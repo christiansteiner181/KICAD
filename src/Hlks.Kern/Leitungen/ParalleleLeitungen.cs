@@ -13,7 +13,7 @@ namespace Hlks.Kern;
 public sealed class ParalleleLeitungen : IBefehl
 {
     public string Name => "parallele_leitungen";
-    public const string Text = "Zeichnet zum Leitungszug einer Leitung (bzw. nur zur Geraden mit zug = false) parallele Züge (Revit «Parallele Rohre»): anzahl Züge im Achsabstand abstand, lage «waagrecht» (zur Seite des Punkts seite, an Knicken auf der Winkelhalbierenden) oder «oben» bzw. «unten». Serie und Grösse wie die Leitung, Bögen der Serie, Enden frei. System je Zug aus systeme; ohne Angabe bei einem Zug das Gegenstück des Systempaars (Vorlauf ↔ Rücklauf), sonst das System der Leitung. Ein Paket.";
+    public const string Text = "Zeichnet zum Leitungszug einer Leitung (bzw. nur zur Geraden mit zug = false) parallele Züge (Revit «Parallele Rohre»): anzahl Züge im Achsabstand abstand, lage «waagrecht» (zur Seite des Punkts seite, an Knicken auf der Winkelhalbierenden) oder «oben» bzw. «unten». Produktlinie und Grösse wie die Leitung, Bögen der Produktlinie, Enden frei. System je Zug aus systeme; ohne Angabe bei einem Zug das Gegenstück des Systempaars (Vorlauf ↔ Rücklauf), sonst das System der Leitung. Ein Paket.";
     public string Beschreibung => Text;
     public const string ParLage = "\"waagrecht\" (Vorgabe, zur Seite des Punkts seite), \"oben\" oder \"unten\"";
     public const string ParSeite = "Punkt [x, y] auf der Seite, zu der die waagrechten Parallelen entstehen";
@@ -41,8 +41,8 @@ public sealed class ParalleleLeitungen : IBefehl
         int anzahl = (int)anzahlRoh;
         var lage = (Param.Text(p, "lage") ?? "waagrecht").Trim().ToLowerInvariant();
         if (lage is not ("waagrecht" or "oben" or "unten")) throw new HlksFehler($"lage «{lage}» gibt es nicht.", ParLage);
-        var s = Leitungsserie.VonLeitung(m, kat, l) ?? throw new HlksFehler($"{l.Kennzeichen} hat keine Serie – die Bögen kommen aus der Serie.", "Zuerst eine Serie zuweisen (leitung_aufteilen mit serie).");
-        var sg = s.GroesseVon(l) is { Gueltig: true } g ? g : throw new HlksFehler($"{l.Kennzeichen} hat keine Grösse der Serie {s.Bezeichnung}.", "Grösse angleichen (leitung_groesse).");
+        var s = Leitungsserie.VonLeitung(m, kat, l) ?? throw new HlksFehler($"{l.Kennzeichen} hat keine Produktlinie – die Bögen kommen aus der Produktlinie.", "Zuerst eine Produktlinie zuweisen (leitung_aufteilen mit serie).");
+        var sg = s.GroesseVon(l) is { Gueltig: true } g ? g : throw new HlksFehler($"{l.Kennzeichen} hat keine Grösse der Produktlinie {s.Bezeichnung}.", "Grösse angleichen (leitung_groesse).");
 
         var knoten = Knoten(k, l, p["zug"] is null || Param.Bool(p, "zug"), sg.Groesse);
         var systeme = Systeme(k, p, l, anzahl);

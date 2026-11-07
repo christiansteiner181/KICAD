@@ -177,7 +177,7 @@ public sealed class FamilienNachfuehren : INachfuehrung
 
         // Leitung mit Serie (Modul 3): Grösse aus dem Typ; die Anschlüsse anfang/ende bleiben (Leitungsserien haben keine)
         if (leitung && !def.IstLeitungsserie)
-            throw new HlksFehler($"{e.Kennzeichen} ist eine Leitung, die Familie {f.Kennzeichen} «{f.Name}» ist keine Leitungsserie.", "Eine Leitungsserie (Kategorie Rohr bzw. Kanal mit Block leitung) angeben; familien listet sie.");
+            throw new HlksFehler($"{e.Kennzeichen} ist eine Leitung, die Familie {f.Kennzeichen} «{f.Name}» ist keine Produktlinie.", "Eine Produktlinie (Kategorie Rohr bzw. Kanal mit Block leitung) angeben; familien listet sie.");
         if (leitung) geaendert |= LeitungsgroesseAnschluesse(e, neu, def, a);
 
         // Anschlüsse aus der Familie
@@ -239,13 +239,13 @@ public sealed class FamilienNachfuehren : INachfuehrung
             {
                 var name = schl switch { "dn" => "dn", "d" => "durchmesser", "b" => "breite", "h" => "hoehe", _ => schl };
                 var ed = d.Eigenschaften.FirstOrDefault(x => x.Name.Equals(name, StringComparison.OrdinalIgnoreCase));
-                if (ed is null) { Hinweis(k, $"{e.Kennzeichen}: {e.Klasse} hat keine Eigenschaft «{name}» für die Grösse {schl} der Serie."); continue; }
+                if (ed is null) { Hinweis(k, $"{e.Kennzeichen}: {e.Klasse} hat keine Eigenschaft «{name}» für die Grösse {schl} der Produktlinie."); continue; }
                 ziele.Add(ed.Name);
                 JsonNode inhalt = JsonValue.Create(wert);
                 var bisher = neu.Eigenschaft(ed.Name);
                 if (bisher is not null && bisher.Herkunft.Art == "familie" && bisher.Herkunft.Quelle == quelle && bisher.Inhalt?.ToJsonString() == inhalt.ToJsonString()) continue;
                 if (bisher is not null && bisher.Herkunft.Art != "familie" && bisher.Inhalt?.ToJsonString() != inhalt.ToJsonString())
-                    Hinweis(k, $"{e.Kennzeichen}: {ed.Name} kommt aus der Serie ({inhalt.ToJsonString()}{(ed.Einheit is null ? "" : " " + ed.Einheit)}, Typ «{typ}»); der bisherige Wert {bisher} wird ersetzt.");
+                    Hinweis(k, $"{e.Kennzeichen}: {ed.Name} kommt aus der Produktlinie ({inhalt.ToJsonString()}{(ed.Einheit is null ? "" : " " + ed.Einheit)}, Typ «{typ}»); der bisherige Wert {bisher} wird ersetzt.");
                 neu.Eigenschaften[ed.Name] = new Wert { Inhalt = inhalt, Einheit = ed.Einheit, Herkunft = k.Herkunft with { Art = "familie", Quelle = quelle } };
                 geaendert = true;
             }

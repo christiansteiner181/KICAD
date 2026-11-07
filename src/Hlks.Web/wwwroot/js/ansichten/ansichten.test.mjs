@@ -718,7 +718,7 @@ test('Materialliste: zwei Tabellen (Leitungen, Formteile) ohne Klick-Schlüssel,
   assert.equal(a.titel, 'Materialliste');
   assert.deepEqual(a.tabellen.map((t) => t.titel), ['Leitungen', 'Formteile']);
   assert.ok(a.tabellen.every((t) => t.schluessel === null));
-  assert.deepEqual(a.tabellen[0].spalten.map((s) => s.titel), ['Serie', 'Grösse', 'Stück', 'Länge m']);
+  assert.deepEqual(a.tabellen[0].spalten.map((s) => s.titel), ['Produktlinie', 'Grösse', 'Stück', 'Länge m']);
   assert.deepEqual(a.tabellen[0].spalten.map((s) => s.art), ['text', 'text', 'zahl', 'zahl']);
   assert.deepEqual(a.tabellen[1].spalten.map((s) => s.titel), ['Familie', 'Typ', 'Klasse', 'Winkel °', 'Stück']);
   assert.equal(a.tabellen[0].zeilen.length, 2);
@@ -748,7 +748,7 @@ test('Strangliste: Längen je Serie und Grösse werden lesbar angezeigt', () => 
   assert.equal(fmt.formatWert('laengen', laengen), 'DN 20 (Testrohrserie (fiktiv)): 4,45 m; DN 100 (ohne Serie): 4,00 m');
   const a = fmt.aufbereiten('strangliste', { ableitung: 'Strangliste', anzahl: 1, zeilen: [{ strang: 'ST-1', leitungslaenge_m: 8.45, laengen, bauteile: 3 }] });
   const titel = a.tabellen[0].spalten.map((s) => s.titel);
-  assert.ok(titel.indexOf('Längen je Serie und Grösse') > titel.indexOf('Leitungslänge m'));
+  assert.ok(titel.indexOf('Längen je Produktlinie und Grösse') > titel.indexOf('Leitungslänge m'));
   assert.equal(fmt.formatWert('laengen', []), '');
 });
 

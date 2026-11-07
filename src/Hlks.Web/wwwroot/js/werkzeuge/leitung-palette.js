@@ -1,7 +1,7 @@
 // Eigenschaftenpalette für Leitungen (Modul 3, C1) – HTML-Bausteine, rein und in Node getestet (leitung.test.mjs).
 //   - Rohr/Kanal mit Serie: Gruppe «Leitung» mit Serie, Grösse (Änderung → leitung_groesse bzw. leitung_serie, Rückfrage «nur diese Leitung /
 //     ganzer Zug» in leitung-bearbeiten.js), Gefälle, Dämmung (Art) und Dämmdicke; dazu eine Zeile mit den Summen des Leitungszugs;
-//   - Rohr/Kanal ohne Serie (Altbestand, z. B. aus IFC): Hinweis und Knopf «Aufteilen mit Serie …» (→ leitung_aufteilen);
+//   - Rohr/Kanal ohne Serie (Altbestand, z. B. aus IFC): Hinweis und Knopf «Aufteilen mit Produktlinie …» (→ leitung_aufteilen);
 //   - Formteile (Bogen, T-Stück, Reduktion, Reinigungsöffnung): Gruppe «Formteil» mit Art, Familie, Typ und Winkel.
 // Die Palette ändert nie selbst: die Felder tragen data-ziel «lt:serie» und «lt:groesse» (eigenschaften.js ruft leitung-bearbeiten.js);
 // Gefälle, Dämmung und Dämmdicke sind gewöhnliche Eigenschaften («eig:…») und gehen als element_aendern an den Kern.
@@ -58,7 +58,7 @@ export function leitungGruppe(d, H) {
   const aktuell = serie ? groessenListe(serie).find((g) => g.typ === typ) : null;
   const zeilen = [];
   const sl = (serien?.length ? serien : [[f?.kennzeichen, f?.name]]).map((s) => (Array.isArray(s) ? s : [s.kz, s.name]));
-  zeilen.push(H.zeile('Serie', `<select data-ziel="lt:serie" data-typ="auswahl">${optionen(sl, f?.kennzeichen ?? el.bezuege?.familie ?? null)}</select>`
+  zeilen.push(H.zeile('Produktlinie', `<select data-ziel="lt:serie" data-typ="auswahl">${optionen(sl, f?.kennzeichen ?? el.bezuege?.familie ?? null)}</select>`
     + `<button type="button" class="ep-fam-knopf" data-aktion="fam-editor" data-fam="${esc(f?.kennzeichen ?? el.bezuege?.familie ?? '')}" title="Leitungsserie im Editor öffnen">Editor</button>`,
     { titel: 'Leitungsserie (Familie der Kategorie Rohr bzw. Kanal). Eine Änderung ersetzt die Formteile der Leitung (Rückfrage: nur diese Leitung oder ganzer Zug).' }));
   if (istFrei(serie)) {
@@ -66,7 +66,7 @@ export function leitungGruppe(d, H) {
     const werte = { breite: wertVon(l, 'breite'), hoehe: wertVon(l, 'hoehe'), durchmesser: wertVon(l, 'durchmesser'), familientyp: typ };
     const anz = groesseAnzeige(serie, werte);
     zeilen.push(H.zeile('Grösse', H.nurLesen(`${anz.text}${anz.frei ? ' (frei)' : anz.typ ? ` (Normgrösse ${anz.typ})` : ''}`),
-      { titel: anz.frei ? 'Freie Grösse: keine Normgrösse der Serie, Masse aus der Vorlage gerechnet' : 'Normgrösse = Typ der Serie' }));
+      { titel: anz.frei ? 'Freie Grösse: keine Normgrösse der Produktlinie, Masse aus der Vorlage gerechnet' : 'Normgrösse = Typ der Produktlinie' }));
     const eingabe = (ziel, wert, einheit = 'mm') => `<input type="text" inputmode="decimal" data-ziel="lt:${ziel}" data-typ="frei" value="${esc(zahl(wert))}"><span class="ep-einheit">${einheit}</span>`;
     if (istRechteck(serie)) {
       zeilen.push(H.zeile('Breite', eingabe('b', werte.breite), { titel: 'Breite b des Kanals. Eine Änderung führt Bögen und Reduktionen nach (Rückfrage: nur diese Leitung oder ganzer Zug).' }));
@@ -75,14 +75,14 @@ export function leitungGruppe(d, H) {
     const raster = rasterVorschlag(serie);
     zeilen.push(H.zeile('Normgrösse', `<select data-ziel="lt:raster" data-typ="auswahl"><option value=""${anz.typ ? '' : ' selected'}>${anz.typ ? 'Normgrösse wählen …' : 'frei (keine Normgrösse)'}</option>`
       + `${raster.map((r) => `<option value="${esc(r.typ)}"${r.typ === anz.typ ? ' selected' : ''}>${esc(r.text)}</option>`).join('')}</select>`,
-      { titel: 'Vorschlagsliste: die Typen der Serie. Die Wahl setzt die Grösse auf die Normgrösse (Rückfrage: nur diese Leitung oder ganzer Zug).' }));
+      { titel: 'Vorschlagsliste: die Typen der Produktlinie. Die Wahl setzt die Grösse auf die Normgrösse (Rückfrage: nur diese Leitung oder ganzer Zug).' }));
     zeilen.push(H.zeile('', H.nurLesen(serie.frei.text ?? ''), { titel: freiHinweis(serie), klasse: 'klein' }));
   } else {
     zeilen.push(H.zeile('Grösse', `<select data-ziel="lt:groesse" data-typ="auswahl">${optionen(nachAussendurchmesser(serie) ? groessenOptionen(serie) : gr, typ)}</select>`,
-      { titel: 'Grösse der Serie. Eine Änderung führt Bögen und Reduktionen nach (Rückfrage: nur diese Leitung oder ganzer Zug).' }));
+      { titel: 'Grösse der Produktlinie. Eine Änderung führt Bögen und Reduktionen nach (Rückfrage: nur diese Leitung oder ganzer Zug).' }));
     if (aktuell) {
       const masse = [aktuell.aussen != null ? `aussen ${zahl(aktuell.aussen)}` : null, aktuell.innen != null ? `innen ${zahl(aktuell.innen)}` : null, aktuell.wand != null ? `Wand ${zahl(aktuell.wand)}` : null].filter(Boolean).join(' · ');
-      if (masse) zeilen.push(H.zeile('Mass', H.nurLesen(`${masse} mm`), { titel: 'Aus der Serie (mit Quelle in der Familie)', klasse: 'klein' }));
+      if (masse) zeilen.push(H.zeile('Mass', H.nurLesen(`${masse} mm`), { titel: 'Aus der Produktlinie (mit Quelle in der Familie)', klasse: 'klein' }));
     }
   }
   // Abwasser-Serie (Nachtrag): Grösse nach Aussendurchmesser, Beschriftung vom Kern, DN nur als Angabe des Herstellers
@@ -90,7 +90,7 @@ export function leitungGruppe(d, H) {
     zeilen.push(H.zeile('Einsatz', H.nurLesen('Abwasser'), { titel: abwasserHinweis(serie), klasse: 'klein' }));
     if (nachAussendurchmesser(serie)) {
       const dm = wertVon(l, 'durchmesser'), dn = wertVon(l, 'dn');
-      zeilen.push(H.zeile('Aussendurchmesser', H.nurLesen(dm != null ? `${zahlText(dm)} mm` : '–'), { titel: 'Aussendurchmesser des Rohrs (Typ der Serie); die Grösse der Serie ist d' }));
+      zeilen.push(H.zeile('Aussendurchmesser', H.nurLesen(dm != null ? `${zahlText(dm)} mm` : '–'), { titel: 'Aussendurchmesser des Rohrs (Typ der Produktlinie); die Grösse der Produktlinie ist d' }));
       if (dn != null) zeilen.push(H.zeile('DN (Hersteller)', H.nurLesen(`DN ${zahlText(dn)}`), { titel: 'Angabe der Herstellerunterlage (Typparameter mit ziel dn) – nie aus dem Aussendurchmesser abgeleitet', klasse: 'klein' }));
     }
     const bes = beschriftungVon(serie, typ);
@@ -117,8 +117,8 @@ export function altbestandGruppe(d, H) {
   const { el } = d;
   const art = el.klasse === 'Kanal' ? 'Kanal' : 'Rohr';
   return H.gruppe('Leitung', [
-    H.zeile('Serie', H.nurLesen('keine (Polylinie aus dem Bestand)'), { titel: `Diese ${art === 'Kanal' ? 'Leitung' : 'Leitung'} hat keine Leitungsserie: sie wird nicht massstäblich gezeichnet und hat keine Formteile.` }),
-    H.zeile('', `<button type="button" class="ep-lt-knopf" data-aktion="lt-aufteilen" title="Zerlegt die Polylinie in Geraden mit Bögen der gewählten Serie (Befehl leitung_aufteilen)">Aufteilen mit Serie …</button>`,
+    H.zeile('Produktlinie', H.nurLesen('keine (Polylinie aus dem Bestand)'), { titel: `Diese ${art === 'Kanal' ? 'Leitung' : 'Leitung'} hat keine Leitungsserie: sie wird nicht massstäblich gezeichnet und hat keine Formteile.` }),
+    H.zeile('', `<button type="button" class="ep-lt-knopf" data-aktion="lt-aufteilen" title="Zerlegt die Polylinie in Geraden mit Bögen der gewählten Produktlinie (Befehl leitung_aufteilen)">Aufteilen mit Produktlinie …</button>`,
       { titel: 'leitung_aufteilen: Geraden und Bögen nach einer Leitungsserie' }),
   ]);
 }

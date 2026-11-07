@@ -72,7 +72,7 @@ static class Senkrechte
 public sealed class FallleitungPlatzieren : IBefehl
 {
     public string Name => "fallleitung_platzieren";
-    public const string Text = "Setzt eine Fallleitung (senkrecht, immer Abwasser: ohne system das Schmutzwasser-System des Projekts; Abgänge daran werden mit 88.5° angeschlossen) an einem Punkt über alle Geschosse des Gebäudes bzw. von_geschoss bis bis_geschoss: je Geschoss ein Rohr vom Geschossboden (Kote) bis zum Boden des nächsten Geschosses (das oberste bis zu seiner Oberkante = Kote + Höhe), von oben nach unten in Fliessrichtung gezeichnet und an das Rohr darüber angeschlossen. Serie, Grösse, System und Strang wie leitung_zeichnen.";
+    public const string Text = "Setzt eine Fallleitung (senkrecht, immer Abwasser: ohne system das Schmutzwasser-System des Projekts; Abgänge daran werden mit 88.5° angeschlossen) an einem Punkt über alle Geschosse des Gebäudes bzw. von_geschoss bis bis_geschoss: je Geschoss ein Rohr vom Geschossboden (Kote) bis zum Boden des nächsten Geschosses (das oberste bis zu seiner Oberkante = Kote + Höhe), von oben nach unten in Fliessrichtung gezeichnet und an das Rohr darüber angeschlossen. Produktlinie, Grösse, System und Strang wie leitung_zeichnen.";
     public const string ParPunkt = "Lage [x, y] in mm";
     public const string ParVon = Senkrechte.ParVon;
     public const string ParBis = Senkrechte.ParBis;
@@ -113,13 +113,13 @@ public sealed class FallleitungPlatzieren : IBefehl
 public sealed class SteigleitungPlatzieren : IBefehl
 {
     public string Name => "steigleitung_platzieren";
-    public const string Text = "Setzt eine Steigleitung aus mehreren senkrechten Leitungen (z. B. KW, WW, Zirk, Heizung VL, RL; Lüftung AUL, FOL, ZUL, ABL rund oder eckig) in einer Reihe über alle Geschosse bzw. von_geschoss bis bis_geschoss: die erste Leitung am punkt, jede weitere um abstand (Achsabstand) in richtung versetzt. Je Leitung Medium, Serie und Grösse (System ohne Angabe: das System des Projekts mit diesem Medium). Je Geschoss ein Rohr, in Fliessrichtung gezeichnet und verbunden: Zirkulation, Rückläufe, Abluft und Aussenluft fallen, die übrigen steigen (richtung je Leitung ändert das, z. B. Lüftungszentrale oben).";
+    public const string Text = "Setzt eine Steigleitung aus mehreren senkrechten Leitungen (z. B. KW, WW, Zirk, Heizung VL, RL; Lüftung AUL, FOL, ZUL, ABL rund oder eckig) in einer Reihe über alle Geschosse bzw. von_geschoss bis bis_geschoss: die erste Leitung am punkt, jede weitere um abstand (Achsabstand) in richtung versetzt. Je Leitung Medium, Produktlinie und Grösse (System ohne Angabe: das System des Projekts mit diesem Medium). Je Geschoss ein Rohr, in Fliessrichtung gezeichnet und verbunden: Zirkulation, Rückläufe, Abluft und Aussenluft fallen, die übrigen steigen (richtung je Leitung ändert das, z. B. Lüftungszentrale oben).";
     public const string ParPunkt = "Lage der ersten Leitung [x, y] in mm";
     public const string ParRichtung = "Richtung der Reihe [dx, dy] im Grundriss (Vorgabe [1, 0])";
     public const string ParAbstand = "Achsabstand der Leitungen in mm (statt steigzone_breite)";
     public const string ParZoneBreite = "Breite der Steigzone in mm entlang der Reihe: die Leitungen werden mit gleichen lichten Abständen verteilt (Aussenmasse eingerechnet), punkt = Anfang der Steigzone";
     public const string ParZoneTiefe = "Tiefe der Steigzone in mm quer zur Reihe (links in Richtung der Reihe): die Leitungen stehen in ihrer Mitte";
-    public const string ParLeitungen = "Liste der Leitungen in der Reihenfolge der Reihe: [{ medium (z. B. KW, WW, ZIR, HZ-VL, HZ-RL; Lüftung AUL, FOL, ZUL, ABL mit Kanalserie rund oder eckig), serie, groesse, system?, richtung? (auf | ab = Fliessrichtung; fehlt: Zirkulation, Rückläufe, Abluft und Aussenluft fallen, die übrigen steigen – Lüftung mit Zentrale unten) }]";
+    public const string ParLeitungen = "Liste der Leitungen in der Reihenfolge der Reihe: [{ medium (z. B. KW, WW, ZIR, HZ-VL, HZ-RL; Lüftung AUL, FOL, ZUL, ABL mit Kanal-Produktlinie rund oder eckig), serie, groesse, system?, richtung? (auf | ab = Fliessrichtung; fehlt: Zirkulation, Rückläufe, Abluft und Aussenluft fallen, die übrigen steigen – Lüftung mit Zentrale unten) }]";
     public string Beschreibung => Text;
     public IReadOnlyList<ParameterDef> Parameter { get; } =
     [

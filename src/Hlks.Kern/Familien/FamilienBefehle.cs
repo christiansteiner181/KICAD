@@ -129,7 +129,7 @@ public sealed class FamilieEntwurf : IBefehl
 public sealed class FamilieAendern : IBefehl
 {
     public string Name => "familie_aendern";
-    public const string Text = "Ändert eine Familie gezielt – der Weg des Editors. ops ist eine Liste von Änderungen, je { op, … }: parameter_setzen { parameter }, parameter_loeschen { name }, parameter_umbenennen { alt, neu } (überall: Formeln, Typwerte, Quellen, Masse, Sinnbild und Exemplarwerte der platzierten Elemente), typ_setzen { typ }, typ_loeschen { name }, koerper_setzen { koerper }, koerper_loeschen { id }, anschluss_setzen { anschluss }, anschluss_loeschen { name }, sinnbild_setzen { sinnbild | null }, leitung_setzen { leitung } (Block «leitung» einer Leitungsserie ersetzen, Modul 3), kopf_setzen { name, kategorie, hersteller, produkt, beschreibung, bericht }. *_setzen ersetzt den Eintrag gleichen Namens (bzw. gleicher id) ganz oder hängt ihn an. Danach wird die Definition wie bei familie_entwurf geprüft (Version + 1, Status entwurf) und platzierte Elemente werden nachgeführt.";
+    public const string Text = "Ändert eine Familie gezielt – der Weg des Editors. ops ist eine Liste von Änderungen, je { op, … }: parameter_setzen { parameter }, parameter_loeschen { name }, parameter_umbenennen { alt, neu } (überall: Formeln, Typwerte, Quellen, Masse, Sinnbild und Exemplarwerte der platzierten Elemente), typ_setzen { typ }, typ_loeschen { name }, koerper_setzen { koerper }, koerper_loeschen { id }, anschluss_setzen { anschluss }, anschluss_loeschen { name }, sinnbild_setzen { sinnbild | null }, leitung_setzen { leitung } (Block «leitung» einer Produktlinie ersetzen, Modul 3), kopf_setzen { name, kategorie, hersteller, produkt, beschreibung, bericht }. *_setzen ersetzt den Eintrag gleichen Namens (bzw. gleicher id) ganz oder hängt ihn an. Danach wird die Definition wie bei familie_entwurf geprüft (Version + 1, Status entwurf) und platzierte Elemente werden nachgeführt.";
     public string Beschreibung => Text;
     public IReadOnlyList<ParameterDef> Parameter { get; } =
     [
@@ -437,7 +437,7 @@ public sealed class FamiliePlatzieren : IBefehl
         if (!def.Gueltig) throw FamilienPruefung.Fehlermeldung($"Familie {fam.Kennzeichen} «{fam.Name}»", def.Fehler);
         var d = k.Katalog.Klassen[def.Kategorie];
         if (def.IstLeitungsserie)
-            throw new HlksFehler($"{fam.Kennzeichen} «{fam.Name}» ist eine Leitungsserie – sie wird nicht platziert, sondern Leitungen benutzen sie.",
+            throw new HlksFehler($"{fam.Kennzeichen} «{fam.Name}» ist eine Produktlinie – sie wird nicht platziert, sondern Leitungen benutzen sie.",
                 $"Leitung ziehen (leitung_ziehen bzw. leitung_zeichnen) und ihr bezuege.familie = {fam.Kennzeichen} und eigenschaften.familientyp = <Grösse> geben; leitungsserie zeigt die Grössen.");
         if (d.Abstrakt)
             throw new HlksFehler($"Die Kategorie {d.Name} der Familie {fam.Kennzeichen} ist nur eine Basisklasse.",

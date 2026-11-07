@@ -182,7 +182,7 @@ public static class FreieGroesse
                     vorschlag += $" – oder den Bogen neu wählen lassen: leitung_groesse {{ \"leitungen\": [{string.Join(", ", leitungen.Select(x => $"\"{x.Kennzeichen}\""))}], \"groesse\": \"{lg.Kurz}\" }}";
             }
             b.Add(new("P45", "hinweis", e.Kennzeichen,
-                $"{e.Klasse} der freien Serie {serie.Kennzeichen} «{serie.Name}» trägt seine Grösse nicht selbst ({werte} aus Typ «{Familien.Typ(e)}» bzw. der Vorgabe von {f.Kennzeichen}) – ändert sich die Familie, ändert sich das Formteil mit",
+                $"{e.Klasse} der freien Produktlinie {serie.Kennzeichen} «{serie.Name}» trägt seine Grösse nicht selbst ({werte} aus Typ «{Familien.Typ(e)}» bzw. der Vorgabe von {f.Kennzeichen}) – ändert sich die Familie, ändert sich das Formteil mit",
                 vorschlag));
         }
     }
@@ -231,6 +231,6 @@ public sealed class FormteilGroessenNachfuehren : INachfuehrung
             festgehalten.Add($"{e.Kennzeichen} ({string.Join(", ", fehlend.Select(x => $"{x.Key} = {x.Value.ToString("0.###", CultureInfo.InvariantCulture)}"))})");
         }
         if (festgehalten.Count > 0)
-            k.Hinweise.Add($"Formteile freier Serien tragen ihre Grösse selbst – festgehalten: {string.Join("; ", festgehalten.Take(10))}{(festgehalten.Count > 10 ? $" … ({festgehalten.Count})" : "")}.");
+            k.Hinweise.Add($"Formteile freier Produktlinien tragen ihre Grösse selbst – festgehalten: {string.Join("; ", festgehalten.Take(10))}{(festgehalten.Count > 10 ? $" … ({festgehalten.Count})" : "")}.");
     }
 }

@@ -21,7 +21,7 @@ public static class Ableitungen
 
     /// <summary>Modul 3 (B4): Materialliste je Leitungsserie und Grösse (Längen) und je Formteil-Familie und Typ (Stück).
     /// Einhängepunkt vom Hauptlauf; Abfrage «materialliste» in LeitungenAbfragen.</summary>
-    public const string MateriallisteText = "Materialliste: Leitungslängen je Serie und Grösse (m) und Formteile je Familie, Typ und Winkel (Stück; Bogenwinkel, bei T-Stücken der Abzweigwinkel), wahlweise für ein System, einen Strang oder ein Geschoss.";
+    public const string MateriallisteText = "Materialliste: Leitungslängen je Produktlinie und Grösse (m) und Formteile je Familie, Typ und Winkel (Stück; Bogenwinkel, bei T-Stücken der Abzweigwinkel), wahlweise für ein System, einen Strang oder ein Geschoss.";
 
     /// <summary>Länge der Leitungen einer Serie und Grösse in m (2 Stellen). <see cref="Serie"/> = Name der Leitungsserie (Familie) oder
     /// «ohne Serie»; <see cref="Groesse"/> = Rohrgrösse nach <see cref="Rohrgroessen.Von"/> (Modul 3, B9b: «NW 20» bzw. «DN 20»; Abwasser «110» = Aussendurchmesser),
@@ -148,7 +148,7 @@ public static class Ableitungen
         o["formteileTotal"] = formteile.Count;
         var ohne = leitungen.Count(l => HlksMasse.Bezeichnung(p, l).Serie == HlksMasse.OhneSerie);
         var hinweise = new List<string>();
-        if (ohne > 0) hinweise.Add($"{ohne} {(ohne == 1 ? "Leitung hat" : "Leitungen haben")} keine Serie (Prüfung P18): sie stehen unter «{HlksMasse.OhneSerie}» mit der Grösse aus den Eigenschaften.");
+        if (ohne > 0) hinweise.Add($"{ohne} {(ohne == 1 ? "Leitung hat" : "Leitungen haben")} keine Produktlinie (Prüfung P18): sie stehen unter «{HlksMasse.OhneSerie}» mit der Grösse aus den Eigenschaften.");
         hinweise.AddRange(Rohrgroessen.Hinweise(p, leitungen));
         if (hinweise.Count > 0) o["hinweis"] = string.Join(" ", hinweise);
         return o;

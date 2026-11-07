@@ -53,7 +53,7 @@ public static class LeitungenAbfragen
     /// <summary>Abfragen zu Leitungen (leitungszug, materialliste …) für Abfragen.Liste.</summary>
     public static readonly IReadOnlyList<AbfrageDef> Definitionen =
     [
-        new("leitungsserie", Leitungsserie.AbfrageText, [new("familie", "text", true, "Leitungsserie: Familie der Kategorie Rohr bzw. Kanal (Kennzeichen, Name oder id)")]),   // B1
+        new("leitungsserie", Leitungsserie.AbfrageText, [new("familie", "text", true, "Produktlinie: Familie der Kategorie Rohr bzw. Kanal (Kennzeichen, Name oder id)")]),   // B1
         new("leitungszug", Leitungszug.AbfrageText, [new("leitung", "text", true, Leitungszug.ParLeitung)]),   // B2
         new("materialliste", Ableitungen.MateriallisteText,   // B4 (Api/Ableitungen.cs)
         [

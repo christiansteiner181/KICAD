@@ -168,8 +168,8 @@ public class PruefungenTests
         Assert.Equal("Apparat ohne Weg im Netz – Belastung fehlt stromab/stromauf", Pruefungen.Codes["P26"]);
         Assert.Equal("Plannummer doppelt im Projekt", Pruefungen.Codes["P27"]);
         Assert.Equal("Liste passt nicht aufs Blatt", Pruefungen.Codes["P28"]);
-        Assert.Equal("Grösse ausserhalb der Grenzen bzw. nicht im Schritt der Serie", Pruefungen.Codes["P29"]);
-        Assert.Equal("Formteil einer freien Serie trägt seine Grösse nicht selbst", Pruefungen.Codes["P45"]);
+        Assert.Equal("Grösse ausserhalb der Grenzen bzw. nicht im Schritt der Produktlinie", Pruefungen.Codes["P29"]);
+        Assert.Equal("Formteil einer freien Produktlinie trägt seine Grösse nicht selbst", Pruefungen.Codes["P45"]);
     }
 
     [Fact]

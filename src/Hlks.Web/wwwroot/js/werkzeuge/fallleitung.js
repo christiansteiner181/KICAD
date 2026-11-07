@@ -11,11 +11,11 @@ const gerundet = (p) => [Math.round(p[0] * 10) / 10, Math.round(p[1] * 10) / 10]
 
 /** Parameter für fallleitung_platzieren aus der Optionsleiste (Serie, Grösse, System bzw. Strang). */
 export function fallleitungParameter({ opt, punkt, serie = null }) {
-  if (!opt.serie) throw new WerkzeugFehler('Die Serie fehlt.', 'In der Optionsleiste eine Rohrserie wählen.');
+  if (!opt.serie) throw new WerkzeugFehler('Die Produktlinie fehlt.', 'In der Optionsleiste eine Produktlinie (Abwasser) wählen.');
   const groesse = groesseAusOptionen(serie, opt);
   if (groesse === null) {
     const f = freiPflichtFehlt(serie, opt);
-    throw new WerkzeugFehler(f ? f.text : 'Die Grösse fehlt.', f ? f.vorschlag : 'In der Optionsleiste eine Grösse der Serie wählen.');
+    throw new WerkzeugFehler(f ? f.text : 'Die Grösse fehlt.', f ? f.vorschlag : 'In der Optionsleiste eine Grösse der Produktlinie wählen.');
   }
   const p = { punkt: gerundet(punkt), serie: opt.serie, groesse };
   if (opt.system) p.system = opt.system;

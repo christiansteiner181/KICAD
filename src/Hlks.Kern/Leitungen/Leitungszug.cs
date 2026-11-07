@@ -74,7 +74,7 @@ public sealed class Leitungszug
 
     // ------------------------------------------------------------------ Abfrage «leitungszug»
 
-    public const string AbfrageText = "Leitungszug einer Leitung (Modul 3): zusammenhängende Leitungen über Bögen und Reduktionen bis zum nächsten T-Stück, Gerät, anderen Element oder offenen Ende – in Fliessrichtung je Glied Kennzeichen, Klasse, Länge (mm, Leitungen), Grösse, Typ und Serie, bei Bögen der Winkel; dazu die Grenzen an Anfang und Ende und die Summen (Länge gesamt und je Grösse, mm und m).";
+    public const string AbfrageText = "Leitungszug einer Leitung (Modul 3): zusammenhängende Leitungen über Bögen und Reduktionen bis zum nächsten T-Stück, Gerät, anderen Element oder offenen Ende – in Fliessrichtung je Glied Kennzeichen, Klasse, Länge (mm, Leitungen), Grösse, Typ und Produktlinie, bei Bögen der Winkel; dazu die Grenzen an Anfang und Ende und die Summen (Länge gesamt und je Grösse, mm und m).";
     public const string ParLeitung = "Leitung (Rohr, Kanal) im Zug (Kennzeichen oder Id)";
 
     static double R(double x, int stellen = 1) => Math.Round(x, stellen);

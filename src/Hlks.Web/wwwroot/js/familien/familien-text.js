@@ -787,10 +787,10 @@ export function leitungFelder(def, o = {}) {
   // Einsatz (Nachtrag, entwurf/abwasser-serie.md; nur Rohre): «Abwasser» = Grösse und Beschriftung nach Aussendurchmesser, keine DN nötig, Prüfbefund P30 in einem anderen Medium
   if (o.art !== 'kanal') {
     f.push({ gruppe: 'Querschnitt und Grösse', pfad: 'einsatz', label: 'Einsatz', typ: 'auswahl', optionen: EINSAETZE, wert: b.einsatz ?? '', leer: '(nicht angegeben)',
-      titel: 'Abwasser: Abwasser-Serie (z. B. Geberit PE, Silent-db20, PP-Hausabfluss). Grösse und Beschriftung immer nach Aussendurchmesser (z. B. «PE 110»), unabhängig vom Medium; keine DN nötig. Verwendet jemand die Serie für Heizung, Kälte oder Trinkwasser, meldet der Kern den Prüfbefund P30.' });
+      titel: 'Abwasser: Produktlinie Abwasser (z. B. Geberit PE, Silent-db20, PP-Hausabfluss). Grösse und Beschriftung immer nach Aussendurchmesser (z. B. «PE 110»), unabhängig vom Medium; keine DN nötig. Verwendet jemand die Serie für Heizung, Kälte oder Trinkwasser, meldet der Kern den Prüfbefund P30.' });
     if (b.einsatz === 'abwasser')
       f.push({ gruppe: 'Querschnitt und Grösse', pfad: 'groessenart', label: 'Grösse geführt nach', typ: 'auswahl', optionen: GROESSENARTEN, wert: Object.hasOwn(b.groesse ?? {}, 'd') ? 'd' : 'dn',
-        titel: 'Aussendurchmesser d (Abwasser-Serie nach Aussendurchmesser, «d 110», keine DN nötig) oder Nennweite DN. Eine DN der Herstellerunterlage steht höchstens als eigener Typparameter mit Ziel dn – der Kern leitet sie nie aus d ab.' });
+        titel: 'Aussendurchmesser d (Produktlinie Abwasser nach Aussendurchmesser, «d 110», keine DN nötig) oder Nennweite DN. Eine DN der Herstellerunterlage steht höchstens als eigener Typparameter mit Ziel dn – der Kern leitet sie nie aus d ab.' });
   }
   for (const k of groesseSchluessel(b, o.art)) {
     f.push({ gruppe: 'Querschnitt und Grösse', pfad: `groesse.${k}`, label: k === 'd' && o.art === 'rohr' ? 'Grösse Aussendurchmesser d' : GROESSE_LABEL[k], typ: 'auswahl', optionen: params.map((n) => [n, n]), wert: b.groesse?.[k] ?? '', leer: '(wählen)',
@@ -821,7 +821,7 @@ export function leitungFelder(def, o = {}) {
   if (o.art !== 'kanal') {
     f.push({ gruppe: 'Beschriftung', pfad: 'kuerzel', label: 'Kürzel (Werkstoff)', typ: 'text', text: typeof b.kuerzel === 'string' ? b.kuerzel : '', platzhalter: 'z. B. CNS, PE-S, PEX',
       hinweis: 'für die Beschriftung, z. B. CNS, PE-S, PEX',
-      titel: 'Optional. Werkstoff-Kürzel der Rohre dieser Serie. Die Beschriftung lautet «<kuerzel> NW|DN <Nennweite>» (z. B. «CNS NW 20», NW oder DN nach Projekteinstellung), bei Abwasser «<kuerzel> <Aussendurchmesser>» (z. B. «PE-S 110»); ohne kuerzel nur die Grösse. Nur eintragen, was die Unterlage nennt. Höchstens 12 Zeichen, eine Zeile.' });
+      titel: 'Optional. Werkstoff-Kürzel der Rohre dieser Produktlinie. Die Beschriftung lautet «<kuerzel> NW|DN <Nennweite>» (z. B. «CNS NW 20», NW oder DN nach Projekteinstellung), bei Abwasser «<kuerzel> <Aussendurchmesser>» (z. B. «PE-S 110»); ohne kuerzel nur die Grösse. Nur eintragen, was die Unterlage nennt. Höchstens 12 Zeichen, eine Zeile.' });
   }
   for (const a of FORMTEIL_ARTEN) {
     const cur = b.formteile?.[a.art]?.familie ?? '';

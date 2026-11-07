@@ -156,7 +156,7 @@ public sealed class LeitungenNachfuehren : INachfuehrung
         var quer = verschiebung - v * verschiebung.Mal(v);
         var laengs = (neu - fest).Mal(v);
         string Grund() => $"{l.Kennzeichen} müsste {Z(quer.Laenge)} mm versetzt werden ({element.Kennzeichen}.{stelle.Name} hat sich quer zu ihr bewegt)";
-        var w = Versatzwinkel(s) ?? throw new HlksFehler($"{Grund()}, die Serie {s.Bezeichnung} hat keinen Bogen bis 90° ({s.WinkelText}).",
+        var w = Versatzwinkel(s) ?? throw new HlksFehler($"{Grund()}, die Produktlinie {s.Bezeichnung} hat keinen Bogen bis 90° ({s.WinkelText}).",
             "Weniger weit bzw. entlang der Leitung verschieben, beim Verschieben «Trennen» wählen oder die Leitung neu zeichnen (leitung_zeichnen).");
         var schraeg = w >= 90 - 1e-9 ? 0 : quer.Laenge / Math.Tan(w * Math.PI / 180);
         var rest = (laengs - schraeg) / 2;

@@ -1,4 +1,4 @@
-// Aktionen für Leitungen (Modul 3, Teil C1): Gruppe «Leitungen» mit Rohr (PI, Register Heizung und Sanitär) und Kanal (DT, Register Lüftung), «Aufteilen mit Serie …»
+// Aktionen für Leitungen (Modul 3, Teil C1): Gruppe «Leitungen» mit Rohr (PI, Register Heizung und Sanitär) und Kanal (DT, Register Lüftung), «Aufteilen mit Produktlinie …»
 // (Kontextregister und Palette, nur für Leitungen ohne Serie) und die Listenansicht «Materialliste» (Register Ansicht › Erstellen,
 // Kontextmenü auf «Listen» im Projektbrowser). Keine Fachlogik: alles geht über Befehle und Abfragen des Kerns
 // (leitung_zeichnen, leitung_abzweigen, leitung_aufteilen, leitung_groesse, leitung_serie, materialliste, element_anlegen).
@@ -68,7 +68,7 @@ registrieren({
   ausfuehren() { werkzeugStarten(parallelWerkzeug()); },
 });
 
-// ---------------------------------------------------------------------------------------------- Aufteilen mit Serie
+// ---------------------------------------------------------------------------------------------- Aufteilen mit Produktlinie
 
 const gewaehlteLeitung = (p) => element(p?.leitung ?? p?.element ?? zustand.auswahl);
 
@@ -76,16 +76,16 @@ const aufteilenAktiv = (p) => istAltbestand(gewaehlteLeitung(p));
 const aufteilenHinweis = (p) => {
   const el = gewaehlteLeitung(p);
   if (!el || !['Rohr', 'Kanal'].includes(el.klasse)) return 'Zuerst eine Leitung (Rohr oder Kanal) wählen.';
-  return `${el.kennzeichen} hat schon eine Serie.`;
+  return `${el.kennzeichen} hat schon eine Produktlinie.`;
 };
 
 registrieren({
-  id: 'leitung.aufteilen', titel: 'Aufteilen mit Serie …', symbol: 'rohr', kuerzel: null,
+  id: 'leitung.aufteilen', titel: 'Aufteilen mit Produktlinie …', symbol: 'rohr', kuerzel: null,
   aktiv: aufteilenAktiv, hinweis: aufteilenHinweis,
   ausfuehren: (p) => aufteilenDialog(gewaehlteLeitung(p).kennzeichen),
 });
 registrieren({
-  id: 'kontext.leitung-aufteilen', titel: 'Aufteilen mit Serie …', symbol: 'rohr', kuerzel: null, register: 'kontext', gruppe: 'Leitung',
+  id: 'kontext.leitung-aufteilen', titel: 'Aufteilen mit Produktlinie …', symbol: 'rohr', kuerzel: null, register: 'kontext', gruppe: 'Leitung',
   aktiv: aufteilenAktiv, hinweis: aufteilenHinweis,
   ausfuehren: (p) => aufteilenDialog(gewaehlteLeitung(p).kennzeichen),
 });

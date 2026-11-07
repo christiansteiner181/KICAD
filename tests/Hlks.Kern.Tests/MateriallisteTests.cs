@@ -70,7 +70,7 @@ public class MateriallisteTests
         Ok(RohrOhneSerie(p, "RO-5", 50, [0, 400, 0], [1000, 400, 0]));
         var l = Ableitungen.Leitungslaengen(p);
         Assert.Equal(
-            [("Testrohrserie (fiktiv)", "NW 15", 2.5), ("Testrohrserie (fiktiv)", "NW 32", 1.0), ("ohne Serie", "NW 50", 1.0), ("ohne Serie", "NW 100", 4.0)],
+            [("Testrohrserie (fiktiv)", "NW 15", 2.5), ("Testrohrserie (fiktiv)", "NW 32", 1.0), ("ohne Produktlinie", "NW 50", 1.0), ("ohne Produktlinie", "NW 100", 4.0)],
             l.Select(x => (x.Serie, x.Groesse, x.LaengeM)).ToArray());
     }
 
@@ -107,7 +107,7 @@ public class MateriallisteTests
         Assert.Equal(["NW 20", "NW 100"], laengen.Select(z => Text(z!["groesse"])).ToArray());
         Assert.Equal(4.45, Zahl(laengen[0]!["laenge_m"]), 6);
         Assert.Equal("Testrohrserie (fiktiv)", Text(laengen[0]!["serie"]));
-        Assert.Equal("ohne Serie", Text(laengen[1]!["serie"]));
+        Assert.Equal("ohne Produktlinie", Text(laengen[1]!["serie"]));
         Assert.Equal(4.0, Zahl(laengen[1]!["laenge_m"]), 6);
         Assert.NotNull(o["bauteile"]);
         Assert.Equal(8.45, Zahl(Liste(Ableitungen.Mengen(p, "KW")["laengen"]).Sum(z => Zahl(z!["laenge_m"]))), 6);
@@ -135,7 +135,7 @@ public class MateriallisteTests
         var p = Beispielprojekt.Erzeugen(Kat, null);
         var l = Ableitungen.Leitungslaengen(p);
         Assert.NotEmpty(l);
-        Assert.All(l, x => Assert.Equal("ohne Serie", x.Serie));
+        Assert.All(l, x => Assert.Equal("ohne Produktlinie", x.Serie));
         // B9b: Rohre ausser Abwasser «NW x»; die Abwasserleitungen des Beispielprojekts haben kein da → «ohne Grösse» (kein DN als Ersatz)
         Assert.All(l, x => Assert.True(x.Groesse.StartsWith("NW ") || x.Groesse == "ohne Grösse", x.Groesse));
         Assert.Contains(l, x => x.Groesse == "ohne Grösse");
@@ -267,8 +267,8 @@ public class MateriallisteTests
         string Ohne(JsonObject o) { o.Remove("erzeugt"); return o.ToJsonString(); }
         var a = Ableitungen.Materialliste(p);
         Assert.Equal(Ohne(a), Ohne(Ableitungen.Materialliste(p)));
-        Assert.Contains("keine Serie", Text(a["hinweis"]));
-        Assert.All(Liste(a["leitungen"]), z => Assert.Equal("ohne Serie", Text(z!["serie"])));
+        Assert.Contains("keine Produktlinie", Text(a["hinweis"]));
+        Assert.All(Liste(a["leitungen"]), z => Assert.Equal("ohne Produktlinie", Text(z!["serie"])));
         Assert.Equal(Zahl(Ableitungen.Mengen(p)["leitungslaengeTotal_m"]), Zahl(a["leitungslaengeTotal_m"]), 6);
         // Formteile des Beispielprojekts haben keine Familie
         Assert.NotEmpty(Liste(a["formteile"]));

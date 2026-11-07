@@ -27,10 +27,10 @@ public static class Pruefungen
         // Modul 3 (entwurf/modul-3.md): gemeldet von LeitungenPruefung bzw. SchemaPruefung
         ["P13"] = "Leitungsende nicht an seinem Anschluss",
         ["P14"] = "Grössensprung ohne Reduktion",
-        ["P15"] = "Knick ohne Formteil bzw. Winkel nicht in der Serie",
+        ["P15"] = "Knick ohne Formteil bzw. Winkel nicht in der Produktlinie",
         ["P16"] = "Gefälle fehlt oder falsch",
         ["P17"] = "Nur im Schema (nicht platziert)",
-        ["P18"] = "Leitung ohne Serie",
+        ["P18"] = "Leitung ohne Produktlinie",
         // Modul 3b (entwurf/modul-3b.md): gemeldet von AussparungPruefung
         ["P19"] = "Aussparung veraltet oder fehlt in der Architekten-Fassung",
         ["P20"] = "Leitung durchdringt Bauteil ohne Aussparung",
@@ -45,15 +45,15 @@ public static class Pruefungen
         ["P27"] = PlanPruefung.Codes["P27"],
         ["P28"] = PlanPruefung.Codes["P28"],   // Modul 7 Teil B3: Liste passt nicht aufs Blatt
         // Nachtrag Modul 3 (entwurf/freie-groesse-kanal.md): gemeldet von LeitungenPruefung (Leitungen/Leitungspruefungen.cs)
-        ["P29"] = "Grösse ausserhalb der Grenzen bzw. nicht im Schritt der Serie",
+        ["P29"] = "Grösse ausserhalb der Grenzen bzw. nicht im Schritt der Produktlinie",
         // Nachtrag Modul 3 (entwurf/abwasser-serie.md): gemeldet von LeitungenPruefung (Leitungen/Leitungspruefungen.cs)
-        ["P30"] = "Abwasser-Serie für ein anderes Medium als Abwasser",
+        ["P30"] = "Produktlinie Abwasser für ein anderes Medium als Abwasser",
         // Nachtrag 21.10.2026 (Quellen über einen Wechsel der Leserversion): gemeldet von der Abfrage familie_pruefen (FamilienQuellenVersion.cs) –
         // nur auf Abruf, nicht in pruefen (die Prüfung braucht die Befunde der Unterlagen; pruefen läuft bei jedem Befehl)
         ["P31"] = "Quellen einer Familie nach einer Leserversion, deren Befunde im Projekt fehlen",
         ["P32"] = "Quelle einer Familie nicht eindeutig auf die aktuelle Leserversion umschlüsselbar",
         // Nachtrag Modul 3, 21.10.2026 (Formteile in Vorgabegrösse): gemeldet von LeitungenPruefung (Leitungen/FreieGroesse.cs)
-        ["P45"] = "Formteil einer freien Serie trägt seine Grösse nicht selbst",
+        ["P45"] = "Formteil einer freien Produktlinie trägt seine Grösse nicht selbst",
         // Modul 5 Teil A-D (entwurf/modul-5.md, Punkt 6): gemeldet von HeizungPruefung (Heizung/HeizungPruefung.cs)
         ["P33"] = HeizungPruefung.Codes["P33"],
         ["P34"] = HeizungPruefung.Codes["P34"],

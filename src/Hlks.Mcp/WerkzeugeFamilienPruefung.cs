@@ -41,15 +41,15 @@ public sealed partial class Werkzeuge
         Lauf(() => Antwort(VdiAbgleich.Abfrage(projekt, new System.Text.Json.Nodes.JsonObject { ["familie"] = familie, ["unterlage"] = unterlage, ["satzart"] = satzart, ["filter"] = filter })));
 
     [McpServerTool(Name = Verbindungen.TabelleName), Description(Verbindungen.TabelleText)]   // Verbindungstabelle (Christian 03.11.2026)
-    public string VerbindungstabelleWerkzeug([Description("Nur diese Leitungsserie (Kennzeichen, Name oder id)")] string? serie = null) =>
+    public string VerbindungstabelleWerkzeug([Description("Nur diese Produktlinie (Kennzeichen, Name oder id)")] string? serie = null) =>
         Lauf(() => Antwort(Verbindungen.Tabelle(projekt, new System.Text.Json.Nodes.JsonObject { ["serie"] = serie })));
 
     [McpServerTool(Name = Verbindungen.PruefenName), Description(Verbindungen.PruefenText)]
     public string VerbindungPruefen(
         [Description("Gerät bzw. Bauteil (Kennzeichen oder Id)")] string element,
         [Description("Name des Anschlusses")] string anschluss,
-        [Description("Leitungsserie (Kennzeichen, Name oder id)")] string serie,
-        [Description("Grösse der Leitung, z. B. { \"dn\": 32 }; leer = alle Grössen der Serie")] JsonElement? groesse = null) =>
+        [Description("Produktlinie (Kennzeichen, Name oder id)")] string serie,
+        [Description("Grösse der Leitung, z. B. { \"dn\": 32 }; leer = alle Grössen der Produktlinie")] JsonElement? groesse = null) =>
         Lauf(() => Antwort(Verbindungen.PruefenAbfrage(projekt, new System.Text.Json.Nodes.JsonObject
         {
             ["element"] = element, ["anschluss"] = anschluss, ["serie"] = serie,

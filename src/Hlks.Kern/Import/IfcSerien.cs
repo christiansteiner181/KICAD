@@ -100,9 +100,9 @@ static class IfcSerien
                 Zaehlen(aufgerundet, $"{name}: {e.Kennungen[IfcGroesse]} → {gr.Typ}");
                 g = gr;
             }
-            if (g is null) { Zaehlen(fehler, $"{name}: Grösse {Kurz(e)} nicht in der Serie"); continue; }
+            if (g is null) { Zaehlen(fehler, $"{name}: Grösse {Kurz(e)} nicht in der Produktlinie"); continue; }
             e.Bezuege[Familien.Bezug] = s.Familie.Id;
-            lauf.Wert(e, "familientyp", g.Typ, $"Serie {s.Familie.Name} nach IFC-Typ «{typname}» (Regel «{regel.Muster}»)");
+            lauf.Wert(e, "familientyp", g.Typ, $"Produktlinie {s.Familie.Name} nach IFC-Typ «{typname}» (Regel «{regel.Muster}»)");
             vonLeitung[e.Id] = (s, g.Groesse);
             zugeordnet++;
         }
@@ -145,8 +145,8 @@ static class IfcSerien
                 }
                 if (getauscht) Tauschen(lauf, e, "a", "b");
                 e.Bezuege[Familien.Bezug] = wahl.Familie!.Id;
-                lauf.Wert(e, "familientyp", wahl.Typ, $"Formteil der Serie {s.Familie.Name}");
-                if (wahl.Exemplar is { Count: > 0 } ex) lauf.Wert(e, "parameter", ex.DeepClone(), $"Formteil der Serie {s.Familie.Name}");
+                lauf.Wert(e, "familientyp", wahl.Typ, $"Formteil der Produktlinie {s.Familie.Name}");
+                if (wahl.Exemplar is { Count: > 0 } ex) lauf.Wert(e, "parameter", ex.DeepClone(), $"Formteil der Produktlinie {s.Familie.Name}");
                 lauf.Wert(e, "ausrichtung", Familien.AusrichtungJson(x, z), "Richtungen der angeschlossenen Leitungen");
                 e.Geometrie = new Geometrie { Art = "punkt", Punkte = [[Math.Round(ursprung.X, 1), Math.Round(ursprung.Y, 1), Math.Round(ursprung.Z, 1)]] };
                 formteileOk++;
@@ -155,12 +155,12 @@ static class IfcSerien
             catch (HlksFehler f) { Zaehlen(fehler, f.Message.Length > 80 ? f.Message[..80] + "…" : f.Message); }
         }
 
-        if (zugeordnet > 0) hinweise.Add($"Serien aus dem Standard: {zugeordnet} Leitungen und {formteileOk} Formteile nachgezeichnet ({string.Join(", ", serien.Where(s => s.Value is not null).Select(s => s.Key))})"
-            + (winkelAngepasst > 0 ? $"; {winkelAngepasst} Bögen auf den nächsten Winkel der Serie (Spielraum Abwasser 5°, sonst 2°; z. B. 90° → 88.5° für das Gefälle)" : "") + ".");
-        foreach (var (was, n) in aufgerundet) hinweise.Add($"Serien aus dem Standard: {n}× aufgerundet – {was}.");
-        if (biegungen > 0) hinweise.Add($"Serien aus dem Standard: {biegungen} Bögen ab Rolle in der Leitung aufgegangen (Serie ohne Bogen-Formteil, Winkel frei; Biegung mit dem Biegeradius der Serie).");
-        if (ohne.Count > 0) hinweise.Add("Ohne Serie (keine Regel, Projektinformation.ifcSerien): " + string.Join(", ", ohne.OrderByDescending(o => o.Value).Take(8).Select(o => $"«{o.Key}» {o.Value}×")) + ".");
-        foreach (var (grund, n) in fehler) hinweise.Add($"Serien aus dem Standard: {n}× {grund}.");
+        if (zugeordnet > 0) hinweise.Add($"Produktlinien aus dem Standard: {zugeordnet} Leitungen und {formteileOk} Formteile nachgezeichnet ({string.Join(", ", serien.Where(s => s.Value is not null).Select(s => s.Key))})"
+            + (winkelAngepasst > 0 ? $"; {winkelAngepasst} Bögen auf den nächsten Winkel der Produktlinie (Spielraum Abwasser 5°, sonst 2°; z. B. 90° → 88.5° für das Gefälle)" : "") + ".");
+        foreach (var (was, n) in aufgerundet) hinweise.Add($"Produktlinien aus dem Standard: {n}× aufgerundet – {was}.");
+        if (biegungen > 0) hinweise.Add($"Produktlinien aus dem Standard: {biegungen} Bögen ab Rolle in der Leitung aufgegangen (Produktlinie ohne Bogen-Formteil, Winkel frei; Biegung mit dem Biegeradius der Produktlinie).");
+        if (ohne.Count > 0) hinweise.Add("Ohne Produktlinie (keine Regel, Projektinformation.ifcSerien): " + string.Join(", ", ohne.OrderByDescending(o => o.Value).Take(8).Select(o => $"«{o.Key}» {o.Value}×")) + ".");
+        foreach (var (grund, n) in fehler) hinweise.Add($"Produktlinien aus dem Standard: {n}× {grund}.");
         return hinweise;
     }
 
@@ -188,7 +188,7 @@ static class IfcSerien
             if (l["regeln"]?["mischbar"] is JsonArray mi) foreach (var m in mi) if (Wert(m) is { } id) Holen(id);
         }
         try { return Leitungsserie.Von(k.Arbeit, kat, Finden(name)!); }
-        catch (HlksFehler f) { Zaehlen(fehler, $"«{name}» ist keine Leitungsserie: {f.Message}"); return null; }
+        catch (HlksFehler f) { Zaehlen(fehler, $"«{name}» ist keine Produktlinie: {f.Message}"); return null; }
     }
 
     /// <summary>Typ der Serie für die Grösse der Leitung: Rohr über den Aussendurchmesser (±1 mm), sonst DN; Kanal rund d, eckig b × h

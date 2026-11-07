@@ -108,7 +108,7 @@ public static class Listentabelle
              S("volumen_m3", "Volumen m³", true), S("anzahlEndgeraete", "Anzahl Endgeräte", true), S("endgeraete", "Endgeräte"), S("systeme", "Systeme")], [], false, null),
         ["strangliste"] = new("Strangliste", "zeilen",
             [S("strang", "Strang"), S("name", "Name"), S("art", "Art"), S("system", "System"), S("systemtyp", "Systemtyp"), S("geschosse", "Geschosse"), S("groesse", "Grösse"),
-             S("leitungslaenge_m", "Leitungslänge m", true), S("laengen", "Längen je Serie und Grösse"), S("bauteile", "Bauteile", true), S("anzahlDirekt", "Endgeräte direkt", true),
+             S("leitungslaenge_m", "Leitungslänge m", true), S("laengen", "Längen je Produktlinie und Grösse"), S("bauteile", "Bauteile", true), S("anzahlDirekt", "Endgeräte direkt", true),
              S("anzahlGesamt", "Endgeräte gesamt", true), S("endgeraeteDirekt", "Endgeräte"), S("datenpunkte", "Datenpunkte")], ["anzahlDirektJeKlasse"], false, null),
         ["raumgrenzen"] = new("Raumgrenzen", "zeilen",
             [S("raum", "Raum"), S("art", "Art"), S("nachbar", "Nachbar"), S("angrenzung", "Angrenzung"), S("bauteil", "Bauteil"), S("aufbau", "Aufbau"), S("flaeche_m2", "Fläche m²", true),
@@ -120,7 +120,7 @@ public static class Listentabelle
              S("raeume", "Räume"), S("hinweis", "Hinweis")], ["uQuelle", "angrenzungen"], false, null),
         ["materialliste"] = new("Materialliste", null, null, [], false,
         [
-            new("Leitungen", "leitungen", [S("serie", "Serie"), S("groesse", "Grösse"), S("stueck", "Stück", true), S("laenge_m", "Länge m", true)]),
+            new("Leitungen", "leitungen", [S("serie", "Produktlinie"), S("groesse", "Grösse"), S("stueck", "Stück", true), S("laenge_m", "Länge m", true)]),
             new("Formteile", "formteile", [S("familie", "Familie"), S("typ", "Typ"), S("klasse", "Klasse"), S("winkel", "Winkel °", true), S("stueck", "Stück", true)]),
         ]),
         ["kollisionen"] = new("Kollisionsliste", "zeilen",

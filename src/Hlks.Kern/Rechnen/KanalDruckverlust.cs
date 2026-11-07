@@ -88,7 +88,7 @@ public static class KanalDruckverlust
             var mass = HlksMasse.Von(p, e);
             double l = (e.Geometrie?.Laenge() ?? 0) / 1000;
             z["laenge_m"] = R(l, 2);
-            if (mass is null) { z["hinweis"] = "Querschnitt unbekannt (Serie bzw. Eigenschaften) – kein Druckverlust."; zeilen.Add(z); continue; }
+            if (mass is null) { z["hinweis"] = "Querschnitt unbekannt (Produktlinie bzw. Eigenschaften) – kein Druckverlust."; zeilen.Add(z); continue; }
             double a = mass.Breite / 1000, b = mass.Hoehe / 1000;
             double flaeche = mass.Rechteck ? a * b : Math.PI * a * a / 4, dh = mass.Rechteck ? 2 * a * b / (a + b) : a;
             double w = q.M3h / 3600 / flaeche, re = w * dh / luft.Nu;

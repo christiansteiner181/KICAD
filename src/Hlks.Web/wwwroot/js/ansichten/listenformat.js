@@ -23,7 +23,7 @@ const VORGABEN = {
     schluessel: 'strang',
     spalten: [
       ['strang', 'Strang'], ['name', 'Name'], ['art', 'Art'], ['system', 'System'], ['systemtyp', 'Systemtyp'],
-      ['geschosse', 'Geschosse'], ['groesse', 'Grösse'], ['leitungslaenge_m', 'Leitungslänge m', 'zahl'], ['laengen', 'Längen je Serie und Grösse'], ['bauteile', 'Bauteile', 'zahl'],
+      ['geschosse', 'Geschosse'], ['groesse', 'Grösse'], ['leitungslaenge_m', 'Leitungslänge m', 'zahl'], ['laengen', 'Längen je Produktlinie und Grösse'], ['bauteile', 'Bauteile', 'zahl'],
       ['anzahlDirekt', 'Endgeräte direkt', 'zahl'], ['anzahlGesamt', 'Endgeräte gesamt', 'zahl'],
       ['endgeraeteDirekt', 'Endgeräte'], ['datenpunkte', 'Datenpunkte'],
     ],
@@ -60,7 +60,7 @@ const VORGABEN = {
     tabellen: [
       {
         titel: 'Leitungen', zeilen: 'leitungen',
-        spalten: [['serie', 'Serie'], ['groesse', 'Grösse'], ['stueck', 'Stück', 'zahl'], ['laenge_m', 'Länge m', 'zahl']],
+        spalten: [['serie', 'Produktlinie'], ['groesse', 'Grösse'], ['stueck', 'Stück', 'zahl'], ['laenge_m', 'Länge m', 'zahl']],
       },
       {
         titel: 'Formteile', zeilen: 'formteile',

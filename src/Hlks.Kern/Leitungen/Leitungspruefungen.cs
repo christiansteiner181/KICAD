@@ -78,7 +78,7 @@ public static class Leitungspruefungen
                 {
                     if (IstLeitung(e1) && IstLeitung(e2))
                         b.Add(new("P15", "fehler", e1.Kennzeichen, $"Knick von {Z(ab.Winkel)}° zwischen {e1.Kennzeichen} und {e2.Kennzeichen} ohne Formteil",
-                            "Bogen setzen: trennen, Bogen der Serie platzieren (familie_platzieren mit ausrichtung) und beide Leitungen an ihn verbinden – leitung_zeichnen setzt Bögen selbst"));
+                            "Bogen setzen: trennen, Bogen der Produktlinie platzieren (familie_platzieren mit ausrichtung) und beide Leitungen an ihn verbinden – leitung_zeichnen setzt Bögen selbst"));
                     else
                         b.Add(new("P13", "warnung", e1.Kennzeichen, $"{paar} sind verbunden, zeigen aber nicht gegeneinander (Abweichung {Z(ab.Winkel)}°, erlaubt {Z(Anschlusslagen.WinkelMax)}°)",
                             "Element drehen bzw. ausrichten (element_aendern drehung bzw. ausrichtung), die Leitung neu führen (leitung_zeichnen) oder ein Formteil setzen; anschlusslagen zeigt die Richtungen"));
@@ -86,13 +86,13 @@ public static class Leitungspruefungen
             }
             if (s1.HatGroesse && s2.HatGroesse && !s1.Groesse.Gleich(s2.Groesse))
                 b.Add(new("P14", "fehler", e1.Kennzeichen, $"{paar} sind verbunden, haben aber verschiedene Grössen ({s1.Groesse} an {s2.Groesse})",
-                    "Reduktion einsetzen (Formteil Reduktion der Serie zwischen den Grössen) oder die Grösse angleichen (element_aendern familientyp bzw. dn)"));
+                    "Reduktion einsetzen (Formteil Reduktion der Produktlinie zwischen den Grössen) oder die Grösse angleichen (element_aendern familientyp bzw. dn)"));
         }
 
         // Leitungen: P15 Polylinie mit Knick (mit Serie), P18 ohne Serie – je Strang zusammengefasst (Entscheid Christian
         // 19.10.2026, Abnahme Modul 3, Prüfliste 26): eine Meldung je Strang (sonst je System, sonst je Leitung) mit Anzahl; eine
         // ungültige Serie (bezuege.familie zeigt auf keine Leitungsserie) bleibt eine Meldung je Leitung.
-        const string P18Vorschlag = "Serie zuweisen: element_aendern mit bezuege.familie = <Leitungsserie> und eigenschaften.familientyp = <Grösse> (bzw. leitung_serie); familien listet die Serien, leitungsserie zeigt ihre Grössen";
+        const string P18Vorschlag = "Produktlinie zuweisen: element_aendern mit bezuege.familie = <Produktlinie> und eigenschaften.familientyp = <Grösse> (bzw. leitung_serie); familien listet die Produktlinien, leitungsserie zeigt ihre Grössen";
         var ohneSerie = new List<Element>();
         foreach (var e in m.Elemente.Where(IstLeitung).OrderBy(e => e.Kennzeichen, StringComparer.OrdinalIgnoreCase))
         {
@@ -100,24 +100,24 @@ public static class Leitungspruefungen
             if (serie is null)
             {
                 if (e.Bezuege.ContainsKey(Familien.Bezug))
-                    b.Add(new("P18", "hinweis", e.Kennzeichen, $"{e.Klasse} hat keine gültige Serie (bezuege.familie ist keine gültige Leitungsserie)", P18Vorschlag));
+                    b.Add(new("P18", "hinweis", e.Kennzeichen, $"{e.Klasse} hat keine gültige Produktlinie (bezuege.familie ist keine gültige Produktlinie)", P18Vorschlag));
                 else
                     ohneSerie.Add(e);
                 continue;
             }
             if (Knicke(e) is { Anzahl: > 0 } kn)
-                b.Add(new("P15", "hinweis", e.Kennzeichen, $"{e.Klasse} mit Serie hat {kn.Anzahl} Knick{(kn.Anzahl == 1 ? "" : "e")} in der Polylinie (bis {Z(kn.Max)}°) – je Gerade gehört ein Element mit Bogen dazwischen",
-                    "leitung_aufteilen: macht aus der Polylinie Geraden mit Bögen der Serie"));
+                b.Add(new("P15", "hinweis", e.Kennzeichen, $"{e.Klasse} mit Produktlinie hat {kn.Anzahl} Knick{(kn.Anzahl == 1 ? "" : "e")} in der Polylinie (bis {Z(kn.Max)}°) – je Gerade gehört ein Element mit Bogen dazwischen",
+                    "leitung_aufteilen: macht aus der Polylinie Geraden mit Bögen der Produktlinie"));
             // P30: Abwasser-Serie (leitung.einsatz abwasser) nur in der Entwässerung
             if (serie.Abwasser) AbwasserEinsatz(m, k, e, serie, b);
             // P29: freie Grösse innerhalb von Grenzen und Schritt der Serie
             if (serie.Frei is not null && FreieGroesse.Von(serie.Def, e, serie.Familie.Name ?? serie.Def.Name) is { } fg)
             {
                 if (serie.Grenzverletzung(fg) is { } ausser)
-                    b.Add(new("P29", "fehler", e.Kennzeichen, $"{e.Klasse} {fg} liegt ausserhalb der Grenzen der Serie {serie.Bezeichnung}: {ausser}",
+                    b.Add(new("P29", "fehler", e.Kennzeichen, $"{e.Klasse} {fg} liegt ausserhalb der Grenzen der Produktlinie {serie.Bezeichnung}: {ausser}",
                         $"Grösse innerhalb der Grenzen wählen (leitung_groesse) – {serie.GroessenVorschlag(fg)}"));
                 else if (!serie.ImSchritt(fg))
-                    b.Add(new("P29", "hinweis", e.Kennzeichen, $"{e.Klasse} {fg} liegt nicht im Schritt der Serie {serie.Bezeichnung} ({serie.FreiText})",
+                    b.Add(new("P29", "hinweis", e.Kennzeichen, $"{e.Klasse} {fg} liegt nicht im Schritt der Produktlinie {serie.Bezeichnung} ({serie.FreiText})",
                         $"leitung_groesse mit {serie.Gerundet(fg).Kurz} (auf den Schritt gerundet) bzw. die Grösse so belassen, wenn sie gewollt ist"));
             }
         }
@@ -126,8 +126,8 @@ public static class Leitungspruefungen
             var liste = g.Select(e => e.Kennzeichen).ToList();
             var namen = string.Join(", ", liste.Take(8)) + (liste.Count > 8 ? " …" : "");
             b.Add(new("P18", "hinweis", g.Key.Kennzeichen,
-                g.Key.Einzeln ? $"{g.First().Klasse} ohne Serie (Grösse und Formteile nicht aus einer Leitungsserie)"
-                              : $"{liste.Count} Leitung{(liste.Count == 1 ? "" : "en")} ohne Serie in {g.Key.Kennzeichen}: {namen} (Grösse und Formteile nicht aus einer Leitungsserie)",
+                g.Key.Einzeln ? $"{g.First().Klasse} ohne Produktlinie (Grösse und Formteile nicht aus einer Produktlinie)"
+                              : $"{liste.Count} Leitung{(liste.Count == 1 ? "" : "en")} ohne Produktlinie in {g.Key.Kennzeichen}: {namen} (Grösse und Formteile nicht aus einer Produktlinie)",
                 P18Vorschlag));
         }
 
@@ -140,8 +140,8 @@ public static class Leitungspruefungen
             {
                 if (m.VerbindungAn(e.Id, an.Name)?.Gegenueber(e.Id, an.Name) is not { } g || m.Finde(g.Element) is not { } l || !IstLeitung(l)) continue;
                 if (Serie(l) is not { } s || s.WinkelErlaubt(w) || !gemeldet.Add(s.Familie.Id)) continue;
-                b.Add(new("P15", "warnung", e.Kennzeichen, $"Bogen mit {Z(w)}° – die Serie {s.Bezeichnung} von {l.Kennzeichen} erlaubt {s.WinkelText}",
-                    "Einen Winkel der Serie verwenden (element_aendern eigenschaften.parameter.winkel) oder die Leitungsführung ändern (leitung_zeichnen)"));
+                b.Add(new("P15", "warnung", e.Kennzeichen, $"Bogen mit {Z(w)}° – die Produktlinie {s.Bezeichnung} von {l.Kennzeichen} erlaubt {s.WinkelText}",
+                    "Einen Winkel der Produktlinie verwenden (element_aendern eigenschaften.parameter.winkel) oder die Leitungsführung ändern (leitung_zeichnen)"));
             }
         }
 
@@ -154,8 +154,8 @@ public static class Leitungspruefungen
             {
                 if (m.VerbindungAn(e.Id, an.Name)?.Gegenueber(e.Id, an.Name) is not { } g || m.Finde(g.Element) is not { } l || !IstLeitung(l)) continue;
                 if (Serie(l) is not { } s || s.AbzweigwinkelErlaubt(w) || !gemeldet.Add(s.Familie.Id)) continue;
-                b.Add(new("P15", "warnung", e.Kennzeichen, $"T-Stück mit Abzweigwinkel {Z(w, 3)}° – die Serie {s.Bezeichnung} von {l.Kennzeichen} erlaubt Abzweigwinkel {s.AbzweigwinkelText}",
-                    "Einen Abzweigwinkel der Serie verwenden (element_aendern eigenschaften.parameter.winkel bzw. ein T-Stück-Typ mit diesem Winkel) oder den Abzweig neu setzen (leitung_abzweigen)"));
+                b.Add(new("P15", "warnung", e.Kennzeichen, $"T-Stück mit Abzweigwinkel {Z(w, 3)}° – die Produktlinie {s.Bezeichnung} von {l.Kennzeichen} erlaubt Abzweigwinkel {s.AbzweigwinkelText}",
+                    "Einen Abzweigwinkel der Produktlinie verwenden (element_aendern eigenschaften.parameter.winkel bzw. ein T-Stück-Typ mit diesem Winkel) oder den Abzweig neu setzen (leitung_abzweigen)"));
             }
         }
 
@@ -182,16 +182,16 @@ public static class Leitungspruefungen
     {
         if (MediumVon(m, k, e) is not var (medium, sys))
         {
-            b.Add(new("P30", "hinweis", e.Kennzeichen, $"{e.Klasse} der Abwasser-Serie {serie.Bezeichnung} ohne Medium (kein System) – ob sie in der Entwässerung liegt, ist offen",
-                "System bzw. Strang zuordnen (element_aendern system bzw. teilVon): Abwasser-Serien gehören in Schmutz- bzw. Regenwasser (Systemtyp mit fliessart schwerkraft)"));
+            b.Add(new("P30", "hinweis", e.Kennzeichen, $"{e.Klasse} der Produktlinie Abwasser {serie.Bezeichnung} ohne Medium (kein System) – ob sie in der Entwässerung liegt, ist offen",
+                "System bzw. Strang zuordnen (element_aendern system bzw. teilVon): Produktlinien Abwasser gehören in Schmutz- bzw. Regenwasser (Systemtyp mit fliessart schwerkraft)"));
             return;
         }
         var typen = k.Systemtypen.Values.Where(st => string.Equals(st.Medium, medium, StringComparison.OrdinalIgnoreCase)).ToList();
         if (typen.Any(st => st.Fliessart == "schwerkraft")) return;
         var name = k.Medien.TryGetValue(medium, out var md) ? $"{md.Name} ({medium})" : medium;
         var wie = typen.Count > 0 ? $"Systemtyp {string.Join(", ", typen.Select(st => st.Name))}, fliessart {string.Join(", ", typen.Select(st => st.Fliessart).Distinct())}" : "kein Systemtyp im Katalog";
-        b.Add(new("P30", "fehler", e.Kennzeichen, $"Abwasser-Serie {serie.Bezeichnung} für {name}: {e.Klasse} in {sys.Kennzeichen} ({wie}) – die Serie ist nur für die Entwässerung",
-            "Eine Serie für dieses Medium wählen (leitung_serie) oder die Leitung dem richtigen System zuordnen; Abwasser-Serien (leitung.einsatz abwasser) gehören in Schmutz- bzw. Regenwasser"));
+        b.Add(new("P30", "fehler", e.Kennzeichen, $"Produktlinie Abwasser {serie.Bezeichnung} für {name}: {e.Klasse} in {sys.Kennzeichen} ({wie}) – die Produktlinie ist nur für die Entwässerung",
+            "Eine Produktlinie für dieses Medium wählen (leitung_serie) oder die Leitung dem richtigen System zuordnen; Produktlinien Abwasser (leitung.einsatz abwasser) gehören in Schmutz- bzw. Regenwasser"));
     }
 
     /// <summary>Die Leitung gehört zu einem System, dessen Systemtyp schwerkraft fliesst.</summary>

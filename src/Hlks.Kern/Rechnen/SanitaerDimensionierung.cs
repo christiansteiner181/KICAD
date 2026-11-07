@@ -37,7 +37,7 @@ public static class SanitaerDimensionierung
         "(Anschlussleitung nach abgewickelter Länge), 11 (Fallleitung) bzw. 22 (Sammel-/Grundleitung mit Q = max(K·√ΣDU, grösster Einzel-DU) und Gefälle), Soll-DN " +
         "(nie kleiner als zufliessend), gezeichneter Innendurchmesser gegen den Mindest-Innendurchmesser (Tabelle 5); Trinkwasser nach SVGW W3 – ΣLU (KW vor dem " +
         "Wassererwärmer mit WW), Spitzendurchfluss (Diagramm 1), Leitungsart V/A/T, abgewickelte Länge je Abschnitt, Rohr da × s aus der Belastungswerttabelle des " +
-        "Systems der Serie, gezeichneter Aussendurchmesser dagegen; je Ergebnis Tabelle, Zeile, Beleg und Annahmen. Die Normtabellen liegen im " +
+        "Systems der Produktlinie, gezeichneter Aussendurchmesser dagegen; je Ergebnis Tabelle, Zeile, Beleg und Annahmen. Die Normtabellen liegen im " +
         "Büroordner (HLKS_NORMTABELLEN); fehlen sie, sagt die Antwort es. Rechenweg: Abfrage rechenweg (sanitaer.abwasser_dimensionierung, sanitaer.trinkwasser_dimensionierung).";
     public const string ParAnlage = "Anlage (Kennzeichen oder Id); leer = alle";
     public const string ParLeitung = "Nur diese Leitung (Kennzeichen oder Id)";
@@ -229,8 +229,8 @@ public static class SanitaerDimensionierung
         var tab = passend.FirstOrDefault();
         aus["serie"] = serie; aus["tabelle"] = tab is null ? null : $"Belastungswerttabelle {tab["tabelle"]}, S. {tab["seite"]}: {tab["system"]}";
         if (passend.Count > 1)
-            annahmen.Add($"Serie «{serie}» passt zu {passend.Count} Tabellen ({string.Join("; ", passend.Select(x => $"{x["tabelle"]} {x["system"]}"))}) – die erste gewählt; Zuordnung im Katalog schärfen (Frage an Christian).");
-        if (tab is null) { annahmen.Add($"Keine Belastungswerttabelle für die Serie «{serie}» und Leitungsart {art}."); aus["annahmen"] = annahmen; aus["ok"] = null; return aus; }
+            annahmen.Add($"Produktlinie «{serie}» passt zu {passend.Count} Tabellen ({string.Join("; ", passend.Select(x => $"{x["tabelle"]} {x["system"]}"))}) – die erste gewählt; Zuordnung im Katalog schärfen (Frage an Christian).");
+        if (tab is null) { annahmen.Add($"Keine Belastungswerttabelle für die Produktlinie «{serie}» und Leitungsart {art}."); aus["annahmen"] = annahmen; aus["ok"] = null; return aus; }
         var (sp, zeile, rohr) = Feld(tab, laenge, lu);
         annahmen.Add("LU- und Längenstufen aufgerundet, Spalte «ohne Wasserzähler».");
         if (sp < 0) annahmen.Add($"Abgewickelte Länge {Math.Round(laenge, 1)} m über der Tabelle – Berechnungsmethode nötig.");
@@ -437,6 +437,6 @@ public static class SanitaerDimensionierung
         double? idMin = zeile is null ? null : D(zeile["IDmin_mm"]);
         aus["idMinSoll"] = idMin;
         aus["ok"] = innen is double i && idMin is double im ? i + 1e-6 >= im : e.Zahl("dn") is double di ? di >= dn : null;
-        if (innen is null) annahmen.Add("Kein Innendurchmesser aus der Serie – Vergleich über die DN der Leitung.");
+        if (innen is null) annahmen.Add("Kein Innendurchmesser aus der Produktlinie – Vergleich über die DN der Leitung.");
     }
 }

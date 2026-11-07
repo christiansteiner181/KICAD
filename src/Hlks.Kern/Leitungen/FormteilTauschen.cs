@@ -13,7 +13,7 @@ namespace Hlks.Kern;
 public sealed class BogenZuTstueck : IBefehl
 {
     public string Name => "bogen_zu_tstueck";
-    public const string Text = "Macht aus einem Bogen ein T-Stück der Serie (Revit «Plus» am Formteil): die zulaufende Gerade endet am Durchgang des T-Stücks, die abgehende wird der Abzweig (wie dehnen_bis; der Umlenkwinkel muss ein Abzweigwinkel der Serie sein); der andere Durchgang bleibt offen zum Weiterzeichnen. Ein Paket.";
+    public const string Text = "Macht aus einem Bogen ein T-Stück der Produktlinie (Revit «Plus» am Formteil): die zulaufende Gerade endet am Durchgang des T-Stücks, die abgehende wird der Abzweig (wie dehnen_bis; der Umlenkwinkel muss ein Abzweigwinkel der Produktlinie sein); der andere Durchgang bleibt offen zum Weiterzeichnen. Ein Paket.";
     public string Beschreibung => Text;
     public IReadOnlyList<ParameterDef> Parameter { get; } = [new("bogen", "text", true, "Bogen (Kennzeichen oder Id) zwischen zwei Geraden")];
 
@@ -57,7 +57,7 @@ public sealed class BogenZuTstueck : IBefehl
 public sealed class TstueckZuBogen : IBefehl
 {
     public string Name => "tstueck_zu_bogen";
-    public const string Text = "Entfernt einen Abzweig eines T-Stücks (Revit «Minus» am Formteil): der Anschluss (Vorgabe: der offene; angegeben auch einer mit einer Geraden mit freiem Ende, die mit entfällt) entfällt samt T-Stück. Bleibt der Durchgang, werden die beiden Geraden direkt verbunden; bleibt ein Durchgang und der Abzweig, entsteht ein Bogen der Serie (wie ecke_bilden). Ein Paket.";
+    public const string Text = "Entfernt einen Abzweig eines T-Stücks (Revit «Minus» am Formteil): der Anschluss (Vorgabe: der offene; angegeben auch einer mit einer Geraden mit freiem Ende, die mit entfällt) entfällt samt T-Stück. Bleibt der Durchgang, werden die beiden Geraden direkt verbunden; bleibt ein Durchgang und der Abzweig, entsteht ein Bogen der Produktlinie (wie ecke_bilden). Ein Paket.";
     public string Beschreibung => Text;
     public IReadOnlyList<ParameterDef> Parameter { get; } =
     [

@@ -62,7 +62,7 @@ public static class IfcExportGeometrie
         double daemm = e.Zahl("daemmdicke") is double dd && dd > 0 && double.IsFinite(dd) ? dd : 0;
         if (HlksMasse.Von(p, e) is { } m)
             return new Querschnitt(m.Rechteck, m.Breite, m.Hoehe, m.Daemmdicke,
-                m.MitSerie ? $"Leitungsserie {m.Serie!.SerieName}, Typ {m.Serie.Typ}" : "Querschnitt der Leitung (breite/hoehe bzw. durchmesser)", false);
+                m.MitSerie ? $"Produktlinie {m.Serie!.SerieName}, Typ {m.Serie.Typ}" : "Querschnitt der Leitung (breite/hoehe bzw. durchmesser)", false);
         if (e.Zahl("da") is double da && da > 0) return new Querschnitt(false, da, da, daemm, "Aussendurchmesser da", false);
         var d = Math.Max(HlksEinordnung.Dn(e) ?? 0, MinDurchmesser);
         return new Querschnitt(false, d, d, daemm, HlksEinordnung.Dn(e) is null ? "ohne Grösse: Darstellung Ø 30 mm wie das 3D" : "DN als Durchmesser wie das 3D (kein Aussendurchmesser)", true);

@@ -77,8 +77,8 @@ public static class Rohrgroessen
         if (HlksMasse.Serie(p, e) is { Kategorie: "Rohr" } s)
         {
             // Abwasser-Serie nach Aussendurchmesser (Nachtrag): die Grösse d ist der Aussendurchmesser
-            if (s.Abwasser && s.Werte.Groesse.TryGetValue("d", out var sd) && sd > 0) return (sd, $"Serie {s.SerieName}, Typ {s.Typ}");
-            if (s.Werte.Aussen is double sa && sa > 0) return (sa, $"Serie {s.SerieName}, Typ {s.Typ}");
+            if (s.Abwasser && s.Werte.Groesse.TryGetValue("d", out var sd) && sd > 0) return (sd, $"Produktlinie {s.SerieName}, Typ {s.Typ}");
+            if (s.Werte.Aussen is double sa && sa > 0) return (sa, $"Produktlinie {s.SerieName}, Typ {s.Typ}");
         }
         if (e.Zahl("da") is double da && da > 0) return (da, "Leitung.da");
         // Rohr mit Grösse d (Abwasser-Serie nach Aussendurchmesser) ohne auswertbare Serie: durchmesser ist der Aussendurchmesser
@@ -104,15 +104,15 @@ public static class Rohrgroessen
             var kuerzel = serie is not null ? serie.Kuerzel : MaterialKuerzel(e);
             if (Aussendurchmesser(p, e) is var (da, quelle))
                 return new(true, "da", da, kuerzel, quelle, null);
-            return new(true, "da", null, kuerzel, "–", "Abwasserleitung ohne Aussendurchmesser (da): weder die Serie noch die Leitung nennt ihn – keine Grösse, kein DN als Ersatz.");
+            return new(true, "da", null, kuerzel, "–", "Abwasserleitung ohne Aussendurchmesser (da): weder die Produktlinie noch die Leitung nennt ihn – keine Grösse, kein DN als Ersatz.");
         }
         var art = Leitungsbezeichnung.Art(p.Modell, ansicht).Art;
         var kz = serie?.Kuerzel;
         if (serie is not null && serie.Werte.Groesse.TryGetValue("dn", out var sd) && sd > 0)
-            return new(false, art, sd, kz, $"Serie {serie.SerieName}, Typ {serie.Typ}", null);
+            return new(false, art, sd, kz, $"Produktlinie {serie.SerieName}, Typ {serie.Typ}", null);
         if (HlksEinordnung.Dn(e) is double dn)
             return new(false, art, dn, kz, "Leitung.dn", null);
-        return new(false, art, null, kz, "–", "Rohr ohne Nennweite (DN): weder die Serie noch die Leitung nennt sie – keine Grösse, kein Ø als Ersatz.");
+        return new(false, art, null, kz, "–", "Rohr ohne Nennweite (DN): weder die Produktlinie noch die Leitung nennt sie – keine Grösse, kein Ø als Ersatz.");
     }
 
     /// <summary>Hinweise zu Leitungen ohne Grösse, zusammengefasst («3 Abwasserleitungen ohne Aussendurchmesser (da) …»). Kanäle und
@@ -129,9 +129,9 @@ public static class Rohrgroessen
         }
         var r = new List<string>();
         if (ohneDa > 0)
-            r.Add($"{ohneDa} Abwasserleitung{(ohneDa == 1 ? "" : "en")} ohne Aussendurchmesser (da): keine Grösse – da in der Serie bzw. an der Leitung nachtragen (nie aus DN gerechnet).");
+            r.Add($"{ohneDa} Abwasserleitung{(ohneDa == 1 ? "" : "en")} ohne Aussendurchmesser (da): keine Grösse – da in der Produktlinie bzw. an der Leitung nachtragen (nie aus DN gerechnet).");
         if (ohneDn > 0)
-            r.Add($"{ohneDn} Rohr{(ohneDn == 1 ? "" : "e")} ohne Nennweite (DN): keine Grösse – DN in der Serie bzw. an der Leitung nachtragen (nie aus dem Aussendurchmesser gerechnet).");
+            r.Add($"{ohneDn} Rohr{(ohneDn == 1 ? "" : "e")} ohne Nennweite (DN): keine Grösse – DN in der Produktlinie bzw. an der Leitung nachtragen (nie aus dem Aussendurchmesser gerechnet).");
         return r;
     }
 }

@@ -119,11 +119,11 @@ public class FreieGroesseKanalTests
         var typ = d["typen"]![0]!["name"]!.GetValue<string>();
         Leitung(d)["frei"] = new JsonObject { ["vorlage"] = typ };
         var def = Lesen(d);
-        HatFehler(def, "leitung.frei", "nur bei Kanalserien");
+        HatFehler(def, "leitung.frei", "nur bei Kanal-Produktlinien");
         Assert.Contains("DN", def.Fehler.First(f => f.Stelle == "leitung.frei").Meldung);
         var p = MitSerie(false);
         var nein = Nein(p.Ausfuehren("familie_entwurf", new JsonObject { ["definition"] = d }));
-        Assert.Contains("nur bei Kanalserien", nein.Fehler);
+        Assert.Contains("nur bei Kanal-Produktlinien", nein.Fehler);
     }
 
     [Fact]
@@ -256,7 +256,7 @@ public class FreieGroesseKanalTests
         Assert.Contains("gerundet 431 × 270 mm", g3);
         // falsche Art
         Assert.Null(s.TypFuer(Leitungsgroesse.Rund(300), out var g4));
-        Assert.Contains("passt nicht zur Serie", g4);
+        Assert.Contains("passt nicht zur Produktlinie", g4);
         // Fehler mit Vorschlag: gerundete Grösse innerhalb der Grenzen und die nächsten Normgrössen
         var f = Assert.Throws<HlksFehler>(() => s.Typ(R(120, 270)));
         Assert.Contains("Vorschlag: 145 × 270", f.Vorschlag);
@@ -267,7 +267,7 @@ public class FreieGroesseKanalTests
         var ohne = Frei(p, "fam-test-kanalserie");
         Assert.Null(ohne.FreiText);
         Assert.Null(ohne.TypFuer(R(430, 270), out var g5));
-        Assert.Equal("Die Serie " + ohne.Bezeichnung + " hat keine Grösse 430 × 270 mm.", g5);
+        Assert.Equal("Die Produktlinie " + ohne.Bezeichnung + " hat keine Grösse 430 × 270 mm.", g5);
         Assert.Equal("500 × 300 mm, 400 × 200 mm, 300 × 200 mm, 200 × 200 mm", ohne.GroessenText);
     }
 
@@ -569,7 +569,7 @@ public class FreieGroesseKanalTests
         {
             ["punkte"] = Pts([0, 5000, 2500], [1000, 5000, 2500]), ["system"] = "ZUL", ["groesse"] = "430x270",
         })).Fehler);
-        Assert.Contains("passt nicht zur Serie", Nein(p.Ausfuehren("leitung_ziehen", new JsonObject
+        Assert.Contains("passt nicht zur Produktlinie", Nein(p.Ausfuehren("leitung_ziehen", new JsonObject
         {
             ["punkte"] = Pts([0, 5000, 2500], [1000, 5000, 2500]), ["system"] = "ZUL", ["serie"] = SerieId, ["groesse"] = "430x270", ["klasse"] = "Rohr",
         })).Fehler);

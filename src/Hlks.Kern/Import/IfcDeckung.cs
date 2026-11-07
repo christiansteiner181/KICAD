@@ -75,7 +75,7 @@ public static class IfcDeckung
             var stdK = u["standardFormteile"]!.AsObject().Select(kv => $"{kv.Key} {kv.Value}").ToList();
             aus.Add($"Prüfung Nachbau ↔ IFC {u["unterlage"]} (±{r["toleranz"]} mm): {ok} von {n} deckungsgleich"
                 + (ab.Count > 0 ? $"; abweichend: {string.Join(", ", ab)}" : "")
-                + (stdK.Count > 0 ? $"; mit unserem Standard nachgezeichnet (Formteile der Serie, nicht 1:1): {string.Join(", ", stdK)}" : "")
+                + (stdK.Count > 0 ? $"; mit unserem Standard nachgezeichnet (Formteile der Produktlinie, nicht 1:1): {string.Join(", ", stdK)}" : "")
                 + (ifcK.Count > 0 ? $"; Körper aus dem IFC (HLKS-Bauteile ohne eigene Form, 3D und Kollision aus dem IFC-Netz): {string.Join(", ", ifcK)}" : "")
                 + (fehlt.Count > 0 ? $"; nicht nachgebaut (nur Hintergrund): {string.Join(", ", fehlt)}" : "")
                 + (ab.Count > 0 || fehlt.Count > 0 ? " – Einzelheiten: Abfrage ifc_deckung." : "."));

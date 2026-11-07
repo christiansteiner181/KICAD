@@ -10,7 +10,12 @@ public static class BeispielKlein
 {
     public const string Name = "Musterhaus 4 Räume (Beispiel, fiktiv)";
 
-    public static Projekt Erzeugen(Katalog katalog, IProjektSpeicher? speicher, string geraet = "beispiel")
+    /// <summary>Ergebnis des letzten Erzeugens mit familienLaden (für die Meldung der Oberfläche).</summary>
+    [ThreadStatic] public static int GeladeneFamilien;
+    [ThreadStatic] public static List<string>? NichtGeladen;
+
+    /// <param name="familienLaden">Alle Familien der Familienbibliothek laden (Christian 07.11.2026: «ich muss beim testen alle familien geladen haben»).</param>
+    public static Projekt Erzeugen(Katalog katalog, IProjektSpeicher? speicher, string geraet = "beispiel", bool familienLaden = false)
     {
         var p = Projekt.Anlegen(katalog, speicher, Name, "Beispielgenerator", geraet, "beispiel");
         void Neu(string klasse, string kz, string? name, JsonObject? eig = null, JsonObject? geo = null, string? teilVon = null, string? geschoss = null)
@@ -64,6 +69,21 @@ public static class BeispielKlein
         Neu("System", "SW", "Schmutzwasser", new JsonObject { ["systemtyp"] = "Schmutzwasser" }, teilVon: "A-SAN");
         Neu("System", "KW", "Trinkwasser kalt", new JsonObject { ["systemtyp"] = "Trinkwasser kalt" }, teilVon: "A-SAN");
         Neu("System", "WW", "Trinkwasser warm", new JsonObject { ["systemtyp"] = "Trinkwasser warm" }, teilVon: "A-SAN");
+
+        // Alle Familien der Bibliothek (Christian 07.11.2026): einzeln geladen, eine nicht ladbare Familie hält das Beispiel nicht auf
+        if (familienLaden)
+        {
+            var bib = FamilienBibliothekDienst.Lesen(FamilienBibliothekDienst.Ort(katalog));
+            var fehler = new List<string>();
+            int n = 0;
+            foreach (var f in bib.Index?.Familien ?? [])
+            {
+                var e = p.Ausfuehren("familie_laden", new JsonObject { ["id"] = f.Id });
+                if (e.Angenommen) n++; else fehler.Add($"{f.Name}: {e.Fehler}");
+            }
+            GeladeneFamilien = n;
+            NichtGeladen = fehler;
+        }
 
         foreach (var (g, _, _, _, _) in geschosse)
             Neu("Ansicht", $"AN-GR-{g}", $"Grundriss {g}", new JsonObject { ["art"] = "grundriss", ["massstab"] = 50, ["schnitthoehe"] = 1000, ["detailgrad"] = "mittel", ["gewerke"] = new JsonArray("sanitaer", "architektur") }, geschoss: g);

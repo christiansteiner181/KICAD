@@ -70,7 +70,7 @@ public class RoutingZugTests
         Assert.Contains(e.Hinweise, h => h.Contains("schon eine Gerade"));
         // ohne Serie und ohne Parameter: abgelehnt
         Ok(RohrOhneSerie(p, "RO-B", 20, [0, 5000, 0], [1000, 5000, 0], [1000, 6000, 0]));
-        Assert.Contains("keine Serie", Nein(p.Ausfuehren("leitung_aufteilen", new JsonObject { ["leitung"] = "RO-B" })).Fehler);
+        Assert.Contains("keine Produktlinie", Nein(p.Ausfuehren("leitung_aufteilen", new JsonObject { ["leitung"] = "RO-B" })).Fehler);
     }
 
     // ------------------------------------------------------------------ leitung_groesse

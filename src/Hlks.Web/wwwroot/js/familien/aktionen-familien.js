@@ -130,7 +130,7 @@ registrieren({
       q('.nf-form').innerHTML = formen.map(([v, t]) => `<option value="${esc(v)}">${esc(t)}</option>`).join('');
       q('.nf-form-zeile').hidden = formen.length < 2;
       q('.nf-text').textContent = formen.length
-        ? 'Es entsteht eine Leitungsserie (Entwurf) mit dem Block «leitung», den Typparametern für Grösse und Aussendurchmesser und einem Typ «Standard» – alle ohne Werte. Die Werte (Grössen, Aussendurchmesser) trägst du im Familieneditor aus der Herstellerunterlage ein.'
+        ? 'Es entsteht eine Produktlinie (Leitungsserie, Entwurf) mit dem Block «leitung», den Typparametern für Grösse und Aussendurchmesser und einem Typ «Standard» – alle ohne Werte. Die Werte (Grössen, Aussendurchmesser) trägst du im Familieneditor aus der Herstellerunterlage ein.'
         : 'Es entsteht ein Entwurf mit dem Typ «Standard», ohne Parameter, Körper und Anschlüsse. Alles Weitere baust du im Familieneditor.';
     };
     q('.nf-kategorie').addEventListener('change', kategorieGeaendert);

@@ -125,7 +125,7 @@ public sealed class EinlageplaeneAnlegen : IBefehl
         if (grund)
         {
             int ohne = plan.Elemente.Where(b => b.Laenge > 0).Count(b => m.Finde(b.ElementId) is { } l && HlksMasse.Serie(k.Projekt, l)?.Werte.Innen is not > 0);
-            if (ohne > 0) info += $"; {ohne} Leitung(en) ohne Innendurchmesser der Serie – dort Achse «A=» statt Sohle";
+            if (ohne > 0) info += $"; {ohne} Leitung(en) ohne Innendurchmesser der Produktlinie – dort Achse «A=» statt Sohle";
         }
 
         // Fenster: steht die Ansicht schon auf einem Blatt, entsteht keines

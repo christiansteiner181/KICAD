@@ -324,10 +324,10 @@ export function optionenZustand({ serien, serie = '', serieDef = null, groesse =
 /** Fehlende Pflichtangaben vor dem ersten Klick: { feld, text, vorschlag } oder null. */
 export function pflichtFehlt(opt, { kategorie = 'Rohr', serien = [], serie = null } = {}) {
   if (!serien.length) return { feld: 'serie', text: `Keine Leitungsserie der Kategorie ${kategorie} im Projekt.`, vorschlag: 'Eine Leitungsserie als Familie laden (Projektbrowser › Familien › Familie laden).' };
-  if (!opt.serie) return { feld: 'serie', text: 'Die Serie fehlt.', vorschlag: 'In der Optionsleiste eine Leitungsserie wählen.' };
+  if (!opt.serie) return { feld: 'serie', text: 'Die Produktlinie fehlt.', vorschlag: 'In der Optionsleiste eine Produktlinie wählen.' };
   // Freie Grösse (Nachtrag): Breite × Höhe bzw. Durchmesser statt der Typwahl; Grenzen und Schritt prüft der Kern
   if (istFrei(serie)) { const f = freiPflichtFehlt(serie, opt); if (f) return f; }
-  else if (!opt.groesse) return { feld: 'groesse', text: 'Die Grösse fehlt.', vorschlag: 'In der Optionsleiste eine Grösse der Serie wählen.' };
+  else if (!opt.groesse) return { feld: 'groesse', text: 'Die Grösse fehlt.', vorschlag: 'In der Optionsleiste eine Grösse der Produktlinie wählen.' };
   if (!zahlOK(opt.hoehe)) return { feld: 'hoehe', text: 'Die Höhe fehlt.', vorschlag: 'In der Optionsleiste die Höhe der Achse über OK Geschoss in mm eintragen (Pflichtfeld).' };
   return null;
 }
@@ -346,12 +346,12 @@ export function eigenschaftenAus(opt) {
  */
 export function leitungParameter({ opt, punkte, von = null, nach = null, geschoss = null, serie = null }) {
   if (punkte.length < 2) throw new WerkzeugFehler('Eine Leitung braucht mindestens zwei Punkte.', 'Weitere Punkte anklicken.');
-  if (!opt.serie) throw new WerkzeugFehler('Die Serie fehlt.', 'In der Optionsleiste eine Leitungsserie wählen.');
-  // Freie Grösse (Nachtrag): groesse = { b, h } bzw. { d } aus den Zahlenfeldern; sonst der Typ der Serie
+  if (!opt.serie) throw new WerkzeugFehler('Die Produktlinie fehlt.', 'In der Optionsleiste eine Produktlinie wählen.');
+  // Freie Grösse (Nachtrag): groesse = { b, h } bzw. { d } aus den Zahlenfeldern; sonst der Typ der Produktlinie
   const groesse = groesseAusOptionen(serie, opt);
   if (groesse === null) {
     const f = freiPflichtFehlt(serie, opt);
-    throw new WerkzeugFehler(f ? f.text : 'Die Grösse fehlt.', f ? f.vorschlag : 'In der Optionsleiste eine Grösse der Serie wählen.');
+    throw new WerkzeugFehler(f ? f.text : 'Die Grösse fehlt.', f ? f.vorschlag : 'In der Optionsleiste eine Grösse der Produktlinie wählen.');
   }
   const r = flussRichtung({ punkte, von, nach });
   const p = { serie: opt.serie, groesse, punkte: r.punkte.map(gerundet) };
@@ -402,7 +402,7 @@ export function serienParameter({ leitung, serie, zug }) {
 }
 /** leitung_aufteilen für eine Altbestand-Polylinie; groesse nur, wenn ausdrücklich gewählt (sonst aus der Leitung). */
 export function aufteilenParameter({ leitung, serie, groesse = '' }) {
-  if (!serie) throw new WerkzeugFehler('Die Serie fehlt.', 'Eine Leitungsserie wählen.');
+  if (!serie) throw new WerkzeugFehler('Die Produktlinie fehlt.', 'Eine Produktlinie wählen.');
   const p = { leitung, serie };
   if (groesse) p.groesse = groesse;
   return p;

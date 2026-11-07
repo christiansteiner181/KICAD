@@ -477,6 +477,8 @@ function optionenSetzen(html, binden) {
   if (html === letzteOptionen) return;
   letzteOptionen = html;
   optionsleiste.innerHTML = html;
+  // hellgelb, sobald etwas eingegeben werden kann (Christian 07.11.2026: «dieses dock hellgelb einfärben, wenn informationen eingegeben werden können»)
+  optionsleiste.classList.toggle('ol-eingabe', !!optionsleiste.querySelector('input, select'));
   binden?.();
 }
 

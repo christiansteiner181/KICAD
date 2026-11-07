@@ -111,7 +111,7 @@ public class RoutingKanalTests
     public void KanalGroesse_FalscheArt_Abgelehnt()
     {
         var p = MitKanal();
-        Assert.Contains("passt nicht zur Serie", Nein(Kanal(p, "20", [[0, 0, 0], [1000, 0, 0]])).Fehler);
+        Assert.Contains("passt nicht zur Produktlinie", Nein(Kanal(p, "20", [[0, 0, 0], [1000, 0, 0]])).Fehler);
         Assert.Contains("keine Grösse 450 × 200 mm", Nein(Kanal(p, "x", [[0, 0, 0], [1000, 0, 0]], new JsonObject { ["groesse"] = new JsonObject { ["b"] = 450, ["h"] = 200 } })).Fehler);
     }
 }

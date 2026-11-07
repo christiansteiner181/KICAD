@@ -154,7 +154,7 @@ public class LeitungenPruefungTests
             Ok(p.Ausfuehren("element_aendern", new JsonObject { ["element"] = kz, ["teilVon"] = "KW-S9" }));
         var b = Assert.Single(Befunde(p, "P18"));
         Assert.Equal("KW-S9", b.Element);
-        Assert.StartsWith("2 Leitungen ohne Serie in KW-S9: RO-1, RO-2", b.Text);
+        Assert.StartsWith("2 Leitungen ohne Produktlinie in KW-S9: RO-1, RO-2", b.Text);
     }
 
     [Fact]

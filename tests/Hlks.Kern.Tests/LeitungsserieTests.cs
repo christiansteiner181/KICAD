@@ -52,7 +52,7 @@ public class LeitungsserieTests
     {
         var hk = FamilieTestHilfe.Testheizkoerper();
         hk["leitung"] = L(Familie("test_rohrserie")).DeepClone();
-        Fehler(hk, "leitung", "nur für Leitungsserien");
+        Fehler(hk, "leitung", "nur für Produktlinien");
         Fehler(SerieDef(d => d.Remove("leitung")), "leitung", "braucht den Block «leitung»");
     }
 
@@ -169,7 +169,7 @@ public class LeitungsserieTests
     {
         var p = MitSerie();
         var f = Assert.Throws<HlksFehler>(() => Leitungsserie.Hole(p.Modell, p.Katalog, "fam-test-bogen"));
-        Assert.Contains("keine Leitungsserie", f.Message);
+        Assert.Contains("keine Produktlinie", f.Message);
         Assert.Contains("FAM-1", f.Vorschlag);
     }
 
@@ -434,7 +434,7 @@ public class LeitungsserieTests
     {
         var p = MitSerie(false);
         var n = Nein(p.Ausfuehren("familie_platzieren", new JsonObject { ["familie"] = "FAM-1", ["typ"] = "DN 20", ["punkt"] = new JsonArray(0, 0, 0), ["system"] = "KW" }));
-        Assert.Contains("Leitungsserie", n.Fehler);
+        Assert.Contains("Produktlinie", n.Fehler);
         Assert.Contains("leitung_ziehen", n.Vorschlag);
     }
 }

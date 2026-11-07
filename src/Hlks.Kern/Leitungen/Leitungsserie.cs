@@ -128,7 +128,7 @@ public readonly record struct Leitungsgroesse(double? Dn, double? D, double? B, 
     /// <summary>Aus { dn } | { d } | { b, h } bzw. einer Zahl (DN) – für Abfragen und Befehle.</summary>
     public static Leitungsgroesse Lesen(JsonNode? n, string wer = "groesse")
     {
-        const string Form = "Grösse als { \"dn\": 20 } (Rohr), { \"d\": 110 } (Aussendurchmesser einer Abwasser-Serie bzw. Kanal rund, mm) bzw. { \"b\": 400, \"h\": 200 } (Kanal rechteckig) bzw. als Zahl (DN).";
+        const string Form = "Grösse als { \"dn\": 20 } (Rohr), { \"d\": 110 } (Aussendurchmesser einer Produktlinie Abwasser bzw. Kanal rund, mm) bzw. { \"b\": 400, \"h\": 200 } (Kanal rechteckig) bzw. als Zahl (DN).";
         if (n is JsonValue v && Json.Zahl(v) is double z) return Rohr(z);
         if (n is not JsonObject o) throw new HlksFehler($"{wer} fehlt oder ist keine Grösse.", Form);
         foreach (var (feld, _) in o)
@@ -179,11 +179,11 @@ public sealed partial class Leitungsserie
     public static Leitungsserie Von(Modell m, Katalog k, Element familie, CancellationToken abbruch = default)
     {
         if (familie.Klasse != Familien.Klasse)
-            throw new HlksFehler($"{familie.Kennzeichen} ist keine Familie, sondern {familie.Klasse}.", "Eine Leitungsserie angeben (Familie der Kategorie Rohr bzw. Kanal); familien listet sie.");
+            throw new HlksFehler($"{familie.Kennzeichen} ist keine Familie, sondern {familie.Klasse}.", "Eine Produktlinie angeben (Familie der Kategorie Rohr bzw. Kanal); familien listet sie.");
         var def = Familien.Definition(familie, k);
         if (!def.Gueltig) throw FamilienPruefung.Fehlermeldung($"Familie {familie.Kennzeichen} «{familie.Name}»", def.Fehler);
         if (!def.IstLeitungsserie)
-            throw new HlksFehler($"{familie.Kennzeichen} «{familie.Name}» ist keine Leitungsserie (Kategorie {def.Kategorie}).",
+            throw new HlksFehler($"{familie.Kennzeichen} «{familie.Name}» ist keine Produktlinie (Kategorie {def.Kategorie}).",
                 "Eine Familie der Kategorie Rohr bzw. Kanal mit Block «leitung» angeben: " + Serien(m, k));
         var groessen = new List<SerienGroesse>();
         foreach (var t in def.Typen)
@@ -261,13 +261,13 @@ public sealed partial class Leitungsserie
         if (Groessen.FirstOrDefault(x => x.Gueltig && x.Groesse.Gleich(g)) is { } t) return t;
         if (Frei is null || !PasstArt(g))
         {
-            grund = PasstArt(g) || g.Leer ? $"Die Serie {Bezeichnung} hat keine Grösse {g}." : $"Die Grösse {g} passt nicht zur Serie {Bezeichnung} ({Kategorie}, {Querschnitt}).";
+            grund = PasstArt(g) || g.Leer ? $"Die Produktlinie {Bezeichnung} hat keine Grösse {g}." : $"Die Grösse {g} passt nicht zur Produktlinie {Bezeichnung} ({Kategorie}, {Querschnitt}).";
             return null;
         }
-        if (Grenzverletzung(g) is { } ausser) { grund = $"Die Grösse {g} liegt ausserhalb der Grenzen der Serie {Bezeichnung}: {ausser}."; return null; }
-        if (!ImSchritt(g)) { grund = $"Die Grösse {g} liegt nicht im Schritt der Serie {Bezeichnung} ({FreiText}) – gerundet {Gerundet(g)}."; return null; }
+        if (Grenzverletzung(g) is { } ausser) { grund = $"Die Grösse {g} liegt ausserhalb der Grenzen der Produktlinie {Bezeichnung}: {ausser}."; return null; }
+        if (!ImSchritt(g)) { grund = $"Die Grösse {g} liegt nicht im Schritt der Produktlinie {Bezeichnung} ({FreiText}) – gerundet {Gerundet(g)}."; return null; }
         var v = Virtuell(g);
-        if (!v.Gueltig) { grund = $"Die freie Grösse {g} der Serie {Bezeichnung} lässt sich aus der Vorlage «{Frei.Vorlage}» nicht rechnen: {v.Fehler}"; return null; }
+        if (!v.Gueltig) { grund = $"Die freie Grösse {g} der Produktlinie {Bezeichnung} lässt sich aus der Vorlage «{Frei.Vorlage}» nicht rechnen: {v.Fehler}"; return null; }
         return v;
     }
 
@@ -281,7 +281,7 @@ public sealed partial class Leitungsserie
         g = Norm(g);
         if (Frei is null || !PasstArt(g))
             return $"Grössen: {GroessenText} (leitungsserie zeigt sie mit ihren Formteilen)."
-                + (NachAussendurchmesser && g.Dn is not null ? " Die Serie ist nach Aussendurchmesser geführt (Abwasser): Grösse als { \"d\": … } angeben – eine DN wird nie in einen Aussendurchmesser umgerechnet." : "");
+                + (NachAussendurchmesser && g.Dn is not null ? " Die Produktlinie ist nach Aussendurchmesser geführt (Abwasser): Grösse als { \"d\": … } angeben – eine DN wird nie in einen Aussendurchmesser umgerechnet." : "");
         var naechste = Groessen.Where(x => x.Gueltig).OrderBy(x => Abstand(x.Groesse, g)).Take(3).Select(x => x.Groesse.Kurz).ToList();
         return $"Vorschlag: {Gerundet(g).Kurz} (innerhalb der Grenzen, im Schritt){(naechste.Count > 0 ? " oder die Normgrösse " + string.Join(", ", naechste) : "")} – {FreiText}.";
     }
@@ -433,7 +433,7 @@ public sealed partial class Leitungsserie
     /// Leitungen; Neues geht über TypFuer). Fehler, wenn die Vorlage damit nicht auswertbar ist.</summary>
     public SerienGroesse Virtuell(Leitungsgroesse g)
     {
-        if (Frei is not { } fr) throw new HlksFehler($"Die Serie {Bezeichnung} hat keine freie Grösse.", "leitung.frei in der Serie ergänzen oder eine Grösse der Serie wählen.");
+        if (Frei is not { } fr) throw new HlksFehler($"Die Produktlinie {Bezeichnung} hat keine freie Grösse.", "leitung.frei in der Produktlinie ergänzen oder eine Grösse der Produktlinie wählen.");
         return virtuelle.GetOrAdd(g.Kurz, _ =>
         {
             var a = FamilienAuswertung.Aufloesen(Def, fr.Vorlage, null, FreieGroesse.Typwerte(Block, g));
@@ -486,12 +486,12 @@ public sealed partial class Leitungsserie
         FormteilWahl Nein(string grund, string vorschlag) => new() { Art = art, Fehler = grund, Vorschlag = vorschlag };
         wahl = null!; fam = null!; def = null!;
         if (!Block.Formteile.TryGetValue(art, out var w))
-            return Nein($"Die Serie {Bezeichnung} nennt keine Formteil-Familie für {Artname(art)}.",
-                $"In der Serie leitung.formteile.{art} = {{ \"familie\": \"<id der {FamLeitung.KlasseVon(art)}-Familie>\" }} ergänzen (familie_aendern mit op leitung_setzen).");
+            return Nein($"Die Produktlinie {Bezeichnung} nennt keine Formteil-Familie für {Artname(art)}.",
+                $"In der Produktlinie leitung.formteile.{art} = {{ \"familie\": \"<id der {FamLeitung.KlasseVon(art)}-Familie>\" }} ergänzen (familie_aendern mit op leitung_setzen).");
         wahl = w;
         var kandidaten = FamilienMitId(m, w.Familie);
         if (kandidaten.Count == 0)
-            return Nein($"Die Formteil-Familie «{w.Familie}» ({Artname(art)} der Serie {Bezeichnung}) fehlt im Projekt.",
+            return Nein($"Die Formteil-Familie «{w.Familie}» ({Artname(art)} der Produktlinie {Bezeichnung}) fehlt im Projekt.",
                 $"familie_laden mit der Datei der Formteil-Familie (familien_bibliothek listet die Bibliothek), danach erneut versuchen.");
         fam = kandidaten[0];
         def = Familien.Definition(fam, k);
@@ -500,7 +500,7 @@ public sealed partial class Leitungsserie
         var klasse = FamLeitung.KlasseVon(art);
         if (!k.Klassen.TryGetValue(def.Kategorie, out var kd) || !kd.IstArt(klasse))
             return Nein($"Die Formteil-Familie {fam.Kennzeichen} «{fam.Name}» hat die Kategorie {def.Kategorie}, für {Artname(art)} braucht es {klasse}.",
-                $"In der Serie leitung.formteile.{art} eine Familie der Kategorie {klasse} nennen.");
+                $"In der Produktlinie leitung.formteile.{art} eine Familie der Kategorie {klasse} nennen.");
         return null;
     }
 
@@ -523,7 +523,7 @@ public sealed partial class Leitungsserie
             try { andere = Von(m, k, fam); } catch (HlksFehler) { continue; }
             var w = andere.FormteilEigen(m, k, art, g1, g2, winkel);
             if (!w.Ok) continue;
-            var text = $"{Artname(art)} aus der mischbaren Serie {andere.Bezeichnung} ({eigen.Fehler})";
+            var text = $"{Artname(art)} aus der mischbaren Produktlinie {andere.Bezeichnung} ({eigen.Fehler})";
             return new FormteilWahl
             {
                 Art = w.Art, Familie = w.Familie, Def = w.Def, Typ = w.Typ, Exemplar = w.Exemplar, Geometrie = w.Geometrie, Vertauscht = w.Vertauscht,
@@ -541,7 +541,7 @@ public sealed partial class Leitungsserie
         if (!FamLeitung.Formteilarten.Contains(art))
             return Nein($"Formteilart «{art}» gibt es nicht.", "Formteilarten: " + string.Join(", ", FamLeitung.Formteilarten));
         if (!PasstArt(g1) || (g2 is { } gx && !PasstArt(gx)))
-            return Nein($"Die Grösse {g1}{(g2 is { } gy ? " bzw. " + gy : "")} passt nicht zur Serie {Bezeichnung} ({Kategorie}, {Querschnitt}).", "Grösse angeben als " + GroessenForm + ".");
+            return Nein($"Die Grösse {g1}{(g2 is { } gy ? " bzw. " + gy : "")} passt nicht zur Produktlinie {Bezeichnung} ({Kategorie}, {Querschnitt}).", "Grösse angeben als " + GroessenForm + ".");
         Leitungsgroesse a1 = g1, a2 = g2 ?? g1;
         bool vertauscht = false;
         double abzweigwinkel = 90;   // T-Stück: gewählter Abzweigwinkel der Serie
@@ -549,8 +549,8 @@ public sealed partial class Leitungsserie
         {
             case "bogen":
                 if (winkel is double w && !WinkelErlaubt(w))
-                    return Nein($"Ein Bogen mit {Leitungsgroesse.Zahl(w)}° ist in der Serie {Bezeichnung} nicht erlaubt (erlaubt: {WinkelText}).",
-                        "Den Verlauf so legen, dass die Umlenkung einem erlaubten Winkel entspricht (auch zwei Bögen nacheinander), oder eine Serie mit diesem Winkel wählen.");
+                    return Nein($"Ein Bogen mit {Leitungsgroesse.Zahl(w)}° ist in der Produktlinie {Bezeichnung} nicht erlaubt (erlaubt: {WinkelText}).",
+                        "Den Verlauf so legen, dass die Umlenkung einem erlaubten Winkel entspricht (auch zwei Bögen nacheinander), oder eine Produktlinie mit diesem Winkel wählen.");
                 if (winkel is double w0 && (w0 <= 0 || w0 > 180))
                     return Nein($"Bogenwinkel {Leitungsgroesse.Zahl(w0)}° liegt nicht in 0 < w ≤ 180.", "Umlenkwinkel in Grad angeben.");
                 break;
@@ -558,8 +558,8 @@ public sealed partial class Leitungsserie
             {
                 double gemessen = winkel ?? 90;
                 if (AbzweigwinkelZu(gemessen) is not double wl)
-                    return Nein($"Ein Abzweig unter {Leitungsgroesse.Zahl(Math.Round(gemessen, 3))}° ist in der Serie {Bezeichnung} nicht erlaubt (Abzweigwinkel: {AbzweigwinkelText}, Toleranz ±{Leitungsgroesse.Zahl(Routing.WinkelToleranz)}°).",
-                        "Den Abzweig unter einem erlaubten Abzweigwinkel führen (Winkel zwischen dem Durchgang in Fliessrichtung und dem Abzweig) oder eine Serie mit diesem Abzweigwinkel wählen (leitung.regeln.abzweigwinkel).");
+                    return Nein($"Ein Abzweig unter {Leitungsgroesse.Zahl(Math.Round(gemessen, 3))}° ist in der Produktlinie {Bezeichnung} nicht erlaubt (Abzweigwinkel: {AbzweigwinkelText}, Toleranz ±{Leitungsgroesse.Zahl(Routing.WinkelToleranz)}°).",
+                        "Den Abzweig unter einem erlaubten Abzweigwinkel führen (Winkel zwischen dem Durchgang in Fliessrichtung und dem Abzweig) oder eine Produktlinie mit diesem Abzweigwinkel wählen (leitung.regeln.abzweigwinkel).");
                 abzweigwinkel = wl;
                 break;
             }
@@ -646,7 +646,7 @@ public sealed partial class Leitungsserie
             try { erg = formel.Werten(umg); }
             catch (FormelFehler ff)
             {
-                return Nein($"Typregel «{wahl.TypText}» der Serie {Bezeichnung} ({Artname(art)}): {ff.MitStelle}", ff.Vorschlag ?? "Typregel in leitung.formteile korrigieren.");
+                return Nein($"Typregel «{wahl.TypText}» der Produktlinie {Bezeichnung} ({Artname(art)}): {ff.MitStelle}", ff.Vorschlag ?? "Typregel in leitung.formteile korrigieren.");
             }
             if (!erg.IstText)
                 return Nein($"Typregel «{wahl.TypText}» ergibt die Zahl {erg}, gebraucht wird ein Typname (Text).", "Formel so schreiben, dass sie den Typnamen ergibt, z. B. if(dn = 15, \"DN 15\", \"DN 20\").");
@@ -682,7 +682,7 @@ public sealed partial class Leitungsserie
                 // freie Serie: Vorlage-Typ (leitung.formteile.<art>.vorlage, fehlt = erster Typ) mit Exemplarwerten
                 var vorlage = wahl.Vorlage ?? def.Typen[0].Name;
                 if (def.Typ(vorlage) is null)
-                    return Nein($"{grundOhne}, und die Vorlage «{vorlage}» (leitung.formteile.{art}.vorlage der Serie {Bezeichnung}) gibt es in {fam.Kennzeichen} «{fam.Name}» nicht.",
+                    return Nein($"{grundOhne}, und die Vorlage «{vorlage}» (leitung.formteile.{art}.vorlage der Produktlinie {Bezeichnung}) gibt es in {fam.Kennzeichen} «{fam.Name}» nicht.",
                         $"Typen: {vorhanden} – vorlage korrigieren (familie_aendern mit op leitung_setzen).");
                 if (FreiEinstellen(vorlage, grundOhne, out var exf) is { } nein) return nein;
                 typ = vorlage; ex = exf; frei = true;
@@ -808,7 +808,7 @@ public sealed partial class Leitungsserie
                 if (name == pn && Wert(g1, schl) is double x) return FWert.Z(x);
                 if (name == pn + "_2" && Wert(g2, schl) is double y) return FWert.Z(y);
             }
-            throw new FormelFehler($"unbekannter Name «{name}»", stelle, "In der Typregel gibt es nur die Grössen der Serie: " + string.Join(", ", FamilieDef.TypregelNamen(groesse.Values, "reduktion")));
+            throw new FormelFehler($"unbekannter Name «{name}»", stelle, "In der Typregel gibt es nur die Grössen der Produktlinie: " + string.Join(", ", FamilieDef.TypregelNamen(groesse.Values, "reduktion")));
         }
     }
 }

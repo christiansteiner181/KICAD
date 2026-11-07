@@ -212,7 +212,7 @@ export function freiHinweis(serie) {
 /** Hinweis zur Abwasser-Serie: Grösse und Beschriftung nach Aussendurchmesser. */
 export function abwasserHinweis(serie, beschriftung = null) {
   if (!istAbwasser(serie)) return '';
-  return `Abwasser-Serie: Grösse nach Aussendurchmesser${beschriftung ? `, Beschriftung «${beschriftung}»` : ''}; nur für Schmutz- und Regenwasser.`;
+  return `Produktlinie Abwasser: Grösse nach Aussendurchmesser${beschriftung ? `, Beschriftung «${beschriftung}»` : ''}; nur für Schmutz- und Regenwasser.`;
 }
 
 /** Beschriftung (Kern) der Grösse mit diesem Typ aus der Antwort leitungsserie oder null (leichte Serie hat sie nicht). */

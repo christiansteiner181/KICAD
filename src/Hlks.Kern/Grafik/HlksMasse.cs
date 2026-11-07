@@ -34,7 +34,7 @@ public sealed record LeitungsMass(LeitungsSerieInfo? Serie, bool Rechteck, doubl
 
 public static class HlksMasse
 {
-    public const string OhneSerie = "ohne Serie";
+    public const string OhneSerie = "ohne Produktlinie";
 
     sealed class Zwischen
     {

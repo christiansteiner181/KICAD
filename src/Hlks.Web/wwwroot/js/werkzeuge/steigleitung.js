@@ -23,8 +23,8 @@ export function steigleitungParameter({ opt, punkt, richtung = null, wid = 'stei
   const l = gewaehlteLeitungen(opt, wid);
   if (!l.length) throw new WerkzeugFehler('Keine Leitung gewählt.', 'In der Optionsleiste mindestens eine Leitung anhaken.');
   for (const x of l) {
-    if (!x.serie) throw new WerkzeugFehler(`${x.kurz}: die Serie fehlt.`, 'In der Optionsleiste eine Serie wählen.');
-    if (!x.groesse) throw new WerkzeugFehler(`${x.kurz}: die Grösse fehlt.`, 'In der Optionsleiste eine Grösse der Serie wählen.');
+    if (!x.serie) throw new WerkzeugFehler(`${x.kurz}: die Produktlinie fehlt.`, 'In der Optionsleiste eine Produktlinie wählen.');
+    if (!x.groesse) throw new WerkzeugFehler(`${x.kurz}: die Grösse fehlt.`, 'In der Optionsleiste eine Grösse der Produktlinie wählen.');
   }
   const zone = opt.zoneB > 0;
   if (l.length > 1 && !zone && !(opt.abstand > 0)) throw new WerkzeugFehler('Steigzone bzw. Achsabstand fehlt.', 'In der Optionsleiste die Breite der Steigzone (oder einen Achsabstand) eintragen.');

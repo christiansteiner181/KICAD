@@ -62,7 +62,7 @@ public class RohrgroesseTests
         Assert.True(g.Abwasser);
         Assert.Equal("da", g.Art);
         Assert.Equal("PE-S", g.Kuerzel);
-        Assert.Contains("Serie", g.Quelle);
+        Assert.Contains("Produktlinie", g.Quelle);
     }
 
     [Fact]
@@ -163,7 +163,7 @@ public class RohrgroesseTests
         Assert.DoesNotContain("Ø", Text(p, "R-KW"));
         Assert.Equal("DN 20", G(p, "R-KW").Groesse);
         // Quelle der Zahl: Typ der Serie bzw. Leitung.dn
-        Assert.Contains("Serie", G(p, "R-KW").Quelle);
+        Assert.Contains("Produktlinie", G(p, "R-KW").Quelle);
         Assert.Equal("Leitung.dn", G(p, "R-OS").Quelle);
     }
 
@@ -254,7 +254,7 @@ public class RohrgroesseTests
         Assert.Matches(@"R-W2 Rohr NW 32\b", kwText);
         var abg = (JsonObject)a.ElementLesen("R-A1")["abgeleitet"]!;
         Assert.Equal("110", abg["rohrgroesse"]!.GetValue<string>());
-        Assert.Contains("Serie", abg["rohrgroesseQuelle"]!.GetValue<string>());
+        Assert.Contains("Produktlinie", abg["rohrgroesseQuelle"]!.GetValue<string>());
         var ohne = (JsonObject)a.ElementLesen("R-A3")["abgeleitet"]!;
         Assert.Null(ohne["rohrgroesse"]);
         Assert.Contains("da", ohne["rohrgroesseHinweis"]!.GetValue<string>());

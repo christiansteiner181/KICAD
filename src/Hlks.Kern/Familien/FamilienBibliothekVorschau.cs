@@ -66,7 +66,7 @@ public sealed class FamilienVorschau
             return teile;
         });
         var weitere = new JsonArray();
-        foreach (var (f, text) in new[] { ("sinnbild", "Sinnbild"), ("schemasymbol", "Schemasymbol"), ("leitung", "Leitungsserie (Block leitung)"), ("masse", "Massbezüge"),
+        foreach (var (f, text) in new[] { ("sinnbild", "Sinnbild"), ("schemasymbol", "Schemasymbol"), ("leitung", "Produktlinie (Block leitung)"), ("masse", "Massbezüge"),
                      ("konflikte", "Konflikte"), ("abdeckung", "Abdeckung"), ("unterlagen", "Unterlagen") })
             if (!JsonNode.DeepEquals(alt[f], neu[f])) { weitere.Add(f); details.Add($"{text} geändert"); }
 

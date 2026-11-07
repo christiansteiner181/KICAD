@@ -64,7 +64,7 @@ public static class Verbindungen
     {
         var direkt = Direkt(s.Block.Verbindung, geraet.Verbindung);
         if (direkt is null)
-            return new("unbekannt", $"Verbindung {(s.Block.Verbindung is null ? $"der Serie {s.Bezeichnung}" : $"des Anschlusses {geraet.Name}")} nicht angegeben – nur die Grösse wird verglichen.", []);
+            return new("unbekannt", $"Verbindung {(s.Block.Verbindung is null ? $"der Produktlinie {s.Bezeichnung}" : $"des Anschlusses {geraet.Name}")} nicht angegeben – nur die Grösse wird verglichen.", []);
         if (direkt == true) return new("direkt", $"{geraet.Verbindung} an {s.Block.Verbindung}: direkt verbindbar.", []);
 
         var kandidaten = new List<UebergangKandidat>();
@@ -97,8 +97,8 @@ public static class Verbindungen
         }
         var ziel = $"{geraet.Verbindung} {geraet.Gewinde ?? geraet.Groesse.ToString()} (Anschluss {geraet.Name})";
         if (kandidaten.Count == 0)
-            return new("kein_uebergang", $"{s.Block.Verbindung} der Serie {s.Bezeichnung}{(g is { } gx ? " " + gx : "")} passt nicht direkt an {ziel}, und kein Übergang passt" +
-                (gruende.Count > 0 ? ": " + string.Join("; ", gruende.Distinct()) : (s.Block.Uebergaenge is null ? " (die Serie nennt keine uebergaenge)" : "")) + ".", []);
+            return new("kein_uebergang", $"{s.Block.Verbindung} der Produktlinie {s.Bezeichnung}{(g is { } gx ? " " + gx : "")} passt nicht direkt an {ziel}, und kein Übergang passt" +
+                (gruende.Count > 0 ? ": " + string.Join("; ", gruende.Distinct()) : (s.Block.Uebergaenge is null ? " (die Produktlinie nennt keine uebergaenge)" : "")) + ".", []);
         return new("uebergang", $"Übergang nötig: {s.Block.Verbindung} → {ziel}; {kandidaten.Count} Möglichkeit(en).", kandidaten);
     }
 
@@ -107,7 +107,7 @@ public static class Verbindungen
     {
         if (e.Status is "unbekannt" or "direkt") return null;
         if (e.Status == "kein_uebergang")
-            throw new HlksFehler(ort + e.Text, "Eine Übergangs-Familie (Kategorie Uebergang) mit passender Grösse anlegen und in leitung.uebergaenge der Serie nennen, oder eine Serie mit passender Verbindung wählen.");
+            throw new HlksFehler(ort + e.Text, "Eine Übergangs-Familie (Kategorie Uebergang) mit passender Grösse anlegen und in leitung.uebergaenge der Produktlinie nennen, oder eine Produktlinie mit passender Verbindung wählen.");
         if (wahl is not null)
         {
             var fam = wahl["familie"]?.ToString(); var typ = wahl["typ"]?.ToString();
@@ -125,19 +125,19 @@ public static class Verbindungen
     // ------------------------------------------------------------------ Abfragen
 
     public const string TabelleName = "verbindungstabelle";
-    public const string TabelleText = "Verbindungstabelle aus den Leitungsserien des Projekts (Werte nur aus den Familien): je Grösse DN, Aussendurchmesser, Zoll (bei Gewindeserien " +
-        "aus dem Typnamen), Verbindung der Serie und die Übergänge. Grundlage, damit verschiedene Masssysteme (DN, NW, d, Zoll) keine Konflikte verursachen.";
+    public const string TabelleText = "Verbindungstabelle aus den Produktlinien des Projekts (Werte nur aus den Familien): je Grösse DN, Aussendurchmesser, Zoll (bei Gewindeserien " +
+        "aus dem Typnamen), Verbindung der Produktlinie und die Übergänge. Grundlage, damit verschiedene Masssysteme (DN, NW, d, Zoll) keine Konflikte verursachen.";
     public const string PruefenName = "verbindung_pruefen";
-    public const string PruefenText = "Prüft, wie ein Geräteanschluss an eine Leitungsserie angeschlossen wird: direkt, mit Übergang (Auswahl aller passenden Übergänge mit " +
-        "Grösse auf der Seite der Serie) oder kein Übergang (mit Grund). Ohne groesse alle Grössen der Serie als Vorschlag.";
+    public const string PruefenText = "Prüft, wie ein Geräteanschluss an eine Produktlinie angeschlossen wird: direkt, mit Übergang (Auswahl aller passenden Übergänge mit " +
+        "Grösse auf der Seite der Produktlinie) oder kein Übergang (mit Grund). Ohne groesse alle Grössen der Produktlinie als Vorschlag.";
 
-    public static readonly IReadOnlyList<ParameterDef> TabelleParameter = [new("serie", "text", false, "Nur diese Leitungsserie (Kennzeichen, Name oder id)")];
+    public static readonly IReadOnlyList<ParameterDef> TabelleParameter = [new("serie", "text", false, "Nur diese Produktlinie (Kennzeichen, Name oder id)")];
     public static readonly IReadOnlyList<ParameterDef> PruefenParameter =
     [
         new("element", "text", true, "Gerät bzw. Bauteil (Kennzeichen oder Id)"),
         new("anschluss", "text", true, "Name des Anschlusses"),
-        new("serie", "text", true, "Leitungsserie (Kennzeichen, Name oder id)"),
-        new("groesse", "objekt", false, "Grösse der Leitung, z. B. { \"dn\": 32 }; leer = alle Grössen der Serie"),
+        new("serie", "text", true, "Produktlinie (Kennzeichen, Name oder id)"),
+        new("groesse", "objekt", false, "Grösse der Leitung, z. B. { \"dn\": 32 }; leer = alle Grössen der Produktlinie"),
     ];
 
     public static JsonObject Tabelle(Projekt p, JsonObject par)

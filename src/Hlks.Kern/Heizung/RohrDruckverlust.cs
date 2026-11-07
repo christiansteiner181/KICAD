@@ -12,7 +12,7 @@ namespace Hlks.Kern;
 public static class RohrDruckverlust
 {
     public const string Text = "Druckverlust durch Reibung im Heizungsrohrnetz (Modul 5 Teil B, Physik): je Leitung Massenstrom (Summe der Verbraucher), " +
-        "Innendurchmesser der Serie, Geschwindigkeit, Re, λ (laminar bzw. Colebrook), R in Pa/m und Δp, dazu die Summe je Verbraucher über Vor- und Rücklauf " +
+        "Innendurchmesser der Produktlinie, Geschwindigkeit, Re, λ (laminar bzw. Colebrook), R in Pa/m und Δp, dazu die Summe je Verbraucher über Vor- und Rücklauf " +
         "und der massgebende Verbraucher. Wasser nach NIST; ohne Einzelwiderstände (ζ). Rechenweg: Abfrage rechenweg (heizung.rohr_druckverlust).";
     public static IReadOnlyList<ParameterDef> Parameter { get; } = [];
 
@@ -38,7 +38,7 @@ public static class RohrDruckverlust
             : System.Text.RegularExpressions.Regex.IsMatch(serie, "kupfer|\\bcu\\b", System.Text.RegularExpressions.RegexOptions.IgnoreCase) ? "gezogen"
             : "stahl_gewalzt";
         var z = w.FirstOrDefault(x => x["key"]?.GetValue<string>() == key);
-        return z is null ? (0.05, "k fehlt") : (D(z["kBis"]), $"k = {D(z["kBis"])} mm ({z["oberflaeche"]}, {z["zustand"]}; Tab. 3, oberer Wert{(serie is null ? ", ohne Serie wie Stahl" : "")})");
+        return z is null ? (0.05, "k fehlt") : (D(z["kBis"]), $"k = {D(z["kBis"])} mm ({z["oberflaeche"]}, {z["zustand"]}; Tab. 3, oberer Wert{(serie is null ? ", ohne Produktlinie wie Stahl" : "")})");
     }
 
     public static JsonObject Abfrage(Projekt p, JsonObject? par)
@@ -70,7 +70,7 @@ public static class RohrDruckverlust
             if (t is not double tt || RohrDruckverlust.Wasser(kat, tt) is not { } wa) { z["hinweis"] = "Temperatur fehlt bzw. ausserhalb 10–80 °C – kein Druckverlust."; zeilen.Add(z); continue; }
             var serie = HlksMasse.Serie(p, e);
             double? di = serie?.Werte.Innen;
-            if (di is not double dmm || dmm <= 0 || kgh <= 0) { z["hinweis"] = di is null ? "Innendurchmesser fehlt (Serie) – kein Druckverlust." : z["hinweis"]?.ToString() ?? "kein Massenstrom"; zeilen.Add(z); continue; }
+            if (di is not double dmm || dmm <= 0 || kgh <= 0) { z["hinweis"] = di is null ? "Innendurchmesser fehlt (Produktlinie) – kein Druckverlust." : z["hinweis"]?.ToString() ?? "kein Massenstrom"; zeilen.Add(z); continue; }
             double d = dmm / 1000, a = Math.PI * d * d / 4, vdot = kgh / 3600 / wa.Rho, w = vdot / a, nu = wa.Eta / wa.Rho, re = w * d / nu;
             var (kmm, kText) = Rauheit(kat, serie?.SerieName);
             double lam = KanalDruckverlust.Lambda(re, kmm / 1000 / d, double.IsNaN(reKrit) ? 2320 : reKrit);

@@ -237,7 +237,7 @@ test('leitung_zeichnen: gegen die Fliessrichtung gezeichnet → umgedreht, von/n
 
 test('leitung_zeichnen: fehlende Angaben → Fehler mit Vorschlag', () => {
   assert.throws(() => L.leitungParameter({ opt, punkte: [[0, 0, 0]] }), /mindestens zwei Punkte/);
-  assert.throws(() => L.leitungParameter({ opt: { ...opt, serie: '' }, punkte: [[0, 0, 0], [1, 0, 0]] }), /Serie fehlt/);
+  assert.throws(() => L.leitungParameter({ opt: { ...opt, serie: '' }, punkte: [[0, 0, 0], [1, 0, 0]] }), /Produktlinie fehlt/);
   assert.throws(() => L.leitungParameter({ opt: { ...opt, groesse: '' }, punkte: [[0, 0, 0], [1, 0, 0]] }), /Grösse fehlt/);
   // ohne System und Medium kein Abbruch: der Kern nimmt das zuletzt gezeichnete Medium (Christian 02.11.2026: «keine warnung beim zeichnen ohne system»)
   const ohne = L.leitungParameter({ opt: { ...opt, system: '', medium: '' }, punkte: [[0, 0, 0], [1000, 0, 0]] }).parameter;
@@ -393,7 +393,7 @@ test('Optionen: Hinweis «Leitungsserie laden» erscheint, solange keine Serie d
   assert.equal(knopf.aktion, 'familie.laden', 'der Weg zu den Familien');
   assert.match(hinweis.text, /Kategorie Rohr/);
   assert.match(O.feldDef('kanal', 'serieHinweis').text, /Kategorie Kanal/);
-  assert.match(knopf.titel, /Leitungsserie laden/);
+  assert.match(knopf.titel, /Produktlinie laden/);
 });
 
 // ============================================================================================== Vorschau-Zeile
@@ -481,7 +481,7 @@ test('Palette: Grösse, die es in der Serie nicht gibt, bleibt sichtbar mit Hinw
 
 test('Palette: Altbestand ohne Serie bietet «Aufteilen mit Serie …»; Formteil zeigt Art, Familie, Typ und Winkel', () => {
   const alt = P.altbestandGruppe({ el: { klasse: 'Rohr', kennzeichen: 'KW-1.01-SP' } }, H);
-  assert.match(alt, /Aufteilen mit Serie …/);
+  assert.match(alt, /Aufteilen mit Produktlinie …/);
   assert.match(alt, /data-aktion="lt-aufteilen"/);
   assert.ok(!alt.includes('fam-editor'));
   const f = P.formteilGruppe({ el: { klasse: 'TStueck', kennzeichen: 'TS-1', werte: {} }, l: { eigenschaften: { familientyp: { wert: 'DN 20' } } }, f: { name: 'Test-T-Stück egal (fiktiv)' } }, H);
@@ -508,7 +508,7 @@ test('Palette: Parameter von leitung_groesse, leitung_serie und leitung_aufteile
   assert.deepEqual(L.serienParameter({ leitung: 'RO-1', serie: 'FAM-9', zug: true }), { leitung: 'RO-1', serie: 'FAM-9', zug: true });
   assert.deepEqual(L.aufteilenParameter({ leitung: 'KW-1', serie: 'FAM-4' }), { leitung: 'KW-1', serie: 'FAM-4' });
   assert.deepEqual(L.aufteilenParameter({ leitung: 'KW-1', serie: 'FAM-4', groesse: 'DN 20' }), { leitung: 'KW-1', serie: 'FAM-4', groesse: 'DN 20' });
-  assert.throws(() => L.aufteilenParameter({ leitung: 'KW-1', serie: '' }), /Serie fehlt/);
+  assert.throws(() => L.aufteilenParameter({ leitung: 'KW-1', serie: '' }), /Produktlinie fehlt/);
 });
 
 test('Elemente: Altbestand = Leitung ohne Familie', () => {

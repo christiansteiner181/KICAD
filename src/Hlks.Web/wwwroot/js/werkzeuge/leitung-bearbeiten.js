@@ -1,5 +1,5 @@
 // Leitungen ändern über die Palette und das Register (Modul 3, C1): Grösse bzw. Serie einer Leitung ändern mit der Rückfrage «nur diese Leitung
-// oder ganzer Leitungszug», und «Aufteilen mit Serie …» für Altbestand-Polylinien. Jeder Schritt ist ein Befehl des Kerns (leitung_groesse,
+// oder ganzer Leitungszug», und «Aufteilen mit Produktlinie …» für Altbestand-Polylinien. Jeder Schritt ist ein Befehl des Kerns (leitung_groesse,
 // leitung_serie, leitung_aufteilen) – ein Paket, rückgängig mit Strg+Z. Abgelehnt wird mit Text und Vorschlag des Kerns (der Aufrufer zeigt ihn).
 // Der Dialog «Aufteilen» rechnet vorab einen Trockenlauf und zeigt die Vorschau des Kerns (Geraden und Formteile).
 
@@ -52,10 +52,10 @@ export async function groesseAendern(kz, groesse) {
 /** Serie einer Leitung ändern (leitung_serie). */
 export async function serieAendern(kz, serie) {
   const name = serienListe(L.kategorieVon(element(kz)?.klasse)).find((s) => s.kz === serie)?.name ?? serie;
-  const umfang = await umfangFragen(kz, 'Serie', name);
+  const umfang = await umfangFragen(kz, 'Produktlinie', name);
   if (!umfang) return { abgebrochen: true };
   const r = await sende('leitung_serie', L.serienParameter({ leitung: kz, serie, zug: umfang === 'zug' }));
-  return ergebnis(r, `${kz}: Serie ${name}${umfang === 'zug' ? ' (ganzer Zug)' : ''}.`);
+  return ergebnis(r, `${kz}: Produktlinie ${name}${umfang === 'zug' ? ' (ganzer Zug)' : ''}.`);
 }
 
 /** Palette: Änderung eines Feldes «lt:serie», «lt:groesse» (Typ), «lt:raster» (Normgrösse einer freien Serie) oder der Zahlenfelder b, h, d einer freien Serie
@@ -65,7 +65,7 @@ export async function leitungAenderung(was, kz, wert) {
   return was === 'serie' ? serieAendern(kz, wert) : groesseAendern(kz, wert);
 }
 
-/** «Aufteilen mit Serie …» für eine Altbestand-Leitung: Serie (und Grösse) wählen, Vorschau des Kerns, aufteilen (leitung_aufteilen). */
+/** «Aufteilen mit Produktlinie …» für eine Altbestand-Leitung: Serie (und Grösse) wählen, Vorschau des Kerns, aufteilen (leitung_aufteilen). */
 export async function aufteilenDialog(kz) {
   const el = element(kz);
   if (!el) { meldung(`Leitung «${kz}» gibt es nicht.`, 'warnung'); return false; }
@@ -78,8 +78,8 @@ export async function aufteilenDialog(kz) {
     return false;
   }
   const w = knoten(`<div class="lt-dlg">
-    <p class="dlg-text"><b>${esc(kz)}</b> ist eine Polylinie ohne Serie${el.werte?.dn ? ` (DN ${esc(el.werte.dn)})` : ''}. Sie wird in Geraden mit Bögen der gewählten Serie zerlegt; die Verbindungen bleiben.</p>
-    <label class="fz"><span>Serie *</span><select class="lt-serie">${serien.map((s) => `<option value="${esc(s.kz)}">${esc(s.name)}</option>`).join('')}</select></label>
+    <p class="dlg-text"><b>${esc(kz)}</b> ist eine Polylinie ohne Produktlinie${el.werte?.dn ? ` (DN ${esc(el.werte.dn)})` : ''}. Sie wird in Geraden mit Bögen der gewählten Serie zerlegt; die Verbindungen bleiben.</p>
+    <label class="fz"><span>Produktlinie *</span><select class="lt-serie">${serien.map((s) => `<option value="${esc(s.kz)}">${esc(s.name)}</option>`).join('')}</select></label>
     <label class="fz"><span>Grösse</span><select class="lt-groesse"><option value="">(aus der Leitung)</option></select></label>
     <div class="lt-vorschau leise">Vorschau wird gerechnet …</div></div>`);
   const q = (s) => w.querySelector(s);
@@ -108,11 +108,11 @@ export async function aufteilenDialog(kz) {
   q('.lt-serie').addEventListener('change', async () => { await groessenFuellen(); neuRechnen(); });
   q('.lt-groesse').addEventListener('change', neuRechnen);
   const ok = await zeigen({
-    titel: 'Aufteilen mit Serie', inhalt: w, breite: 560, klasse: 'dlg-hoch',
+    titel: 'Aufteilen mit Produktlinie', inhalt: w, breite: 560, klasse: 'dlg-hoch',
     beiOeffnen: async () => { await groessenFuellen(); vorschau(); },
     knoepfe: [{ text: 'Abbrechen', wert: false },
       { text: 'Aufteilen', primaer: true, schliesst: false,
-        pruefen: () => (bereit ? true : 'Die Vorschau ist noch nicht da oder wurde abgelehnt – anderen Serie oder Grösse wählen.'),
+        pruefen: () => (bereit ? true : 'Die Vorschau ist noch nicht da oder wurde abgelehnt – andere Produktlinie oder Grösse wählen.'),
         async klick(c) {
           ++nr;
           const r = await sende('leitung_aufteilen', param());

@@ -454,7 +454,7 @@ public static class Routing
             var ecke = pkt[j];
             pkt[j] = ecke - a * c;
             pkt.Insert(j + 1, ecke + b * c);
-            hinweise.Add($"Punkt {P(ecke)}: Knick {Z(knick, 2)}° als 2 × {Z(halb)}° ausgeführt (Bogen an Bogen) – die Serie {s.Bezeichnung} hat Bögen mit {s.WinkelText}.");
+            hinweise.Add($"Punkt {P(ecke)}: Knick {Z(knick, 2)}° als 2 × {Z(halb)}° ausgeführt (Bogen an Bogen) – die Produktlinie {s.Bezeichnung} hat Bögen mit {s.WinkelText}.");
             j++;
         }
     }
@@ -470,8 +470,8 @@ public static class Routing
         {
             var naechster = liste.OrderBy(x => Math.Abs(x - knick)).First();
             if (Math.Abs(naechster - knick) <= WinkelToleranz) return naechster;
-            throw new HlksFehler($"{ort}Knick von {Z(knick, 2)}° – die Serie {s.Bezeichnung} hat Bögen mit {s.WinkelText} (Toleranz ±{Z(WinkelToleranz)}°).",
-                "Den Verlauf so legen, dass jede Umlenkung einem erlaubten Winkel entspricht (auch zwei Bögen nacheinander, z. B. 2 × 45°), oder eine Serie mit diesem Winkel wählen.");
+            throw new HlksFehler($"{ort}Knick von {Z(knick, 2)}° – die Produktlinie {s.Bezeichnung} hat Bögen mit {s.WinkelText} (Toleranz ±{Z(WinkelToleranz)}°).",
+                "Den Verlauf so legen, dass jede Umlenkung einem erlaubten Winkel entspricht (auch zwei Bögen nacheinander, z. B. 2 × 45°), oder eine Produktlinie mit diesem Winkel wählen.");
         }
         return Math.Round(knick, 4);
     }
@@ -598,7 +598,7 @@ public static class Routing
             e = (k.Arbeit.Finde(wieder.Id) ?? throw new HlksFehler($"{wieder.Kennzeichen} gibt es nicht mehr.")).Kopie();
             d = kat.Klassen[e.Klasse];
             if (!kat.IstArt(e, s.Kategorie))
-                throw new HlksFehler($"{e.Kennzeichen} ist ein {e.Klasse}, die Serie {s.Bezeichnung} gehört zu {s.Kategorie}.", $"Eine Serie der Kategorie {e.Klasse} wählen.");
+                throw new HlksFehler($"{e.Kennzeichen} ist ein {e.Klasse}, die Produktlinie {s.Bezeichnung} gehört zu {s.Kategorie}.", $"Eine Produktlinie der Kategorie {e.Klasse} wählen.");
         }
         else
         {
@@ -682,7 +682,7 @@ public static class Routing
     {
         var geraden = liste.Where(x => x.Teil is PlanGerade).ToList();
         double summe = geraden.Sum(x => ((PlanGerade)x.Teil).Laenge);
-        k.Hinweise.Add($"{titel}: {geraden.Count} Gerade(n), zusammen {Z(summe)} mm, und {liste.Count - geraden.Count} Formteil(e) – Serie {plan.Serie.Bezeichnung}.");
+        k.Hinweise.Add($"{titel}: {geraden.Count} Gerade(n), zusammen {Z(summe)} mm, und {liste.Count - geraden.Count} Formteil(e) – Produktlinie {plan.Serie.Bezeichnung}.");
         foreach (var (t, e) in liste)
             k.Hinweise.Add(t switch
             {

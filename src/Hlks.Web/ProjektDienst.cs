@@ -191,7 +191,7 @@ public sealed class ProjektDienst(Einstellungen einstellungen, ILogger<ProjektDi
         {
             if (beispiel)
             {
-                var erzeugt = klein ? BeispielKlein.Erzeugen(Katalog, SpeicherFuer(ordner), Einstellungen.Geraet) : Beispielprojekt.Erzeugen(Katalog, SpeicherFuer(ordner), Einstellungen.Geraet);
+                var erzeugt = klein ? BeispielKlein.Erzeugen(Katalog, SpeicherFuer(ordner), Einstellungen.Geraet, familienLaden: true) : Beispielprojekt.Erzeugen(Katalog, SpeicherFuer(ordner), Einstellungen.Geraet);
                 erzeugt.Freigeben();   // Reservierungen des Beispielgenerators nicht stehen lassen (wie die Kommandozeile)
                 var sp = new AbgleichSpeicher(SpeicherFuer(ordner));
                 return (Kern.Projekt.Oeffnen(Katalog, sp, Einstellungen.Akteur, Einstellungen.Geraet, "mensch"), sp);

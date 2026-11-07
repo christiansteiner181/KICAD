@@ -81,7 +81,7 @@ public static class Stutzen
 public sealed class EckeBilden : IBefehl
 {
     public string Name => "ecke_bilden";
-    public const string Text = "Stutzt bzw. dehnt zwei Geraden bis zu ihrem Schnittpunkt (Revit «Stutzen/Dehnen für Ecke»). Zwei Leitungen (gleiche Serie, Grösse und System, Achsen schneiden sich bis 1 mm) bekommen einen Bogen der Serie; beide behalten ihr Kennzeichen, eine muss zur Ecke laufen, die andere weg. Wände, Detaillinien, Achsen: geometrische Ecke im Grundriss. Verbindungen an weggeschnittenen Enden entfallen. Ein Paket.";
+    public const string Text = "Stutzt bzw. dehnt zwei Geraden bis zu ihrem Schnittpunkt (Revit «Stutzen/Dehnen für Ecke»). Zwei Leitungen (gleiche Produktlinie, Grösse und System, Achsen schneiden sich bis 1 mm) bekommen einen Bogen der Produktlinie; beide behalten ihr Kennzeichen, eine muss zur Ecke laufen, die andere weg. Wände, Detaillinien, Achsen: geometrische Ecke im Grundriss. Verbindungen an weggeschnittenen Enden entfallen. Ein Paket.";
     public string Beschreibung => Text;
     public IReadOnlyList<ParameterDef> Parameter { get; } =
     [
@@ -110,10 +110,10 @@ public sealed class EckeBilden : IBefehl
     static void Leitungsecke(Kontext k, JsonObject p, Element ea, V3 a0, V3 a1, Element eb, V3 b0, V3 b1)
     {
         var m = k.Arbeit; var kat = k.Katalog;
-        var s = Leitungsserie.VonLeitung(m, kat, ea) ?? throw new HlksFehler($"{ea.Kennzeichen} hat keine Serie – der Bogen kommt aus der Serie.", "Zuerst eine Serie zuweisen (leitung_aufteilen mit serie).");
+        var s = Leitungsserie.VonLeitung(m, kat, ea) ?? throw new HlksFehler($"{ea.Kennzeichen} hat keine Produktlinie – der Bogen kommt aus der Produktlinie.", "Zuerst eine Produktlinie zuweisen (leitung_aufteilen mit serie).");
         if (Leitungsserie.VonLeitung(m, kat, eb)?.Familie.Id != s.Familie.Id)
-            throw new HlksFehler($"{ea.Kennzeichen} und {eb.Kennzeichen} haben nicht dieselbe Serie.", "Serie angleichen (leitung_serie).");
-        var sg = s.GroesseVon(ea) is { Gueltig: true } g ? g : throw new HlksFehler($"{ea.Kennzeichen} hat keine Grösse der Serie {s.Bezeichnung}.", "Grösse angleichen (leitung_groesse).");
+            throw new HlksFehler($"{ea.Kennzeichen} und {eb.Kennzeichen} haben nicht dieselbe Produktlinie.", "Produktlinie angleichen (leitung_serie).");
+        var sg = s.GroesseVon(ea) is { Gueltig: true } g ? g : throw new HlksFehler($"{ea.Kennzeichen} hat keine Grösse der Produktlinie {s.Bezeichnung}.", "Grösse angleichen (leitung_groesse).");
         if (s.GroesseVon(eb) is not { Gueltig: true } gb || !gb.Groesse.Gleich(sg.Groesse))
             throw new HlksFehler($"{ea.Kennzeichen} und {eb.Kennzeichen} haben nicht dieselbe Grösse.", "Grösse angleichen (leitung_groesse) – eine Ecke mit Reduktion macht A4 nicht.");
         if (ea.System != eb.System) throw new HlksFehler($"{ea.Kennzeichen} und {eb.Kennzeichen} gehören zu verschiedenen Systemen.", "Zwei Leitungen desselben Systems wählen.");
@@ -152,7 +152,7 @@ public sealed class EckeBilden : IBefehl
 public sealed class DehnenBis : IBefehl
 {
     public string Name => "dehnen_bis";
-    public const string Text = "Stutzt bzw. dehnt eine Gerade bis an die Achse einer anderen (Revit «Einzelnes Element stutzen/dehnen»). Leitung bis Leitung (Achsen schneiden sich bis 1 mm): an der Bezugsleitung entsteht ein T-Stück wie bei leitung_abzweigen (Abzweigwinkel der Serie, Fliessrichtung nach dem System), das Ende wird angeschlossen. Sonst geometrisch bis zum Schnittpunkt im Grundriss (Höhe bleibt). Ein Paket.";
+    public const string Text = "Stutzt bzw. dehnt eine Gerade bis an die Achse einer anderen (Revit «Einzelnes Element stutzen/dehnen»). Leitung bis Leitung (Achsen schneiden sich bis 1 mm): an der Bezugsleitung entsteht ein T-Stück wie bei leitung_abzweigen (Abzweigwinkel der Produktlinie, Fliessrichtung nach dem System), das Ende wird angeschlossen. Sonst geometrisch bis zum Schnittpunkt im Grundriss (Höhe bleibt). Ein Paket.";
     public string Beschreibung => Text;
     public IReadOnlyList<ParameterDef> Parameter { get; } =
     [

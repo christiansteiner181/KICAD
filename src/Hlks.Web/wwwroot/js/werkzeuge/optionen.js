@@ -173,10 +173,10 @@ export const WERKZEUGE = {
       return leitungFelder('fallleitung', 'Rohr').filter((f) => !['lage', 'hoehe', 'gefaelle', 'winkelfang', 'daemmdicke', 'system', 'medium'].includes(f.id))
         .map((f) => (f.id === 'serie' ? { ...f, get werte() { return serienListe('Rohr').filter((x) => { const d = serieDef(x.kz); return !d || istAbwasser(d); }).map((x) => [x.kz, x.name]); } } : f));
     },
-    hinweis: 'Immer Abwasser (System Schmutzwasser). Lage anklicken – senkrecht durch alle Geschosse, je Geschoss ein Rohr, verbunden; Abgänge daran mit 88.5°.',
+    hinweis: 'Immer Abwasser (System Schmutzwasser, Produktlinien Abwasser). Lage anklicken – senkrecht durch alle Geschosse, je Geschoss ein Rohr, verbunden; Abgänge daran mit 88.5°.',
   },
-  steigleitung: { titel: 'Steigleitung', get felder() { return steigFelder('steigleitung'); }, hinweis: 'Leitungen anhaken, je Serie und Grösse; Steigzone Breite × Tiefe (Abstände daraus) oder Achsabstand. 1. Klick: Anfang der Steigzone bzw. erste Leitung, 2. Klick: Richtung. Zirk und RL fallen, die übrigen steigen.' },
-  steigleitungLueftung: { titel: 'Steigleitung Lüftung', get felder() { return steigFelder('steigleitungLueftung'); }, hinweis: 'AUL, FOL, ZUL, ABL mit Kanalserie rund oder eckig; Steigzone Breite × Tiefe oder Achsabstand. Zentrale unten: ZUL und FOL steigen, ABL und AUL fallen (oben umgekehrt).' },
+  steigleitung: { titel: 'Steigleitung', get felder() { return steigFelder('steigleitung'); }, hinweis: 'Leitungen anhaken, je Produktlinie und Grösse; Steigzone Breite × Tiefe (Abstände daraus) oder Achsabstand. 1. Klick: Anfang der Steigzone bzw. erste Leitung, 2. Klick: Richtung. Zirk und RL fallen, die übrigen steigen.' },
+  steigleitungLueftung: { titel: 'Steigleitung Lüftung', get felder() { return steigFelder('steigleitungLueftung'); }, hinweis: 'AUL, FOL, ZUL, ABL mit Produktlinie rund oder eckig; Steigzone Breite × Tiefe oder Achsabstand. Zentrale unten: ZUL und FOL steigen, ABL und AUL fallen (oben umgekehrt).' },
   verschieben: {
     titel: 'Verschieben',
     felder: [{ id: 'trennen', titel: 'Trennen', art: 'bool', vorgabe: false }],   // Bearbeitungswerkzeuge A1: ohne folgen Leitungen und Formteile
@@ -258,7 +258,7 @@ function steigFelder(wid) {
     const id = steigId(m);
     felder.push(
       { id, titel: kurz, art: 'bool', vorgabe: an, beiAenderung: () => leitungHaken.optionenNeu?.() },
-      { id: id + 'Serie', titel: 'Serie', art: 'auswahl', leer: 'wählen …', sichtbar: () => !!wert(wid, id), get werte() { return serienListe(kategorie).map((x) => [x.kz, x.name]); },
+      { id: id + 'Serie', titel: 'Produktlinie', art: 'auswahl', leer: 'wählen …', sichtbar: () => !!wert(wid, id), get werte() { return serienListe(kategorie).map((x) => [x.kz, x.name]); },
         beiAenderung(el) { el?.blur?.(); const kz = wert(wid, id + 'Serie'); if (kz) serieLaden(kz).then(() => leitungHaken.optionenNeu?.()); leitungHaken.optionenNeu?.(); } },
       { id: id + 'Groesse', titel: 'Grösse', art: 'auswahl', leer: 'wählen …', sichtbar: () => !!wert(wid, id), get werte() { const d = serieDef(wert(wid, id + 'Serie')); return d ? groessenOptionen(d) : []; } },
     );
@@ -294,7 +294,7 @@ function leitungFelder(wid, kategorie) {
     leitungHaken.optionenNeu?.();
   };
   return [
-    { id: 'serie', titel: 'Serie', art: 'auswahl', get werte() { return serienListe(kategorie).map((s) => [s.kz, s.name]); }, leer: 'wählen …', beiAenderung: nachSerie },
+    { id: 'serie', titel: 'Produktlinie', art: 'auswahl', get werte() { return serienListe(kategorie).map((s) => [s.kz, s.name]); }, leer: 'wählen …', beiAenderung: nachSerie },
     { id: 'groesse', get titel() { return frei() ? 'Normgrösse' : 'Grösse'; }, art: 'auswahl', get leer() { return frei() ? 'Vorschlag …' : 'wählen …'; },
       get werte() {
         const s = aktuelleSerie();
@@ -323,8 +323,8 @@ function leitungFelder(wid, kategorie) {
     { id: 'daemmdicke', titel: 'Dämmdicke', art: 'zahl', einheit: 'mm', platzhalter: 'keine', breite: 4, fluechtig: true },
     { id: 'winkelfang', titel: 'Winkelfang', art: 'bool', vorgabe: true },
     // Keine Serie der Kategorie im Projekt: Hinweis mit Weg zu den Familien
-    { id: 'serieHinweis', art: 'hinweis', text: `Keine Leitungsserie der Kategorie ${kategorie} im Projekt.`, sichtbar: () => serienListe(kategorie).length === 0 },
-    { id: 'serieLaden', art: 'knopf', titel: 'Leitungsserie laden …', aktion: 'familie.laden', sichtbar: () => serienListe(kategorie).length === 0 },
+    { id: 'serieHinweis', art: 'hinweis', text: `Keine Produktlinie der Kategorie ${kategorie} im Projekt.`, sichtbar: () => serienListe(kategorie).length === 0 },
+    { id: 'serieLaden', art: 'knopf', titel: 'Produktlinie laden …', aktion: 'familie.laden', sichtbar: () => serienListe(kategorie).length === 0 },
   ];
 }
 

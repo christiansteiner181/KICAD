@@ -312,7 +312,7 @@ test('Optionsleiste: Zahlenfelder und Hinweis erscheinen nur bei einer freien Se
   assert.equal(feld('rohr', 'freiHinweis').sichtbar(), false);
   assert.equal(feld('rohr', 'groesse').titel, 'Grösse');
   assert.deepEqual(feld('rohr', 'groesse').werte.map(([, t]) => t), ['d 32', 'd 56', 'd 75', 'd 110']);
-  assert.match(feld('rohr', 'abwasserHinweis').text, /Abwasser-Serie: Grösse nach Aussendurchmesser/);
+  assert.match(feld('rohr', 'abwasserHinweis').text, /Produktlinie Abwasser: Grösse nach Aussendurchmesser/);
   // DN-Serie wie bisher
   O.setze('rohr', 'serie', 'FAM-R');
   assert.equal(feld('rohr', 'abwasserHinweis').sichtbar(), false);

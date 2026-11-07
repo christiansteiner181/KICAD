@@ -119,7 +119,7 @@ public class AbwasserSerieTests
         HatFehler(Lesen(d), "leitung.einsatz", "gibt es nicht");
         var k = Familie("test_kanalserie");
         L(k)["einsatz"] = "abwasser";
-        HatFehler(Lesen(k), "leitung.einsatz", "nur bei Rohrserien");
+        HatFehler(Lesen(k), "leitung.einsatz", "nur bei Rohr-Produktlinien");
     }
 
     [Fact]
@@ -495,7 +495,7 @@ public class AbwasserSerieTests
     [Fact]
     public void P30_Code()
     {
-        Assert.Equal("Abwasser-Serie für ein anderes Medium als Abwasser", Pruefungen.Codes["P30"]);
+        Assert.Equal("Produktlinie Abwasser für ein anderes Medium als Abwasser", Pruefungen.Codes["P30"]);
     }
 
     [Fact]
@@ -508,7 +508,7 @@ public class AbwasserSerieTests
         Assert.Equal(["RO-3", "RO-4", "RO-5"], b.Select(x => x.Element).Order(StringComparer.Ordinal));
         Assert.All(b, x => Assert.Equal("fehler", x.Schwere));
         var hz = b.Single(x => x.Element == "RO-3");
-        Assert.Contains($"Abwasser-Serie FAM-1 «{PeName}» für Heizung Vorlauf (HZ-VL)", hz.Text);
+        Assert.Contains($"Produktlinie Abwasser FAM-1 «{PeName}» für Heizung Vorlauf (HZ-VL)", hz.Text);
         Assert.Contains("fliessart druck", hz.Text);
         Assert.Contains("leitung_serie", hz.Vorschlag);
         Assert.Contains("Trinkwasser kalt (KW)", b.Single(x => x.Element == "RO-4").Text);

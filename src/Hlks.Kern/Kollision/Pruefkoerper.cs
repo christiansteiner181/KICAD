@@ -762,14 +762,14 @@ public static class Pruefkoerperbau
                 var d = (b - a).Einheit();
                 achsen.Add(Achskoerper.Quader(i > 1 ? a - d * verl : a, i < punkte.Count - 1 ? b + d * verl : b, mass.Breite, mass.Hoehe, e.Zahl("querDrehung") ?? 0));
             }
-            massquelle = mass.Serie is { } s ? $"Serie {s.SerieName}, {s.Typ}: {Z(mass.Breite)} × {Z(mass.Hoehe)} mm" : $"Eigenschaften breite × hoehe: {Z(mass.Breite)} × {Z(mass.Hoehe)} mm";
+            massquelle = mass.Serie is { } s ? $"Produktlinie {s.SerieName}, {s.Typ}: {Z(mass.Breite)} × {Z(mass.Hoehe)} mm" : $"Eigenschaften breite × hoehe: {Z(mass.Breite)} × {Z(mass.Hoehe)} mm";
         }
         else
         {
             double? da = mass is null && e.Zahl("da") is double d0 && d0 > 0 ? d0 : null;   // ohne Serie: Aussendurchmesser wie das 3D (z. B. aus dem IFC)
             double durchmesser = mass?.Durchmesser ?? da ?? Math.Max(HlksEinordnung.Dn(e) ?? 0, HlksKoerper.MinDurchmesser);
             for (int i = 1; i < punkte.Count; i++) achsen.Add(Achskoerper.Kapsel(punkte[i - 1], punkte[i], durchmesser / 2));
-            massquelle = mass?.Serie is { } s ? $"Serie {s.SerieName}, {s.Typ}: Ø {Z(durchmesser)} mm"
+            massquelle = mass?.Serie is { } s ? $"Produktlinie {s.SerieName}, {s.Typ}: Ø {Z(durchmesser)} mm"
                 : mass is not null ? $"Eigenschaft durchmesser: Ø {Z(durchmesser)} mm"
                 : da is not null ? $"Eigenschaft da: Ø {Z(durchmesser)} mm"
                 : $"Darstellung DN-gerecht: Ø max(dn, {Z(HlksKoerper.MinDurchmesser)}) = {Z(durchmesser)} mm";

@@ -17,7 +17,7 @@ public sealed partial class Werkzeuge
 
     // Nachtrag 21.10.2026: leitungsserie rechnet ohne Sperre auf einem Lesestand und bricht ab, wenn der Client den Aufruf abbricht
     [McpServerTool(Name = "leitungsserie"), Description(Leitungsserie.AbfrageText)]
-    public string LeitungsserieLesen([Description("Leitungsserie: Familie der Kategorie Rohr bzw. Kanal (Kennzeichen, Name oder id)")] string familie,
+    public string LeitungsserieLesen([Description("Produktlinie: Familie der Kategorie Rohr bzw. Kanal (Kennzeichen, Name oder id)")] string familie,
         CancellationToken abbruch = default) =>
         LaufAbgesetzt(() => { var r = Leitungsserie.AbfrageVorbereiten(projekt, familie); return a => r(a); }, abbruch);
 

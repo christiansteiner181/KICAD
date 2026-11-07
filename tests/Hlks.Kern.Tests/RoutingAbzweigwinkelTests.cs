@@ -179,7 +179,7 @@ public class RoutingAbzweigwinkelTests
         Assert.True(w.Ok, w.Fehler);
         Assert.Equal("fam-test-abwasser-t", Familien.DefinitionsId(w.Familie!));
         Assert.Equal("DN 100", w.Typ);
-        Assert.Contains("mischbaren Serie", w.Hinweis);
+        Assert.Contains("mischbaren Produktlinie", w.Hinweis);
     }
 
     [Fact]

@@ -33,7 +33,7 @@ namespace Hlks.Kern;
 
 public sealed partial class Leitungsserie
 {
-    public const string AbfrageText = "Eine Leitungsserie (Familie der Kategorie Rohr bzw. Kanal, Modul 3): Querschnitt, Werkstoff-Kürzel (leitung.kuerzel, falls angegeben), Grössen mit aussen, innen, wand und Biegeradius (mm) und der Beschriftung der Rohre dieser Grösse (Rohre ausser Abwasser: beschriftung mit NW/DN, z. B. «CNS NW 20»; Abwasser: beschriftungAbwasser mit dem Aussendurchmesser, z. B. «PE-S 110»; ohne Kürzel nur die Grösse; ohne Zahl null). Abwasser-Serien (leitung.einsatz abwasser, einsatz und nachAussendurchmesser): beschriftung ist immer die Abwasserform mit dem Aussendurchmesser, unabhängig vom Medium (z. B. «PE 110»); bei Grösse d (nachAussendurchmesser: true) heissen die Grössen { d } («d 110»), keine DN nötig, dnHersteller = DN der Unterlage (Typparameter mit ziel dn, nie abgeleitet) bzw. null. Erlaubte Bogenwinkel und Abzweigwinkel der T-Stücke (regeln.abzweigwinkel, fehlt = 90°; abzweigwinkelVorgabe = Vorgabe von leitung_abzweigen), Formteil-Familien je Art (im Projekt vorhanden?) und je Grösse, ob Bogen, T-Stück (gleiche Grösse, erster Abzweigwinkel; tstueckJeWinkel je erlaubtem Abzweigwinkel), Reduktion (auf jede kleinere Grösse) und Reinigungsöffnung verfügbar sind – mit Grund und Vorschlag, wenn nicht. Kanalserien mit freier Grösse (leitung.frei): frei mit Vorlage, Grenzen, Schritt und Text (die Typen sind dann das Vorschlagsraster) und eine probe mit einer freien Grösse (Mitte der Grenzen, sonst 430 × 270) samt Massen und Formteilverfügbarkeit (frei: true und parameter = Exemplarwerte, wenn ein Formteil aus seiner Vorlage gerechnet wird). Reduktionen einer freien Serie, für die kein Typ passt, ermittelt der Kern nach der Regel der Reduktionsfamilie (Vorlage mit Exemplar-Grössen: jede Kombination innerhalb der Grenzen) statt jede einzeln zu rechnen – solche Einträge tragen gezaehlt: true; kontrolle sagt, wie viele Paare gerechnet bzw. gezählt wurden, nach welcher Regel, mit welchen Stichproben (voll gerechnet: Ecken des Rasters) und wie lange es dauerte. Die Abfrage rechnet auf einem festen Stand ohne den Kern zu besetzen und bricht ab, wenn die Anfrage abgebrochen wird.";
+    public const string AbfrageText = "Eine Produktlinie (Familie der Kategorie Rohr bzw. Kanal, Modul 3): Querschnitt, Werkstoff-Kürzel (leitung.kuerzel, falls angegeben), Grössen mit aussen, innen, wand und Biegeradius (mm) und der Beschriftung der Rohre dieser Grösse (Rohre ausser Abwasser: beschriftung mit NW/DN, z. B. «CNS NW 20»; Abwasser: beschriftungAbwasser mit dem Aussendurchmesser, z. B. «PE-S 110»; ohne Kürzel nur die Grösse; ohne Zahl null). Produktlinien Abwasser (leitung.einsatz abwasser, einsatz und nachAussendurchmesser): beschriftung ist immer die Abwasserform mit dem Aussendurchmesser, unabhängig vom Medium (z. B. «PE 110»); bei Grösse d (nachAussendurchmesser: true) heissen die Grössen { d } («d 110»), keine DN nötig, dnHersteller = DN der Unterlage (Typparameter mit ziel dn, nie abgeleitet) bzw. null. Erlaubte Bogenwinkel und Abzweigwinkel der T-Stücke (regeln.abzweigwinkel, fehlt = 90°; abzweigwinkelVorgabe = Vorgabe von leitung_abzweigen), Formteil-Familien je Art (im Projekt vorhanden?) und je Grösse, ob Bogen, T-Stück (gleiche Grösse, erster Abzweigwinkel; tstueckJeWinkel je erlaubtem Abzweigwinkel), Reduktion (auf jede kleinere Grösse) und Reinigungsöffnung verfügbar sind – mit Grund und Vorschlag, wenn nicht. Kanal-Produktlinien mit freier Grösse (leitung.frei): frei mit Vorlage, Grenzen, Schritt und Text (die Typen sind dann das Vorschlagsraster) und eine probe mit einer freien Grösse (Mitte der Grenzen, sonst 430 × 270) samt Massen und Formteilverfügbarkeit (frei: true und parameter = Exemplarwerte, wenn ein Formteil aus seiner Vorlage gerechnet wird). Reduktionen einer freien Produktlinie, für die kein Typ passt, ermittelt der Kern nach der Regel der Reduktionsfamilie (Vorlage mit Exemplar-Grössen: jede Kombination innerhalb der Grenzen) statt jede einzeln zu rechnen – solche Einträge tragen gezaehlt: true; kontrolle sagt, wie viele Paare gerechnet bzw. gezählt wurden, nach welcher Regel, mit welchen Stichproben (voll gerechnet: Ecken des Rasters) und wie lange es dauerte. Die Abfrage rechnet auf einem festen Stand ohne den Kern zu besetzen und bricht ab, wenn die Anfrage abgebrochen wird.";
 
     /// <summary>Abfrage leitungsserie auf einmal (Lesestand und Rechnung nacheinander) – für Tests und Aufrufer ohne eigene Sperre.</summary>
     public static JsonObject Abfrage(Projekt p, string bezug, CancellationToken abbruch = default) => AbfrageVorbereiten(p, bezug)(abbruch);
@@ -440,7 +440,7 @@ public sealed partial class Leitungsserie
             if (plan is null)
                 return (Nein(GrundOhne() + ".", $"Vorhandene Typen: {Vorhanden()}. Typ ergänzen (familie_aendern typ_setzen) oder eine andere Grösse bzw. Folge wählen (z. B. in zwei Schritten reduzieren)."), false);
             if (!vorlageDa)
-                return (Nein($"{GrundOhne()}, und die Vorlage «{vorlage}» (leitung.formteile.reduktion.vorlage der Serie {s.Bezeichnung}) gibt es in {fam!.Kennzeichen} «{fam.Name}» nicht.",
+                return (Nein($"{GrundOhne()}, und die Vorlage «{vorlage}» (leitung.formteile.reduktion.vorlage der Produktlinie {s.Bezeichnung}) gibt es in {fam!.Kennzeichen} «{fam.Name}» nicht.",
                     $"Typen: {Vorhanden()} – vorlage korrigieren (familie_aendern mit op leitung_setzen)."), false);
             var (exf, grund) = FreiAnwenden(plan, soll, null);
             if (grund is not null)
@@ -452,9 +452,9 @@ public sealed partial class Leitungsserie
 
     // ------------------------------------------------------------------ Abfrage «abzweigwinkel» (Nachtrag 21.10.2026)
 
-    public const string AbzweigwinkelAbfrageText = "Abzweigwinkel einer Leitungsserie für leitung_abzweigen (Nachtrag Modul 3), z. B. für das Werkzeug Abzweig der Oberfläche: erlaubte Winkel (regeln.abzweigwinkel, fehlt = 90°; Winkel zwischen der Leitung in Fliessrichtung und dem Abzweig) und die Vorgabe (der einzige Winkel der Serie, sonst 90 – vorgabeErlaubt sagt, ob die Serie ihn hat). Mit leitung (die Gerade, an der abgezweigt wird): ihre Serie und Grösse, je Winkel das T-Stück dieser Grösse (Familie, Typ, Einbaulängen a, b, c in mm aus der Familie; sonst Grund und Vorschlag), die Fliessrichtung (zulaufend: Entsorgung und Rücklauf münden schräg in Fliessrichtung ein; zufuehrend: Versorgung und Vorlauf gehen schräg in Fliessrichtung ab, das T-Stück wird dann gespiegelt), die Richtung der Leitung (anfang → ende) und die Seiten, die leitung_abzweigen mit seite nimmt (links, rechts, oben, unten – nicht an senkrechten Leitungen; ein Vektor [dx, dy, dz] geht immer). Mit familie (und groesse) dasselbe ohne Leitung.";
-    public const string ParAbzweigLeitung = "Gerade, an der abgezweigt wird (Kennzeichen oder Id) – Serie und Grösse kommen von ihr";
-    public const string ParAbzweigFamilie = "Leitungsserie (Kennzeichen, Name oder id), wenn keine Leitung angegeben ist";
+    public const string AbzweigwinkelAbfrageText = "Abzweigwinkel einer Produktlinie für leitung_abzweigen (Nachtrag Modul 3), z. B. für das Werkzeug Abzweig der Oberfläche: erlaubte Winkel (regeln.abzweigwinkel, fehlt = 90°; Winkel zwischen der Leitung in Fliessrichtung und dem Abzweig) und die Vorgabe (der einzige Winkel der Produktlinie, sonst 90 – vorgabeErlaubt sagt, ob die Produktlinie ihn hat). Mit leitung (die Gerade, an der abgezweigt wird): ihre Produktlinie und Grösse, je Winkel das T-Stück dieser Grösse (Familie, Typ, Einbaulängen a, b, c in mm aus der Familie; sonst Grund und Vorschlag), die Fliessrichtung (zulaufend: Entsorgung und Rücklauf münden schräg in Fliessrichtung ein; zufuehrend: Versorgung und Vorlauf gehen schräg in Fliessrichtung ab, das T-Stück wird dann gespiegelt), die Richtung der Leitung (anfang → ende) und die Seiten, die leitung_abzweigen mit seite nimmt (links, rechts, oben, unten – nicht an senkrechten Leitungen; ein Vektor [dx, dy, dz] geht immer). Mit familie (und groesse) dasselbe ohne Leitung.";
+    public const string ParAbzweigLeitung = "Gerade, an der abgezweigt wird (Kennzeichen oder Id) – Produktlinie und Grösse kommen von ihr";
+    public const string ParAbzweigFamilie = "Produktlinie (Kennzeichen, Name oder id), wenn keine Leitung angegeben ist";
     public const string ParAbzweigGroesse = "Grösse für die T-Stücke je Winkel (mit familie), wie bei leitung_zeichnen";
 
     /// <summary>Abfrage abzweigwinkel (siehe AbzweigwinkelText).</summary>
@@ -468,8 +468,8 @@ public sealed partial class Leitungsserie
         {
             l = m.Hole(leitung, "Leitung");
             if (!k.IstArt(l, "Leitung")) throw new HlksFehler($"{l.Kennzeichen} ist keine Leitung, sondern {l.Klasse}.", "Eine Gerade (Rohr, Kanal) angeben.");
-            s = VonLeitung(m, k, l) ?? throw new HlksFehler($"{l.Kennzeichen} hat keine Serie – die Abzweigwinkel kommen aus der Serie der Leitung.",
-                $"Zuerst eine Serie zuweisen: leitung_aufteilen {{ \"leitung\": \"{l.Kennzeichen}\", \"serie\": … }} bzw. leitung_serie.");
+            s = VonLeitung(m, k, l) ?? throw new HlksFehler($"{l.Kennzeichen} hat keine Produktlinie – die Abzweigwinkel kommen aus der Produktlinie der Leitung.",
+                $"Zuerst eine Produktlinie zuweisen: leitung_aufteilen {{ \"leitung\": \"{l.Kennzeichen}\", \"serie\": … }} bzw. leitung_serie.");
             g = s.Norm(Anschlusslagen.LeitungGroesse(m, k, l));
         }
         else if (familie is not null)
@@ -477,7 +477,7 @@ public sealed partial class Leitungsserie
             s = Hole(m, k, familie);
             if (groesse is not null) g = RoutingBefehle.Groesse(s, groesse).Groesse;
         }
-        else throw new HlksFehler("leitung bzw. familie fehlt.", "Die Gerade angeben, an der abgezweigt wird (leitung), oder eine Leitungsserie (familie).");
+        else throw new HlksFehler("leitung bzw. familie fehlt.", "Die Gerade angeben, an der abgezweigt wird (leitung), oder eine Produktlinie (familie).");
 
         var o = new JsonObject
         {
