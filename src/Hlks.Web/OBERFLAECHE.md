@@ -4166,7 +4166,7 @@ Christian 04.11.2026: «eine funktion zum erstellen von geberit duofix und gis v
   als entwurf darstellen»): 1. **Aussenkante** anklicken: Anfangs- und Endpunkt, 2. der **nächste Klick greift die Tiefe ab** (seit 09.11.2026, Christian «nach dem absetzen der
   Vorwandlänge sollte mit dem nächsten mausklick die tiefe abgegriffen werden. die ausrichtung ist dann klar») – Klick auf die Rohbauwand, die Seite des
   Klicks gibt die Ausrichtung, oder Tiefe eintippen; mit «Kette» (Vorgabe aus) weitere Kantenpunkte, Enter/Doppelklick beendet; beide Schritte als Entwurf (Band mit «Tiefe … mm») → `vorwand_zeichnen` mit `aussenkante`. Optionsleiste: System (GIS/Duofix),
-  Tiefe (leer = am Plan; eingetragen gilt sie fest, die Maus wählt nur die Seite), **Höhe** (Pflicht; raumhoch leer = Raumhöhe), Lage an der Rohbauwand bzw.
+  keine feste Tiefe mehr (09.11.2026, Christian «der tiefenwert aus dem klick wird nicht übernommen»: die Tiefe kommt immer aus dem Klick oder der eingetippten Zahl), **Höhe** (Pflicht; raumhoch leer = Raumhöhe), Lage an der Rohbauwand bzw.
   frei stehend, Bauwerk massiv/Trockenbau, Bodenaufbau, Bauweise, Bestücken, Kette.
 - **System wechseln** (Eigenschaften der Vorwand): die Montageelemente der Vorwand wechseln mit auf das entsprechende Element des neuen Systems (gleicher Apparat,
   gleiche Bauart, nächste Bauhöhe; `VorwandSystem.Angleichen`). Ein Element des anderen Systems im Werkzeug Montageelement wird ebenso ersetzt.

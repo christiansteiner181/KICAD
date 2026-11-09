@@ -2,7 +2,7 @@
 // gis vorwänden», «auch die Profile und befestigungen müssen gezeichnet werden»).
 // - «Vorwand» (VW, Christian 06.11.2026: «1. aussenkannte der vorwand zeichnen, 2. tiefe am plan abgreiffen. jeweils als entwurf darstellen»):
 //   1. Aussenkante anklicken (nach zwei Punkten fertig; mit «Kette» weitere Punkte, Enter/Doppelklick beendet), 2. Tiefe am Plan abgreifen – Klick auf die Rohbauwand
-//   (bzw. eingetippte Zahl; eine Tiefe in der Optionsleiste gilt fest, die Maus wählt dann nur die Seite) → vorwand_zeichnen mit aussenkante.
+//   (bzw. eingetippte Zahl; die Tiefe kommt immer aus dem Klick bzw. der eingetippten Zahl, 09.11.2026) → vorwand_zeichnen mit aussenkante.
 //   Beide Schritte als Entwurf. Höhe Pflicht (raumhoch: leer = Raumhöhe); «Bestücken» setzt danach die Montageelemente hinter die Apparate.
 // - «Montageelement» (ME): Maus über eine Vorwand, Klick → montageelement_setzen mit dem gewählten Elementtyp an dieser Stelle.
 
@@ -57,11 +57,9 @@ async function senden(z, ctx, seite, tiefe) {
   if (r?.angenommen) { z.punkte = []; z.phase = 'kante'; }
 }
 
-/** Seite und Tiefe aus dem Mauspunkt; eine eingetragene Tiefe gilt fest, die Maus bestimmt dann nur die Seite. */
-function seiteTiefe(z, punkt, ctx) {
-  const m = tiefeAmPlan(z.punkte, punkt);
-  if (!m) return null;
-  return { seite: m.seite, tiefe: ctx.opt.tiefe > 0 ? ctx.opt.tiefe : m.tiefe };
+/** Seite und Tiefe aus dem Mauspunkt (Christian 09.11.2026: der Tiefenwert aus dem Klick gilt – kein festes Tiefenfeld mehr). */
+function seiteTiefe(z, punkt) {
+  return tiefeAmPlan(z.punkte, punkt);
 }
 
 export function vorwandWerkzeug() {
@@ -69,7 +67,7 @@ export function vorwandWerkzeug() {
     id: 'vorwand', titel: 'Vorwand', planarten: ['grundriss'], mehrpunkt: true,
     neu: () => ({ punkte: [], phase: 'kante' }),
     hinweis: (z, ctx) => (z.phase === 'tiefe'
-      ? (ctx?.opt?.tiefe > 0 ? `Seite der Rohbauwand anklicken (Tiefe fest ${ctx.opt.tiefe} mm).` : 'Tiefe am Plan abgreifen: Rohbauwand anklicken oder Tiefe eintippen.')
+      ? 'Tiefe am Plan abgreifen: Rohbauwand anklicken oder Tiefe eintippen.'
       : z.punkte.length === 0 ? 'Aussenkante der Vorwand: Anfangspunkt anklicken.'
         : ctx?.opt?.mehrteilig ? 'Aussenkante: nächster Punkt, Enter oder Doppelklick beendet die Kante.' : 'Aussenkante: Endpunkt anklicken – danach greift der nächste Klick die Tiefe ab.'),
     letzterPunkt: (z) => (z.phase === 'kante' ? z.punkte.at(-1) ?? null : null),
@@ -86,7 +84,7 @@ export function vorwandWerkzeug() {
       if (o.ausfuehrung !== 'raumhoch' && !(o.hoehe > 0)) { ctx.pflicht('hoehe', 'Die Ablagehöhe fehlt – bitte in der Optionsleiste eintragen (raumhoch: leer = Raumhöhe).'); return; }
       const p = fang.punkt;
       if (z.phase === 'tiefe') {
-        const st = seiteTiefe(z, p, ctx);
+        const st = seiteTiefe(z, p);
         if (st) await senden(z, ctx, st.seite, st.tiefe);
         return;
       }
@@ -100,7 +98,7 @@ export function vorwandWerkzeug() {
     zeichne(z, fang, ctx, s) {
       let h = '';
       if (z.phase === 'tiefe') {
-        const st = fang ? seiteTiefe(z, fang.punkt, ctx) : null;
+        const st = fang ? seiteTiefe(z, fang.punkt) : null;
         for (let i = 0; i + 1 < z.punkte.length; i++) {
           if (st) h += S.band(z.punkte[i], z.punkte[i + 1], st.tiefe, st.seite === 'links' ? st.tiefe / 2 : -st.tiefe / 2);
           h += S.linie(z.punkte[i], z.punkte[i + 1], 'wz-gummi');

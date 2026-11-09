@@ -54,7 +54,8 @@ export const WERKZEUGE = {
     titel: 'Vorwand',
     felder: [
       { id: 'system', titel: 'System', art: 'auswahl', werte: [['gis', 'Geberit GIS'], ['duofix', 'Geberit Duofix']], vorgabe: 'gis' },
-      { id: 'tiefe', titel: 'Tiefe', art: 'zahl', einheit: 'mm', platzhalter: 'am Plan', breite: 6 },
+      // kein festes Tiefenfeld (Christian 09.11.2026: «der tiefenwert aus dem klick wird nicht übernommen» – ein gemerkter Wert überstimmte den Klick);
+      // die Tiefe kommt aus dem Klick oder aus einer eingetippten Zahl
       { id: 'ausfuehrung', titel: 'Ausführung', art: 'auswahl', werte: [['teilhoch', 'teilhoch'], ['raumhoch', 'raumhoch']], vorgabe: 'teilhoch' },
       { id: 'hoehe', titel: 'Höhe', art: 'zahl', einheit: 'mm', platzhalter: 'teilhoch Pflicht', breite: 7 },
       { id: 'bezugslinie', titel: 'Lage', art: 'auswahl', werte: [['links', 'an der Rohbauwand'], ['mitte', 'frei stehend']], vorgabe: 'links' },
@@ -66,7 +67,7 @@ export const WERKZEUGE = {
       // eigene id, damit ein gemerktes «kette: an» nicht weiter gilt
       { id: 'mehrteilig', titel: 'Kette', art: 'bool', vorgabe: false },
     ],
-    hinweis: '1. Aussenkante: Anfangs- und Endpunkt anklicken, 2. nächster Klick greift die Tiefe ab – die Seite des Klicks gibt die Ausrichtung (oder Tiefe fest eintragen). Mit «Kette»: weitere Punkte, Enter beendet die Kante. Tiefe inkl. Beplankung: GIS 100–700 mm, Duofix 135–220 mm (420 mit Verlängerung). Höhe ab OK Fertigboden; raumhoch ohne Höhe = Raumhöhe.',
+    hinweis: '1. Aussenkante: Anfangs- und Endpunkt anklicken, 2. nächster Klick greift die Tiefe ab – die Seite des Klicks gibt die Ausrichtung (oder Tiefe eintippen, Maus auf der Wandseite). Mit «Kette»: weitere Punkte, Enter beendet die Kante. Tiefe inkl. Beplankung: GIS 100–700 mm, Duofix 135–220 mm (420 mit Verlängerung). Höhe ab OK Fertigboden; raumhoch ohne Höhe = Raumhöhe.',
   },
   montageelement: {
     titel: 'Montageelement',

@@ -598,9 +598,10 @@ test('Vorwand: nach Anfangs- und Endpunkt greift der nächste Klick die Tiefe ab
   const { vorwandWerkzeug } = await import('./vorwand.js');
   const w = vorwandWerkzeug(), z = w.neu();
   const gesendet = [];
-  const ctx = { geschoss: 'EG', opt: { ...O.werte('vorwand'), hoehe: 1140 }, befehl: async (b, p) => { gesendet.push([b, p]); return { angenommen: true }; },
+  const ctx = { geschoss: 'EG', opt: { ...O.werte('vorwand'), hoehe: 1140, tiefe: 250 }, befehl: async (b, p) => { gesendet.push([b, p]); return { angenommen: true }; },
     pflicht: () => assert.fail('Pflichtfeld'), fehler: (e) => assert.fail(String(e)) };
   assert.equal(ctx.opt.mehrteilig, false);
+  // Christian 09.11.2026: «der tiefenwert aus dem klick wird nicht übernommen» – ein gemerkter Wert (hier tiefe 250) darf den Klick nicht überstimmen
   await w.klick(z, { punkt: [0, 0] }, ctx);
   await w.klick(z, { punkt: [3000, 0] }, ctx);
   assert.equal(z.phase, 'tiefe');
