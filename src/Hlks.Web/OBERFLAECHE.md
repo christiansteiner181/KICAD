@@ -4270,6 +4270,12 @@ jedes neue Projekt erhält alle Mustersysteme.
   der Mitte der Leitungslinie. Senkrechte Leitungen: gelber Ring bzw. gelbes Rechteck.
 - **Abwasser – Sohle ab Decke** (Christian 09.11.2026: «Ablaufleitungen werden immer mit der Rohr Sole ab Decke beschriftet. immer am höchsten
   gefällspunkt»): Detailgrad fein, unter der Leitung beim höchsten Punkt «Sohle = −XYmm UKD» (Achse − Innendurchmesser/2, bezogen auf die UK roh Decke).
+- **Optionsleiste nur Dimension und Lage** (Christian 09.11.2026: «im gelben bereich sollen nur die Dimension und die Lage eingestellt werden müssen»): Rohr
+  Grösse, Lage (Höhe nur ohne Lage), Kanal Grösse, unter UKD, Achshöhe; System, Medium, Strang, Gefälle, Dämmdicke und Winkelfang stehen in der
+  Eigenschaftenpalette in der Gruppe «Zeichnen» (Vorgaben für die nächsten Teile; Felder mit `ort: 'palette'`).
+- **Esc bestätigt** (Christian 09.11.2026: «wird gezeichnet soll jeweils esc. den befehl bestätigen»): Rohr/Kanal – Esc legt den gezeichneten Zug an
+  (Vorschau des Kerns und Ausführen in einem); abgelehnt zeigt die Leiste den Vorschlag, Esc zeichnet weiter; ein einzelner Punkt wird verworfen; Esc ohne Zug
+  beendet das Werkzeug.
 - **Produktlinie nur im Eigenschaftsfenster** (Christian 09.11.2026): nicht mehr in der Optionsleiste von Rohr/Kanal/Fallleitung; die Typenwahl oben in der
   Palette ist doppelt so gross und gilt während des Zeichnens für die nächsten Teile.
 - **Dämmregel** (Spalte im Dialog, Systemeigenschaft `daemmregel`; Christian 09.11.2026: «dämmdicken gem. energiegesetzt»): «MuKEn 2014 (λ > 0,03 W/(m·K))» bzw.

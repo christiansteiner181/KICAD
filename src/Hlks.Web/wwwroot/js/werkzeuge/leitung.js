@@ -309,10 +309,14 @@ if (typeof window !== 'undefined') {
     const { z, ctx } = t;
     const stop = () => { e.preventDefault(); e.stopImmediatePropagation(); };
     if (e.key === 'Escape' && (z.punkte.length || z.vorschau)) {
+      // Christian 09.11.2026: «wird gezeichnet soll jeweils esc. den befehl bestätigen» – Esc legt den gezeichneten Zug an (Vorschau des Kerns und
+      // Ausführen in einem); abgelehnt: die Leiste zeigt den Vorschlag, Esc zeichnet weiter; ein Zug mit nur einem Punkt wird verworfen; ohne Zug beendet Esc
       stop();
-      if (z.vorschau && z.punkte.length) { z.vorschau = null; leisteAus(); ctx.lauf.hinweisAktualisieren(); ctx.neuZeichnen(); }
-      else if (ctx.lauf.tipp) { ctx.lauf.tipp = ''; ctx.lauf.hinweisAktualisieren(); ctx.neuZeichnen(); }   // zuerst die Längeneingabe leeren
-      else { zuruecksetzen(z); ctx.lauf.hinweisAktualisieren(); ctx.neuZeichnen(); }   // angefangenen Zug verwerfen
+      if (ctx.lauf.tipp) { ctx.lauf.tipp = ''; ctx.lauf.hinweisAktualisieren(); ctx.neuZeichnen(); }   // zuerst die Längeneingabe leeren
+      else if (z.vorschau?.ok) ctx.lauf.run(() => ausfuehren(z, ctx));
+      else if (z.vorschau) { z.vorschau = null; leisteAus(); ctx.lauf.hinweisAktualisieren(); ctx.neuZeichnen(); }
+      else if (z.punkte.length >= 2 || (z.abzweig && z.punkte.length)) ctx.lauf.run(async () => { await vorschauHolen(z, ctx); if (z.vorschau?.ok) await ausfuehren(z, ctx); });
+      else { zuruecksetzen(z); ctx.lauf.hinweisAktualisieren(); ctx.neuZeichnen(); }   // nur ein Punkt: verwerfen
     } else if (e.key === 'Backspace' && !ctx.lauf.tipp && z.punkte.length) {
       stop(); punktZurueck(t);
     } else if ((e.key === 'h' || e.key === 'H') && !e.shiftKey) {
@@ -357,12 +361,12 @@ export function leitungWerkzeug(kategorie = 'Rohr') {
     },
 
     hinweis(z, ctx) {
-      if (z.vorschau) return z.vorschau.ok ? 'Vorschau des Kerns – Enter führt aus, Esc zeichnet weiter.' : 'Der Kern hat abgelehnt – Vorschlag lesen, Esc zeichnet weiter.';
+      if (z.vorschau) return z.vorschau.ok ? 'Vorschau des Kerns – Enter oder Esc führt aus.' : 'Der Kern hat abgelehnt – Vorschlag lesen, Esc zeichnet weiter.';
       if (z.punkte.length === 0) return 'Startpunkt anklicken – auf einem Anschluss beginnt die Leitung dort, auf einer Geraden entsteht ein Abzweig.';
       if (z.von && z.punkte.length === 1 && L.anschlussRichtungPlan(z.von) === null)
         return `${z.von.element}.${z.von.name} zeigt senkrecht ${(z.von.richtung?.[2] ?? 0) < 0 ? 'nach unten' : 'nach oben'}: zuerst die Höhe ändern (H), dann weiterzeichnen.`;
       if (z.abzweig) return 'Abzweig: Punkt rechtwinklig neben der Leitung anklicken, Zahl = Länge, Enter ohne weiteren Punkt setzt nur das T-Stück.';
-      return 'Nächsten Punkt anklicken, Zahl = Länge in mm, H = Höhe ändern (Steigleitung), Rückschritt = Punkt zurück, Enter oder Doppelklick legt an, Esc verwirft den Zug, Umschalt = orthogonal.';
+      return 'Nächsten Punkt anklicken, Zahl = Länge in mm, H = Höhe ändern (Steigleitung), Rückschritt = Punkt zurück, Esc (oder Enter, Doppelklick) legt an, Esc ohne Zug beendet, Umschalt = orthogonal.';
     },
 
     letzterPunkt: (z) => (z.punkte.length ? plan(z.punkte.at(-1)) : null),

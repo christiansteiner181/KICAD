@@ -405,10 +405,13 @@ function leitungFelder(wid, kategorie) {
     { id: 'unterUkd', get titel() { return eckig() ? 'OK unter UKD' : 'Achse unter UKD'; }, art: 'zahl', einheit: 'mm', breite: 5, sichtbar: () => kategorie === 'Kanal',
       get platzhalter() { const u = ukdGeschoss(); return Number.isFinite(u) ? `UKD ${Math.round(u)}` : 'UKD fehlt'; },
       beiAenderung: () => ausUkd() },
+    // Optionsleiste nur Dimension und Lage (Christian 09.11.2026: «im gelben bereich sollen nur die Dimension und die Lage eingestellt werden müssen»):
+    // Höhe nur ohne gewählte Lage; System, Medium, Strang, Gefälle, Dämmdicke, Winkelfang stehen im Eigenschaftsfenster (ort: palette)
     { id: 'hoehe', get titel() { return kategorie === 'Kanal' ? 'Achshöhe' : 'Höhe'; }, art: 'zahl', einheit: 'mm', pflicht: true, platzhalter: 'ab OK Geschoss', breite: 12,
+      sichtbar: () => kategorie !== 'Rohr' || !wert(wid, 'lage'),
       beiAenderung: () => { if (kategorie === 'Kanal') setze(wid, 'unterUkd', null); leitungHaken.hoeheGeaendert?.(); } },
-    { id: 'gefaelle', titel: 'Gefälle', art: 'zahl', einheit: '%', platzhalter: 'kein', breite: 4, fluechtig: true },
-    { id: 'system', titel: 'System', art: 'auswahl', get werte() { return systemOptionen(); }, leer: '–',
+    { id: 'gefaelle', titel: 'Gefälle', art: 'zahl', einheit: '%', platzhalter: 'kein', breite: 4, fluechtig: true, ort: 'palette' },
+    { id: 'system', titel: 'System', art: 'auswahl', ort: 'palette', get werte() { return systemOptionen(); }, leer: '–',
       beiAenderung(el) {
         el?.blur?.();
         const st = derKlasse('Strang').find((e) => kz(e) === wert(wid, 'strang')); if (st && st.teilVon !== wert(wid, 'system')) setze(wid, 'strang', '');
@@ -422,12 +425,12 @@ function leitungFelder(wid, kategorie) {
         if (pl && pl !== wert(wid, 'serie') && serienListe(kategorie).some((s) => s.kz === pl)) { setze(wid, 'serie', pl); nachSerie(); return; }
         leitungHaken.optionenNeu?.();
       } },
-    { id: 'medium', titel: 'Medium', art: 'auswahl', get werte() { return mediumOptionen(); }, leer: '–',
+    { id: 'medium', titel: 'Medium', art: 'auswahl', ort: 'palette', get werte() { return mediumOptionen(); }, leer: '–',
       beiAenderung(el) { el?.blur?.(); leitungHaken.optionenNeu?.(); } },   // ohne System: Medium der Leitung (Christian 02.11.2026)
-    { id: 'strang', titel: 'Strang', art: 'auswahl', get werte() { return strangOptionen(wid); }, leer: '–',
+    { id: 'strang', titel: 'Strang', art: 'auswahl', ort: 'palette', get werte() { return strangOptionen(wid); }, leer: '–',
       beiAenderung(el) { el?.blur?.(); const st = derKlasse('Strang').find((e) => kz(e) === wert(wid, 'strang')); if (st?.teilVon) setze(wid, 'system', st.teilVon); leitungHaken.optionenNeu?.(); } },
-    { id: 'daemmdicke', titel: 'Dämmdicke', art: 'zahl', einheit: 'mm', platzhalter: 'keine', breite: 4, fluechtig: true },
-    { id: 'winkelfang', titel: 'Winkelfang', art: 'bool', vorgabe: true },
+    { id: 'daemmdicke', titel: 'Dämmdicke', art: 'zahl', einheit: 'mm', platzhalter: 'keine', breite: 4, fluechtig: true, ort: 'palette' },
+    { id: 'winkelfang', titel: 'Winkelfang', art: 'bool', vorgabe: true, ort: 'palette' },
     // Keine Serie der Kategorie im Projekt: Hinweis mit Weg zu den Familien
     { id: 'serieHinweis', art: 'hinweis', text: `Keine Produktlinie der Kategorie ${kategorie} im Projekt.`, sichtbar: () => serienListe(kategorie).length === 0 },
     { id: 'serieLaden', art: 'knopf', titel: 'Produktlinie laden …', aktion: 'familie.laden', sichtbar: () => serienListe(kategorie).length === 0 },

@@ -58,6 +58,16 @@ export function einrichten(w) {
   inhalt.addEventListener('change', beiAenderung);
   // Typenwahl beim Zeichnen (Christian 09.11.2026: «produktelinie in den eigenschaften anzeigen. (wie bei revit, Typenwahl)»): Produktlinie des Werkzeugs
   inhalt.addEventListener('change', (e) => {
+    const fz = e.target.closest?.('.ep-wz-feld');
+    if (fz) {   // Gruppe «Zeichnen»
+      e.stopPropagation();
+      const wid = fz.dataset.wz, f = OPT.WERKZEUGE[wid]?.felder?.find((x) => x.id === fz.dataset.feld);
+      if (!f) return;
+      optSetze(wid, f.id, fz.type === 'checkbox' ? fz.checked : OPT.ausText(f, fz.value));
+      f.beiAenderung?.(fz);
+      modusSetzen('werkzeug', { ...modus.daten });
+      return;
+    }
     const s = e.target.closest?.('.ep-wz-serie');
     if (!s) return;
     e.stopPropagation();
@@ -336,6 +346,26 @@ function typWahlHtml(el, istAnsicht, fam) {
   return `<select disabled title="Typwechsel folgt später"><option>${esc(el.klasse)}</option></select>`;
 }
 
+/** Gruppe «Zeichnen»: Vorgaben des aktiven Zeichenwerkzeugs für die nächsten Teile (Christian 09.11.2026: «im gelben bereich sollen nur die Dimension
+ *  und die Lage eingestellt werden müssen» – System, Medium, Strang, Gefälle, Dämmdicke, Winkelfang stehen hier; Felder mit ort: «palette» in optionen.js). */
+function zeichnenGruppeHtml() {
+  const wid = modus.id === 'werkzeug' ? modus.daten?.werkzeug : null;
+  const felder = (wid ? OPT.WERKZEUGE[wid]?.felder : null)?.filter((f) => f.ort === 'palette' && (!f.sichtbar || f.sichtbar())) ?? [];
+  if (!felder.length) return '';
+  const zeilen = felder.map((f) => {
+    const w = optWert(wid, f.id);
+    const d = `class="ep-wz-feld" data-wz="${esc(wid)}" data-feld="${esc(f.id)}"`;
+    let html;
+    if (f.art === 'auswahl') {
+      const opts = [...(f.leer !== undefined ? [['', f.leer]] : []), ...(f.werte ?? [])];
+      html = `<select ${d}>${opts.map(([v, x]) => `<option value="${esc(v)}"${v === w ? ' selected' : ''}>${esc(x)}</option>`).join('')}</select>`;
+    } else if (f.art === 'bool') html = `<input type="checkbox" ${d}${w ? ' checked' : ''}>`;
+    else html = `<input type="text" ${f.art === 'zahl' ? 'inputmode="decimal" ' : ''}${d} value="${esc(w ?? '')}" placeholder="${esc(f.platzhalter ?? '')}">${f.einheit ? ` <span class="ep-einheit">${esc(f.einheit)}</span>` : ''}`;
+    return zeile(f.titel, html, { titel: 'Vorgabe für die nächsten Teile' });
+  });
+  return gruppe('Zeichnen', zeilen);
+}
+
 function palette(el, l, def, istAnsicht, fam = null, san = null, aus = null, sia = null) {
   const res = reservierungVon(el);
   let h = `<div class="ep-kopf"><div class="ep-typ"><span class="ep-sym">${symbol(symbolFuerKlasse(el.klasse, el.basis), 16)}</span>`
@@ -345,6 +375,7 @@ function palette(el, l, def, istAnsicht, fam = null, san = null, aus = null, sia
 
   if (hinweise && hinweise.id === el.id) h += paletteHinweiseHtml(hinweise.texte);
 
+  h += zeichnenGruppeHtml();   // Vorgaben des Zeichenwerkzeugs (09.11.2026)
   h += gruppe('Identität', [
     zeile('Kennzeichen', textFeld('kz', el.kennzeichen), { pflicht: true, titel: 'Eindeutiges Kennzeichen' }),
     zeile('Name', textFeld('name', el.name ?? ''), { titel: 'Bezeichnung (frei)' }),

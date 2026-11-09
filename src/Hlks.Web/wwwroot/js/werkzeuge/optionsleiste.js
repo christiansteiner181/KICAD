@@ -9,7 +9,8 @@ import { ausfuehren } from '../oberflaeche/register.js';
 const zahlText = (w) => (w === null || w === undefined || w === '' ? '' : String(Math.round(w * 10000) / 10000));
 
 function feldHtml(wid, f) {
-  if (f.sichtbar && !f.sichtbar()) return '';   // Felder, die nur manchmal gebraucht werden (Hinweis «Leitungsserie laden»)
+  if (f.sichtbar && !f.sichtbar()) return '';
+  if (f.ort === 'palette') return '';   // steht im Eigenschaftsfenster (Gruppe «Zeichnen», Christian 09.11.2026)   // Felder, die nur manchmal gebraucht werden (Hinweis «Leitungsserie laden»)
   const w = f.anzeigeWert ? f.anzeigeWert() : wert(wid, f.id);   // anzeigeWert: Grösse mit Produktlinie (Stufen je Dimension, 09.11.2026)
   const daten =`data-wz="${esc(wid)}" data-feld="${esc(f.id)}"`;
   const einheit = f.einheit ? ` <span class="ol-einheit">${esc(f.einheit)}</span>` : '';

@@ -371,7 +371,9 @@ test('Optionen: Felder von Rohr und Kanal (Serie, Grösse, Höhe als Pflicht, Ge
   for (const wid of ['rohr', 'kanal']) {
     const ids = O.WERKZEUGE[wid].felder.map((f) => f.id);
     // Nachtrag freie Grösse / Abwasser-Serie: Zahlenfelder und Hinweise hinter der Grösse (sichtbar nur bei den passenden Serien, siehe frei-abwasser.test.mjs)
-    assert.deepEqual(ids, ['serie', 'groesse', 'freiB', 'freiH', 'freiD', 'freiHinweis', 'abwasserHinweis', 'lage', 'hoehe', 'gefaelle', 'system', 'medium', 'strang', 'daemmdicke', 'winkelfang', 'serieHinweis', 'serieLaden']);
+    assert.deepEqual(ids, ['serie', 'groesse', 'freiB', 'freiH', 'freiD', 'freiHinweis', 'abwasserHinweis', 'lage', 'unterUkd', 'hoehe', 'gefaelle', 'system', 'medium', 'strang', 'daemmdicke', 'winkelfang', 'serieHinweis', 'serieLaden']);
+    // Christian 09.11.2026: «im gelben bereich sollen nur die Dimension und die Lage eingestellt werden müssen» – der Rest steht im Eigenschaftsfenster
+    assert.deepEqual(O.WERKZEUGE[wid].felder.filter((x) => x.ort === 'palette').map((x) => x.id), ['gefaelle', 'system', 'medium', 'strang', 'daemmdicke', 'winkelfang']);
     const hoehe = O.feldDef(wid, 'hoehe');
     assert.equal(hoehe.pflicht, true);
     assert.equal(hoehe.art, 'zahl');
