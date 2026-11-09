@@ -4293,6 +4293,9 @@ jedes neue Projekt erhält alle Mustersysteme.
   bleiben. Die Palette zeigt die Höhe des zuletzt gezeichneten Teils während des Zeichnens nur zum Lesen.
 - **Löschen ohne Rückfrage** (Christian 09.11.2026: «löschen soll ohne nachfrage löschen»): Entf bzw. DE löscht sofort (Einzel- und Mehrfachauswahl
   in einem Paket); zurück mit Rückgängig (Strg+Z). Neue Warnungen/Fehler nennt die Meldung, Ablehnungen des Kerns kommen mit Vorschlag.
+- **Esc ohne Fenster** (Christian 09.11.2026: «esc klappt, öffnet momentan aber noch ein fenster. es soll ohne dieses fenster gehen»): Esc legt den Zug
+  ohne Vorschau-Leiste und ohne Erfolgsmeldung an (gekürzt bis zeichenbar, dann Hinweis «angelegt bis Punkt n»); geht nichts, nur eine Meldung, das
+  nächste Esc verwirft. Enter zeigt weiterhin die Vorschau.
 - **Esc ein Weg für alle Werkzeuge** (Christian 09.11.2026: «esc funktioniert immer noch nicht zuverlässig»): Esc während einer laufenden Abfrage wird
   danach ausgeführt (vorher verworfen); Esc in einem Feld der Optionsleiste bzw. des Eigenschaftsfensters (auch Textfeld) verlässt das Feld und wirkt
   wie Esc in der Ansicht; das Leitungswerkzeug behandelt Esc über denselben Weg (def.esc).

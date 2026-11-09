@@ -145,24 +145,33 @@ function zuruecksetzen(z) {
   leisteAus();
 }
 
-/** Esc mit falsch gezeichnetem Zug (Christian 09.11.2026: «ist ein rohr/kanal falsch gezeichnet muss esc. bis da beenden wo noch zeichenbar ist»):
- *  den Zug Punkt um Punkt von hinten kürzen, bis der Kern ihn annimmt, und diesen Teil anlegen; geht nichts, zeigt die Leiste den Vorschlag zum ganzen Zug. */
-async function bisZeichenbar(z, ctx) {
-  const alle = [...z.punkte];
+/** Esc legt den Zug an (Christian 09.11.2026: «wird gezeichnet soll jeweils esc. den befehl bestätigen», «ist ein rohr/kanal falsch gezeichnet muss esc.
+ *  bis da beenden wo noch zeichenbar ist», «esc klappt, öffnet momentan aber noch ein fenster. es soll ohne dieses fenster gehen»): ohne Vorschau-Leiste
+ *  und ohne Erfolgsmeldung – den Zug von hinten kürzen, bis der Kern ihn annimmt, und anlegen. Geht nichts, eine Meldung; das nächste Esc verwirft. */
+async function stillAnlegen(z, ctx) {
+  const alle = [...z.punkte], nach = z.nach;
+  let abgelehnt = null;
   for (let n = alle.length; n >= (z.abzweig ? 1 : 2); n--) {
     z.punkte = alle.slice(0, n);
-    if (n < alle.length) z.nach = null;   // gekürzt: das Ende hängt nicht mehr am angeklickten Ziel
-    z.vorschau = null;
-    await vorschauHolen(z, ctx);
-    if (z.vorschau?.ok) {
-      if (n < alle.length) meldung(`Der Zug war ab Punkt ${n + 1} nicht zeichenbar – angelegt bis Punkt ${n}.`, 'info');
-      await ausfuehren(z, ctx);
-      return;
-    }
+    z.nach = n < alle.length ? null : nach;   // gekürzt: das Ende hängt nicht mehr am angeklickten Ziel
+    let bau;
+    try { bau = befehlBauen(z, ctx); } catch (e) { abgelehnt ??= { fehler: e.message, vorschlag: e.vorschlag }; continue; }
+    const probe = await sende(bau.name, bau.parameter, { trockenlauf: true });
+    if (!probe.angenommen) { abgelehnt ??= probe; continue; }
+    const r = await ctx.befehl(bau.name, bau.parameter, null, true);
+    if (!r.angenommen) { abgelehnt = r; break; }
+    mediumUebernehmen(r, ctx);
+    zuletztMerken(ctx);
+    zuruecksetzen(z);
+    const b = L.neueBefundeTexte(r);
+    if (b.length) meldung(b.join(' · '), 'warnung');
+    if (n < alle.length) meldung(`Der Zug war ab Punkt ${n + 1} nicht zeichenbar – angelegt bis Punkt ${n}.`, 'info');
+    return;
   }
-  z.punkte = alle;
-  await vorschauHolen(z, ctx);   // nichts zeichenbar: Vorschlag des Kerns zum ganzen Zug zeigen; das nächste Esc verwirft den Zug
-  if (z.vorschau && !z.vorschau.ok) z.vorschau.unzeichenbar = true;
+  z.punkte = alle; z.nach = nach;
+  const a = L.ablehnung(abgelehnt ?? {});
+  meldung(`Nicht zeichenbar: ${a.text} – Esc verwirft den Zug.`, 'warnung', { vorschlag: a.vorschlag ?? undefined });
+  z.vorschau = { ok: false, r: abgelehnt ?? {}, unzeichenbar: true };
 }
 
 async function ausfuehren(z, ctx) {
@@ -370,14 +379,14 @@ export function leitungWerkzeug(kategorie = 'Rohr', variante = null) {
     // Rechtsklick (Basis): verwirft den angefangenen Zug wie Esc, ohne einen neuen Zustand anzulegen (neu() baut die Leiste)
     zugAngefangen: (z) => z.punkte.length > 0 || !!z.vorschau,
     // Christian 09.11.2026: «wird gezeichnet soll jeweils esc. den befehl bestätigen» – Esc legt den gezeichneten Zug an (Vorschau des Kerns und
-    // Ausführen in einem); abgelehnt: Esc legt an, so weit zeichenbar (bisZeichenbar), ein weiteres Esc verwirft; ein Zug mit nur einem Punkt wird
+    // Ausführen in einem); Esc legt ohne Fenster an, so weit zeichenbar (stillAnlegen), ein weiteres Esc verwirft; ein Zug mit nur einem Punkt wird
     // verworfen; ohne Zug (false) bricht die Basis stufenweise ab bzw. beendet das Werkzeug
     esc(z, ctx) {
       if (!z.punkte.length && !z.vorschau) return false;
       if (ctx.lauf.tipp) ctx.lauf.tipp = '';                                              // zuerst die Längeneingabe leeren
       else if (z.vorschau?.ok) ctx.lauf.run(() => ausfuehren(z, ctx));
       else if (z.vorschau?.unzeichenbar) { zuruecksetzen(z); meldung('Zug verworfen – nicht zeichenbar.', 'info'); }   // schon gekürzt versucht
-      else if (z.punkte.length >= 2 || (z.abzweig && z.punkte.length)) ctx.lauf.run(() => bisZeichenbar(z, ctx));
+      else if (z.punkte.length >= 2 || (z.abzweig && z.punkte.length)) ctx.lauf.run(() => stillAnlegen(z, ctx));
       else if (z.vorschau) { z.vorschau = null; leisteAus(); }
       else zuruecksetzen(z);                                                                   // nur ein Punkt: verwerfen
       ctx.neuZeichnen();

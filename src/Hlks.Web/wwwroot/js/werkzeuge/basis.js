@@ -137,7 +137,7 @@ class Lauf {
       get maus() { return lauf.maus; },
       s: () => lauf.s(),
       fangdaten: () => lauf.fangdaten(),
-      befehl: (name, parameter, okText) => lauf.befehl(name, parameter, okText),
+      befehl: (name, parameter, okText, still) => lauf.befehl(name, parameter, okText, still),
       pflicht: (feld, text) => lauf.pflicht(feld, text),
       beenden: () => lauf.beenden(),
       neuZeichnen: () => lauf.zeichnen(),
@@ -223,10 +223,11 @@ class Lauf {
 
   // ------------------------------------------------------------------------------------------ Befehle und Fehler
 
-  async befehl(name, parameter, okText) {
+  /** still: bei Erfolg keine Meldung (Esc legt an, Christian 09.11.2026: «es soll ohne dieses fenster gehen»); Ablehnungen werden immer gemeldet. */
+  async befehl(name, parameter, okText, still = false) {
     const r = await sende(name, parameter);
     const text = okText ?? (r.hinweise ?? []).filter(Boolean)[0] ?? undefined;
-    ergebnisMelden(r, text);
+    if (!still || !r?.angenommen) ergebnisMelden(r, text);
     this.cache.daten = null;
     // Christian 09.11.2026: «beim zeichen die eigenschaften des neuen teils zeigen» – erstes neu angelegtes Element (Formteile nur, wenn sonst nichts)
     if (r?.angenommen) {
