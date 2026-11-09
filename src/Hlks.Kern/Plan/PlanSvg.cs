@@ -49,6 +49,7 @@ public static class PlanSvg
             "strich" => $" stroke-dasharray=\"{Z(2 * m)} {Z(1 * m)}\"",
             "strichpunkt" => $" stroke-dasharray=\"{Z(3 * m)} {Z(0.8 * m)} {Z(0.3 * m)} {Z(0.8 * m)}\"",
             "punkt" => $" stroke-dasharray=\"{Z(0.3 * m)} {Z(0.8 * m)}\"",
+            "strichfein" => $" stroke-dasharray=\"{Z(0.8 * m)} {Z(0.5 * m)}\"",
             "achse" => $" stroke-dasharray=\"{Z(1.5 * m)} {Z(0.4 * m)} {Z(0.2 * m)} {Z(0.4 * m)}\"",   // halb so lang wie strichpunkt (09.11.2026)
             _ => "",
         };

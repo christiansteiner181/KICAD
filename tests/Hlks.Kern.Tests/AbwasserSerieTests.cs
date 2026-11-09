@@ -379,7 +379,7 @@ public class AbwasserSerieTests
         Assert.Equal(2, boegen.Count);
         // eine vereinigte Fläche über Rohre und Bögen (DaemmGrafik): reicht bis zum Ende des zweiten Rohrs, ohne Lücke an den Bögen
         var dm = Grafik.Plan(p, "AN-EG").Teile.Single(x => x.Id == "daemmung");
-        var b = Assert.Single(dm.Primitive);
+        var b = Assert.Single(dm.Primitive, x => x.Art == "polygon");
         Assert.True(b.Punkte.Max(q => q[1]) > 1900);
         Ok(p.Ausfuehren("element_aendern", new JsonObject { ["element"] = "AN-EG", ["eigenschaften"] = new JsonObject { ["detailgrad"] = "grob" } }));
         Assert.DoesNotContain(Grafik.Plan(p, "AN-EG").Teile, x => x.Id == "daemmung");

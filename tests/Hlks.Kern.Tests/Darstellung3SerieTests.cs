@@ -22,7 +22,8 @@ public class Darstellung3SerieTests
 
     static double Abstand(double[] a, double[] b) => Math.Sqrt(Math.Pow(a[0] - b[0], 2) + Math.Pow(a[1] - b[1], 2));
 
-    static IEnumerable<Primitiv> Strichlinien(Grafikteil t) => t.Primitive.Where(x => x.Art == "polylinie" && x.Stil.Linie == "strich");
+    static Primitiv Flaeche(Grafikteil t) => Assert.Single(t.Primitive, x => x.Art == "polygon");   // Dämmfläche (DaemmGrafik), Ränder als Linien
+    static IEnumerable<Primitiv> Strichlinien(Grafikteil t) => t.Primitive.Where(x => x.Art == "polylinie" && x.Stil.Linie is "strich" or DaemmGrafik.Verdeckt);
 
     // ------------------------------------------------------------------ Grundriss massstäblich
 
@@ -115,10 +116,10 @@ public class Darstellung3SerieTests
         // Handrechnung: 25 + 2 · 20 = 65 mm Dämmbreite; eine vereinigte Fläche mit dünnem schwarzem Rand, vor den Leitungen gezeichnet (darunter)
         var plan = Grafik.Plan(p, "AN-EG");
         var dm = plan.Teile.Single(x => x.Id == "daemmung");
-        var b = Assert.Single(dm.Primitive);
+        var b = Flaeche(dm);
         Assert.Equal(HlksGrafik.DaemmGelb, b.Stil.Fuellung);
-        Assert.Equal(HlksGrafik.DaemmLinie, b.Stil.Farbe);
-        Assert.Equal(Stifte.Duenn, b.Stil.Stift);
+        Assert.Null(b.Stil.Stift);   // Fläche ohne Rand; die Ränder sind dünne schwarze Linien
+        Assert.All(dm.Primitive.Where(x => x.Art == "polylinie"), x => { Assert.Equal(HlksGrafik.DaemmLinie, x.Stil.Farbe); Assert.Equal(Stifte.Duenn, x.Stil.Stift); Assert.Equal("voll", x.Stil.Linie); });
         Assert.Equal((3000.0, 65.0), Ausdehnung(b));
         Assert.True(plan.Teile.IndexOf(dm) < plan.Teile.FindIndex(x => x.Id == Hole(p, "RO-1").Id));   // hinter dem Rohr
         var t = Teil(p, "RO-1");
@@ -137,7 +138,7 @@ public class Darstellung3SerieTests
         var p = MitSerie(false);
         Ok(Rohr(p, "RO-1", "DN 20", [0, 0, 500], [1000, 0, 500], [1000, 1000, 500]));
         Aendern(p, "RO-1", new JsonObject { ["daemmdicke"] = 20 });
-        var b = Assert.Single(Daemmung(p)!.Primitive);   // eine Fläche über den Knick, ohne Schleife am Innenradius
+        var b = Flaeche(Daemmung(p)!);   // eine Fläche über den Knick, ohne Schleife am Innenradius
         Assert.Contains(b.Punkte, q => Math.Abs(q[0] - 967.5) < 0.5 && Math.Abs(q[1] - 32.5) < 0.5);   // innen eine scharfe Ecke
         Assert.DoesNotContain(b.Punkte, q => Math.Abs(q[0] - 1032.5) < 0.5 && Math.Abs(q[1] + 32.5) < 0.5);   // aussen gerundet (keine Gehrungsecke)
     }
@@ -259,15 +260,38 @@ public class Darstellung3SerieTests
     }
 
     [Fact]
+    public void Daemmung_Lagewechsel_VerdeckteKantenGestrichelt()
+    {
+        // Christian 09.11.2026: «bei dämmungen passt die darstellung bei bogen nach oben/bogen nach unten. hier die unsichtbaren dämmkanten gestrichelt
+        // darstellen» – oben 2500, Steigleitung hinunter, unten 2200 weiter: Ring unter dem oberen Band und das untere Band unter dem Ring gestrichelt
+        var p = MitSerie(false);
+        Ok(Rohr(p, "RO-O", "DN 20", [0, 0, 2500], [1000, 0, 2500]));
+        Ok(Rohr(p, "RO-S", "DN 20", [1000, 0, 2500], [1000, 0, 2200]));
+        Ok(Rohr(p, "RO-U", "DN 20", [1000, 0, 2200], [1000, 1000, 2200]));
+        foreach (var kz in new[] { "RO-O", "RO-S", "RO-U" }) Aendern(p, kz, new JsonObject { ["daemmdicke"] = 20 });
+        var dm = Daemmung(p)!;
+        Flaeche(dm);
+        var strich = Strichlinien(dm).ToList();
+        Assert.NotEmpty(strich);
+        // gestrichelt nur am Lagewechsel: im Ring (r = 32.5) bzw. unter dem oberen Band (y ±32.5 bis x 1000), ausgezogen der Rest
+        Assert.All(strich.SelectMany(x => x.Punkte), q => Assert.True(Math.Sqrt((q[0] - 1000) * (q[0] - 1000) + q[1] * q[1]) <= 33 || (q[0] <= 1000.5 && Math.Abs(q[1]) <= 33), $"{q[0]}/{q[1]}"));
+        Assert.DoesNotContain(strich, x => x.Punkte.Any(q => q[0] < 960));   // das obere Band selbst ist nirgends verdeckt
+        Assert.Contains(dm.Primitive, x => x.Art == "polylinie" && x.Stil.Linie == "voll" && x.Punkte.Any(q => q[1] > 900));
+        // Ring über dem unteren Band ausgezogen (Teil des Rings bei y > 0 ausserhalb des oberen Bands)
+        Assert.Contains(dm.Primitive, x => x.Stil.Linie == "voll" && x.Punkte.Any(q => q[0] > 1020 && q[1] > 20));
+    }
+
+    [Fact]
     public void Steigleitung_MitDaemmungUndInPolylinie()
     {
         var p = MitSerie(false);
         Ok(Rohr(p, "RO-S", "DN 20", [1000, 1000, 0], [1000, 1000, 3000]));
         Aendern(p, "RO-S", new JsonObject { ["daemmdicke"] = 20 });
         var t = Teil(p, "RO-S");
-        Assert.Equal(4, t.Primitive.Count);   // Dämmung, Kreis, Achsenkreuz (2 Linien)
-        Assert.Equal(32.5, t.Primitive[0].Radius!.Value, 9);                  // 25 / 2 + 20
-        Assert.Equal(HlksGrafik.DaemmGelb, t.Primitive[0].Stil.Fuellung);     // gelb hinter dem Rohr (09.11.2026)
+        Assert.Equal(3, t.Primitive.Count);   // Kreis, Achsenkreuz (2 Linien); der Dämmring steht in der Dämmfläche (DaemmGrafik)
+        var dr = Flaeche(Daemmung(p)!);
+        Assert.Equal(65, Ausdehnung(dr).Breite, 1);                          // 2 · (25 / 2 + 20)
+        Assert.Equal(HlksGrafik.DaemmGelb, dr.Stil.Fuellung);
         // Polylinie mit senkrechtem Teilstück durch die Schnittebene: dort erscheint der Kreis zusätzlich
         Ok(Rohr(p, "RO-P", "DN 20", [0, 0, 500], [2000, 0, 500], [2000, 0, 2500], [4000, 0, 2500]));
         var pl = Teil(p, "RO-P");
@@ -347,7 +371,7 @@ public class Darstellung3SerieTests
     {
         var p = MitKanaelen();
         Aendern(p, "KA-2", new JsonObject { ["daemmdicke"] = 30 });
-        var band = Assert.Single(Daemmung(p)!.Primitive);
+        var band = Flaeche(Daemmung(p)!);
         Assert.Equal(460, Math.Min(Ausdehnung(band).Breite, Ausdehnung(band).Hoehe), 6);   // 400 + 2 · 30
         var teile = Grafik.Koerper(p, [Hole(p, "KA-2").Id]).Single().Teile.Where(t => t.Masse![0] == 2000).ToList();   // ohne die Rahmen
         Assert.Equal(2, teile.Count);

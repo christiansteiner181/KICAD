@@ -4291,6 +4291,12 @@ jedes neue Projekt erhält alle Mustersysteme.
 - **Lagewechsel beim Zeichnen** (Christian 09.11.2026: «wird beim zeichnen ein lagewechsel vorgenommen, gilt dies nur für die kommenden leitungen»): Lage
   bzw. Höhe in der Optionsleiste setzt am letzten Punkt eine Steigleitung, die folgenden Strecken liegen auf der neuen Lage; schon gezeichnete Strecken
   bleiben. Die Palette zeigt die Höhe des zuletzt gezeichneten Teils während des Zeichnens nur zum Lesen.
+- **Verdeckte Dämmkanten** (Christian 09.11.2026: «bei dämmungen passt die darstellung bei bogen nach oben/bogen nach unten. hier die unsichtbaren
+  dämmkanten gestrichelt darstellen»): die gelbe Fläche bleibt eine; die schwarzen Ränder sind nach Höhe geschichtet. Was unter einer höher liegenden
+  Dämmung liegt (z. B. der Ring der Steigleitung unter dem oberen Rohr, das untere Rohr unter dem Ring), ist fein gestrichelt (Linienart «strichfein»,
+  0.8 / 0.5 mm Papier, ANNAHME); Kanten im Inneren gleich hoher Teile entfallen. Der Dämmring der Steigleitung gehört im Grundriss (fein, mittel) zur Dämmfläche.
+- **Rücklauf ausgezogen** (Christian 09.11.2026: «rohrdarstellung des Rücklaufes bei mittel und fein nicht gestrichelt»): Rohrbänder in mittel und fein immer
+  ausgezogen; die Linienart des Mediums (Rücklauf gestrichelt) gilt nur noch grob bzw. einlinig und im Schema.
 - **Beschriftung neben der Dämmung** (Christian 09.11.2026: «beschriftungsposition mit der Dämmung abgleichen»): Dimension, Höhe ab UKD, Sohle und Gefälle
   stehen bei gedämmten Leitungen (Grundriss fein/mittel) mit demselben Abstand neben dem Aussenrand der Dämmung wie sonst neben dem Rohr.
 - **Achslinien** (Christian 09.11.2026: «achslinien sollen bei allen leitungen antrazith sein. zudem die strichlinie für achsen etwas feiner»): alle Achsen

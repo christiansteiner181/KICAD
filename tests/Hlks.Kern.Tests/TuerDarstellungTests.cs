@@ -99,6 +99,7 @@ public class TuerDarstellungTests
         ["sanitaer_dimensionierung"] = """{"anlage":"A-SAN"}""",   // Modul 4 Teil B (ohne Normtabellen: Hinweis)
         ["sanitaer_katalog"] = "{}",
         ["rueckmeldung_lesen"] = "{\"inhalt\":{\"format\":\"kicad-baustelle-rueckmeldung\",\"meldungen\":[]}}",   // BIM to field: leere Rückmeldung
+        ["mustersysteme"] = "{}",                                       // Mustersysteme (09.11.2026)
         ["montageabschnitte"] = "{}",                                   // BIM to field Stufe 0: Beispiel ohne Abschnitte → leere Liste
         ["lueftung_schema"] = "{}",                                    // Modul 6 Teil A-3: Beispiel ohne Luftmengen → leer mit Befund
         ["lueftung_varianten"] = "{}",                                 // Modul 6 Teil A: Beispiel ohne Luftmengen → nur Befund

@@ -361,8 +361,9 @@ public class KaelteHeizungTests
         List<string> Farben(string kz) => g.Teile.Where(t => t.Id == m.Hole(kz).Id).SelectMany(t => t.Primitive)
             .SelectMany(x => new[] { x.Stil.Farbe, x.Stil.Fuellung }).Where(f => f is { Length: > 0 } && f[0] == '#').Select(f => f!).Distinct().ToList();
         Assert.Equal(["#00CCCC"], Farben("KAE-V1-1"), StringComparer.OrdinalIgnoreCase);     // Vorlauf cyan (HKAP KAE_VL), voll gezeichnet
-        Assert.Equal(["#FF00CC"], Farben("KAE-R1-1"), StringComparer.OrdinalIgnoreCase);     // Rücklauf magenta (HKAP KAE_RL), gestrichelt: mehrere Striche
-        Assert.True(g.Teile.Where(t => t.Id == m.Hole("KAE-R1-1").Id).Sum(t => t.Primitive.Count) > g.Teile.Where(t => t.Id == m.Hole("KAE-V1-1").Id).Sum(t => t.Primitive.Count));
+        Assert.Equal(["#FF00CC"], Farben("KAE-R1-1"), StringComparer.OrdinalIgnoreCase);     // Rücklauf magenta (HKAP KAE_RL)
+        // mittel und fein: auch der Rücklauf ausgezogen wie der Vorlauf (Christian 09.11.2026: «rohrdarstellung des Rücklaufes bei mittel und fein nicht gestrichelt»)
+        Assert.Equal(g.Teile.Where(t => t.Id == m.Hole("KAE-V1-1").Id).Sum(t => t.Primitive.Count), g.Teile.Where(t => t.Id == m.Hole("KAE-R1-1").Id).Sum(t => t.Primitive.Count));
         // der kleine Kältekreis hat keine Fehler und Warnungen (offene Enden sind Hinweise P01) und beeinträchtigt die Sanitär-Prüfungen nicht
         Assert.DoesNotContain(Pruefungen.Alle(m, Kat), b => b.Schwere is "fehler" or "warnung" && b.Element.Contains("KAE"));
         Assert.DoesNotContain(Pruefungen.Alle(m, Kat), b => b.Element is "P-KAE-1" or "VE-KAE-1" or "VE-KAE-2" or "VE-KAE-3" && b.Schwere is "fehler" or "warnung");

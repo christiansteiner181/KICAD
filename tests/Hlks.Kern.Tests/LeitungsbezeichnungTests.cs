@@ -77,7 +77,9 @@ public class LeitungsbezeichnungTests
         var k = Leitung(p, "Kanal", "KA-1", "S-ZUL", new JsonObject { ["breite"] = 400, ["hoehe"] = 200, ["daemmdicke"] = 50 });
         List<Primitiv> Prims() => Grafik.Plan(p, "AN-L").Teile.Single(x => x.Id == k.Id).Primitive;
         var dm = Grafik.Plan(p, "AN-L").Teile.Single(x => x.Id == "daemmung");   // vereinigte Fläche (DaemmGrafik)
-        Assert.All(dm.Primitive, x => { Assert.Equal(HlksGrafik.DaemmGelb, x.Stil.Fuellung); Assert.Equal(HlksGrafik.DaemmDeckkraft, x.Stil.Deckkraft); Assert.Equal(HlksGrafik.DaemmLinie, x.Stil.Farbe); });
+        var fl = Assert.Single(dm.Primitive, x => x.Art == "polygon");   // Fläche ohne Rand, Ränder als dünne schwarze Linien
+        Assert.Equal(HlksGrafik.DaemmGelb, fl.Stil.Fuellung); Assert.Equal(HlksGrafik.DaemmDeckkraft, fl.Stil.Deckkraft);
+        Assert.All(dm.Primitive.Where(x => x.Art == "polylinie"), x => Assert.Equal(HlksGrafik.DaemmLinie, x.Stil.Farbe));
         Assert.True(p.Ausfuehren("element_aendern", new JsonObject { ["element"] = "AN-L", ["eigenschaften"] = new JsonObject { ["detailgrad"] = "grob" } }).Angenommen);
         var grob = Prims();
         Assert.Single(grob, x => x.Art == "kreis" && x.Stil.Fuellung == HlksGrafik.DaemmGelb);

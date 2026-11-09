@@ -144,7 +144,10 @@ public sealed class HlksGrafik : IGrafikquelle
         if (HlksLinien.Laenge(xy) < 1)
         {
             var lage = HoeheVon(pts.Min(q => q[2]), pts.Max(q => q[2]), schnitt);
-            var kreisS = Steigleitung(pts[0][0], pts[0][1], mass, lage, pts.Max(q => q[2]) < boden - Eps, farbe, w, dn, M, grob || mass is null, abwasser).ToList();
+            bool verdecktS = pts.Max(q => q[2]) < boden - Eps;
+            // Dämmring im Grundriss (fein, mittel) zeichnet DaemmGrafik mit den übrigen Dämmflächen (verdeckte Kanten gestrichelt, 09.11.2026)
+            var kreisS = Steigleitung(pts[0][0], pts[0][1], mass, lage, verdecktS, farbe, w, dn, M, grob || mass is null, abwasser,
+                daemmung: ctx.Art != "grundriss" || verdecktS).ToList();
             // einlinig: Ausschnitt des Kreises auf der höheren Leitung (Christian 05.11.2026), gesucht über die Verbindungen am oberen Ende
             // nur wenn das obere Ende in diesem Geschoss liegt (die höhere Leitung ist im Plan zu sehen)
             double deckeS = boden + (ctx.Geschoss?.Zahl("hoehe") ?? 3000);
@@ -216,10 +219,8 @@ public sealed class HlksGrafik : IGrafikquelle
                     foreach (var pr in HlksLinien.Band(lauf.Xy, breite, farbe ?? "schnitt")) { pr.Stil.Deckkraft = LeitungDeckkraft; teil.Primitive.Add(pr); }
                     teil.Primitive.AddRange(Raender(lauf.Xy, breite, farbe, linie == "voll" ? "voll" : "strich"));
                 }
-                else if (mass.Rohrband)
-                    teil.Primitive.AddRange(linie == "voll"
-                        ? HlksLinien.Band(lauf.Xy, breite, farbe ?? "schnitt")
-                        : HlksLinien.BandGestrichelt(lauf.Xy, breite, farbe ?? "schnitt", M));
+                else if (mass.Rohrband)   // mittel und fein immer ausgezogen, auch der Rücklauf (Christian 09.11.2026: «rohrdarstellung des Rücklaufes bei mittel und fein nicht gestrichelt»); gestrichelt nur grob bzw. einlinig
+                    teil.Primitive.AddRange(HlksLinien.Band(lauf.Xy, breite, farbe ?? "schnitt"));
                 else
                     foreach (var pr in HlksLinien.Band(lauf.Xy, breite, farbe ?? "schnitt"))
                     {
@@ -262,7 +263,7 @@ public sealed class HlksGrafik : IGrafikquelle
             else if (lauf.Verdeckt)
                 teil.Primitive.AddRange(Raender(lauf.Xy, w, farbe, "strich"));
             else
-                teil.Primitive.AddRange(linie == "voll"
+                teil.Primitive.AddRange(linie == "voll" || !grob   // Band in mittel und fein ausgezogen (09.11.2026)
                     ? HlksLinien.Band(lauf.Xy, w, farbe ?? "schnitt")
                     : HlksLinien.BandGestrichelt(lauf.Xy, w, farbe ?? "schnitt", M));
         }
@@ -390,7 +391,7 @@ public sealed class HlksGrafik : IGrafikquelle
     /// ANNAHME (Gestaltung): Ø 2.4 mm Papier.</summary>
     internal static double SymbolRadius(double M) => 1.2 * M;
 
-    static IEnumerable<Primitiv> Steigleitung(double x, double y, LeitungsMass? mass, Hoehe lage, bool verdeckt, string? farbe, double w, double? dn, double M, bool einlinig = false, bool abwasser = false)
+    static IEnumerable<Primitiv> Steigleitung(double x, double y, LeitungsMass? mass, Hoehe lage, bool verdeckt, string? farbe, double w, double? dn, double M, bool einlinig = false, bool abwasser = false, bool daemmung = true)
     {
         var fuellung = lage switch { Hoehe.Geschnitten => "schnitt", Hoehe.Unten => "papier", _ => null };
         var linienart = verdeckt ? "strich" : "voll";
@@ -416,13 +417,13 @@ public sealed class HlksGrafik : IGrafikquelle
                 : new Stil { Stift = Stifte.Duenn, Linie = linienart, Farbe = farbe, Fuellung = farbe ?? "schnitt" };
             if (mass.Rechteck)
             {
-                if (mass.Daemmdicke > 0)
+                if (mass.Daemmdicke > 0 && daemmung)
                     yield return new Primitiv { Art = "polygon", Punkte = Rechteck(x, y, mass.DaemmBreite, mass.DaemmHoehe), Stil = DaemmStil(verdeckt) };
                 yield return new Primitiv { Art = "polygon", Punkte = Rechteck(x, y, b, h), Stil = stil };
             }
             else
             {
-                if (mass.Daemmdicke > 0)
+                if (mass.Daemmdicke > 0 && daemmung)
                     yield return new Primitiv { Art = "kreis", Punkte = [[x, y]], Radius = mass.DaemmBreite / 2, Stil = DaemmStil(verdeckt) };
                 yield return new Primitiv { Art = "kreis", Punkte = [[x, y]], Radius = b / 2, Stil = stil };
                 if (wieLeitung)

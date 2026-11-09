@@ -1,8 +1,12 @@
 // Dämmung im Grundriss als eine vereinigte Fläche (Christian 09.11.2026: «auch bei den isolationen passt die darstellung noch nicht. überlappungen sind
-// frablich anders als der rest. zudem hat es beim innenradius noch falsche schwarze darstellungen.»): die Dämmbänder aller sichtbaren Leitungen und der
-// Formteile daneben (entlang ihrer Achse) werden vereinigt (Clipper) – eine Fläche je Zusammenhang, gelb transparent, nur der Aussenrand schwarz und dünn.
-// Damit keine doppelt transparenten Überlappungen und keine Schleifen der Randlinien am Innenradius. Detailgrad fein und mittel; grob: Punkt (HlksGrafik).
-// Senkrechte Leitungen (Ring) zeichnet weiterhin HlksGrafik.
+// frablich anders als der rest. zudem hat es beim innenradius noch falsche schwarze darstellungen.»): die Dämmbänder aller sichtbaren Leitungen, der
+// Formteile daneben (entlang ihrer Achse) und die Ringe der Steig- und Fallleitungen werden vereinigt (Clipper) – eine gelb transparente Fläche ohne Rand.
+// Die Ränder kommen je Teil dazu, nach Höhe geschichtet (Christian 09.11.2026: «bei dämmungen passt die darstellung bei bogen nach oben/bogen nach unten.
+// hier die unsichtbaren dämmkanten gestrichelt darstellen»): ein Rand unter einem höher liegenden Teil ist verdeckt und gestrichelt, ein Rand im Inneren
+// eines gleich hohen Teils entfällt (keine Schleifen am Innenradius), sonst ist er schwarz dünn ausgezogen.
+// Höher liegt: bei waagrechten Teilen das Teil, dessen tiefste Achshöhe über der höchsten des anderen liegt (gleiche oder überlappende Höhen = gleiche Lage,
+// auch Leitungen mit Gefälle und ihre Formteile); mit einer Steig- bzw. Fallleitung das Teil, dessen mittlere Achshöhe über ihrer Mitte liegt.
+// Detailgrad fein und mittel; grob: Punkt (HlksGrafik). Ganz unter dem Geschossboden (verdeckt) zeichnet HlksGrafik gestrichelt.
 
 using Clipper2Lib;
 
@@ -10,18 +14,45 @@ namespace Hlks.Kern;
 
 public static class DaemmGrafik
 {
+    const double Eps = 1.0;          // mm Achshöhe
+    const double Naht = 0.05;
+    /// <summary>Linienart verdeckter Dämmkanten: fein gestrichelt (die Stücke sind kurz, das Muster «strich» wäre länger; 09.11.2026).</summary>
+    public const string Verdeckt = "strichfein";        // mm: Ränder genau auf der Naht zweier gleich hoher Teile gelten als innen
+
+    sealed class Teil
+    {
+        public PathsD Flaeche = [];
+        public double ZMin = double.MaxValue, ZMax = double.MinValue;
+        public bool Senkrecht;
+        public RectD Box;
+        public double Mitte => (ZMin + ZMax) / 2;
+        public void Z(double z) { ZMin = Math.Min(ZMin, z); ZMax = Math.Max(ZMax, z); }
+    }
+
+    /// <summary>Liegt q über p (verdeckt q die Ränder von p)?</summary>
+    static bool Ueber(Teil q, Teil p) =>
+        p.Senkrecht || q.Senkrecht ? q.Mitte > p.Mitte + Eps : q.ZMin > p.ZMax + Eps;
+
     public static IEnumerable<Grafikteil> Teile(GrafikKontext ctx)
     {
         if (ctx.Art != "grundriss" || ctx.Detailgrad == "grob") yield break;
         var m = ctx.Modell; var kat = ctx.Katalog;
-        var pfade = new PathsD();
+        double boden = ctx.Geschoss?.Zahl("kote") ?? double.NegativeInfinity;
+        var teile = new List<Teil>();
         var masse = new Dictionary<string, LeitungsMass?>(StringComparer.Ordinal);
         LeitungsMass? Mass(Element e) => masse.TryGetValue(e.Id, out var x) ? x : masse[e.Id] = HlksMasse.Von(ctx.Projekt, e);
-        void Band(List<double[]> xy, double breite)
+        static void Band(Teil t, List<double[]> xy, double breite)
         {
             if (xy.Count < 2) return;
             var linie = new PathD(xy.Select(q => new PointD(q[0], q[1])));
-            pfade.AddRange(Clipper.InflatePaths(new PathsD { linie }, breite / 2, JoinType.Round, EndType.Butt, 2, 2));
+            t.Flaeche.AddRange(Clipper.InflatePaths(new PathsD { linie }, breite / 2, JoinType.Round, EndType.Butt, 2, 2));
+        }
+        void Fertig(Teil t)
+        {
+            if (t.Flaeche.Count == 0 || t.ZMax < boden - Eps) return;   // ganz unter dem Boden: verdeckt, HlksGrafik
+            t.Flaeche = Clipper.Union(t.Flaeche, FillRule.NonZero);
+            t.Box = Clipper.GetBounds(t.Flaeche);
+            teile.Add(t);
         }
         foreach (var e in m.Elemente)
         {
@@ -29,15 +60,38 @@ public static class DaemmGrafik
             if (kat.IstArt(e, "Leitung"))
             {
                 if (Mass(e) is not { Daemmdicke: > 0 } ms) continue;
-                // waagrechte bzw. flache Stücke als Züge im Grundriss (senkrechte Stücke: Ring in HlksGrafik)
+                if (HlksLinien.Laenge(pts.Select(q => new[] { q[0], q[1] }).ToList()) < 1)
+                {
+                    // Steig- bzw. Fallleitung: Ring bzw. Rechteck der Dämmung
+                    var t = new Teil { Senkrecht = true };
+                    foreach (var q in pts) t.Z(q.Length > 2 ? q[2] : 0);
+                    var c = new PointD(pts[0][0], pts[0][1]);
+                    if (ms.Rechteck)
+                    {
+                        double b = ms.DaemmBreite / 2, h = ms.DaemmHoehe / 2;
+                        t.Flaeche.Add([new(c.x - b, c.y - h), new(c.x + b, c.y - h), new(c.x + b, c.y + h), new(c.x - b, c.y + h)]);
+                    }
+                    else t.Flaeche.Add(Clipper.Ellipse(c, ms.DaemmBreite / 2, ms.DaemmBreite / 2, 72));
+                    Fertig(t);
+                    continue;
+                }
+                // waagrechte bzw. flache Stücke als Züge im Grundriss (senkrechte Stücke einer Polylinie: Ring in HlksGrafik)
                 var zug = new List<double[]>();
+                var tz = new Teil();
+                void ZugFertig() { Band(tz, zug, ms.DaemmBreite); zug = []; }
                 for (int i = 1; i < pts.Count; i++)
                 {
                     bool flach = Math.Abs(pts[i][0] - pts[i - 1][0]) + Math.Abs(pts[i][1] - pts[i - 1][1]) > 1;
-                    if (flach) { if (zug.Count == 0) zug.Add([pts[i - 1][0], pts[i - 1][1]]); zug.Add([pts[i][0], pts[i][1]]); }
-                    else { Band(zug, ms.DaemmBreite); zug = []; }
+                    if (flach)
+                    {
+                        if (zug.Count == 0) zug.Add([pts[i - 1][0], pts[i - 1][1]]);
+                        zug.Add([pts[i][0], pts[i][1]]);
+                        tz.Z(pts[i - 1].Length > 2 ? pts[i - 1][2] : 0); tz.Z(pts[i].Length > 2 ? pts[i][2] : 0);
+                    }
+                    else ZugFertig();
                 }
-                Band(zug, ms.DaemmBreite);
+                ZugFertig();
+                Fertig(tz);
             }
             else if (kat.IstArt(e, "Formteil") && Familien.Einbaulage(e) is { } lage
                      && Familien.Aufloesung(m, kat, e, out _) is { } a)
@@ -47,23 +101,60 @@ public static class DaemmGrafik
                     .Where(n => kat.IstArt(n, "Leitung")).Select(Mass).OfType<LeitungsMass>().Where(x => x.Daemmdicke > 0)
                     .OrderByDescending(x => x.DaemmBreite).FirstOrDefault();
                 if (nachbar is null) continue;
+                var t = new Teil();
                 foreach (var achse in a.Achsen)
-                    Band(achse.Select(p => FamilienGrafik.W2(p, lage)).ToList(), nachbar.DaemmBreite);
+                {
+                    foreach (var p in achse) t.Z(lage.Welt(p)[2]);
+                    Band(t, achse.Select(p => FamilienGrafik.W2(p, lage)).ToList(), nachbar.DaemmBreite);
+                }
+                Fertig(t);
             }
         }
-        if (pfade.Count == 0) yield break;
-        var flaechen = Polygone.Flaechen(Clipper.Union(pfade, FillRule.NonZero));
+        if (teile.Count == 0) yield break;
+
         var teil = new Grafikteil { Id = "daemmung", Ebene = "leitung" };
-        foreach (var f in flaechen)
-        {
+        // Fläche: alles vereinigt, ohne Rand
+        foreach (var f in Polygone.Flaechen(Clipper.Union(new PathsD(teile.SelectMany(t => t.Flaeche)), FillRule.NonZero)))
             teil.Primitive.Add(new Primitiv
             {
-                Art = "polygon", Punkte = f.Aussen,
-                Stil = new Stil { Stift = Stifte.Duenn, Linie = "voll", Farbe = HlksGrafik.DaemmLinie, Fuellung = HlksGrafik.DaemmGelb, Deckkraft = HlksGrafik.DaemmDeckkraft },
+                Art = "polygon", Punkte = f.Aussen, Loecher = f.Loecher.Count > 0 ? f.Loecher : null,
+                Stil = new Stil { Stift = null, Fuellung = HlksGrafik.DaemmGelb, Deckkraft = HlksGrafik.DaemmDeckkraft },
             });
-            foreach (var l in f.Loecher)
-                teil.Primitive.Add(new Primitiv { Art = "polygon", Punkte = l, Stil = new Stil { Stift = Stifte.Duenn, Linie = "voll", Farbe = HlksGrafik.DaemmLinie } });
+        // Ränder je Teil: innen (gleich hoch) weg, unter einem höheren Teil gestrichelt, sonst ausgezogen
+        foreach (var p in teile)
+        {
+            var gleich = new PathsD(); var hoeher = new PathsD();
+            foreach (var q in teile)
+            {
+                if (ReferenceEquals(p, q) || !Ueberlappt(p.Box, q.Box)) continue;
+                if (Ueber(q, p)) hoeher.AddRange(q.Flaeche);
+                else if (!Ueber(p, q)) gleich.AddRange(q.Flaeche);
+            }
+            var rand = new PathsD(p.Flaeche.Select(r => { var o = new PathD(r); if (r.Count > 0) o.Add(r[0]); return o; }));
+            if (gleich.Count > 0) rand = Offen(rand, Clipper.InflatePaths(gleich, Naht, JoinType.Miter, EndType.Polygon), ClipType.Difference);
+            var verdeckt = hoeher.Count > 0 ? Offen(rand, hoeher, ClipType.Intersection) : [];
+            var sichtbar = hoeher.Count > 0 ? Offen(rand, hoeher, ClipType.Difference) : rand;
+            foreach (var (pfade, linie) in new[] { (sichtbar, "voll"), (verdeckt, Verdeckt) })
+                foreach (var r in pfade.Where(r => r.Count >= 2))
+                    teil.Primitive.Add(new Primitiv
+                    {
+                        Art = "polylinie", Punkte = r.Select(q => new[] { q.x, q.y }).ToList(),
+                        Stil = new Stil { Stift = Stifte.Duenn, Linie = linie, Farbe = HlksGrafik.DaemmLinie },
+                    });
         }
         yield return teil;
+    }
+
+    static bool Ueberlappt(RectD a, RectD b) => a.left <= b.right && b.left <= a.right && a.top <= b.bottom && b.top <= a.bottom;
+
+    /// <summary>Offene Linien an Flächen schneiden (Clipper: offene Subjekte).</summary>
+    static PathsD Offen(PathsD linien, PathsD flaechen, ClipType art)
+    {
+        var c = new ClipperD(3);
+        c.AddOpenSubject(linien);
+        c.AddClip(flaechen);
+        var zu = new PathsD(); var auf = new PathsD();
+        c.Execute(art, FillRule.NonZero, zu, auf);
+        return auf;
     }
 }
