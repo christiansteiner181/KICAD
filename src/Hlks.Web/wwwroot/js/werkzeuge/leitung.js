@@ -18,6 +18,8 @@ import { setze, rasterWert, freiVorbelegen } from './optionen.js';
 import { familienLaden } from '../familien/daten.js';
 import { esc } from './schicht.js';
 import * as S from './schicht.js';
+import { escAusFeld } from './basis.js';
+import { lagenLaden, lagenFuer } from './lagen-daten.js';
 import * as L from './leitung-logik.js';
 import * as F from './leitung-frei.js';
 import * as D from './leitung-daten.js';
@@ -67,14 +69,14 @@ function leisteZeigen(v) {
     div.innerHTML = `<div class="lt-kopf"><span class="lt-titel">Vorschau</span><span class="lt-text">${esc(L.vorschauZeile(info))}</span>`
       + `<button type="button" class="lt-knopf" data-lt="liste" title="Einzelheiten ein-/ausblenden">▾</button>`
       + `<button type="button" class="lt-knopf lt-primaer" data-lt="ausfuehren">Ausführen (Enter)</button>`
-      + `<button type="button" class="lt-knopf" data-lt="zurueck">Weiter zeichnen (Esc)</button></div>`
+      + `<button type="button" class="lt-knopf" data-lt="zurueck">Weiter zeichnen</button></div>`
       + `<ul class="lt-liste" hidden>${zeilen.map((t) => `<li>${esc(t)}</li>`).join('')}</ul>`
       + befundeHtml(v.r);
   } else {
     const a = L.ablehnung(v.r);
     div.innerHTML = `<div class="lt-kopf lt-abgelehnt"><span class="lt-titel lt-fehler">Abgelehnt</span><span class="lt-text">${esc(a.text)}</span>`
       + `<button type="button" class="lt-knopf" data-lt="neu" title="Noch einmal prüfen (Enter)">Neu prüfen</button>`
-      + `<button type="button" class="lt-knopf" data-lt="zurueck">Weiter zeichnen (Esc)</button></div>`
+      + `<button type="button" class="lt-knopf" data-lt="zurueck">Weiter zeichnen</button></div>`
       + (a.vorschlag ? `<div class="lt-vorschlag">Vorschlag: ${esc(a.vorschlag)}</div>` : '');
   }
   div.hidden = false;
@@ -135,7 +137,7 @@ async function vorschauHolen(z, ctx) {
   const r = await sende(bau.name, bau.parameter, { trockenlauf: true });
   z.vorschau = { ok: !!r.angenommen, r, name: bau.name, parameter: bau.parameter };
   leisteZeigen(z.vorschau);
-  hinweisSetzen(r.angenommen ? 'Vorschau des Kerns – Enter führt aus, Esc zeichnet weiter.' : 'Der Kern hat abgelehnt – Vorschlag lesen, Esc zeichnet weiter.');
+  hinweisSetzen(r.angenommen ? 'Vorschau des Kerns – Enter oder Esc führt aus.' : 'Der Kern hat abgelehnt – Vorschlag lesen; Esc legt an, so weit zeichenbar, ein weiteres Esc verwirft.');
   ctx.neuZeichnen();
 }
 
@@ -160,7 +162,8 @@ async function bisZeichenbar(z, ctx) {
     }
   }
   z.punkte = alle;
-  await vorschauHolen(z, ctx);   // nichts zeichenbar: Vorschlag des Kerns zum ganzen Zug zeigen
+  await vorschauHolen(z, ctx);   // nichts zeichenbar: Vorschlag des Kerns zum ganzen Zug zeigen; das nächste Esc verwirft den Zug
+  if (z.vorschau && !z.vorschau.ok) z.vorschau.unzeichenbar = true;
 }
 
 async function ausfuehren(z, ctx) {
@@ -325,15 +328,16 @@ if (typeof window !== 'undefined') {
   // Am Fenster (Aufnahmephase) – läuft vor den Hörern der Basis und der Ansicht
   window.addEventListener('keydown', (e) => {
     const t = laufend;
-    if (!t || t.ctx.lauf.fertig || dialogOffen() || inEingabe(e.target) || e.ctrlKey || e.metaKey || e.altKey) return;
+    if (!t || t.ctx.lauf.fertig || dialogOffen() || (inEingabe(e.target) && !escAusFeld(e)) || e.ctrlKey || e.metaKey || e.altKey) return;
     const { z, ctx } = t;
     const stop = () => { e.preventDefault(); e.stopImmediatePropagation(); };
     if (e.key === 'Escape' && (z.punkte.length || z.vorschau)) {
       // Christian 09.11.2026: «wird gezeichnet soll jeweils esc. den befehl bestätigen» – Esc legt den gezeichneten Zug an (Vorschau des Kerns und
-      // Ausführen in einem); abgelehnt: die Leiste zeigt den Vorschlag, Esc zeichnet weiter; ein Zug mit nur einem Punkt wird verworfen; ohne Zug beendet Esc
+      // Ausführen in einem); abgelehnt: Esc legt an, so weit zeichenbar (bisZeichenbar), ein weiteres Esc verwirft; ein Zug mit nur einem Punkt wird verworfen; ohne Zug beendet Esc
       stop();
       if (ctx.lauf.tipp) { ctx.lauf.tipp = ''; ctx.lauf.hinweisAktualisieren(); ctx.neuZeichnen(); }   // zuerst die Längeneingabe leeren
       else if (z.vorschau?.ok) ctx.lauf.run(() => ausfuehren(z, ctx));
+      else if (z.vorschau?.unzeichenbar) { zuruecksetzen(z); meldung('Zug verworfen – nicht zeichenbar.', 'info'); ctx.lauf.hinweisAktualisieren(); ctx.neuZeichnen(); }   // schon gekürzt versucht
       else if (z.punkte.length >= 2 || (z.abzweig && z.punkte.length)) ctx.lauf.run(() => bisZeichenbar(z, ctx));
       else if (z.vorschau) { z.vorschau = null; leisteAus(); ctx.lauf.hinweisAktualisieren(); ctx.neuZeichnen(); }
       else { zuruecksetzen(z); ctx.lauf.hinweisAktualisieren(); ctx.neuZeichnen(); }   // nur ein Punkt: verwerfen
@@ -402,13 +406,21 @@ export function leitungWerkzeug(kategorie = 'Rohr', variante = null) {
         const def = D.serieDef(ctx.opt.serie);
         if (def && ctx.opt.groesse && !L.groessenListe(def).some((g) => g.typ === ctx.opt.groesse)) setze(id, 'groesse', '');
         if (def) freiVorbelegen(id, def, true);                                // freie Serie: leere Zahlenfelder mit der Vorlage füllen
+        // gemerkte Lage (Christian 09.11.2026: «Ja, Lage merken»): die Höhe gilt im aktuellen Geschoss neu (UK roh Decke je Geschoss); hat es die
+        // Lage hier nicht, bleibt die Höhe und das Feld Lage wird leer
+        if (kategorie === 'Rohr' && ctx.opt.lage) {
+          await lagenLaden();
+          if (ctx.lauf.fertig) return;
+          const l = lagenFuer(ctx.geschoss).find((x) => String(x.nr) === String(ctx.opt.lage));
+          if (l) setze(id, 'hoehe', Math.round(l.hoehe)); else setze(id, 'lage', '');
+        }
         ctx.optionenNeu();
       })();
       return z;
     },
 
     hinweis(z, ctx) {
-      if (z.vorschau) return z.vorschau.ok ? 'Vorschau des Kerns – Enter oder Esc führt aus.' : 'Der Kern hat abgelehnt – Vorschlag lesen, Esc zeichnet weiter.';
+      if (z.vorschau) return z.vorschau.ok ? 'Vorschau des Kerns – Enter oder Esc führt aus.' : z.vorschau.unzeichenbar ? 'Nicht zeichenbar – Vorschlag lesen; Esc verwirft den Zug.' : 'Der Kern hat abgelehnt – Vorschlag lesen; Esc legt an, so weit zeichenbar.';
       if (z.punkte.length === 0) return 'Startpunkt anklicken – auf einem Anschluss beginnt die Leitung dort, auf einer Geraden entsteht ein Abzweig.';
       if (z.von && z.punkte.length === 1 && L.anschlussRichtungPlan(z.von) === null)
         return `${z.von.element}.${z.von.name} zeigt senkrecht ${(z.von.richtung?.[2] ?? 0) < 0 ? 'nach unten' : 'nach oben'}: zuerst die Höhe ändern (H), dann weiterzeichnen.`;

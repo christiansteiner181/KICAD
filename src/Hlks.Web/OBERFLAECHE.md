@@ -4291,6 +4291,11 @@ jedes neue Projekt erhält alle Mustersysteme.
 - **Lagewechsel beim Zeichnen** (Christian 09.11.2026: «wird beim zeichnen ein lagewechsel vorgenommen, gilt dies nur für die kommenden leitungen»): Lage
   bzw. Höhe in der Optionsleiste setzt am letzten Punkt eine Steigleitung, die folgenden Strecken liegen auf der neuen Lage; schon gezeichnete Strecken
   bleiben. Die Palette zeigt die Höhe des zuletzt gezeichneten Teils während des Zeichnens nur zum Lesen.
+- **Esc beendet** (Christian 09.11.2026: «esc. beendet die befehle nicht»): Esc in einer Auswahlliste bzw. einem Kästchen der Optionsleiste oder des
+  Eigenschaftsfensters verlässt das Feld und wirkt wie Esc in der Ansicht (Zug anlegen, sonst Werkzeug beenden); in Textfeldern beendet Esc nur die Eingabe.
+  Ist ein Zug gar nicht zeichenbar, verwirft das zweite Esc ihn, das dritte beendet das Werkzeug.
+- **Lage gemerkt** (Christian 09.11.2026: «Ja, Lage merken»): die zuletzt gewählte Lage gilt beim nächsten Start wieder; die Höhe wird aus der Lage im
+  aktuellen Geschoss neu gerechnet (hat das Geschoss die Lage nicht, wird das Feld leer).
 - **Esc bei falsch gezeichnetem Zug** (Christian 09.11.2026: «ist ein rohr/kanal falsch gezeichnet muss esc. bis da beenden wo noch zeichenbar ist»): der
   Zug wird von hinten gekürzt, bis der Kern ihn annimmt, und bis dort angelegt (Meldung «angelegt bis Punkt n»). **Dunkles Design**: transparente Farbflächen werden mit Weiss vorgemischt (mindestens 60 % Farbe, Deckkraft 0.85; Abwasser bleibt braun), damit sie nicht
   abgedunkelt wirken («die darstellung der transparenten flächen wird im dunklen modeu abgedunkelt. das ist nicht gewollt»; `plangrafik.js › mitWeiss`).

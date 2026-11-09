@@ -389,10 +389,21 @@ function inEingabe(ziel) {
   return ziel instanceof HTMLElement && (ziel.isContentEditable || ['INPUT', 'TEXTAREA', 'SELECT'].includes(ziel.tagName));
 }
 
+/** Esc in einer Auswahlliste bzw. einem Kästchen (Optionsleiste, Eigenschaftsfenster) gehört dem Werkzeug (Christian 09.11.2026: «esc. beendet die
+ *  befehle nicht» – nach einer Wahl im Eigenschaftsfenster blieb der Fokus in der Liste): Feld verlassen, dann wie Esc in der Ansicht. Textfelder:
+ *  Esc beendet nur die Eingabe. true = das Ereignis gehört dem Werkzeug. */
+export function escAusFeld(e) {
+  const z = e.target;
+  if (e.key !== 'Escape' || !(z instanceof HTMLElement)) return false;
+  if (!(z.tagName === 'SELECT' || (z.tagName === 'INPUT' && ['checkbox', 'radio'].includes(z.type)))) return false;
+  z.blur();
+  return true;
+}
+
 if (typeof document !== 'undefined') {
   document.addEventListener('keydown', (e) => {
     if (!aktiv || dialogOffen()) return;
-    if (inEingabe(e.target)) {
+    if (inEingabe(e.target) && !escAusFeld(e)) {
       // In der Optionsleiste beendet Enter/Esc nur die Eingabe
       if ((e.key === 'Enter' || e.key === 'Escape') && e.target.closest?.('#optionsleiste')) { e.preventDefault(); e.stopPropagation(); e.target.blur(); }
       return;
