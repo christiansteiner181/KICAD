@@ -547,6 +547,13 @@ public sealed class HlksGrafik : IGrafikquelle
             Art = "text", Punkte = [[m.X - Math.Sin(rad) * abstand, m.Y + Math.Cos(rad) * abstand]],
             Text = text, Groesse = Schrift, Ausrichtung = "mitte", Winkel = grad, Mitdrehen = true,   // N9: folgt der Leitung
         });
+        // Lüftung: Höhe zur UK roh Decke unter der Linie («Achse = −150mm UKD» rund, «OK = −100mm UKD» eckig; Christian 09.11.2026)
+        if (Leitungsbezeichnung.HoeheUkd(ctx.Projekt, e) is { } hoehe)
+            teil.Primitive.Add(new Primitiv
+            {
+                Art = "text", Punkte = [[m.X + Math.Sin(rad) * (abstand + Schrift * ctx.Massstab), m.Y - Math.Cos(rad) * (abstand + Schrift * ctx.Massstab)]],
+                Text = hoehe, Groesse = Schrift, Ausrichtung = "mitte", Winkel = grad, Mitdrehen = true,
+            });
     }
 
     /// <summary>formteil() in zeichnen2d.js: gefüllter Kreis auf der Leitung, mit hellem Rand wie die Papierfarbe.</summary>

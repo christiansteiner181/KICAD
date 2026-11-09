@@ -4229,7 +4229,7 @@ Lagenummer – einmal bis zum nächsten Wechsel (kein Zeichen, wenn das Rohr dav
 **Lüftung** (seit 09.11.2026, Christian «Lüftungen beziehen sich nicht auf lagen. diese werden für Rohre immer als Achse = -xy UKD und bei kanälen immer OK = -xy UKD
 angegeben»): Werkzeug Kanal (DT), Feld **Achse unter UKD** (runde Produktlinie) bzw. **OK unter UKD** (eckige) in mm; Platzhalter zeigt die UK roh Decke des
 Geschosses. Es setzt die **Achshöhe** = UKD − Wert (rund) bzw. UKD − Wert − Kanalhöhe/2 (eckig) und rechnet bei Wechsel von Produktlinie oder Grösse neu; eine
-von Hand eingetragene Achshöhe leert das Feld.
+von Hand eingetragene Achshöhe leert das Feld. **Plan** (Detailgrad fein): unter der Grössenangabe «Achse = −XYmm UKD» (runde Lüftungsleitungen) bzw. «OK = −XYmm UKD» (Kanäle), aus dem ersten waagrechten Stück und der UK roh Decke des Geschosses (`Leitungsbezeichnung.HoeheUkd`; ohne UK roh Decke keine Angabe).
 
 ## Raumbezeichnungen aus DWG (Christian 05.11.2026)
 

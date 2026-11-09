@@ -61,6 +61,22 @@ public static class Leitungsbezeichnung
         return Rohrgroessen.Von(p, ansicht, e).Beschriftung;
     }
 
+    /// <summary>Höhe einer Lüftungsleitung zur UK roh Decke (Christian 09.11.2026: «Lüftungen beziehen sich nicht auf lagen. diese werden für Rohre
+    /// immer als Achse = -xy UKD und bei kanälen immer OK = -xy UKD angegeben und gezeichnet», Bezeichnung «Achse = -XYmm UKD» bzw. «OK = -XYmm UKD»):
+    /// runde Leitung ab Achse, eckige ab OK, gemessen am ersten waagrechten Stück. null ohne Querschnitt, senkrecht oder ohne UK roh Decke.</summary>
+    public static string? HoeheUkd(Projekt p, Element e)
+    {
+        if (QuerschnittVon(p, e) is not { } q || e.Geometrie?.Punkte is not { Count: >= 2 } pts || e.Geschoss is null || p.Modell.Finde(e.Geschoss) is not { } g) return null;
+        double? z = null;
+        for (int i = 1; i < pts.Count && z is null; i++)
+            if (Math.Abs(pts[i][0] - pts[i - 1][0]) + Math.Abs(pts[i][1] - pts[i - 1][1]) > 1 && pts[i - 1].Length > 2) z = pts[i - 1][2];
+        if (z is null || Lagen.UkRohdecke(p, g).Wert is not double ukd) return null;
+        double hoehe = z.Value - (g.Zahl("kote") ?? 0) + (q.Rechteck ? q.Hoehe!.Value / 2 : 0);   // Achse bzw. OK über der Kote
+        double d = Math.Round(ukd - hoehe);
+        string wert = d == 0 ? "±0" : d > 0 ? "−" + Mm(d) : "+" + Mm(-d);
+        return $"{(q.Rechteck ? "OK" : "Achse")} = {wert}mm UKD";
+    }
+
     /// <summary>Aussendurchmesser in mm für die Beschriftung: ganzzahlig ohne Nachkommastellen («22»), sonst auf eine Stelle gerundet
     /// mit Punkt («22.5»). Für die Bausteine im Einlageplan («KW: B.n.o Ø16»).</summary>
     public static string Aussendurchmesser(double da) => Math.Round(da, 1, MidpointRounding.AwayFromZero).ToString("0.#", CultureInfo.InvariantCulture);

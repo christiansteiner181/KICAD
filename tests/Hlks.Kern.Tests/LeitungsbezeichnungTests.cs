@@ -68,6 +68,23 @@ public class LeitungsbezeichnungTests
         Assert.Equal("Ø 160", Text(p, "AN-L", rohr));
     }
 
+    /// <summary>Christian 09.11.2026: Lüftung ohne Lagen, Bezeichnung «Achse = -XYmm UKD» (Rohre) bzw. «OK = -XYmm UKD» (Kanäle).</summary>
+    [Fact]
+    public void Lueftung_HoeheZurUkRohdecke()
+    {
+        var p = Neu();
+        Assert.True(p.Ausfuehren("element_aendern", new JsonObject { ["element"] = "EG", ["eigenschaften"] = new JsonObject { ["ukRohdecke"] = 2700 } }).Angenommen);
+        var rechteck = Leitung(p, "Kanal", "KA-1", "S-ZUL", new JsonObject { ["breite"] = 400, ["hoehe"] = 200 });   // Achse 2500 → OK 2600
+        var rund = Leitung(p, "Kanal", "KA-2", "S-ZUL", new JsonObject { ["durchmesser"] = 250 });
+        var rohr = Leitung(p, "Rohr", "ZUL-1", "S-ZUL", new JsonObject { ["dn"] = 160 });
+        string[] Texte(Element e) => Grafik.Plan(p, "AN-L").Teile.Single(t => t.Id == e.Id).Primitive.Where(x => x.Art == "text").Select(x => x.Text!).ToArray();
+        Assert.Equal(["400×200", "OK = −100mm UKD"], Texte(rechteck));
+        Assert.Equal(["Ø 250", "Achse = −200mm UKD"], Texte(rund));
+        Assert.Equal(["Ø 160", "Achse = −200mm UKD"], Texte(rohr));
+        var kw = Leitung(p, "Rohr", "KW-1", "S-KW", new JsonObject { ["dn"] = 32 });   // Sanitär: Lagen, keine UKD-Angabe
+        Assert.Null(Leitungsbezeichnung.HoeheUkd(p, kw));
+    }
+
     [Fact]
     public void Kanal_InEchterBreiteImGrundriss()
     {
