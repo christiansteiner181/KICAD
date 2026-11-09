@@ -6,8 +6,8 @@ import { zustand, element, auswaehlen } from '../zustand.js';
 import { abfrage } from '../api.js';
 import { registrieren, modusSetzen, optionen } from './register.js';
 import { zeigen, meldung, eingabe, warumDialog } from './dialoge.js';
-import { sende, ergebnisMelden, aenderungenHtml, befundeHtml } from './befehle.js';
-import { esc, knoten, elementText, vergleichen } from './werkzeug.js';
+import { sende, ergebnisMelden } from './befehle.js';
+import { esc, knoten, vergleichen } from './werkzeug.js';
 import { umschalten, sichtbar } from './paletten.js';
 import { istMehrfach, auswahlKennzeichen } from '../werkzeuge/auswahl.js';
 import { beendeWerkzeug } from '../werkzeuge/basis.js';   // «Ändern», Löschen und Netz folgen beenden ein laufendes Werkzeug (Prüfbefund 04.11.2026)
@@ -29,7 +29,8 @@ registrieren({
 
 // ---------------------------------------------------------------------------------------------- Löschen
 
-/** Löschen mit Vorschau: erst Trockenlauf, Änderungen und neue Prüfbefunde zeigen, nach Bestätigung echt ausführen. */
+/** Löschen ohne Rückfrage (Christian 09.11.2026: «löschen soll ohne nachfrage löschen»): direkt ausführen; zurücknehmen mit Rückgängig.
+ *  Lehnt der Kern ab, kommt die Meldung mit Vorschlag; neue Warnungen und Fehler nennt die Erfolgsmeldung. */
 async function loeschen(p) {
   const el = ZIEL(p);
   if (!el) return;
@@ -39,31 +40,10 @@ async function loeschen(p) {
   const befehl = mehr ? 'elemente_loeschen' : 'element_loeschen';
   const par = mehr ? { elemente: mehr } : { element: kz };
   beendeWerkzeug();
-  modusSetzen('loeschen', { kennzeichen: kz });
-  try {
-    const vor = await sende(befehl, par, { trockenlauf: true });
-    if (!vor.angenommen) {
-      meldung(`Löschen von ${kz} abgelehnt: ${vor.fehler || vor.meldung}`, 'warnung', { vorschlag: vor.vorschlag });
-      return;
-    }
-    const neu = vor.neueBefunde ?? [];
-    const schlimm = neu.filter((b) => b.schwere === 'fehler' || b.schwere === 'warnung').length;
-    const w = knoten(`<div class="loeschen">
-      <p class="dlg-text">«${esc(mehr ? `${kz}: ${mehr.slice(0, 12).join(', ')}${mehr.length > 12 ? ' …' : ''}` : elementText(el))}» wird gelöscht. Das sind die Folgen (Vorschau, noch nichts geändert):</p>
-      <h4>Änderungen (${(vor.aenderungen ?? []).length})</h4>${aenderungenHtml(vor.aenderungen)}
-      <h4>Neue Prüfbefunde (${neu.length})${schlimm ? ` <span class="warnung">davon ${schlimm} Warnungen/Fehler</span>` : ''}</h4>${befundeHtml(neu)}
-      ${(vor.behobeneBefunde ?? []).length ? `<h4>Behobene Prüfbefunde (${vor.behobeneBefunde.length})</h4>${befundeHtml(vor.behobeneBefunde)}` : ''}
-      ${(vor.hinweise ?? []).length ? `<p class="leise">${vor.hinweise.map(esc).join('<br>')}</p>` : ''}
-      ${(vor.gesperrt ?? []).length ? `<p class="warnung">Reserviert von anderen: ${vor.gesperrt.map((g) => esc(g?.element ?? g?.kennzeichen ?? (typeof g === 'string' ? g : JSON.stringify(g)))).join(', ')}</p>` : ''}
-    </div>`);
-    const ok = await zeigen({
-      titel: `${kz} löschen`, inhalt: w, breite: 760,
-      knoepfe: [{ text: 'Abbrechen', wert: false }, { text: 'Löschen', wert: true, primaer: true, gefahr: true }],
-    });
-    if (ok !== true) return;
-    const r = await sende(befehl, par);
-    ergebnisMelden(r, `${kz} gelöscht.`);
-  } finally { modusSetzen('aendern'); }
+  const r = await sende(befehl, par);
+  if (!r.angenommen) { meldung(`Löschen von ${kz} abgelehnt: ${r.fehler || r.meldung}`, 'warnung', { vorschlag: r.vorschlag }); return; }
+  const schlimm = (r.neueBefunde ?? []).filter((b) => b.schwere === 'fehler' || b.schwere === 'warnung').length;
+  ergebnisMelden(r, `${kz} gelöscht${schlimm ? ` – ${schlimm} neue Warnung(en)/Fehler` : ''} (Rückgängig: Strg+Z).`);
 }
 
 registrieren({

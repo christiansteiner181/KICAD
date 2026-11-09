@@ -4291,6 +4291,11 @@ jedes neue Projekt erhält alle Mustersysteme.
 - **Lagewechsel beim Zeichnen** (Christian 09.11.2026: «wird beim zeichnen ein lagewechsel vorgenommen, gilt dies nur für die kommenden leitungen»): Lage
   bzw. Höhe in der Optionsleiste setzt am letzten Punkt eine Steigleitung, die folgenden Strecken liegen auf der neuen Lage; schon gezeichnete Strecken
   bleiben. Die Palette zeigt die Höhe des zuletzt gezeichneten Teils während des Zeichnens nur zum Lesen.
+- **Löschen ohne Rückfrage** (Christian 09.11.2026: «löschen soll ohne nachfrage löschen»): Entf bzw. DE löscht sofort (Einzel- und Mehrfachauswahl
+  in einem Paket); zurück mit Rückgängig (Strg+Z). Neue Warnungen/Fehler nennt die Meldung, Ablehnungen des Kerns kommen mit Vorschlag.
+- **Esc ein Weg für alle Werkzeuge** (Christian 09.11.2026: «esc funktioniert immer noch nicht zuverlässig»): Esc während einer laufenden Abfrage wird
+  danach ausgeführt (vorher verworfen); Esc in einem Feld der Optionsleiste bzw. des Eigenschaftsfensters (auch Textfeld) verlässt das Feld und wirkt
+  wie Esc in der Ansicht; das Leitungswerkzeug behandelt Esc über denselben Weg (def.esc).
 - **Linienstärken Haustechnik** (Christian 09.11.2026: «konturen 0.5mm, Achsen und hilfslinien 0.2mm»; Entscheid: nur Haustechnik, Dämmkanten = Hilfslinien):
   neue Stifte «kontur» 0.5 mm und «hilf» 0.2 mm (Bildschirm, PDF, SVG). Kontur: Ränder von Kanälen, Abwasser, verdeckten Leitungen, Steigleitungen und
   Umrisse der Familien und Formteile; Hilf: Achsen, Achsenkreuze, Dämmkanten, Kanalrahmen, Fliesspfeil, Sichtkanten. Deckend gefüllte Rohre und ihre

@@ -18,7 +18,6 @@ import { setze, rasterWert, freiVorbelegen } from './optionen.js';
 import { familienLaden } from '../familien/daten.js';
 import { esc } from './schicht.js';
 import * as S from './schicht.js';
-import { escAusFeld } from './basis.js';
 import { lagenLaden, lagenFuer } from './lagen-daten.js';
 import * as L from './leitung-logik.js';
 import * as F from './leitung-frei.js';
@@ -328,20 +327,11 @@ if (typeof window !== 'undefined') {
   // Am Fenster (Aufnahmephase) – läuft vor den Hörern der Basis und der Ansicht
   window.addEventListener('keydown', (e) => {
     const t = laufend;
-    if (!t || t.ctx.lauf.fertig || dialogOffen() || (inEingabe(e.target) && !escAusFeld(e)) || e.ctrlKey || e.metaKey || e.altKey) return;
+    if (e.key === 'Escape') return;   // Esc: ein Weg für alle Werkzeuge (basis.js esc → def.esc unten)
+    if (!t || t.ctx.lauf.fertig || dialogOffen() || inEingabe(e.target) || e.ctrlKey || e.metaKey || e.altKey) return;
     const { z, ctx } = t;
     const stop = () => { e.preventDefault(); e.stopImmediatePropagation(); };
-    if (e.key === 'Escape' && (z.punkte.length || z.vorschau)) {
-      // Christian 09.11.2026: «wird gezeichnet soll jeweils esc. den befehl bestätigen» – Esc legt den gezeichneten Zug an (Vorschau des Kerns und
-      // Ausführen in einem); abgelehnt: Esc legt an, so weit zeichenbar (bisZeichenbar), ein weiteres Esc verwirft; ein Zug mit nur einem Punkt wird verworfen; ohne Zug beendet Esc
-      stop();
-      if (ctx.lauf.tipp) { ctx.lauf.tipp = ''; ctx.lauf.hinweisAktualisieren(); ctx.neuZeichnen(); }   // zuerst die Längeneingabe leeren
-      else if (z.vorschau?.ok) ctx.lauf.run(() => ausfuehren(z, ctx));
-      else if (z.vorschau?.unzeichenbar) { zuruecksetzen(z); meldung('Zug verworfen – nicht zeichenbar.', 'info'); ctx.lauf.hinweisAktualisieren(); ctx.neuZeichnen(); }   // schon gekürzt versucht
-      else if (z.punkte.length >= 2 || (z.abzweig && z.punkte.length)) ctx.lauf.run(() => bisZeichenbar(z, ctx));
-      else if (z.vorschau) { z.vorschau = null; leisteAus(); ctx.lauf.hinweisAktualisieren(); ctx.neuZeichnen(); }
-      else { zuruecksetzen(z); ctx.lauf.hinweisAktualisieren(); ctx.neuZeichnen(); }   // nur ein Punkt: verwerfen
-    } else if (e.key === 'Backspace' && !ctx.lauf.tipp && z.punkte.length) {
+    if (e.key === 'Backspace' && !ctx.lauf.tipp && z.punkte.length) {
       stop(); punktZurueck(t);
     } else if ((e.key === 'h' || e.key === 'H') && !e.shiftKey) {
       const f = document.querySelector(`#optionsleiste [data-feld="hoehe"]`);
@@ -379,6 +369,20 @@ export function leitungWerkzeug(kategorie = 'Rohr', variante = null) {
     eingabeText: 'Länge',
     // Rechtsklick (Basis): verwirft den angefangenen Zug wie Esc, ohne einen neuen Zustand anzulegen (neu() baut die Leiste)
     zugAngefangen: (z) => z.punkte.length > 0 || !!z.vorschau,
+    // Christian 09.11.2026: «wird gezeichnet soll jeweils esc. den befehl bestätigen» – Esc legt den gezeichneten Zug an (Vorschau des Kerns und
+    // Ausführen in einem); abgelehnt: Esc legt an, so weit zeichenbar (bisZeichenbar), ein weiteres Esc verwirft; ein Zug mit nur einem Punkt wird
+    // verworfen; ohne Zug (false) bricht die Basis stufenweise ab bzw. beendet das Werkzeug
+    esc(z, ctx) {
+      if (!z.punkte.length && !z.vorschau) return false;
+      if (ctx.lauf.tipp) ctx.lauf.tipp = '';                                              // zuerst die Längeneingabe leeren
+      else if (z.vorschau?.ok) ctx.lauf.run(() => ausfuehren(z, ctx));
+      else if (z.vorschau?.unzeichenbar) { zuruecksetzen(z); meldung('Zug verworfen – nicht zeichenbar.', 'info'); }   // schon gekürzt versucht
+      else if (z.punkte.length >= 2 || (z.abzweig && z.punkte.length)) ctx.lauf.run(() => bisZeichenbar(z, ctx));
+      else if (z.vorschau) { z.vorschau = null; leisteAus(); }
+      else zuruecksetzen(z);                                                                   // nur ein Punkt: verwerfen
+      ctx.neuZeichnen();
+      return true;
+    },
     zugVerwerfen: (z, ctx) => { zuruecksetzen(z); ctx.lauf.tipp = ''; },
 
     neu(ctx) {

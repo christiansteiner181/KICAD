@@ -256,7 +256,18 @@ class Lauf {
     finally {
       this.beschaeftigt = false;
       if (!this.fertig) { this.berechneFang(); this.hinweisAktualisieren(); this.zeichnen(); }
+      if (this.escWartet && !this.fertig) { this.escWartet = false; this.esc(); }   // Esc während der Arbeit: jetzt nachholen
     }
+  }
+
+  /** Esc (Christian 09.11.2026: «esc funktioniert immer noch nicht zuverlässig»): ein Weg für alle Werkzeuge. Läuft gerade etwas (Abfrage des Kerns),
+   *  wird Esc danach ausgeführt statt verworfen; das Werkzeug kann es selbst behandeln (def.esc, z. B. Leitung: Zug anlegen), sonst stufenweise
+   *  abbrechen (Eingabe leeren, Zug verwerfen, Werkzeug beenden). */
+  esc() {
+    if (this.fertig) return;
+    if (this.beschaeftigt) { this.escWartet = true; return; }
+    if (this.def.esc?.(this.z, this.ctx)) { this.hinweisAktualisieren(); this.zeichnen(); return; }
+    this.abbrechenStufe();
   }
 
   // ------------------------------------------------------------------------------------------ Ereignisse
@@ -339,7 +350,7 @@ class Lauf {
   tasteInnen(e) {
     const d = this.def;
     if (e.key === 'Shift') { this.shift = true; this.berechneFang(); this.zeichnen(); return false; }
-    if (e.key === 'Escape') { this.abbrechenStufe(); return true; }
+    if (e.key === 'Escape') { this.esc(); return true; }
     if (e.key === 'Enter') {
       if (this.tipp) { this.tippBestaetigen(); return true; }
       this.run(() => d.enter?.(this.z, this.ctx));
@@ -389,13 +400,12 @@ function inEingabe(ziel) {
   return ziel instanceof HTMLElement && (ziel.isContentEditable || ['INPUT', 'TEXTAREA', 'SELECT'].includes(ziel.tagName));
 }
 
-/** Esc in einer Auswahlliste bzw. einem Kästchen (Optionsleiste, Eigenschaftsfenster) gehört dem Werkzeug (Christian 09.11.2026: «esc. beendet die
- *  befehle nicht» – nach einer Wahl im Eigenschaftsfenster blieb der Fokus in der Liste): Feld verlassen, dann wie Esc in der Ansicht. Textfelder:
- *  Esc beendet nur die Eingabe. true = das Ereignis gehört dem Werkzeug. */
+/** Esc in einem Feld (Optionsleiste, Eigenschaftsfenster) gehört dem laufenden Werkzeug (Christian 09.11.2026: «esc. beendet die befehle nicht», «esc
+ *  funktioniert immer noch nicht zuverlässig»): Feld verlassen (die Eingabe gilt), dann wie Esc in der Ansicht – auch in Textfeldern.
+ *  true = das Ereignis gehört dem Werkzeug. */
 export function escAusFeld(e) {
   const z = e.target;
   if (e.key !== 'Escape' || !(z instanceof HTMLElement)) return false;
-  if (!(z.tagName === 'SELECT' || (z.tagName === 'INPUT' && ['checkbox', 'radio'].includes(z.type)))) return false;
   z.blur();
   return true;
 }
@@ -404,8 +414,8 @@ if (typeof document !== 'undefined') {
   document.addEventListener('keydown', (e) => {
     if (!aktiv || dialogOffen()) return;
     if (inEingabe(e.target) && !escAusFeld(e)) {
-      // In der Optionsleiste beendet Enter/Esc nur die Eingabe
-      if ((e.key === 'Enter' || e.key === 'Escape') && e.target.closest?.('#optionsleiste')) { e.preventDefault(); e.stopPropagation(); e.target.blur(); }
+      // In der Optionsleiste beendet Enter nur die Eingabe (Esc gehört dem Werkzeug, escAusFeld)
+      if (e.key === 'Enter' && e.target.closest?.('#optionsleiste')) { e.preventDefault(); e.stopPropagation(); e.target.blur(); }
       return;
     }
     if (aktiv.taste(e)) { e.preventDefault(); e.stopPropagation(); }
