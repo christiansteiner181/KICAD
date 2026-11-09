@@ -463,3 +463,4 @@ nicht die Arbeit der Agenten). Je Aufgabenart:
 | 02.11.2026 | Herstellerbibliothek Konzept | VDI-3805-Verfügbarkeit Biral, Grundfos, Wilo, Siemens, Belimo, EBRO und freie Formatbeschreibung recherchieren | general-purpose (sonnet) | ok – VDI 3805 nur Belimo (ZIP ~367 MB) und EBRO (Registrierung); Pumpenhersteller nicht; Siemens unklar; Feldaufbau nur in kostenpflichtigen Blättern |
 | 04.11.2026 | Farben | RAL/NCS-Tabelle kataloge/farben.json aus Quellen übertragen | Agent (Tabellenübertragung) | übernommen (a8088f4), Stichproben RAL 9016/7016 geprüft |
 | 09.11.2026 | M3 | Prüfung Leitungs-Zeichenfunktionen ohne KI (nur lesen) | Explore (sonnet) | keine KI-Aufrufe im Rechenweg; KI-Palette darf Leitungsbefehle auslösen; KI-Entwürfe von Leitungsserien werden ungeprüft verwendet |
+| 09.11.2026 | Übersicht | Liste: welche Funktionen KI zwingend brauchen (nur lesen) | Explore (sonnet) | zwei: Palette Claude, Familie aus Unterlagen (+3 Skripte) |
