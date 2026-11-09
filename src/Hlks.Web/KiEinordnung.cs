@@ -52,7 +52,7 @@ public static class KiEinordnung
             ["element_anlegen", "element_aendern", "system_vererben", "element_loeschen", "verbinden", "trennen", "leitung_ziehen", "elemente_drehen", "elemente_kopieren",
              "elemente_spiegeln", "elemente_verschieben", "ausrichten", "versetzen", "elemente_loeschen", "elemente_aendern", "rueckgaengig", "wiederholen"]),
         new("Leitungen und Schema", "Leitungen zeichnen, teilen, dimensionieren und Schemata anordnen – Modellarbeit, als Paket zurücknehmbar.",
-            ["leitung_abzweigen", "fallleitung_platzieren", "steigleitung_platzieren", "leitung_aufteilen", "leitung_einsetzen", "leitung_teilen", "ecke_bilden", "dehnen_bis", "leitung_gefaelle", "leitung_hoehe", "parallele_leitungen", "bogen_zu_tstueck", "tstueck_zu_bogen", "leitung_groesse", "leitung_serie", "leitung_zeichnen", "fliessrichtung_aus_quelle", "uebergang_setzen", "schema_anlegen",
+            ["leitung_abzweigen", "fallleitung_platzieren", "steigleitung_platzieren", "leitung_aufteilen", "leitung_einsetzen", "leitung_teilen", "ecke_bilden", "dehnen_bis", "leitung_gefaelle", "leitung_hoehe", "parallele_leitungen", "bogen_zu_tstueck", "tstueck_zu_bogen", "leitung_groesse", "leitung_serie", "leitung_zeichnen", "fliessrichtung_aus_quelle", "fliessrichtung_umkehren", "uebergang_setzen", "schema_anlegen",
              "schema_anordnen", "schema_lage"]),
         new("Heizung", "Heizgruppen und Systempaare anlegen, ändern und aus dem Netz vorschlagen (Modul 5) – Modellarbeit, als Paket zurücknehmbar; " +
             "Temperaturen sind Eingaben ohne Vorgabewert; die Heizlast nach SIA 384.201 übernimmt heizlast_uebernehmen in die Räume.",

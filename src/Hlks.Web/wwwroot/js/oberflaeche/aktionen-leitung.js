@@ -47,6 +47,15 @@ for (const [id, titel, variante] of [['sa.abwasser', 'Abwasserleitung', 'abwasse
   });
 }
 
+// Fluss- und Gefällsrichtung umkehren (Christian 09.11.2026: «bei abläufen muss die fluss und gefällsrichtung angezeigt und invertiert werden können»):
+// Kontextregister einer gewählten Leitung; Befehl fliessrichtung_umkehren (ganzer Zug, Gefälle in die neue Richtung)
+const leitungZumUmkehren = () => { const el = element(zustand.auswahl); return el && ['Rohr', 'Kanal'].includes(el.klasse) ? el : null; };
+registrieren({
+  id: 'kontext.fliess-umkehren', titel: 'Fliessrichtung umkehren', symbol: 'netzAuf', kuerzel: null, register: 'kontext', gruppe: 'Netz',
+  aktiv: () => !!leitungZumUmkehren(), hinweis: 'Zuerst eine Leitung auswählen.',
+  async ausfuehren() { const el = leitungZumUmkehren(); if (el) ergebnisMelden(await sende('fliessrichtung_umkehren', { leitung: el.kennzeichen })); },
+});
+
 // ---------------------------------------------------------------------------------------------- Fallleitung (06.11.2026)
 
 registrieren({

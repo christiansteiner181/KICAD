@@ -111,10 +111,12 @@ public class Darstellung3SerieTests
         var t = Teil(p, "RO-1");
         // Handrechnung: 25 + 2 · 20 = 65 mm Dämmbreite
         var band = t.Primitive.Where(x => x.Art == "polygon" && x.Stil.Fuellung == HlksGrafik.DaemmGelb).ToList();
-        var b = Assert.Single(band);
-        Assert.Equal(HlksGrafik.DaemmLinie, b.Stil.Farbe);
-        Assert.Equal(Stifte.Duenn, b.Stil.Stift);
+        var b = Assert.Single(band);   // eine Fläche ohne Rand, dazu zwei schwarze Randlinien
+        Assert.Null(b.Stil.Stift);
         Assert.Equal(65, Abstand(b.Punkte[0], b.Punkte[3]), 6);
+        var raender = t.Primitive.Where(x => x.Art == "polylinie" && x.Stil.Farbe == HlksGrafik.DaemmLinie).ToList();
+        Assert.Equal(2, raender.Count);
+        Assert.All(raender, r => Assert.Equal(Stifte.Duenn, r.Stil.Stift));
         Assert.True(t.Primitive.IndexOf(b) < t.Primitive.FindIndex(x => x.Art == "polygon" && x.Stil.Fuellung != HlksGrafik.DaemmGelb));   // hinter dem Rohr
         // das Rohr selbst bleibt 25 mm breit
         var rohr = t.Primitive.First(x => x.Art == "polygon" && x.Stil.Fuellung != HlksGrafik.DaemmGelb);
@@ -131,9 +133,13 @@ public class Darstellung3SerieTests
         var p = MitSerie(false);
         Ok(Rohr(p, "RO-1", "DN 20", [0, 0, 500], [1000, 0, 500], [1000, 1000, 500]));
         Aendern(p, "RO-1", new JsonObject { ["daemmdicke"] = 20 });
-        var band = Teil(p, "RO-1").Primitive.Where(x => x.Art == "polygon" && x.Stil.Fuellung == HlksGrafik.DaemmGelb).ToList();
-        Assert.Equal(2, band.Count);
-        Assert.All(band, b => Assert.Equal(65, Abstand(b.Punkte[0], b.Punkte[3]), 6));
+        var t = Teil(p, "RO-1");
+        Assert.Single(t.Primitive, x => x.Art == "polygon" && x.Stil.Fuellung == HlksGrafik.DaemmGelb);   // eine Fläche über den Knick
+        var raender = t.Primitive.Where(x => x.Art == "polylinie" && x.Stil.Farbe == HlksGrafik.DaemmLinie).ToList();
+        Assert.Equal(2, raender.Count);
+        Assert.All(raender, r => Assert.Equal(3, r.Punkte.Count));
+        Etwa([1032.5, -32.5], raender[1].Punkte[1], 1e-9);   // rechts der Laufrichtung: Gehrungspunkt (Abstand 65 mm)
+        Etwa([967.5, 32.5], raender[0].Punkte[1], 1e-9);
     }
 
     [Fact]

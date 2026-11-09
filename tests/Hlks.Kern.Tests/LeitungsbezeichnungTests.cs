@@ -78,7 +78,8 @@ public class LeitungsbezeichnungTests
         List<Primitiv> Prims() => Grafik.Plan(p, "AN-L").Teile.Single(x => x.Id == k.Id).Primitive;
         var band = Prims().Where(x => x.Stil.Fuellung == HlksGrafik.DaemmGelb && x.Art == "polygon").ToList();
         Assert.NotEmpty(band);
-        Assert.All(band, x => { Assert.Equal(HlksGrafik.DaemmLinie, x.Stil.Farbe); Assert.Equal(HlksGrafik.DaemmDeckkraft, x.Stil.Deckkraft); });
+        Assert.All(band, x => Assert.Equal(HlksGrafik.DaemmDeckkraft, x.Stil.Deckkraft));
+        Assert.Equal(2, Prims().Count(x => x.Art == "polylinie" && x.Stil.Farbe == HlksGrafik.DaemmLinie));   // schwarze Randlinien
         Assert.True(p.Ausfuehren("element_aendern", new JsonObject { ["element"] = "AN-L", ["eigenschaften"] = new JsonObject { ["detailgrad"] = "grob" } }).Angenommen);
         var grob = Prims();
         Assert.Single(grob, x => x.Art == "kreis" && x.Stil.Fuellung == HlksGrafik.DaemmGelb);

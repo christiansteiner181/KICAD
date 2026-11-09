@@ -351,6 +351,23 @@ public class AbwasserSerieTests
         Sauber(p);
     }
 
+    /// <summary>Christian 09.11.2026: «bei abläufen muss die fluss und gefällsrichtung angezeigt und invertiert werden können».</summary>
+    [Fact]
+    public void Ablauf_FliessUndGefaellsrichtung_Umkehren()
+    {
+        var p = MitPe();
+        Ok(PeZeichnen(p, "d 110", [[0, 0, 600], [3000, 0, 600]], extra: new JsonObject { ["gefaelle"] = 2 }));
+        var rohre = p.Modell.DerKlasse("Rohr").OrderBy(r => r.Kennzeichen).ToList();
+        double Z(Element r, int i) => p.Modell.Finde(r.Id)!.Geometrie!.Punkte[i][2];
+        Assert.True(Z(rohre[0], 0) > Z(rohre[0], 1));   // fällt in Fliessrichtung
+        var pfeil = Grafik.Plan(p, "AN-EG").Teile.Single(x => x.Id == rohre[0].Id).Primitive.Where(x => x.Art == "polygon" && x.Punkte.Count == 3 && x.Stil.Fuellung == HlksGrafik.AchseAnthrazit);
+        Assert.Single(pfeil);   // Pfeil in Fliessrichtung
+        Ok(p.Ausfuehren("fliessrichtung_umkehren", new JsonObject { ["leitung"] = rohre[0].Kennzeichen }));
+        var a = p.Modell.Finde(rohre[0].Id)!.Geometrie!.Punkte;
+        Assert.Equal(3000, a[0][0], 1);   // Anfang jetzt am anderen Ende
+        Assert.True(a[0][2] > a[^1][2] + 1);   // und fällt wieder in (neuer) Fliessrichtung
+    }
+
     /// <summary>Christian 09.11.2026: «bei dämmung auch bogenradien zeichnen» – der Bogen trägt das Dämmband der angeschlossenen Leitung entlang seiner Achse.</summary>
     [Fact]
     public void Daemmung_AuchAmBogen()

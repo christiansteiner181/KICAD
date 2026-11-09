@@ -3,6 +3,13 @@
    Farben und Masse nur über diese Variablen; Schriftgrösse überall 12 px (Revit: Segoe UI 9 pt).
    Kein CSS `zoom`: es verschiebt die Koordinaten der Mausklicks im SVG-Grundriss. */
 :root {
+  /* Optionsleiste mit Eingabe: hellgelb in beiden Designs (Christian 07.11.2026), Felder weiss */
+  --ol-eingabe-flaeche: #FFF6C8;
+  --ol-eingabe-text: #1f1f1f;
+  --ol-eingabe-leise: #555;
+  --ol-eingabe-feld: #ffffff;
+  --ol-eingabe-rand: #b5b09a;
+  --ol-eingabe-platzhalter: #8a8a8a;
   --schrift: "Segoe UI", system-ui, -apple-system, sans-serif;
   --schrift-mono: Consolas, "Cascadia Mono", monospace;
   --schriftgroesse: 12px;
@@ -101,6 +108,13 @@
 }
 
 :root[data-design="dunkel"] {
+  /* Optionsleiste: gleich hell wie im hellen Design (Christian 07.11.2026) */
+  --ol-eingabe-flaeche: #FFF6C8;
+  --ol-eingabe-text: #1f1f1f;
+  --ol-eingabe-leise: #555;
+  --ol-eingabe-feld: #ffffff;
+  --ol-eingabe-rand: #b5b09a;
+  --ol-eingabe-platzhalter: #8a8a8a;
   color-scheme: dark;
   --text: #f5f5f5;
   --text-leise: #aab1bb;

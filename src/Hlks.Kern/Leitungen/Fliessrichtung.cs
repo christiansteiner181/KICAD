@@ -98,3 +98,51 @@ public sealed class FliessrichtungAusQuelle : IBefehl
         foreach (var (gegen, name) in neuVerb) k.Verbinden(new Anschlusspunkt(leitung.Id, name), gegen);
     }
 }
+
+/// <summary>fliessrichtung_umkehren (Christian 09.11.2026: «bei abläufen muss die fluss und gefällsrichtung angezeigt und invertiert werden können»):
+/// kehrt die Fliessrichtung des Leitungszugs um (Geraden über Bögen und Reduktionen bis zum nächsten T-Stück bzw. Gerät) und legt ein vorhandenes Gefälle
+/// in die neue Fliessrichtung (leitung_gefaelle mit demselben Gefälle; ist ein Ende an ein Element mit Lage gebunden, bleibt dessen Höhe).</summary>
+public sealed class FliessrichtungUmkehren : IBefehl
+{
+    public const string Text = "Kehrt Fliess- und Gefällsrichtung eines Leitungszugs um (Abläufe, Christian 09.11.2026): Punkte, Grössen und Verbindungen von anfang und ende " +
+        "jeder Geraden werden getauscht (Lage bleibt); hatte der Zug ein Gefälle, wird es mit demselben Wert in die neue Fliessrichtung gelegt (Bögen wandern mit; " +
+        "ein an ein Element mit Lage gebundenes Ende behält seine Höhe). zug = false: nur die genannte Gerade, ohne Gefälle. Ein Paket.";
+    public string Name => "fliessrichtung_umkehren";
+    public string Beschreibung => Text;
+    public IReadOnlyList<ParameterDef> Parameter { get; } =
+    [
+        new("leitung", "text", true, "Eine Gerade des Zugs (Kennzeichen oder Id)"),
+        new("zug", "bool", false, "false: nur diese Gerade umkehren (Vorgabe true: der ganze Leitungszug samt Gefälle)"),
+    ];
+
+    public void Ausfuehren(Kontext k, JsonObject p)
+    {
+        var m = k.Arbeit;
+        var e = m.Hole(Param.Text(p, "leitung", true));
+        if (!k.Katalog.IstArt(e, "Leitung")) throw new HlksFehler($"{e.Kennzeichen} ist keine Leitung.", "Eine Gerade (Rohr) angeben.");
+        bool zug = p["zug"] is null || Param.Bool(p, "zug");
+        var glieder = zug ? Leitungszug.Finden(m, k.Katalog, e).Glieder.Select(g => g.Element).Where(x => k.Katalog.IstArt(x, "Leitung")).ToList() : [e];
+        // Gefälle vor dem Umkehren: Eigenschaft gefaelle, sonst gemessen am ersten flachen Stück (Annahme: bis 15 % Neigung gilt als Gefälle)
+        double? gef = glieder.Select(x => x.Zahl("gefaelle")).FirstOrDefault(x => x > 0);
+        if (gef is null)
+            foreach (var x in glieder)
+            {
+                var pts = x.Geometrie?.Punkte;
+                if (pts is not { Count: >= 2 }) continue;
+                for (int i = 1; i < pts.Count && gef is null; i++)
+                {
+                    double h = Math.Sqrt(Math.Pow(pts[i][0] - pts[i - 1][0], 2) + Math.Pow(pts[i][1] - pts[i - 1][1], 2));
+                    double dz = Math.Abs((pts[i].Length > 2 ? pts[i][2] : 0) - (pts[i - 1].Length > 2 ? pts[i - 1][2] : 0));
+                    if (h > 1 && dz > 0.5 && dz <= 0.15 * h) gef = Math.Round(dz / h * 100, 2);
+                }
+                if (gef is not null) break;
+            }
+        foreach (var x in glieder) FliessrichtungAusQuelle.Umkehren(k, m.Finde(x.Id)!);
+        k.Hinweise.Add($"Fliessrichtung umgekehrt: {string.Join(", ", glieder.Select(x => x.Kennzeichen))}.");
+        if (zug && gef is double g && g > 0)
+        {
+            new LeitungGefaelle().Ausfuehren(k, new JsonObject { ["leitung"] = e.Id, ["gefaelle"] = g, ["zug"] = true });
+            k.Hinweise.Add($"Gefälle {g:0.##} % in die neue Fliessrichtung gelegt.");
+        }
+    }
+}

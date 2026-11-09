@@ -99,12 +99,26 @@ function kontur(stil, ctx) {
 function fuellung(stil) {
   const d = stil?.deckkraft;
   const deck = Number.isFinite(d) && d < 1 ? ` fill-opacity="${zahl(Math.max(0, d))}"` : '';
+  // Dunkles Design (Christian 09.11.2026: «die darstellung der transparenten flächen wird im dunklen modeu abgedunkelt. das ist nicht gewollt»): eine
+  // transparente Farbfläche wird mit Weiss vorgemischt (wie auf weissem Papier) und fast deckend gezeichnet, statt mit dem dunklen Grund zu mischen
+  const hell = (f) => (dunkel() && deck ? { klasse: '', attr: ` fill="${mitWeiss(f, Math.max(0, d))}" fill-opacity="${zahl(DUNKEL_DECKKRAFT)}"` } : { klasse: '', attr: ` fill="${f}"${deck}` });
   switch (stil?.fuellung) {
     case undefined: case null: case '': return { klasse: '', attr: ' fill="none"' };
-    case 'schnitt': { const f = hex(stil.farbe); return f ? { klasse: '', attr: ` fill="${f}"${deck}` } : { klasse: 'pf', attr: deck }; }
+    case 'schnitt': { const f = hex(stil.farbe); return f ? hell(f) : { klasse: 'pf', attr: deck }; }
     case 'papier': return { klasse: 'pp', attr: deck };
-    default: { const f = hex(stil.fuellung); return f ? { klasse: '', attr: ` fill="${f}"${deck}` } : { klasse: '', attr: ' fill="none"' }; }
+    default: { const f = hex(stil.fuellung); return f ? hell(f) : { klasse: '', attr: ' fill="none"' }; }
   }
+}
+
+/** ANNAHME Gestaltung: Deckkraft der vorgemischten Füllung im dunklen Design (darunterliegende Linien bleiben leicht sichtbar). */
+const DUNKEL_DECKKRAFT = 0.85;
+const dunkel = () => typeof document !== 'undefined' && document.documentElement?.dataset?.design === 'dunkel';
+/** #rrggbb mit Deckkraft d auf Weiss gemischt. */
+export function mitWeiss(f, d) {
+  if (f.length !== 7) return f;   // nur #rrggbb
+  const n = parseInt(f.slice(1), 16);
+  const k = (x) => Math.round(255 - (255 - x) * d).toString(16).padStart(2, '0');
+  return `#${k((n >> 16) & 255)}${k((n >> 8) & 255)}${k(n & 255)}`;
 }
 
 const klassen = (...k) => { const t = k.filter(Boolean).join(' '); return t ? ` class="${t}"` : ''; };

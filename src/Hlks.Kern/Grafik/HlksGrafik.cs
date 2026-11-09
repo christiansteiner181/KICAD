@@ -234,6 +234,7 @@ public sealed class HlksGrafik : IGrafikquelle
                         [new Koerperteil { Achse = lauf.Xy.Select(q => new[] { q[0], q[1], 0.0 }).ToList(), AchseRadius = breite / 2 }],
                         q => [q[0], q[1]], M, abwasser || !mass.Rohrband ? AchseAnthrazit : !lauf.Verdeckt ? "#ffffff" : farbe, ueberstand: false));   // leicht gefüllt (Abwasser, Lüftung): anthrazit
             }
+            if (abwasser) teil.Primitive.AddRange(FliessPfeil(ctx, pts, xy, M));   // Fluss- und Gefällsrichtung (09.11.2026)
             teil.Primitive.AddRange(Lagen.Zeichen(ctx.Projekt, e, xy, M));   // Lagezeichen (Lagemanager, 05.11.2026)
             LeitungsText(ctx, e, xy, breite, teil);
             teil.Fangpunkte = xy.Select(p => new[] { p[0], p[1] }).ToList();
@@ -292,6 +293,37 @@ public sealed class HlksGrafik : IGrafikquelle
     /// <summary>Deckkraft der leichten Füllung (Kanäle, Abwasser und ihre Formteile).</summary>
     internal const double LeitungDeckkraft = 0.2;
 
+    /// <summary>Fluss- und Gefällsrichtung einer Abwasserleitung (Christian 09.11.2026: «bei abläufen muss die fluss und gefällsrichtung angezeigt und
+    /// invertiert werden können»): Pfeil auf der Achse bei einem Viertel der Länge in Fliessrichtung (anfang → ende), im Detailgrad fein daneben das Gefälle
+    /// in %. Steigt die Leitung in Fliessrichtung (Gegengefälle), sind Pfeil und Text rot. ANNAHME Gestaltung: Pfeil 3 mm lang, 1.6 mm breit (Papier).</summary>
+    static IEnumerable<Primitiv> FliessPfeil(GrafikKontext ctx, List<double[]> pts, List<double[]> xy, double M)
+    {
+        if (xy.Count < 2 || HlksLinien.PunktBeiLaenge(xy, HlksLinien.Laenge(xy) / 4) is not { } m) yield break;
+        double gef = 0; bool gegen = false;
+        for (int i = 1; i < pts.Count; i++)
+        {
+            double h = Math.Sqrt(Math.Pow(pts[i][0] - pts[i - 1][0], 2) + Math.Pow(pts[i][1] - pts[i - 1][1], 2));
+            if (h < 1) continue;
+            double dz = (pts[i].Length > 2 ? pts[i][2] : 0) - (pts[i - 1].Length > 2 ? pts[i - 1][2] : 0);
+            if (Math.Abs(dz) > 0.15 * h) continue;
+            gef = Math.Abs(dz) / h * 100; gegen = dz > 0.5; break;
+        }
+        string farbe = gegen ? "#d0312d" : AchseAnthrazit;
+        double w = m.Winkel * Math.PI / 180, ux = Math.Cos(w), uy = Math.Sin(w), l = 3.0 * M, b = 0.8 * M;
+        double sx = m.X + ux * l / 2, sy = m.Y + uy * l / 2;   // Spitze
+        yield return new Primitiv { Art = "polygon", Punkte = [[sx, sy], [sx - ux * l - uy * b, sy - uy * l + ux * b], [sx - ux * l + uy * b, sy - uy * l - ux * b]],
+            Stil = new Stil { Stift = Stifte.Duenn, Farbe = farbe, Fuellung = farbe } };
+        if (ctx.Detailgrad == "fein" && gef > 0.005)
+        {
+            var grad = HlksLinien.LesbarerWinkel(m.Winkel); var rad = grad * Math.PI / 180;
+            yield return new Primitiv
+            {
+                Art = "text", Punkte = [[m.X + Math.Sin(rad) * 2.2 * M, m.Y - Math.Cos(rad) * 2.2 * M]], Stil = new Stil { Farbe = farbe },
+                Text = (gegen ? "Gegengefälle " : "") + gef.ToString("0.0#", System.Globalization.CultureInfo.InvariantCulture) + " %", Groesse = Schrift, Ausrichtung = "mitte", Winkel = grad, Mitdrehen = true,
+            };
+        }
+    }
+
     /// <summary>Dämmung (Christian 09.11.2026: «schwarze linien, gelb transparent hinterlegt»). ANNAHME Gestaltung: Gelb #ffd400, Deckkraft 0.35;
     /// Punkt im Detailgrad grob Radius 0.8 mm Papier.</summary>
     internal const string DaemmGelb = "#ffd400";
@@ -306,13 +338,13 @@ public sealed class HlksGrafik : IGrafikquelle
     /// <summary>Dämmung als Band der Dämmbreite: dünne schwarze Ränder, gelbe transparente Füllung, ohne eigene Achse.</summary>
     internal static IEnumerable<Primitiv> DaemmBand(List<double[]> xy, double breite)
     {
-        foreach (var pr in HlksLinien.Band(xy, breite, DaemmGelb))
-        {
-            pr.Stil = pr.Art == "polygon"
-                ? new Stil { Stift = Stifte.Duenn, Linie = "voll", Farbe = DaemmLinie, Fuellung = DaemmGelb, Deckkraft = DaemmDeckkraft }
-                : new Stil { Stift = null, Fuellung = DaemmGelb, Deckkraft = DaemmDeckkraft };
-            yield return pr;
-        }
+        // eine einzige Fläche ohne Rand (Christian 09.11.2026: «bei den Isolationsbogen wird etwas noch nicht sauber dargestellt» – je Teilstück eigene
+        // transparente Flächen überlagerten sich am Bogen) und zwei durchgehende Randlinien; keine Querstriche an den Stössen zu Formteilen
+        if (xy.Count < 2) yield break;
+        var links = HlksLinien.Versatz(xy, breite / 2); var rechts = HlksLinien.Versatz(xy, -breite / 2);
+        if (links.Count < 2 || rechts.Count < 2) yield break;
+        yield return new Primitiv { Art = "polygon", Punkte = links.Concat(Enumerable.Reverse(rechts)).ToList(), Stil = new Stil { Stift = null, Fuellung = DaemmGelb, Deckkraft = DaemmDeckkraft } };
+        foreach (var r in Raender(xy, breite, DaemmLinie, "voll")) yield return r;
     }
 
     /// <summary>Rahmen eckiger Kanäle im Grundriss: je Rahmen ein Rechteck quer zur Achse (Kanalbreite + 2 × Überstand, Profiltiefe entlang der Achse).</summary>

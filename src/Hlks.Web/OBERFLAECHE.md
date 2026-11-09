@@ -4281,6 +4281,13 @@ jedes neue Projekt erhält alle Mustersysteme.
 - **Esc bestätigt** (Christian 09.11.2026: «wird gezeichnet soll jeweils esc. den befehl bestätigen»): Rohr/Kanal – Esc legt den gezeichneten Zug an
   (Vorschau des Kerns und Ausführen in einem); abgelehnt zeigt die Leiste den Vorschlag, Esc zeichnet weiter; ein einzelner Punkt wird verworfen; Esc ohne Zug
   beendet das Werkzeug.
+- **Abwasser – Fluss- und Gefällsrichtung** (Christian 09.11.2026: «bei abläufen muss die fluss und gefällsrichtung angezeigt und invertiert werden
+  können»): Pfeil auf der Achse (bei ¼ der Länge) in Fliessrichtung, im Detailgrad fein daneben das Gefälle in %; steigt die Leitung in Fliessrichtung, rot
+  mit «Gegengefälle». Umkehren: Leitung wählen › Kontextregister › Netz › «Fliessrichtung umkehren» (`fliessrichtung_umkehren`: ganzer Zug, Gefälle mit
+  demselben Wert in die neue Richtung; ein an ein Element mit Lage gebundenes Ende behält seine Höhe).
+- **Dämmung als eine Fläche** (09.11.2026, «bei den Isolationsbogen wird etwas noch nicht sauber dargestellt»): Fläche ohne Rand plus zwei durchgehende
+  Randlinien, keine Überlagerungen am Bogen. **Dunkles Design**: transparente Farbflächen werden mit Weiss vorgemischt (Deckkraft 0.85), damit sie nicht
+  abgedunkelt wirken («die darstellung der transparenten flächen wird im dunklen modeu abgedunkelt. das ist nicht gewollt»; `plangrafik.js › mitWeiss`).
 - **Produktlinie nur im Eigenschaftsfenster** (Christian 09.11.2026): nicht mehr in der Optionsleiste von Rohr/Kanal/Fallleitung; die Typenwahl oben in der
   Palette ist doppelt so gross und gilt während des Zeichnens für die nächsten Teile.
 - **Dämmregel** (Spalte im Dialog, Systemeigenschaft `daemmregel`; Christian 09.11.2026: «dämmdicken gem. energiegesetzt»): «MuKEn 2014 (λ > 0,03 W/(m·K))» bzw.

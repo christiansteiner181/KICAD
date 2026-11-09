@@ -291,14 +291,14 @@ tr.art-angelegt td:first-child { color: var(--ok); }
 #optionsleiste .ol-einheit { color: var(--text-leise); }
 #optionsleiste .ol-bool { cursor: pointer; }
 /* Optionsleiste mit Eingabefeldern hellgelb (Christian 07.11.2026), im dunklen Design gleich hell mit dunkler Schrift */
-#optionsleiste.ol-eingabe { background: #FFF6C8; }
-:root[data-design="dunkel"] #optionsleiste.ol-eingabe { background: #FFF6C8; color: #1f1f1f; }   /* gleich hell wie im hellen Design (Christian 07.11.2026), Schrift dunkel */
-:root[data-design="dunkel"] #optionsleiste.ol-eingabe .ol-titel { color: #1f1f1f; }
-:root[data-design="dunkel"] #optionsleiste.ol-eingabe .ol-leise, :root[data-design="dunkel"] #optionsleiste.ol-eingabe .ol-einheit { color: #555; }
+#optionsleiste.ol-eingabe { background: var(--ol-eingabe-flaeche); }
+:root[data-design="dunkel"] #optionsleiste.ol-eingabe { background: var(--ol-eingabe-flaeche); color: var(--ol-eingabe-text); }   /* gleich hell wie im hellen Design (Christian 07.11.2026), Schrift dunkel */
+:root[data-design="dunkel"] #optionsleiste.ol-eingabe .ol-titel { color: var(--ol-eingabe-text); }
+:root[data-design="dunkel"] #optionsleiste.ol-eingabe .ol-leise, :root[data-design="dunkel"] #optionsleiste.ol-eingabe .ol-einheit { color: var(--ol-eingabe-leise); }
 /* Eingabefelder auf dem Gelb weiss mit dunkler Schrift, auch im dunklen Design (Christian 07.11.2026 «bei der dunklen version die textfelder weiss») */
-:root[data-design="dunkel"] #optionsleiste.ol-eingabe input.ol-feld, :root[data-design="dunkel"] #optionsleiste.ol-eingabe select { background: #ffffff; color: #1f1f1f; border-color: #b5b09a; }
-:root[data-design="dunkel"] #optionsleiste.ol-eingabe input.ol-feld::placeholder { color: #8a8a8a; }
-:root[data-design="dunkel"] #optionsleiste.ol-eingabe select option { background: #ffffff; color: #1f1f1f; }
+:root[data-design="dunkel"] #optionsleiste.ol-eingabe input.ol-feld, :root[data-design="dunkel"] #optionsleiste.ol-eingabe select { background: var(--ol-eingabe-feld); color: var(--ol-eingabe-text); border-color: var(--ol-eingabe-rand); }
+:root[data-design="dunkel"] #optionsleiste.ol-eingabe input.ol-feld::placeholder { color: var(--ol-eingabe-platzhalter); }
+:root[data-design="dunkel"] #optionsleiste.ol-eingabe select option { background: var(--ol-eingabe-feld); color: var(--ol-eingabe-text); }
 #optionsleiste .ol-trenner { width: 1px; align-self: stretch; margin: 3px 2px; background: var(--rand-leise); }
 
 /* Werkzeugschicht in der Ansicht: Linienbreiten bleiben in Bildschirmpixeln (die Schicht liegt in Modellkoordinaten) */

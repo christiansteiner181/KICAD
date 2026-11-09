@@ -228,4 +228,11 @@ public sealed partial class Werkzeuge
         [Description(FliessrichtungAusQuelle.ParAnschluss)] string? anschluss = null,
         [Description("Nur prüfen, nichts ändern")] bool trockenlauf = false)
         => Befehl("fliessrichtung_aus_quelle", Parameter(("quelle", quelle), ("anschluss", anschluss)), trockenlauf);
+
+    [McpServerTool(Name = "fliessrichtung_umkehren"), Description(FliessrichtungUmkehren.Text)]   // Abläufe, 09.11.2026
+    public string FliessrichtungUmkehrenWerkzeug(
+        [Description("Eine Gerade des Zugs (Kennzeichen oder Id)")] string leitung,
+        [Description("false: nur diese Gerade umkehren (Vorgabe true: der ganze Leitungszug samt Gefälle)")] bool zug = true,
+        [Description("Nur prüfen, nichts ändern")] bool trockenlauf = false)
+        => Befehl("fliessrichtung_umkehren", Parameter(("leitung", leitung), ("zug", zug)), trockenlauf);
 }
