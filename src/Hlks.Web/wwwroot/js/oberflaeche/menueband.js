@@ -490,8 +490,10 @@ function optionenZeichnen() {
     return;
   }
   if (modus.id === 'werkzeug') {
-    // Während der Eingabe in einem Feld nicht neu schreiben (Fokus bliebe sonst nicht erhalten)
-    if (document.activeElement?.matches?.('#optionsleiste input, #optionsleiste select')) return;
+    // Während der Eingabe in einem Feld nicht neu schreiben (Fokus bliebe sonst nicht erhalten). Häkchen ausgenommen: ein angeklicktes Häkchen
+    // behält den Fokus, und davon abhängige Felder (Steigleitung VL/RL → Produktlinie, Grösse) erschienen sonst nicht (Christian 09.11.2026:
+    // «grössen können bei den steigleitungen bsp. VL und RL immer noch nicht gewählt werden»)
+    if (document.activeElement?.matches?.('#optionsleiste input:not([type="checkbox"]), #optionsleiste select')) return;
     const o = werkzeugOptionen(modus.daten.werkzeug);
     optionenSetzen(o.html, () => o.binden(optionsleiste));
     return;
