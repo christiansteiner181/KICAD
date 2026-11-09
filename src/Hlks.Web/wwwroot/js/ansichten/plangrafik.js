@@ -32,7 +32,7 @@ export const strichbreite = (stift, massstab) => stiftMm(stift) * massstab;
 const STIFT_KLASSE = { duenn: 'sd', mittel: 'sm', dick: 'sk' };
 
 /** Strichmuster der Linienarten in Papier-mm (Strich, Lücke, …) – wie PdfZeichner.cs. */
-export const LINIENMUSTER = Object.freeze({ strich: [3.0, 1.0], strichpunkt: [6.0, 1.0, 0.5, 1.0], punkt: [0.5, 1.0] });
+export const LINIENMUSTER = Object.freeze({ strich: [3.0, 1.0], strichpunkt: [6.0, 1.0, 0.5, 1.0], punkt: [0.5, 1.0], achse: [3.0, 0.6, 0.3, 0.6] });
 /** stroke-dasharray in Modell-mm; null für durchgezogene Linien. */
 export function dasharray(linie, massstab) {
   const m = LINIENMUSTER[linie];

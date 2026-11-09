@@ -236,9 +236,9 @@ public sealed class HlksGrafik : IGrafikquelle
                 if (!mass.Rechteck)   // nur runde: eckige Kanäle ohne Achsen, runde Lüftungsrohre mit (Christian 06.11.2026)
                     teil.Primitive.AddRange(Achslinien.Zeichnen(
                         [new Koerperteil { Achse = lauf.Xy.Select(q => new[] { q[0], q[1], 0.0 }).ToList(), AchseRadius = breite / 2 }],
-                        q => [q[0], q[1]], M, abwasser || !mass.Rohrband ? AchseAnthrazit : !lauf.Verdeckt ? "#ffffff" : farbe, ueberstand: false));   // leicht gefüllt (Abwasser, Lüftung): anthrazit
+                        q => [q[0], q[1]], M, AchseAnthrazit, ueberstand: false));   // alle Leitungen anthrazit (Christian 09.11.2026)
             }
-            if (abwasser) teil.Primitive.AddRange(FliessPfeil(ctx, pts, xy, M, breite));   // Fluss- und Gefällsrichtung (09.11.2026)
+            if (abwasser) teil.Primitive.AddRange(FliessPfeil(ctx, pts, xy, M, TextBreite(ctx, e, breite)));   // Fluss- und Gefällsrichtung (09.11.2026)
             teil.Primitive.AddRange(Lagen.Zeichen(ctx.Projekt, e, xy, M));   // Lagezeichen (Lagemanager, 05.11.2026)
             LeitungsText(ctx, e, xy, breite, teil);
             teil.Fangpunkte = xy.Select(p => new[] { p[0], p[1] }).ToList();
@@ -429,7 +429,7 @@ public sealed class HlksGrafik : IGrafikquelle
                 {
                     // Achsenkreuz mit Überstand, anthrazit (Christian 06.11.2026: «hier können die achskreuze verlängert werden», «achskreuze in antrazith»)
                     double r = b / 2, hk = r + Achslinien.Ueberstand(r, M);
-                    var kreuzStil = new Stil { Stift = Stifte.Duenn, Linie = "strichpunkt", Farbe = AchseAnthrazit };
+                    var kreuzStil = new Stil { Stift = Stifte.Duenn, Linie = Achslinien.Linie, Farbe = AchseAnthrazit };
                     yield return new Primitiv { Art = "linie", Punkte = [[x - hk, y], [x + hk, y]], Stil = kreuzStil };
                     yield return new Primitiv { Art = "linie", Punkte = [[x, y - hk], [x, y + hk]], Stil = kreuzStil };
                 }
@@ -599,10 +599,16 @@ public sealed class HlksGrafik : IGrafikquelle
     static List<double[]> Rechteck(double x, double y, double b, double h) =>
         [[x - b / 2, y - h / 2], [x + b / 2, y - h / 2], [x + b / 2, y + h / 2], [x - b / 2, y + h / 2]];
 
+    /// <summary>Breite, neben der die Beschriftung steht (Christian 09.11.2026: «beschriftungsposition mit der Dämmung abgleichen»): im Grundriss mit
+    /// gezeichneter Dämmung (fein, mittel; DaemmGrafik) der Aussenrand der Dämmung, sonst die Leitung.</summary>
+    static double TextBreite(GrafikKontext ctx, Element e, double w) =>
+        ctx.Art == "grundriss" && ctx.Detailgrad != "grob" && HlksMasse.Von(ctx.Projekt, e) is { Daemmdicke: > 0 } ms ? Math.Max(w, ms.DaemmBreite) : w;
+
     /// <summary>Beschriftung (Detailgrad fein) mittig über der Leitung: «DN 50»/«NW 50», «400×200», «Ø 250» (Leitungsbezeichnung).</summary>
     static void LeitungsText(GrafikKontext ctx, Element e, List<double[]> xy, double w, Grafikteil teil)
     {
         if (ctx.Detailgrad != "fein" || Leitungsbezeichnung.Text(ctx.Projekt, ctx.Ansicht, e) is not { } text) return;
+        w = TextBreite(ctx, e, w);
         var m = HlksLinien.PunktBeiLaenge(xy, HlksLinien.Laenge(xy) / 2)!.Value;
         var grad = HlksLinien.LesbarerWinkel(m.Winkel);
         var rad = grad * Math.PI / 180;

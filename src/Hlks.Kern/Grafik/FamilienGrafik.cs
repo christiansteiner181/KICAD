@@ -119,7 +119,7 @@ public sealed class FamilienGrafik : IGrafikquelle
         var teil = Grundriss(a, lage, ctx.Detailgrad, ctx.Massstab, farbe, ctx.Katalog, Netz.ElementMedium(ctx.Modell, e), e.Id, Ebene(ctx.Katalog, e),
             formteil || Architektur(ctx.Katalog, e) ? null : e.Kennzeichen, anschlussMarken: !formteil);
         if (formteil && ctx.Detailgrad == "grob")   // einlinig: tiefere Linien enden am Kreis der Steigleitung (Skizze Christian 05.11.2026)
-            teil.Primitive = teil.Primitive.SelectMany(p => p.Art == "polylinie" && p.Stil.Linie != "strichpunkt"
+            teil.Primitive = teil.Primitive.SelectMany(p => p.Art == "polylinie" && p.Stil.Linie is not ("strichpunkt" or Achslinien.Linie)
                 ? HlksGrafik.AmKreisUnterbrechen(ctx, p.Punkte, lage.Ursprung[2]).Select(st => new Primitiv { Art = "polylinie", Punkte = st, Stil = p.Stil })
                 : [p]).ToList();
         else if (formteil) FormteilWieLeitung(ctx, e, teil, farbe);
@@ -182,8 +182,8 @@ public sealed class FamilienGrafik : IGrafikquelle
         {
             if (p.Art == "polygon" && p.Stil.Fuellung == "papier")
                 p.Stil = new Stil { Stift = p.Stil.Stift, Linie = p.Stil.Linie, Farbe = p.Stil.Farbe, Fuellung = farbe ?? "schnitt", Deckkraft = leicht ? HlksGrafik.LeitungDeckkraft : null };
-            else if (p.Art == "polylinie" && p.Stil.Linie == "strichpunkt")
-                p.Stil = new Stil { Stift = p.Stil.Stift, Linie = "strichpunkt", Farbe = leicht ? HlksGrafik.AchseAnthrazit : "#ffffff" };
+            else if (p.Art == "polylinie" && p.Stil.Linie is "strichpunkt" or Achslinien.Linie)   // Achsen anthrazit, fein (Christian 09.11.2026)
+                p.Stil = new Stil { Stift = p.Stil.Stift, Linie = Achslinien.Linie, Farbe = HlksGrafik.AchseAnthrazit };
         }
     }
 
@@ -228,7 +228,7 @@ public sealed class FamilienGrafik : IGrafikquelle
                 });
         // Achslinien runder Körper (Achslinien.cs; nicht zum Sinnbild und nicht bei einliniger Darstellung)
         if (sinnbild.Count == 0 && !einlinig && umriss.Count > 0)
-            teil.Primitive.AddRange(Achslinien.Zeichnen(a.Teile(detail), q => { var w = lage.Welt(q); return [w[0], w[1]]; }, M, farbe, ueberstand: anschlussMarken));   // Formteile (ohne Anschlussmarken) ohne Überstand
+            teil.Primitive.AddRange(Achslinien.Zeichnen(a.Teile(detail), q => { var w = lage.Welt(q); return [w[0], w[1]]; }, M, null, ueberstand: anschlussMarken));   // Formteile (ohne Anschlussmarken) ohne Überstand
         foreach (var f in umriss)
             foreach (var ring in f.Loecher.Prepend(f.Aussen))
                 teil.Fangpunkte!.AddRange(ring.Select(p => new[] { p[0], p[1] }));

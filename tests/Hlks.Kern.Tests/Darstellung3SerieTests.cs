@@ -61,10 +61,10 @@ public class Darstellung3SerieTests
         Assert.Equal(3000, Abstand(band.Punkte[0], band.Punkte[1]), 6);
         Assert.Equal(Kat.Medien["KW"].FarbeHex, band.Stil.Fuellung);
         Assert.Null(band.Stil.Stift);
-        Assert.DoesNotContain(t.Primitive, x => x.Stil.Linie is not ("voll" or "strichpunkt"));
-        // Achslinie (Christian 05.11.2026): weiss auf dem Band; endet am Rohr (06.11.2026 «die achse der rohre darf nicht länger sein, als das rohr selbst»)
-        var achse = Assert.Single(t.Primitive, x => x.Stil.Linie == "strichpunkt");
-        Assert.Equal("#ffffff", achse.Stil.Farbe);
+        Assert.DoesNotContain(t.Primitive, x => x.Stil.Linie is not ("voll" or "achse"));
+        // Achslinie (Christian 05.11.2026): anthrazit (09.11.2026); endet am Rohr (06.11.2026 «die achse der rohre darf nicht länger sein, als das rohr selbst»)
+        var achse = Assert.Single(t.Primitive, x => x.Stil.Linie == "achse");
+        Assert.Equal("#383e42", achse.Stil.Farbe);
         Assert.Equal(0, achse.Punkte[0][0], 6); Assert.Equal(3000, achse.Punkte[^1][0], 6);
         Assert.Equal(2, t.Fangpunkte!.Count);
         Etwa([3000, 0], t.Fangpunkte[1]);
@@ -240,7 +240,7 @@ public class Darstellung3SerieTests
         // Achsenkreuz; unterhalb der Schnitthöhe gleich, darüber und verdeckt wie bisher
         var sp = Teil(p, "RO-S").Primitive;
         var s = Assert.Single(sp, x => x.Art == "kreis");
-        var kreuz = sp.Where(x => x.Stil.Linie == "strichpunkt").ToList();
+        var kreuz = sp.Where(x => x.Stil.Linie == "achse").ToList();
         Assert.Equal(2, kreuz.Count);
         // anthrazit mit Überstand (Christian 06.11.2026 «hier können die achskreuze verlängert werden», «achskreuze in antrazith»): Ø 25 + 2 × 12.5
         Assert.All(kreuz, x => { Assert.Equal("#383e42", x.Stil.Farbe); Assert.Equal(50, Math.Abs(x.Punkte[0][0] - x.Punkte[1][0]) + Math.Abs(x.Punkte[0][1] - x.Punkte[1][1]), 9); });
@@ -339,7 +339,7 @@ public class Darstellung3SerieTests
         Assert.Equal(0.2, r.Stil.Deckkraft);
         Etwa([400, 200], [r.Punkte.Max(a => a[0]) - r.Punkte.Min(a => a[0]), r.Punkte.Max(a => a[1]) - r.Punkte.Min(a => a[1])]);
         Assert.Equal(62.5, Assert.Single(Teil(p, "KA-4").Primitive, x => x.Art == "kreis").Radius!.Value, 9);
-        Assert.Equal(2, Teil(p, "KA-4").Primitive.Count(x => x.Stil.Linie == "strichpunkt"));   // runde Lüftungsrohre mit Achsenkreuz
+        Assert.Equal(2, Teil(p, "KA-4").Primitive.Count(x => x.Stil.Linie == "achse"));   // runde Lüftungsrohre mit Achsenkreuz
     }
 
     [Fact]
@@ -428,6 +428,19 @@ public class Darstellung3SerieTests
     }
 
     // ------------------------------------------------------------------ Beschriftung
+
+    [Fact]
+    public void Beschriftung_GedaemmtesRohr_StehtAusserhalbDerDaemmung()
+    {
+        // Christian 09.11.2026: «beschriftungsposition mit der Dämmung abgleichen»
+        var p = MitSerie(false);
+        Aendern(p, "AN-EG", new JsonObject { ["detailgrad"] = "fein" });
+        Ok(Rohr(p, "RO-1", "DN 20", [0, 0, 500], [3000, 0, 500]));
+        double ohne = Teil(p, "RO-1").Primitive.Single(x => x.Art == "text").Punkte[0][1];
+        Aendern(p, "RO-1", new JsonObject { ["daemmdicke"] = 40 });
+        double mit = Teil(p, "RO-1").Primitive.Single(x => x.Art == "text").Punkte[0][1];
+        Assert.Equal(40, mit - ohne, 1e-6);   // um die Dämmdicke weiter weg, der Abstand zum Rand bleibt gleich
+    }
 
     [Fact]
     public void Beschriftung_RohreMitUndOhneSerie_NwOderDnNachEinstellung()

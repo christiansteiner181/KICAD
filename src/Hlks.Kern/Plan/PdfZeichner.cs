@@ -36,6 +36,7 @@ public sealed class PdfZeichner
     static readonly double[] Strich = [3.0, 1.0];
     static readonly double[] Strichpunkt = [6.0, 1.0, 0.5, 1.0];
     static readonly double[] Punkt = [0.5, 1.0];
+    static readonly double[] Achse = [3.0, 0.6, 0.3, 0.6];   // Achslinien, feiner als Strichpunkt (Christian 09.11.2026; Masse ANNAHME)
 
     /// <summary>Durchmesser eines Punkts der Punktschraffur in mm (Annahme).</summary>
     const double PunktMm = 0.2;
@@ -76,7 +77,7 @@ public sealed class PdfZeichner
     {
         // Deckkraft gilt der Füllung; ohne Füllung der Linie (Unterlagen DWG/IFC: graue Linien halb deckend)
         var pen = new XPen(Farbe(s.Farbe, s.Fuellung is null ? s.Deckkraft : null), (mm ?? Stifte.Mm(s.Stift)) * PtJeMm) { LineJoin = XLineJoin.Miter };
-        var muster = s.Linie switch { "strich" => Strich, "strichpunkt" => Strichpunkt, "punkt" => Punkt, _ => null };
+        var muster = s.Linie switch { "strich" => Strich, "strichpunkt" => Strichpunkt, "punkt" => Punkt, "achse" => Achse, _ => null };
         if (muster is not null)
         {
             // PDFsharp gibt DashPattern als Vielfache der Strichbreite an

@@ -4291,6 +4291,11 @@ jedes neue Projekt erhält alle Mustersysteme.
 - **Lagewechsel beim Zeichnen** (Christian 09.11.2026: «wird beim zeichnen ein lagewechsel vorgenommen, gilt dies nur für die kommenden leitungen»): Lage
   bzw. Höhe in der Optionsleiste setzt am letzten Punkt eine Steigleitung, die folgenden Strecken liegen auf der neuen Lage; schon gezeichnete Strecken
   bleiben. Die Palette zeigt die Höhe des zuletzt gezeichneten Teils während des Zeichnens nur zum Lesen.
+- **Beschriftung neben der Dämmung** (Christian 09.11.2026: «beschriftungsposition mit der Dämmung abgleichen»): Dimension, Höhe ab UKD, Sohle und Gefälle
+  stehen bei gedämmten Leitungen (Grundriss fein/mittel) mit demselben Abstand neben dem Aussenrand der Dämmung wie sonst neben dem Rohr.
+- **Achslinien** (Christian 09.11.2026: «achslinien sollen bei allen leitungen antrazith sein. zudem die strichlinie für achsen etwas feiner»): alle Achsen
+  von Leitungen, Formteilen, Steigleitungen und runden Familienteilen anthrazit, eigene Linienart «achse» (Strichpunkt 3 / 0.6 / 0.3 / 0.6 mm Papier, ANNAHME;
+  bisher Strichpunkt 6 / 1 / 0.5 / 1). Gebäudeachsen und Schnittlinien bleiben «strichpunkt».
 - **Esc beendet** (Christian 09.11.2026: «esc. beendet die befehle nicht»): Esc in einer Auswahlliste bzw. einem Kästchen der Optionsleiste oder des
   Eigenschaftsfensters verlässt das Feld und wirkt wie Esc in der Ansicht (Zug anlegen, sonst Werkzeug beenden); in Textfeldern beendet Esc nur die Eingabe.
   Ist ein Zug gar nicht zeichenbar, verwirft das zweite Esc ihn, das dritte beendet das Werkzeug.

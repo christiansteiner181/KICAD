@@ -10,6 +10,8 @@ namespace Hlks.Kern;
 public static class Achslinien
 {
     public const string Ebene = "achse";
+    /// <summary>Linienart der Achslinien: Strichpunkt, feiner als «strichpunkt» (Christian 09.11.2026).</summary>
+    public const string Linie = "achse";
 
     /// <summary>Überstand der Achslinie über den Körper (siehe Dateikopf).</summary>
     public static double Ueberstand(double r, double massstab) => Math.Max(0.3 * r, Math.Min(3 * massstab, r));
@@ -19,7 +21,9 @@ public static class Achslinien
     public static List<Primitiv> Zeichnen(IEnumerable<Koerperteil> teile, Func<double[], double[]> nach2d, double massstab, string? farbe = null, bool ueberstand = true)
     {
         var aus = new List<Primitiv>();
-        var stil = new Stil { Stift = Stifte.Duenn, Linie = "strichpunkt", Farbe = farbe };
+        // Christian 09.11.2026: «achslinien sollen bei allen leitungen antrazith sein. zudem die strichlinie für achsen etwas feiner.» – Linienart «achse»
+        // (feineres Strichpunktmuster, PdfZeichner.cs) und anthrazit, sofern der Aufrufer keine Farbe vorgibt
+        var stil = new Stil { Stift = Stifte.Duenn, Linie = Linie, Farbe = farbe ?? HlksGrafik.AchseAnthrazit };
         static double Ab(double[] p, double[] q) => Math.Sqrt((p[0] - q[0]) * (p[0] - q[0]) + (p[1] - q[1]) * (p[1] - q[1]));
         static double[] Weiter(double[] von, double[] bis, double um)
         {

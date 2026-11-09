@@ -26,7 +26,7 @@ public sealed class Stil
 {
     /// <summary>duenn | mittel | dick (Papier-mm siehe Stifte), null = keine Kontur.</summary>
     public string? Stift { get; set; } = Stifte.Duenn;
-    /// <summary>voll | strich | strichpunkt | punkt</summary>
+    /// <summary>voll | strich | strichpunkt | punkt | achse (Achslinien, feiner Strichpunkt)</summary>
     public string Linie { get; set; } = "voll";
     /// <summary>Linienfarbe #rrggbb; null = Planfarbe (schwarz auf Papier, hell im dunklen Design).</summary>
     public string? Farbe { get; set; }

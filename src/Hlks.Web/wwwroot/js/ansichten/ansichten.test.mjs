@@ -107,6 +107,7 @@ test('Linienarten als dasharray in Modell-mm – Längen wie im PDF (PdfZeichner
     assert.deepEqual(pg.LINIENMUSTER.strich, muster('Strich'));
     assert.deepEqual(pg.LINIENMUSTER.strichpunkt, muster('Strichpunkt'));
     assert.deepEqual(pg.LINIENMUSTER.punkt, muster('Punkt'));
+    assert.deepEqual(pg.LINIENMUSTER.achse, muster('Achse'));   // Achslinien fein (09.11.2026)
   }
   assert.match(pg.primitivSvg(prim('polylinie', { punkte: [[0, 0], [10, 0], [10, 10]] }, { linie: 'strichpunkt' }), ctx(50)), /stroke-dasharray="300 50 25 50"/);
   assert.doesNotMatch(pg.primitivSvg(prim('linie', { punkte: [[0, 0], [10, 0]] }), ctx(50)), /dasharray/);
