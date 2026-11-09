@@ -26,6 +26,7 @@ const opt = (v, t, gewaehlt) => `<option value="${esc(v)}"${v === gewaehlt ? ' s
 export async function systemeDialog() {
   const w = knoten('<div class="sys-dlg" style="display:grid;gap:10px"></div>');
   let muster = null;
+  let stufeHtml = () => '';
 
   async function laden() {
     try { muster = await abfrage('mustersysteme', {}); } catch (e) { muster = { hinweis: String(e?.message ?? e), systeme: [], bibliothek: {} }; }
@@ -45,6 +46,10 @@ export async function systemeDialog() {
     const sysOpts = (g, ohne) => opt('', '–', g) + systeme.filter((s) => s.kennzeichen !== ohne).map((s) => opt(s.kennzeichen, s.kennzeichen, g)).join('');
     const regeln = (zustand.katalog?.daemmregeln ?? []).map((r) => r.name);
     const regOpts = (g) => opt('', '–', g) + regeln.map((r) => opt(r, r, g)).join('');   // Dämmdicke nach Energiegesetz (09.11.2026)
+    // Produktlinien je Dimension (Christian 09.11.2026: «BSP Heizung <NW100 Mapress-C >NW100 Stahlrohr geschweisst»): Stufen «ab NW → Produktlinie»
+    stufeHtml = (ab, pl) => `<div class="sy-stufe" style="display:flex;gap:4px;align-items:center;margin-top:3px"><span class="leise">ab NW</span>
+      <input type="text" inputmode="decimal" class="st-ab" value="${esc(ab ?? '')}" size="3" data-kein-enter="1"><select class="st-linie">${linOpts(pl ?? '')}</select>
+      <button type="button" class="dlg-knopf st-weg" title="Stufe entfernen">✕</button></div>`;
     const linOpts = (g) => opt('', '–', g) + linien.map((l) => opt(l.kz, l.name, g)).join('');
     w.innerHTML = `
       <div class="leise">Mustersysteme: ${esc((muster?.systeme ?? []).length)} in der Systembibliothek ${esc(bib.pfad ?? '')}${bib.offline ? ' – <b>nicht erreichbar</b>, letzter bekannter Stand' : ''}.
@@ -58,7 +63,9 @@ export async function systemeDialog() {
         <td><select class="sy-typ">${typOpts(wert(s, 'systemtyp') ?? '')}</select></td>
         <td><select class="sy-anlage">${anlOpts(kz(s.teilVon))}</select></td>
         <td><select class="sy-gegen">${sysOpts(kz(s.bezuege?.gegenstueck), s.kennzeichen)}</select></td>
-        <td><select class="sy-linie">${linOpts(wert(s, 'produktlinie') ?? '')}</select></td>
+        <td><select class="sy-linie" title="Produktlinie bis zur ersten Stufe">${linOpts(wert(s, 'produktlinie') ?? '')}</select>
+          <div class="sy-stufen">${(Array.isArray(wert(s, 'produktlinienAb')) ? wert(s, 'produktlinienAb') : []).map((x) => stufeHtml(x.ab, x.produktlinie)).join('')}</div>
+          <button type="button" class="dlg-knopf sy-stufe-neu" title="Ab einer Nennweite eine andere Produktlinie (z. B. ab NW 100 Stahlrohr geschweisst)">+ ab NW</button></td>
         <td><select class="sy-regel">${regOpts(wert(s, 'daemmregel') ?? '')}</select></td>
         <td><input type="text" inputmode="decimal" class="sy-daemm" value="${esc(wert(s, 'daemmdicke') ?? '')}" size="4" data-kein-enter="1"></td>
         <td class="leise">${inBib.has(s.kennzeichen) ? 'in Bibliothek' : '–'}</td></tr>`).join('')}
@@ -83,6 +90,8 @@ export async function systemeDialog() {
   async function ausfuehren(befehl, par) { const r = await sende(befehl, par); const ok = ergebnisMelden(r); if (ok) await laden(); return ok; }
 
   function binden() {
+    w.querySelectorAll('.sy-stufe-neu').forEach((b) => { b.onclick = () => b.previousElementSibling.insertAdjacentHTML('beforeend', stufeHtml('', '')); });
+    w.onclick = (e) => { const x = e.target.closest?.('.st-weg'); if (x) x.closest('.sy-stufe').remove(); };
     // Kennzeichen-Vorschlag mit Präfix (Christian 09.11.2026: «Mache bei allen Systemen einen Präfix. Sa, Hz, Ka, Lu usw.» – Format Sa-KW)
     let vorschlag = '';
     w.querySelector('.n-typ').onchange = (e) => {
@@ -137,6 +146,10 @@ export async function systemeDialog() {
       if (name !== (s.name ?? '')) o.name = name;
       const typ = tr.querySelector('.sy-typ').value; if (typ && typ !== (wert(s, 'systemtyp') ?? '')) eig.systemtyp = typ;
       const lin = tr.querySelector('.sy-linie').value; if (lin !== (wert(s, 'produktlinie') ?? '')) eig.produktlinie = lin || null;
+      const stufen = [...tr.querySelectorAll('.sy-stufe')].map((d) => ({ ab: Number(d.querySelector('.st-ab').value.replace(',', '.')), produktlinie: d.querySelector('.st-linie').value }))
+        .filter((x) => x.ab > 0 && x.produktlinie).sort((a, b) => a.ab - b.ab);
+      const stAlt = Array.isArray(wert(s, 'produktlinienAb')) ? wert(s, 'produktlinienAb') : [];
+      if (JSON.stringify(stufen) !== JSON.stringify(stAlt.map((x) => ({ ab: Number(x.ab), produktlinie: x.produktlinie })))) eig.produktlinienAb = stufen.length ? stufen : null;
       const reg = tr.querySelector('.sy-regel').value; if (reg !== (wert(s, 'daemmregel') ?? '')) eig.daemmregel = reg || null;
       const dt = tr.querySelector('.sy-daemm').value.trim().replace(',', '.'); const dAlt = wert(s, 'daemmdicke');
       if (dt !== String(dAlt ?? '')) eig.daemmdicke = dt === '' ? null : Number(dt);

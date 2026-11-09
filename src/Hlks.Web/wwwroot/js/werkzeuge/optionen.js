@@ -306,7 +306,7 @@ function leitungFelder(wid, kategorie) {
     if (frei()) return wert(wid, 'freiH');
     const g = s ? groessenListe(s).find((x) => x.typ === wert(wid, 'groesse')) : null;
     if (g?.h > 0) return g.h;
-    const m = String(wert(wid, 'groesse') ?? '').match(/(d+(?:.d+)?)s*[x×]s*(d+(?:.d+)?)/);
+    const m = String(wert(wid, 'groesse') ?? '').match(/(\d+(?:\.\d+)?)\s*[x×]\s*(\d+(?:\.\d+)?)/);
     return m ? Number(m[2]) : null;
   };
   const ukdGeschoss = () => ukdFuer(element(zustand.aktiveAnsicht)?.geschoss);
@@ -329,11 +329,47 @@ function leitungFelder(wid, kategorie) {
     if (regel) {
       const s = aktuelleSerie();
       const g = s ? groessenListe(s).find((x) => x.typ === wert(wid, 'groesse')) : null;
-      const dn = g?.dn ?? Number(/DNs*(d+)/i.exec(String(wert(wid, 'groesse') ?? ''))?.[1]);
+      const dn = g?.dn ?? Number(/DN\s*(\d+)/i.exec(String(wert(wid, 'groesse') ?? ''))?.[1]);
       const d = daemmDicke(regel, dn);
       if (d) { setze(wid, 'daemmdicke', d); return; }
     }
     if (w('daemmdicke') > 0) setze(wid, 'daemmdicke', w('daemmdicke'));
+  };
+  // Produktlinien je Dimension (Christian 09.11.2026: «bei den systemen sollten dimensionsabhängig unterschiedliche produktelinien vorgegeben werden
+  // können. BSP Heizung <NW100 Mapress-C >NW100 Stahlrohr geschweisst»): System.produktlinie bis zur ersten Stufe, produktlinienAb [{ ab, produktlinie }]
+  // darüber (ab einschliesslich). Die Grössenliste zeigt dann die Grössen aller Stufen, die Wahl einer Grösse setzt die Produktlinie mit.
+  const systemEl = () => derKlasse('System').find((e) => e.id === wert(wid, 'system') || kz(e) === wert(wid, 'system'));
+  const sysWert = (sy, n) => { const x = sy?.werte?.[n]; return x && typeof x === 'object' && 'wert' in x ? x.wert : x; };
+  const stufen = () => {
+    const sy = systemEl(); const ab = sysWert(sy, 'produktlinienAb');
+    if (!sy || !Array.isArray(ab) || !ab.length) return null;
+    const l = [{ ab: 0, kz: sysWert(sy, 'produktlinie') }, ...ab.map((x) => ({ ab: Number(x.ab), kz: x.produktlinie }))]
+      .filter((x) => x.kz && Number.isFinite(x.ab) && serienListe(kategorie).some((s) => s.kz === x.kz)).sort((a, b) => a.ab - b.ab);
+    return l.length > 1 ? l : null;
+  };
+  const stufenGroessen = (st) => {
+    const opts = [];
+    st.forEach((x, i) => {
+      const d = serieDef(x.kz);
+      if (!d) { serieLaden(x.kz).then(() => leitungHaken.optionenNeu?.()); return; }
+      const bis = st[i + 1]?.ab ?? Infinity;
+      const name = serienListe(kategorie).find((s) => s.kz === x.kz)?.name ?? x.kz;
+      for (const g of groessenListe(d)) {
+        const dn = Number.isFinite(g.dn) ? g.dn : null;
+        if (dn === null ? i !== 0 : dn < x.ab || dn >= bis) continue;
+        opts.push([`${x.kz}§${g.typ}`, `${g.typ} · ${name}`]);
+      }
+    });
+    return opts;
+  };
+  const nachStufengroesse = (el) => {
+    const v = wert(wid, 'groesse');
+    if (typeof v === 'string' && v.includes('§')) {
+      const [k, typ] = v.split('§');
+      setze(wid, 'groesse', typ);
+      if (k !== wert(wid, 'serie')) { setze(wid, 'serie', k); serieLaden(k).then(() => nachNormgroesse(el)); return; }
+    }
+    nachNormgroesse(el);
   };
   const nachNormgroesse = (el) => {
     el?.blur?.();
@@ -345,13 +381,17 @@ function leitungFelder(wid, kategorie) {
     leitungHaken.optionenNeu?.();
   };
   return [
-    { id: 'serie', titel: 'Produktlinie', art: 'auswahl', get werte() { return serienListe(kategorie).map((s) => [s.kz, s.name]); }, leer: 'wählen …', beiAenderung: nachSerie },
+    // Produktlinie nur noch im Eigenschaftsfenster (Typenwahl; Christian 09.11.2026: «produktelinie soll nur noch im eigenschaftsfenster gezeigt werden»)
+    { id: 'serie', titel: 'Produktlinie', art: 'auswahl', sichtbar: () => false, get werte() { return serienListe(kategorie).map((s) => [s.kz, s.name]); }, leer: 'wählen …', beiAenderung: nachSerie },
     { id: 'groesse', get titel() { return frei() ? 'Normgrösse' : 'Grösse'; }, art: 'auswahl', get leer() { return frei() ? 'Vorschlag …' : 'wählen …'; },
       get werte() {
+        const st = stufen();
+        if (st) return stufenGroessen(st);
         const s = aktuelleSerie();
         return s ? groessenOptionen(s) : (serienListe(kategorie).find((x) => x.kz === wert(wid, 'serie'))?.typen ?? []).map((t) => [t, t]);
       },
-      beiAenderung: nachNormgroesse },
+      anzeigeWert: () => (stufen() && wert(wid, 'groesse') ? `${wert(wid, 'serie')}§${wert(wid, 'groesse')}` : wert(wid, 'groesse')),
+      beiAenderung: nachStufengroesse },
     // Freie Grösse (Nachtrag): Zahlenfelder statt der Typwahl, vorbelegt mit der Vorlage; Grenzen und Schritt prüft der Kern
     { id: 'freiB', titel: 'Breite', art: 'zahl', einheit: 'mm', pflicht: true, platzhalter: 'b', breite: 5, sichtbar: () => frei() && istRechteck(aktuelleSerie()) },
     { id: 'freiH', titel: 'Kanalhöhe', art: 'zahl', einheit: 'mm', pflicht: true, platzhalter: 'h', breite: 5, sichtbar: () => frei() && istRechteck(aktuelleSerie()), beiAenderung: () => ausUkd() },
@@ -376,6 +416,8 @@ function leitungFelder(wid, kategorie) {
         const sy = derKlasse('System').find((e) => e.id === wert(wid, 'system') || kz(e) === wert(wid, 'system'));
         const w = (n) => { const x = sy?.werte?.[n]; return x && typeof x === 'object' && 'wert' in x ? x.wert : x; };
         daemmVorschlag();
+        const stu = stufen();   // Produktlinien je Dimension: alle Stufen laden, damit die Grössenliste vollständig ist
+        if (stu) Promise.all(stu.map((x) => serieLaden(x.kz))).then(() => leitungHaken.optionenNeu?.());
         const pl = w('produktlinie');
         if (pl && pl !== wert(wid, 'serie') && serienListe(kategorie).some((s) => s.kz === pl)) { setze(wid, 'serie', pl); nachSerie(); return; }
         leitungHaken.optionenNeu?.();

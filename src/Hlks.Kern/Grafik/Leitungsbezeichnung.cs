@@ -77,6 +77,26 @@ public static class Leitungsbezeichnung
         return $"{(q.Rechteck ? "OK" : "Achse")} = {wert}mm UKD";
     }
 
+    /// <summary>Rohrsohle einer Abwasserleitung ab UK roh Decke am höchsten Punkt des Gefälles (Christian 09.11.2026: «Ablaufleitungen werden immer mit
+    /// der Rohr Sole ab Decke beschriftet. immer am höchsten gefällspunkt.»): Sohle = Achse − Innendurchmesser/2 (ohne Innenmass: Aussen − 2 × Wand),
+    /// Text «Sohle = −XYmm UKD» wie die Lüftung. Punkt = höchster Punkt (Grundriss), Nach = Nachbarpunkt entlang der Leitung. null ohne Serie, Innenmass
+    /// oder UK roh Decke und bei senkrechten Leitungen.</summary>
+    public static (string Text, double[] Punkt, double[] Nach)? SohleUkd(Projekt p, Element e)
+    {
+        if (!Rohrgroessen.IstAbwasser(p, e) || e.Geometrie?.Punkte is not { Count: >= 2 } pts || e.Geschoss is null || p.Modell.Finde(e.Geschoss) is not { } g) return null;
+        if (HlksMasse.Serie(p, e)?.Werte is not { } w) return null;
+        double? innen = w.Innen ?? (w.Aussen is double a && w.Wand is double wd ? a - 2 * wd : null);
+        if (innen is not double di || di <= 0 || Lagen.UkRohdecke(p, g).Wert is not double ukd) return null;
+        int i = 0;
+        for (int k = 1; k < pts.Count; k++) if ((pts[k].Length > 2 ? pts[k][2] : 0) > (pts[i].Length > 2 ? pts[i][2] : 0) + 1e-6) i = k;
+        int n = i + 1 < pts.Count ? i + 1 : i - 1;
+        if (Math.Abs(pts[n][0] - pts[i][0]) + Math.Abs(pts[n][1] - pts[i][1]) < 1) return null;   // senkrecht
+        double sohle = (pts[i].Length > 2 ? pts[i][2] : 0) - (g.Zahl("kote") ?? 0) - di / 2;
+        double d = Math.Round(ukd - sohle);
+        string wert = d == 0 ? "±0" : d > 0 ? "−" + Mm(d) : "+" + Mm(-d);
+        return ($"Sohle = {wert}mm UKD", [pts[i][0], pts[i][1]], [pts[n][0], pts[n][1]]);
+    }
+
     /// <summary>Aussendurchmesser in mm für die Beschriftung: ganzzahlig ohne Nachkommastellen («22»), sonst auf eine Stelle gerundet
     /// mit Punkt («22.5»). Für die Bausteine im Einlageplan («KW: B.n.o Ø16»).</summary>
     public static string Aussendurchmesser(double da) => Math.Round(da, 1, MidpointRounding.AwayFromZero).ToString("0.#", CultureInfo.InvariantCulture);

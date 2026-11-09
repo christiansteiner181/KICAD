@@ -322,14 +322,16 @@ const kennOption = (e) => [e.kennzeichen, e.name ? `${e.kennzeichen} – ${e.nam
  *  Produktlinie (wie die Zeile «Produktlinie», data-ziel lt:serie), beim Zeichnen von Rohr/Kanal die Produktlinie des Werkzeugs, sonst die Klasse. */
 function typWahlHtml(el, istAnsicht, fam) {
   const opts = (liste, aktuell) => [['', 'wählen …'], ...liste].map(([v, n]) => `<option value="${esc(v)}"${v === aktuell ? ' selected' : ''}>${esc(n)}</option>`).join('');
+  // Werkzeug mit Produktlinie (Rohr, Kanal, Fallleitung) aktiv: die Typenwahl gilt für die nächsten Teile – wie Revit beim Platzieren
+  const wid = modus.id === 'werkzeug' ? modus.daten?.werkzeug : null;
+  const feld = wid ? OPT.WERKZEUGE[wid]?.felder?.find((f) => f.id === 'serie') : null;
+  if (feld) {
+    const sl = feld.werte ?? [];
+    return `<select class="ep-wz-serie" data-wz="${wid}" title="Produktlinie beim Zeichnen (Typenwahl)">${opts(sl, optWert(wid, 'serie') ?? '')}</select>`;
+  }
   if (!istAnsicht && leitungsArt(el) === 'leitung' && fam?.f) {
     const sl = serienListe(kategorieVon(el.klasse)).map((s) => [s.kz, s.name]);
     return `<select data-ziel="lt:serie" data-typ="auswahl" title="Produktlinie (Typenwahl)">${opts(sl, fam.f.kennzeichen)}</select>`;
-  }
-  const wid = modus.id === 'werkzeug' ? modus.daten?.werkzeug : null;
-  if (istAnsicht && (wid === 'rohr' || wid === 'kanal')) {
-    const sl = serienListe(wid === 'kanal' ? 'Kanal' : 'Rohr').map((s) => [s.kz, s.name]);
-    return `<select class="ep-wz-serie" data-wz="${wid}" title="Produktlinie beim Zeichnen (Typenwahl)">${opts(sl, optWert(wid, 'serie') ?? '')}</select>`;
   }
   return `<select disabled title="Typwechsel folgt später"><option>${esc(el.klasse)}</option></select>`;
 }

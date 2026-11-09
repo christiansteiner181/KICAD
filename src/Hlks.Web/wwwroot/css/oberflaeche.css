@@ -147,7 +147,7 @@ svg.sym { display: block; flex: none; }
 .ep-leer { padding: 12px 8px; color: var(--text-leise); text-align: center; }
 .ep-kopf { padding: 2px 4px; border-bottom: 1px solid var(--trenner); display: grid; gap: 2px; }
 .ep-typ { display: flex; align-items: center; gap: 4px; }
-.ep-typ select { flex: 1; height: var(--hoehe-zeile); padding: 0 2px; background: var(--eingabe); border: 1px solid var(--eingabe-rand); border-radius: var(--radius); }
+.ep-typ select { flex: 1; height: calc(var(--hoehe-zeile) * 2); font-size: 1.25em; font-weight: 600; padding: 0 4px;   /* Typenwahl doppelt so gross (Christian 09.11.2026) */ background: var(--eingabe); border: 1px solid var(--eingabe-rand); border-radius: var(--radius); }
 .ep-hinweis { color: var(--text-leise); font-style: italic; }
 .ep-reserviert { padding: 1px 4px; border-radius: var(--radius); }
 .ep-reserviert.fremde { background: var(--ob-warnung-flaeche); color: var(--warnung); border: 1px solid var(--warnung); }

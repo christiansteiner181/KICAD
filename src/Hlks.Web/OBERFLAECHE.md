@@ -4261,6 +4261,17 @@ jedes neue Projekt erhält alle Mustersysteme.
   `HLKS_SYSTEMBIBLIOTHEK`); ohne NAS gilt die lokale Kopie, gespeichert wird nur bei erreichbarer Bibliothek. Abfrage `mustersysteme`.
 - **Neues Projekt:** erhält alle Mustersysteme (`ProjektDienst.Anlegen`); Beispielprojekte behalten ihre eigenen Systeme.
 - **Zeichnen:** Wahl eines Systems in der Optionsleiste von Rohr/Kanal schlägt dessen Produktlinie und Dämmdicke vor.
+- **Produktlinien je Dimension** (Christian 09.11.2026: «BSP Heizung <NW100 Mapress-C >NW100 Stahlrohr geschweisst»): im Dialog unter der Produktlinie
+  «+ ab NW» – ab dieser NW (einschliesslich) gilt die andere Produktlinie (`produktlinienAb` [{ ab, produktlinie }]); die Mustersysteme nehmen die Stufen mit
+  (Familien-Id). Beim Zeichnen mit diesem System zeigt die Grössenliste die Grössen aller Stufen («22,0 x 1,2 · Geberit Mapress …»), die Wahl setzt die
+  Produktlinie mit.
+- **Darstellung der Dämmung** (09.11.2026): Detailgrad fein und mittel ein Band in Dämmbreite hinter der Leitung, dünne schwarze Ränder, gelb transparent,
+  ohne eigene Achse (die Leitungsachse bleibt); an Formteilen (Bögen) entlang ihrer Achse, also mit dem Bogenradius; Detailgrad grob nur ein gelber Punkt in
+  der Mitte der Leitungslinie. Senkrechte Leitungen: gelber Ring bzw. gelbes Rechteck.
+- **Abwasser – Sohle ab Decke** (Christian 09.11.2026: «Ablaufleitungen werden immer mit der Rohr Sole ab Decke beschriftet. immer am höchsten
+  gefällspunkt»): Detailgrad fein, unter der Leitung beim höchsten Punkt «Sohle = −XYmm UKD» (Achse − Innendurchmesser/2, bezogen auf die UK roh Decke).
+- **Produktlinie nur im Eigenschaftsfenster** (Christian 09.11.2026): nicht mehr in der Optionsleiste von Rohr/Kanal/Fallleitung; die Typenwahl oben in der
+  Palette ist doppelt so gross und gilt während des Zeichnens für die nächsten Teile.
 - **Dämmregel** (Spalte im Dialog, Systemeigenschaft `daemmregel`; Christian 09.11.2026: «dämmdicken gem. energiegesetzt»): «MuKEn 2014 (λ > 0,03 W/(m·K))» bzw.
   «(λ ≤ 0,03 W/(m·K))» – beim Zeichnen ergibt sich die Dämmdicke aus der DN der gewählten Grösse nach MuKEn 2014 Anhang 4 (`kataloge/daemmung.json`, Quelle
   Art. 1.17 Abs. 2–3, S. 25/27; Rechenregister `leitungen.daemmdicke`); geht der festen Dämmung vor. Die Standard-Mustersysteme Hz-VL/RL (auch Glykol), Sa-WW

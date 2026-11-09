@@ -15,8 +15,11 @@ namespace Hlks.Kern;
 
 public sealed record Musteranlage(string Kennzeichen, string? Name, string? Beschreibung);
 
+/// <summary>Produktlinie ab einer Nennweite (Christian 09.11.2026: «dimensionsabhängig unterschiedliche produktelinien»).</summary>
+public sealed record MusterStufe(double Ab, string? ProduktlinieId, string? ProduktlinieName);
+
 public sealed record Mustersystem(string Kennzeichen, string? Name, string Systemtyp, string? Anlage, string? Gegenstueck,
-    string? ProduktlinieId, string? ProduktlinieName, double? Daemmdicke, string? Daemmregel = null);
+    string? ProduktlinieId, string? ProduktlinieName, double? Daemmdicke, string? Daemmregel = null, IReadOnlyList<MusterStufe>? Stufen = null);
 
 public sealed class Musterdatei
 {
@@ -33,7 +36,8 @@ public sealed class Musterdatei
         foreach (var s in n?["systeme"] as JsonArray ?? [])
             if (Mj.Text(s?["kennzeichen"]) is { Length: > 0 } kz && Mj.Text(s?["systemtyp"]) is { Length: > 0 } typ)
                 d.Systeme.Add(new(kz, Mj.Text(s?["name"]), typ, Mj.Text(s?["anlage"]), Mj.Text(s?["gegenstueck"]),
-                    Mj.Text(s?["produktlinie"]?["id"]), Mj.Text(s?["produktlinie"]?["name"]), Json.Zahl(s?["daemmdicke"]), Mj.Text(s?["daemmregel"])));
+                    Mj.Text(s?["produktlinie"]?["id"]), Mj.Text(s?["produktlinie"]?["name"]), Json.Zahl(s?["daemmdicke"]), Mj.Text(s?["daemmregel"]),
+                    (s?["produktlinienAb"] as JsonArray ?? []).Select(x => Json.Zahl(x?["ab"]) is double ab ? new MusterStufe(ab, Mj.Text(x?["id"]), Mj.Text(x?["name"])) : null).OfType<MusterStufe>().ToList()));
         return d;
     }
 
@@ -51,6 +55,7 @@ public sealed class Musterdatei
         ["kennzeichen"] = s.Kennzeichen, ["name"] = s.Name, ["systemtyp"] = s.Systemtyp, ["anlage"] = s.Anlage, ["gegenstueck"] = s.Gegenstueck,
         ["produktlinie"] = s.ProduktlinieId is null && s.ProduktlinieName is null ? null : new JsonObject { ["id"] = s.ProduktlinieId, ["name"] = s.ProduktlinieName },
         ["daemmdicke"] = s.Daemmdicke, ["daemmregel"] = s.Daemmregel,
+        ["produktlinienAb"] = s.Stufen is { Count: > 0 } st ? new JsonArray(st.OrderBy(x => x.Ab).Select(x => (JsonNode)new JsonObject { ["ab"] = x.Ab, ["id"] = x.ProduktlinieId, ["name"] = x.ProduktlinieName }).ToArray()) : null,
     };
 }
 
@@ -185,6 +190,20 @@ public static class Systembibliothek
 /// <summary>mustersysteme_uebernehmen: legt die Mustersysteme (und ihre Anlagen) im Projekt an; vorhandene Kennzeichen bleiben unverändert.</summary>
 public sealed class MustersystemeUebernehmen : IBefehl
 {
+    /// <summary>Familie des Projekts zu einer Produktlinie; fehlt sie, aus der Familienbibliothek laden (ohne Unterlagen), sonst Hinweis.</summary>
+    static Element? FamilieFuer(Kontext k, string system, string? id, string? name)
+    {
+        var fam = Systembibliothek.Produktlinie(k.Arbeit, id, name);
+        if (fam is null && id is { Length: > 0 })
+        {
+            try { new FamilieLaden().Ausfuehren(k, new JsonObject { ["id"] = id, ["ohne_unterlagen"] = true }); }
+            catch (HlksFehler ex) { k.Hinweise.Add($"{system}: Produktlinie «{name ?? id}» nicht geladen – {ex.Message}"); }
+            fam = Systembibliothek.Produktlinie(k.Arbeit, id, name);
+        }
+        if (fam is null) k.Hinweise.Add($"{system}: Produktlinie «{name ?? id}» nicht im Projekt – mit «Familie laden» nachholen.");
+        return fam;
+    }
+
     public string Name => "mustersysteme_uebernehmen";
     public const string Text = "Übernimmt Mustersysteme der Systembibliothek ins Projekt (Christian 09.11.2026): fehlende Anlagen und Systeme werden angelegt (Systemtyp, " +
         "Vorgabe-Produktlinie, Dämmdicke, Gegenstück VL/RL); Systeme mit schon vorhandenem Kennzeichen bleiben unverändert. Fehlt die Produktlinie im Projekt, wird " +
@@ -241,6 +260,13 @@ public sealed class MustersystemeUebernehmen : IBefehl
                 if (fam is not null) eig["produktlinie"] = fam.Kennzeichen;
                 else k.Hinweise.Add($"{s.Kennzeichen}: Produktlinie «{s.ProduktlinieName ?? s.ProduktlinieId}» nicht im Projekt – mit «Familie laden» nachholen.");
             }
+            if (s.Stufen is { Count: > 0 })
+            {
+                var stufen = new JsonArray();
+                foreach (var st in s.Stufen.OrderBy(x => x.Ab))
+                    if (FamilieFuer(k, s.Kennzeichen, st.ProduktlinieId, st.ProduktlinieName) is { } f) stufen.Add(new JsonObject { ["ab"] = st.Ab, ["produktlinie"] = f.Kennzeichen });
+                if (stufen.Count > 0) eig["produktlinienAb"] = stufen;
+            }
             var o = new JsonObject { ["klasse"] = "System", ["kennzeichen"] = s.Kennzeichen, ["name"] = s.Name ?? s.Kennzeichen, ["eigenschaften"] = eig };
             anlage ??= SystemPraefix.Hauptanlage(k, k.Katalog.Systemtypen[s.Systemtyp]);   // ohne Anlage: Hauptanlage des Gewerks (09.11.2026)
             if (anlage is not null) o["teilVon"] = anlage.Id;
@@ -284,7 +310,13 @@ public sealed class MustersystemSpeichern : IBefehl
             var fam = s.Text("produktlinie") is { Length: > 0 } pl ? m.Finde(pl) ?? m.DerKlasse(Familien.Klasse).FirstOrDefault(f => f.Name == pl) : null;
             var typ = s.Text("systemtyp") ?? throw new HlksFehler($"{s.Kennzeichen} hat keinen Systemtyp.", "Systemtyp in den Eigenschaften setzen.");
             return (Muster: new Mustersystem(s.Kennzeichen, s.Name, typ, anlage?.Kennzeichen, Heizgruppen.Gegenstueck(m, s)?.Kennzeichen,
-                fam is null ? null : Familien.DefinitionsId(fam), fam?.Name, s.Zahl("daemmdicke"), s.Text("daemmregel")), Anlage: anlage);
+                fam is null ? null : Familien.DefinitionsId(fam), fam?.Name, s.Zahl("daemmdicke"), s.Text("daemmregel"),
+                (s.Eigenschaft("produktlinienAb")?.Inhalt as JsonArray ?? []).Select(x =>
+                {
+                    if (Json.Zahl(x?["ab"]) is not double ab || Mj.Text(x?["produktlinie"]) is not { } pkz) return null;
+                    var f = m.Finde(pkz) ?? m.DerKlasse(Familien.Klasse).FirstOrDefault(y => y.Name == pkz);
+                    return f is null ? null : new MusterStufe(ab, Familien.DefinitionsId(f), f.Name);
+                }).OfType<MusterStufe>().ToList()), Anlage: anlage);
         }).ToList();
         var ort = Systembibliothek.Ort(k.Katalog);
         var text = $"{muster.Count} Mustersystem(e) gespeichert{(entfernen.Count > 0 ? $", {entfernen.Count} entfernt" : "")} ({ort.Pfad}).";

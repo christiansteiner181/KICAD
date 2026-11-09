@@ -85,51 +85,55 @@ public class Darstellung3SerieTests
     }
 
     [Fact]
-    public void Grundriss_Grob_BleibtEinfacheLinie_OhneDaemmung()
+    public void Grundriss_Grob_EinfacheLinie_MitGelbemDaemmpunkt()
     {
+        // Christian 09.11.2026: «bei grob, gibt es nur einen gelben punkt auf der leitungslinie»
         var p = MitSerie(false);
         Ok(Rohr(p, "RO-1", "DN 20", [0, 0, 500], [3000, 0, 500]));
         Aendern(p, "RO-1", new JsonObject { ["daemmdicke"] = 20 });
         Aendern(p, "AN-EG", new JsonObject { ["detailgrad"] = "grob" });
-        var l = Assert.Single(Teil(p, "RO-1").Primitive);
-        Assert.Equal("polylinie", l.Art);
+        var pr = Teil(p, "RO-1").Primitive;
+        var punkt = Assert.Single(pr, x => x.Art == "kreis");
+        Assert.Equal(HlksGrafik.DaemmGelb, punkt.Stil.Fuellung);
+        Etwa([1500, 0], punkt.Punkte[0], 1e-9);   // Mitte der Leitung
+        var l = Assert.Single(pr, x => x.Art == "polylinie");
         Assert.Equal("voll", l.Stil.Linie);
         Assert.Equal(Stifte.Mittel, l.Stil.Stift);
     }
 
     [Fact]
-    public void Grundriss_Daemmung_ZweiteKonturDuennGestrichelt()
+    public void Grundriss_Daemmung_GelbesBandHinterDemRohr()
     {
+        // Christian 09.11.2026: «darstellung dämmung … schwarze linien, gelb transparent hinterlegt», «auch auf mittel anwenden»
         var p = MitSerie(false);
         Ok(Rohr(p, "RO-1", "DN 20", [0, 0, 500], [3000, 0, 500]));
         Aendern(p, "RO-1", new JsonObject { ["daemmdicke"] = 20 });
         var t = Teil(p, "RO-1");
-        // Handrechnung: 25 + 2 · 20 = 65 mm äussere Kontur → Ränder bei y = ±32.5
-        var kontur = Strichlinien(t).ToList();
-        Assert.Equal(2, kontur.Count);
-        Assert.All(kontur, k => Assert.Equal(Stifte.Duenn, k.Stil.Stift));
-        Assert.Equal(65, Math.Abs(kontur[0].Punkte[0][1] - kontur[1].Punkte[0][1]), 6);
-        Assert.Equal([32.5, -32.5], kontur.Select(k => k.Punkte[0][1]).ToArray());
-        Assert.Equal([0.0, 3000.0], kontur[0].Punkte.Select(q => q[0]).ToArray());
-        // das Rohr selbst bleibt 25 mm breit und voll
-        Assert.Equal(25, Abstand(t.Primitive.First(x => x.Art == "polygon").Punkte[0], t.Primitive.First(x => x.Art == "polygon").Punkte[3]), 6);
-        // ohne Dämmdicke keine zweite Kontur
+        // Handrechnung: 25 + 2 · 20 = 65 mm Dämmbreite
+        var band = t.Primitive.Where(x => x.Art == "polygon" && x.Stil.Fuellung == HlksGrafik.DaemmGelb).ToList();
+        var b = Assert.Single(band);
+        Assert.Equal(HlksGrafik.DaemmLinie, b.Stil.Farbe);
+        Assert.Equal(Stifte.Duenn, b.Stil.Stift);
+        Assert.Equal(65, Abstand(b.Punkte[0], b.Punkte[3]), 6);
+        Assert.True(t.Primitive.IndexOf(b) < t.Primitive.FindIndex(x => x.Art == "polygon" && x.Stil.Fuellung != HlksGrafik.DaemmGelb));   // hinter dem Rohr
+        // das Rohr selbst bleibt 25 mm breit
+        var rohr = t.Primitive.First(x => x.Art == "polygon" && x.Stil.Fuellung != HlksGrafik.DaemmGelb);
+        Assert.Equal(25, Abstand(rohr.Punkte[0], rohr.Punkte[3]), 6);
+        // ohne Dämmdicke kein Band
         Aendern(p, "RO-1", new JsonObject { ["daemmdicke"] = 0 });
-        Assert.Empty(Strichlinien(Teil(p, "RO-1")));
+        Assert.DoesNotContain(Teil(p, "RO-1").Primitive, x => x.Stil.Fuellung == HlksGrafik.DaemmGelb);
     }
 
     [Fact]
     public void Grundriss_Daemmung_AnKnickenMitGehrung()
     {
-        // Polylinie (Altbestand mit Serie): zweite Kontur folgt dem Knick; Abstand der Ränder bleibt 65 mm
+        // Polylinie (Altbestand mit Serie): das Dämmband folgt dem Knick, je Teilstück 65 mm breit
         var p = MitSerie(false);
         Ok(Rohr(p, "RO-1", "DN 20", [0, 0, 500], [1000, 0, 500], [1000, 1000, 500]));
         Aendern(p, "RO-1", new JsonObject { ["daemmdicke"] = 20 });
-        var kontur = Strichlinien(Teil(p, "RO-1")).ToList();
-        Assert.Equal(2, kontur.Count);
-        Assert.All(kontur, k => Assert.Equal(3, k.Punkte.Count));
-        Etwa([1032.5, -32.5], kontur[1].Punkte[1], 1e-9);   // rechts der Laufrichtung: Gehrungspunkt
-        Etwa([967.5, 32.5], kontur[0].Punkte[1], 1e-9);
+        var band = Teil(p, "RO-1").Primitive.Where(x => x.Art == "polygon" && x.Stil.Fuellung == HlksGrafik.DaemmGelb).ToList();
+        Assert.Equal(2, band.Count);
+        Assert.All(band, b => Assert.Equal(65, Abstand(b.Punkte[0], b.Punkte[3]), 6));
     }
 
     [Fact]
@@ -255,9 +259,9 @@ public class Darstellung3SerieTests
         Ok(Rohr(p, "RO-S", "DN 20", [1000, 1000, 0], [1000, 1000, 3000]));
         Aendern(p, "RO-S", new JsonObject { ["daemmdicke"] = 20 });
         var t = Teil(p, "RO-S");
-        Assert.Equal(4, t.Primitive.Count);   // Kreis, Dämmkontur, Achsenkreuz (2 Linien)
-        Assert.Equal(32.5, t.Primitive[1].Radius!.Value, 9);                  // 25 / 2 + 20
-        Assert.Equal("strich", t.Primitive[1].Stil.Linie);                     // Dämmkontur bleibt dünn gestrichelt
+        Assert.Equal(4, t.Primitive.Count);   // Dämmung, Kreis, Achsenkreuz (2 Linien)
+        Assert.Equal(32.5, t.Primitive[0].Radius!.Value, 9);                  // 25 / 2 + 20
+        Assert.Equal(HlksGrafik.DaemmGelb, t.Primitive[0].Stil.Fuellung);     // gelb hinter dem Rohr (09.11.2026)
         // Polylinie mit senkrechtem Teilstück durch die Schnittebene: dort erscheint der Kreis zusätzlich
         Ok(Rohr(p, "RO-P", "DN 20", [0, 0, 500], [2000, 0, 500], [2000, 0, 2500], [4000, 0, 2500]));
         var pl = Teil(p, "RO-P");
@@ -333,13 +337,12 @@ public class Darstellung3SerieTests
     }
 
     [Fact]
-    public void Kanal_Daemmung_ZweiteKonturUndHellerKoerper()
+    public void Kanal_Daemmung_GelbesBandUndHellerKoerper()
     {
         var p = MitKanaelen();
         Aendern(p, "KA-2", new JsonObject { ["daemmdicke"] = 30 });
-        var kontur = Strichlinien(Teil(p, "KA-2")).ToList();
-        Assert.Equal(2, kontur.Count);
-        Assert.Equal(460, Math.Abs(kontur[0].Punkte[0][1] - kontur[1].Punkte[0][1]), 6);   // 400 + 2 · 30
+        var band = Assert.Single(Teil(p, "KA-2").Primitive, x => x.Art == "polygon" && x.Stil.Fuellung == HlksGrafik.DaemmGelb);
+        Assert.Equal(460, Abstand(band.Punkte[0], band.Punkte[3]), 6);   // 400 + 2 · 30
         var teile = Grafik.Koerper(p, [Hole(p, "KA-2").Id]).Single().Teile.Where(t => t.Masse![0] == 2000).ToList();   // ohne die Rahmen
         Assert.Equal(2, teile.Count);
         Assert.Equal([2000.0, 400.0, 200.0], teile[0].Masse!);

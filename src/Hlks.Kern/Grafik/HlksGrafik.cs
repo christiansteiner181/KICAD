@@ -108,7 +108,8 @@ public sealed class HlksGrafik : IGrafikquelle
     /// <summary>leitung() in zeichnen2d.js, ab Modul 3 (B4) massstäblich und mit Schnitthöhe:
     ///   – Rohr mit Serie: Band mit dem Aussendurchmesser der Grösse (mindestens eine dünne Linie breit), Kanal mit Serie bzw.
     ///     Querschnitt: Umriss b × h bzw. Ø d wie bisher; ohne Serie DN-gerecht wie bisher; Detailgrad grob: einfache Linie.
-    ///   – Dämmung (daemmdicke > 0, Detailgrad mittel/fein): zweite Kontur im Abstand daemmdicke, dünn gestrichelt.
+    ///   – Dämmung (daemmdicke > 0, Detailgrad mittel/fein): Band der Dämmbreite hinter dem Rohr, dünne schwarze Ränder, gelb transparent (09.11.2026);
+    ///     grob: ein gelber Punkt auf der Leitungslinie.
     ///   – Entscheid Christian 19.10.2026 (Abnahme Modul 3, Prüfliste 10): über der Schnitthöhe **ausgezogen**, gestrichelt nur
     ///     **Verdecktes**. Verdeckt = Teilstück ganz unterhalb der Kote des dargestellten Geschosses (in bzw. unter Boden, Decke
     ///     oder Bodenplatte, z. B. Grundleitungen) – Auslegung Hauptlauf, Prüfliste. Gilt für alle Leitungen (mit und ohne Serie);
@@ -199,6 +200,9 @@ public sealed class HlksGrafik : IGrafikquelle
             var breite = Math.Max(mass.Breite, 0.18 * M);   // ANNAHME: nie schmaler als die dünne Linie (0.18 mm Papier)
             foreach (var lauf in laeufe)
             {
+                // Dämmung hinter dem Rohr (Christian 09.11.2026: «darstellung dämmung … schwarze linien, gelb transparent hinterlegt», «auch auf mittel anwenden»)
+                if (mass.Daemmdicke > 0)
+                    teil.Primitive.AddRange(lauf.Verdeckt ? Raender(lauf.Xy, mass.DaemmBreite, DaemmLinie, "strich") : DaemmBand(lauf.Xy, mass.DaemmBreite));
                 if (lauf.Verdeckt)
                     teil.Primitive.AddRange(Raender(lauf.Xy, breite, farbe, "strich"));
                 else if (abwasser)
@@ -224,8 +228,6 @@ public sealed class HlksGrafik : IGrafikquelle
                 // Rahmen eckiger Kanäle (Christian 06.11.2026 «… auch die rahmen darstellen. auch in den grundrissen»; KanalRahmen.cs)
                 if (!lauf.Verdeckt && mass.Rechteck && mass.MitSerie && KanalRahmen.Fuer(ctx.Katalog, mass.Breite, mass.Hoehe) is { } kr)
                     teil.Primitive.AddRange(RahmenPlan(lauf.Xy, breite, kr, farbe));
-                if (mass.Daemmdicke > 0)   // zweite Kontur, dünn gestrichelt
-                    teil.Primitive.AddRange(Raender(lauf.Xy, mass.DaemmBreite, farbe, "strich"));
                 // Achslinie runder Leitungen (Achslinien.cs, Christian 05.11.2026 «auch dort»): auf dem gefüllten Rohrband weiss, sonst in der Leitungsfarbe
                 if (!mass.Rechteck)   // nur runde: eckige Kanäle ohne Achsen, runde Lüftungsrohre mit (Christian 06.11.2026)
                     teil.Primitive.AddRange(Achslinien.Zeichnen(
@@ -260,6 +262,9 @@ public sealed class HlksGrafik : IGrafikquelle
                     : HlksLinien.BandGestrichelt(lauf.Xy, w, farbe ?? "schnitt", M));
         }
 
+        // Dämmung im Detailgrad grob: ein gelber Punkt auf der Leitungslinie (Christian 09.11.2026: «bei grob, gibt es nur einen gelben punkt auf der leitungslinie»)
+        if (e.Zahl("daemmdicke") is double dg && dg > 0 && xy.Count >= 2 && HlksLinien.PunktBeiLaenge(xy, HlksLinien.Laenge(xy) / 2) is { } mp)
+            teil.Primitive.Add(new Primitiv { Art = "kreis", Punkte = [[mp.X, mp.Y]], Radius = DaemmPunktRadius * M, Stil = new Stil { Stift = Stifte.Duenn, Farbe = DaemmLinie, Fuellung = DaemmGelb } });
         teil.Primitive.AddRange(Lagen.Zeichen(ctx.Projekt, e, xy, M));   // Lagezeichen (Lagemanager, 05.11.2026)
         LeitungsText(ctx, e, xy, w, teil);
         teil.Fangpunkte = xy.Select(q => new[] { q[0], q[1] }).ToList();
@@ -286,6 +291,29 @@ public sealed class HlksGrafik : IGrafikquelle
 
     /// <summary>Deckkraft der leichten Füllung (Kanäle, Abwasser und ihre Formteile).</summary>
     internal const double LeitungDeckkraft = 0.2;
+
+    /// <summary>Dämmung (Christian 09.11.2026: «schwarze linien, gelb transparent hinterlegt»). ANNAHME Gestaltung: Gelb #ffd400, Deckkraft 0.35;
+    /// Punkt im Detailgrad grob Radius 0.8 mm Papier.</summary>
+    internal const string DaemmGelb = "#ffd400";
+    internal const string DaemmLinie = "#000000";
+    internal const double DaemmDeckkraft = 0.35;
+    internal const double DaemmPunktRadius = 0.8;
+
+    static Stil DaemmStil(bool verdeckt) => verdeckt
+        ? new Stil { Stift = Stifte.Duenn, Linie = "strich", Farbe = DaemmLinie }
+        : new Stil { Stift = Stifte.Duenn, Linie = "voll", Farbe = DaemmLinie, Fuellung = DaemmGelb, Deckkraft = DaemmDeckkraft };
+
+    /// <summary>Dämmung als Band der Dämmbreite: dünne schwarze Ränder, gelbe transparente Füllung, ohne eigene Achse.</summary>
+    internal static IEnumerable<Primitiv> DaemmBand(List<double[]> xy, double breite)
+    {
+        foreach (var pr in HlksLinien.Band(xy, breite, DaemmGelb))
+        {
+            pr.Stil = pr.Art == "polygon"
+                ? new Stil { Stift = Stifte.Duenn, Linie = "voll", Farbe = DaemmLinie, Fuellung = DaemmGelb, Deckkraft = DaemmDeckkraft }
+                : new Stil { Stift = null, Fuellung = DaemmGelb, Deckkraft = DaemmDeckkraft };
+            yield return pr;
+        }
+    }
 
     /// <summary>Rahmen eckiger Kanäle im Grundriss: je Rahmen ein Rechteck quer zur Achse (Kanalbreite + 2 × Überstand, Profiltiefe entlang der Achse).</summary>
     static IEnumerable<Primitiv> RahmenPlan(List<double[]> xy, double b, KanalRahmenProfil kr, string? farbe)
@@ -351,15 +379,15 @@ public sealed class HlksGrafik : IGrafikquelle
                 : new Stil { Stift = Stifte.Duenn, Linie = linienart, Farbe = farbe, Fuellung = farbe ?? "schnitt" };
             if (mass.Rechteck)
             {
-                yield return new Primitiv { Art = "polygon", Punkte = Rechteck(x, y, b, h), Stil = stil };
                 if (mass.Daemmdicke > 0)
-                    yield return new Primitiv { Art = "polygon", Punkte = Rechteck(x, y, mass.DaemmBreite, mass.DaemmHoehe), Stil = new Stil { Stift = Stifte.Duenn, Linie = "strich", Farbe = farbe } };
+                    yield return new Primitiv { Art = "polygon", Punkte = Rechteck(x, y, mass.DaemmBreite, mass.DaemmHoehe), Stil = DaemmStil(verdeckt) };
+                yield return new Primitiv { Art = "polygon", Punkte = Rechteck(x, y, b, h), Stil = stil };
             }
             else
             {
-                yield return new Primitiv { Art = "kreis", Punkte = [[x, y]], Radius = b / 2, Stil = stil };
                 if (mass.Daemmdicke > 0)
-                    yield return new Primitiv { Art = "kreis", Punkte = [[x, y]], Radius = mass.DaemmBreite / 2, Stil = new Stil { Stift = Stifte.Duenn, Linie = "strich", Farbe = farbe } };
+                    yield return new Primitiv { Art = "kreis", Punkte = [[x, y]], Radius = mass.DaemmBreite / 2, Stil = DaemmStil(verdeckt) };
+                yield return new Primitiv { Art = "kreis", Punkte = [[x, y]], Radius = b / 2, Stil = stil };
                 if (wieLeitung)
                 {
                     // Achsenkreuz mit Überstand, anthrazit (Christian 06.11.2026: «hier können die achskreuze verlängert werden», «achskreuze in antrazith»)
@@ -554,6 +582,23 @@ public sealed class HlksGrafik : IGrafikquelle
                 Art = "text", Punkte = [[m.X + Math.Sin(rad) * (abstand + Schrift * ctx.Massstab), m.Y - Math.Cos(rad) * (abstand + Schrift * ctx.Massstab)]],
                 Text = hoehe, Groesse = Schrift, Ausrichtung = "mitte", Winkel = grad, Mitdrehen = true,
             });
+        // Abwasser: Rohrsohle ab Decke am höchsten Punkt des Gefälles (Christian 09.11.2026: «Ablaufleitungen werden immer mit der Rohr Sole ab Decke
+        // beschriftet. immer am höchsten gefällspunkt.»): unter der Linie, kurz nach dem höchsten Punkt
+        if (Leitungsbezeichnung.SohleUkd(ctx.Projekt, e) is { } so)
+        {
+            double dx = so.Nach[0] - so.Punkt[0], dy = so.Nach[1] - so.Punkt[1], l = Math.Sqrt(dx * dx + dy * dy);
+            if (l > 1e-6)
+            {
+                double ein = Math.Min(8 * ctx.Massstab, l / 2);   // ANNAHME Gestaltung: 8 mm Papier nach dem höchsten Punkt
+                double px = so.Punkt[0] + dx / l * ein, py = so.Punkt[1] + dy / l * ein;
+                var g2 = HlksLinien.LesbarerWinkel(Math.Atan2(dy, dx) * 180 / Math.PI); var r2 = g2 * Math.PI / 180;
+                teil.Primitive.Add(new Primitiv
+                {
+                    Art = "text", Punkte = [[px + Math.Sin(r2) * (abstand + Schrift * ctx.Massstab), py - Math.Cos(r2) * (abstand + Schrift * ctx.Massstab)]],
+                    Text = so.Text, Groesse = Schrift, Ausrichtung = "mitte", Winkel = g2, Mitdrehen = true,
+                });
+            }
+        }
     }
 
     /// <summary>formteil() in zeichnen2d.js: gefüllter Kreis auf der Leitung, mit hellem Rand wie die Papierfarbe.</summary>

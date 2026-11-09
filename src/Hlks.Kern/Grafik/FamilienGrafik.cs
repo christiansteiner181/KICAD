@@ -177,6 +177,21 @@ public sealed class FamilienGrafik : IGrafikquelle
     {
         bool abwasser = Rohrgroessen.IstAbwasser(ctx.Projekt, e);
         bool leicht = abwasser || HlksEinordnung.Medium(ctx.Projekt, e)?.Gewerk == "lueftung";
+        // Dämmung auch an Formteilen, entlang der Achse und damit mit dem Bogenradius (Christian 09.11.2026: «bei dämmung auch bogenradien zeichnen»):
+        // Dämmdicke und Aussenmass der angeschlossenen Leitung (die dickste), Band hinter dem Formteil; im Detailgrad grob keine (Punkt an der Leitung)
+        if (ctx.Detailgrad != "grob")
+        {
+            var m = ctx.Projekt.Modell;
+            var nachbar = m.VerbindungenVon(e.Id).Select(v => m.Finde(v.Von.Element == e.Id ? v.Nach.Element : v.Von.Element)).OfType<Element>()
+                .Select(n => HlksMasse.Von(ctx.Projekt, n)).OfType<LeitungsMass>().Where(x => x.Daemmdicke > 0)
+                .OrderByDescending(x => x.DaemmBreite).FirstOrDefault();
+            if (nachbar is not null)
+            {
+                var band = teil.Primitive.Where(p => p.Art == "polylinie" && p.Stil.Linie == "strichpunkt" && p.Punkte.Count >= 2)
+                    .SelectMany(p => HlksGrafik.DaemmBand(p.Punkte.Select(q => new[] { q[0], q[1] }).ToList(), nachbar.DaemmBreite)).ToList();
+                teil.Primitive.InsertRange(0, band);
+            }
+        }
         foreach (var p in teil.Primitive)
         {
             if (p.Art == "polygon" && p.Stil.Fuellung == "papier")

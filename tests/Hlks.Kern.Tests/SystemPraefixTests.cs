@@ -40,3 +40,20 @@ public class SystemPraefixTests
         Assert.Equal("A-SAN", p.Modell.Finde(p.Modell.Finde("Sa-SW")!.TeilVon)!.Kennzeichen);   // System bleibt in seiner Anlage
     }
 }
+
+/// <summary>Produktlinien je Dimension (Christian 09.11.2026: «BSP Heizung &lt;NW100 Mapress-C &gt;NW100 Stahlrohr geschweisst»): Datenformat der Mustersysteme.</summary>
+public class MusterStufenTests
+{
+    [Fact]
+    public void Mustersystem_StufenBleibenErhalten()
+    {
+        var s = new Mustersystem("Hz-VL", "Heizung Vorlauf", "Heizung Vorlauf", "Hz", "Hz-RL", "fam-mapress-c", "Geberit Mapress C-Stahl", null, null,
+            [new MusterStufe(100, "fam-stahl", "Stahlrohr geschweisst")]);
+        var d = new Musterdatei(); d.Systeme.Add(s);
+        var zurueck = Musterdatei.AusJson(System.Text.Json.Nodes.JsonNode.Parse(d.AlsJson().ToJsonString())).Systeme.Single();
+        var st = Assert.Single(zurueck.Stufen!);
+        Assert.Equal(100, st.Ab);
+        Assert.Equal("fam-stahl", st.ProduktlinieId);
+        Assert.Equal("fam-mapress-c", zurueck.ProduktlinieId);
+    }
+}

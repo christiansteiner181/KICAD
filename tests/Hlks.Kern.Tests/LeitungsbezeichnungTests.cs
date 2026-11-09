@@ -68,6 +68,23 @@ public class LeitungsbezeichnungTests
         Assert.Equal("Ø 160", Text(p, "AN-L", rohr));
     }
 
+    /// <summary>Dämmung (Christian 09.11.2026: «schwarze linien, gelb transparent hinterlegt», «auch auf mittel anwenden», «bei grob, gibt es nur einen
+    /// gelben punkt auf der leitungslinie»).</summary>
+    [Fact]
+    public void Daemmung_GelbesBand_GrobPunkt()
+    {
+        var p = Neu();
+        var k = Leitung(p, "Kanal", "KA-1", "S-ZUL", new JsonObject { ["breite"] = 400, ["hoehe"] = 200, ["daemmdicke"] = 50 });
+        List<Primitiv> Prims() => Grafik.Plan(p, "AN-L").Teile.Single(x => x.Id == k.Id).Primitive;
+        var band = Prims().Where(x => x.Stil.Fuellung == HlksGrafik.DaemmGelb && x.Art == "polygon").ToList();
+        Assert.NotEmpty(band);
+        Assert.All(band, x => { Assert.Equal(HlksGrafik.DaemmLinie, x.Stil.Farbe); Assert.Equal(HlksGrafik.DaemmDeckkraft, x.Stil.Deckkraft); });
+        Assert.True(p.Ausfuehren("element_aendern", new JsonObject { ["element"] = "AN-L", ["eigenschaften"] = new JsonObject { ["detailgrad"] = "grob" } }).Angenommen);
+        var grob = Prims();
+        Assert.Single(grob, x => x.Art == "kreis" && x.Stil.Fuellung == HlksGrafik.DaemmGelb);
+        Assert.DoesNotContain(grob, x => x.Art == "polygon" && x.Stil.Fuellung == HlksGrafik.DaemmGelb);
+    }
+
     /// <summary>Christian 09.11.2026: Lüftung ohne Lagen, Bezeichnung «Achse = -XYmm UKD» (Rohre) bzw. «OK = -XYmm UKD» (Kanäle).</summary>
     [Fact]
     public void Lueftung_HoeheZurUkRohdecke()

@@ -351,6 +351,43 @@ public class AbwasserSerieTests
         Sauber(p);
     }
 
+    /// <summary>Christian 09.11.2026: «bei dämmung auch bogenradien zeichnen» – der Bogen trägt das Dämmband der angeschlossenen Leitung entlang seiner Achse.</summary>
+    [Fact]
+    public void Daemmung_AuchAmBogen()
+    {
+        var p = MitPe();
+        Ok(PeZeichnen(p, "d 110", [[0, 0, 500], [3000, 0, 500], [3000, 2000, 500]], "HZ", new JsonObject { ["eigenschaften"] = new JsonObject { ["daemmdicke"] = 30 } }));
+        Ok(p.Ausfuehren("element_aendern", new JsonObject { ["element"] = "AN-EG", ["eigenschaften"] = new JsonObject { ["detailgrad"] = "mittel" } }));
+        var boegen = p.Modell.DerKlasse("Bogen").ToList();   // 90° = 2 × 45°
+        Assert.Equal(2, boegen.Count);
+        foreach (var bo in boegen)
+        {
+            var teil = Grafik.Plan(p, "AN-EG").Teile.Single(x => x.Id == bo.Id);
+            var band = teil.Primitive.Where(x => x.Art == "polygon" && x.Stil.Fuellung == HlksGrafik.DaemmGelb).ToList();
+            Assert.NotEmpty(band);
+            Assert.Equal(0, teil.Primitive.IndexOf(band[0]));   // hinter dem Formteil
+        }
+        Ok(p.Ausfuehren("element_aendern", new JsonObject { ["element"] = "AN-EG", ["eigenschaften"] = new JsonObject { ["detailgrad"] = "grob" } }));
+        Assert.DoesNotContain(Grafik.Plan(p, "AN-EG").Teile.Single(x => x.Id == boegen[0].Id).Primitive, x => x.Stil.Fuellung == HlksGrafik.DaemmGelb);
+    }
+
+    /// <summary>Christian 09.11.2026: «Ablaufleitungen werden immer mit der Rohr Sole ab Decke beschriftet. immer am höchsten gefällspunkt.»</summary>
+    [Fact]
+    public void Sohle_AbDecke_AmHoechstenPunkt()
+    {
+        var p = MitPe();
+        Ok(p.Ausfuehren("element_aendern", new JsonObject { ["element"] = "EG", ["eigenschaften"] = new JsonObject { ["ukRohdecke"] = 2700 } }));
+        Ok(PeZeichnen(p, "d 110", [[3000, 0, 2370], [0, 0, 2400]]));   // gezeichnet vom tiefen zum hohen Ende
+        var ro = p.Modell.DerKlasse("Rohr").Single();
+        var w = HlksMasse.Serie(p, ro)!.Werte;
+        double innen = w.Innen ?? (w.Aussen!.Value - 2 * w.Wand!.Value);
+        var so = Leitungsbezeichnung.SohleUkd(p, ro)!.Value;
+        Assert.Equal([0.0, 0.0], so.Punkt);   // höchster Punkt
+        Assert.Equal($"Sohle = −{Math.Round(2700 - (2400 - innen / 2)):0}mm UKD", so.Text);
+        Ok(PeZeichnen(p, "d 110", [[0, 3000, 2400], [3000, 3000, 2400]], "KW"));   // kein Abwasser: keine Sohle
+        Assert.Null(Leitungsbezeichnung.SohleUkd(p, p.Modell.DerKlasse("Rohr").Single(r => r.Id != ro.Id)));
+    }
+
     [Fact]
     public void LeitungSerie_VonDnSerieInPeSerie_UeberDenAussendurchmesser()
     {

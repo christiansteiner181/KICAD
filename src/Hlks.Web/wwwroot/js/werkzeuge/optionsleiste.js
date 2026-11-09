@@ -10,8 +10,8 @@ const zahlText = (w) => (w === null || w === undefined || w === '' ? '' : String
 
 function feldHtml(wid, f) {
   if (f.sichtbar && !f.sichtbar()) return '';   // Felder, die nur manchmal gebraucht werden (Hinweis «Leitungsserie laden»)
-  const w = wert(wid, f.id);
-  const daten = `data-wz="${esc(wid)}" data-feld="${esc(f.id)}"`;
+  const w = f.anzeigeWert ? f.anzeigeWert() : wert(wid, f.id);   // anzeigeWert: Grösse mit Produktlinie (Stufen je Dimension, 09.11.2026)
+  const daten =`data-wz="${esc(wid)}" data-feld="${esc(f.id)}"`;
   const einheit = f.einheit ? ` <span class="ol-einheit">${esc(f.einheit)}</span>` : '';
   const pflicht = f.pflicht && (w === null || w === '') ? ' pflicht-leer' : '';
   switch (f.art) {
