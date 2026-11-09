@@ -81,6 +81,12 @@ public sealed class SystemtypDef
     /// <summary>stromab: Verbraucher liegen in Fliessrichtung (Versorgung); stromauf: sie speisen ein (Entsorgung, Rücklauf).</summary>
     public string VerbraucherRichtung { get; set; } = "stromab";
     public string Beschreibung { get; set; } = "";
+    /// <summary>Präfix des Kennzeichens (Christian 09.11.2026: «Mache bei allen Systemen einen Präfix. Sa, Hz, Ka, Lu usw.»), z. B. «Sa».</summary>
+    public string Praefix { get; set; } = "";
+    /// <summary>Kurzzeichen nach dem Präfix, z. B. «KW», «VL»: Kennzeichen-Vorschlag «Sa-KW», «Hz-VL».</summary>
+    public string Kurz { get; set; } = "";
+    /// <summary>Name der Hauptanlage des Gewerks (Christian 09.11.2026: «es braucht auch eine main-anlage für alle gewerke»), Kennzeichen = Präfix.</summary>
+    public string Hauptanlage { get; set; } = "";
 }
 
 /// <summary>Ein Gewerk mit Koordinationsfarbe und Pastellton (gewerke.json; Hinterlegung im Projektbrowser). Die Farben stehen nur im Katalog.</summary>

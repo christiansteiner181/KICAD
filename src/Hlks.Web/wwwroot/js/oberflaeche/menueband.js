@@ -30,7 +30,8 @@ function tabGewerk(id) {
   return f ? { klasse: ' mb-gewerk', stil: ` style="--gw-pastell:${f.pastell};--gw-kord:${f.koordination}"` } : { klasse: '', stil: '' };
 }
 
-const REGISTER = [['datei', 'Datei'], ['architektur', 'Architektur'], ['huelle', 'Hülle'], ['heizung', 'Heizung'], ['lueftung', 'Lüftung'], ['sanitaer', 'Sanitär'], ['msrl', 'MSRL'], ['einfuegen', 'Einfügen'], ['beschriften', 'Beschriften'], ['aendern', 'Ändern'], ['koordination', 'Koordination'], ['ansicht', 'Ansicht'], ['xr', 'XR'], ['verwalten', 'Verwalten']];
+// Reihenfolge Christian 09.11.2026: «Tab Ordnung: Datei, Einfügen, Heizung, Lüftung, Sanitär, Koordination, MSRL, Architektur, Hülle, Beschriften, Verwalten, XR, Ändern» (Ansicht nach Beschriften)
+const REGISTER = [['datei', 'Datei'], ['einfuegen', 'Einfügen'], ['heizung', 'Heizung'], ['lueftung', 'Lüftung'], ['sanitaer', 'Sanitär'], ['koordination', 'Koordination'], ['msrl', 'MSRL'], ['architektur', 'Architektur'], ['huelle', 'Hülle'], ['beschriften', 'Beschriften'], ['ansicht', 'Ansicht'], ['verwalten', 'Verwalten'], ['xr', 'XR'], ['aendern', 'Ändern']];
 // Reihenfolge der Gruppen je Register (Einfügereihenfolge der Aktionen reicht nicht, weil Werkzeuge nachträglich dazukommen)
 const GRUPPENFOLGE = {
   datei: ['Projekt', 'Ausgabe'],   // «Zuletzt geöffnet» hängt gruppenListe() immer hinten an; Ausgabe seit Modul 7 Teil B2 (IFC exportieren)

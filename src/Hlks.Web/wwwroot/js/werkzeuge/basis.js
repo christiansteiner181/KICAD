@@ -228,6 +228,12 @@ class Lauf {
     const text = okText ?? (r.hinweise ?? []).filter(Boolean)[0] ?? undefined;
     ergebnisMelden(r, text);
     this.cache.daten = null;
+    // Christian 09.11.2026: «beim zeichen die eigenschaften des neuen teils zeigen» – erstes neu angelegtes Element (Formteile nur, wenn sonst nichts)
+    if (r?.angenommen) {
+      const neu = (r.aenderungen ?? []).filter((a) => a.art === 'angelegt');
+      const teil = neu.find((a) => a.klasse !== 'Formteil') ?? neu[0];
+      if (teil?.kennzeichen) window.dispatchEvent(new CustomEvent('hlks:neues-teil', { detail: teil.kennzeichen }));
+    }
     return r;
   }
 

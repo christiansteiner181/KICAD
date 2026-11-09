@@ -114,6 +114,10 @@ die volle Klassendefinition (Eigenschaften mit typ/einheit/auswahl/pflicht/besch
 
 ## Menüband (Register) und Kürzel – Pflichtumfang Modul 0b
 
+**Reihenfolge der Register** (Christian 09.11.2026: «Tab Ordnung: Datei, Einfügen, Heizung, Lüftung, Sanitär, Koordination, MSRL, Architektur, Hülle,
+Beschriften, Verwalten, XR, Ändern»; Ansicht nach Beschriften): Datei · Einfügen · Heizung · Lüftung · Sanitär · Koordination · MSRL · Architektur · Hülle ·
+Beschriften · Ansicht · Verwalten · XR · Ändern (`menueband.js › REGISTER`).
+
 Aktionen sind zentral in `aktionen.js` registriert (`id`, `titel`, `symbol` (SVG), `kuerzel`, `ausfuehren()`,
 `aktiv()` → bool, `hinweis` für noch nicht verfügbare). Menüband, Kontextmenüs und Tastaturkürzel lösen nur Aktionen aus.
 
@@ -341,7 +345,10 @@ daneben steht der jetzige Wert. Eine **Vorschau des Kerns (Trockenlauf)** zeigt 
 
 ## Eigenschaftenpalette – Pflichtumfang
 
-Oben Typauswahl (Klasse mit Symbol; Typwechsel folgt später), darunter Gruppen wie in Revit: Identität (Kennzeichen,
+Oben Typauswahl (Klasse mit Symbol; bei Leitungen die **Produktlinie** als Typenwahl wie in Revit – Wechsel wie die Zeile «Produktlinie», beim Zeichnen
+mit Rohr/Kanal die Produktlinie des Werkzeugs, gekoppelt an die Optionsleiste; Christian 09.11.2026: «produktelinie in den eigenschaften anzeigen. (wie bei
+revit, Typenwahl)»). **Beim Zeichnen** zeigt die Palette das zuletzt neu angelegte Teil (Christian 09.11.2026: «beim zeichen die eigenschaften des neuen teils
+zeigen»; Ereignis `hlks:neues-teil` aus `basis.js`, ohne die Auswahl zu ändern), mit dem Ende des Werkzeugs wieder die Ansicht. Darunter Gruppen wie in Revit: Identität (Kennzeichen,
 Name, Klasse), Zuordnung (Geschoss, Raum, System, Übergeordnet – Auswahllisten aus passenden Elementen), dann die
 Eigenschaften laut Katalog in drei Gruppen (04.11.2026, `eigenschaften-logik.js`): **Eigenschaften** (ohne Einheit: Auswahl,
 Text, Schalter), **Abmessungen** (mm, m, m², °, DN; dazu Dicke und Höhe aus der Geometrie, änderbar), **Kennwerte** (übrige
@@ -4242,7 +4249,11 @@ jedes neue Projekt erhält alle Mustersysteme.
 **Ort:** Register **Koordination › Gruppe Vorgaben › Anlagen und Systeme** (Aktion `koordination.systeme`, `aktionen-systeme.js`).
 - **Tabelle** der Systeme des Projekts: Name, Systemtyp (Katalog `systemtypen.json`: Medium, Fliessart), Anlage, Gegenstück (VL ↔ RL), **Produktlinie** und
   **Dämmung** als Vorgabe beim Zeichnen; «Speichern» schreibt die geänderten Zeilen (`element_aendern`). Spalte «Muster»: schon in der Systembibliothek.
-- **System anlegen** (letzte Zeile) und **Anlage anlegen** (`element_anlegen`).
+- **System anlegen** (letzte Zeile) und **Anlage anlegen** (`element_anlegen`). Die Wahl des Systemtyps füllt Kennzeichen und Name vor; das Kennzeichen
+  trägt den **Präfix des Gewerks** (Christian 09.11.2026: «Mache bei allen Systemen einen Präfix. Sa, Hz, Ka, Lu usw.»; Format `Sa-KW`, `Hz-VL`, `Ka-VL`,
+  `Lu-ZUL`, nur im Kennzeichen; `praefix`/`kurz` je Systemtyp in `systemtypen.json`).
+- **Präfixe setzen**: benennt bestehende Systeme ohne Präfix um (`system_praefixe_setzen`; «HZ-VL» → «Hz-VL», «KW» → «Sa-KW»); Leitungen und Stränge bleiben
+  zugeordnet, ein schon vergebenes Ziel-Kennzeichen bleibt unverändert (Hinweis).
 - **Gewählte als Mustersysteme speichern** / **aus Bibliothek entfernen** (Spalte «Wahl»; `mustersystem_speichern`, nur ein Mensch – für Claude verboten wie
   `familie_in_bibliothek`); **Fehlende Mustersysteme übernehmen** (`mustersysteme_uebernehmen`; vorhandene Kennzeichen bleiben unverändert, fehlende
   Produktlinien werden aus der Familienbibliothek geladen).

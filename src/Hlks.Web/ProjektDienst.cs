@@ -201,6 +201,9 @@ public sealed class ProjektDienst(Einstellungen einstellungen, ILogger<ProjektDi
             // Mustersysteme (Christian 09.11.2026: «wie die Familien in jedem Projekt als basis»): jedes neue Projekt erhält alle; ohne Bibliothek bleibt es leer
             try { neu.Ausfuehren("mustersysteme_uebernehmen", new JsonObject()); }
             catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or HlksFehler) { }
+            // Hauptanlage je Gewerk und Präfixe (Christian 09.11.2026: «es braucht auch eine main-anlage für alle gewerke»)
+            try { neu.Ausfuehren("system_praefixe_setzen", new JsonObject { ["alle_hauptanlagen"] = true }); }
+            catch (HlksFehler) { }
             return (neu, leer);
         });
         await Umhaengen(p, sp);

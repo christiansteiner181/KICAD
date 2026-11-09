@@ -10,7 +10,10 @@
 import { zustand, abonnieren, element, derKlasse } from '../zustand.js';
 import { farbenLaden, farbHex, farbeWaehlen } from './farbwahl.js';
 import { abfrage } from '../api.js';
-import { familie, beiFamilie, familieSetzen, ausfuehren } from './aktionen.js';
+import { familie, beiFamilie, familieSetzen, ausfuehren, modus, beiModus, modusSetzen } from './aktionen.js';
+import * as OPT from '../werkzeuge/optionen.js';
+const optSetze = (w, f, v) => OPT.setze(w, f, v);
+const optWert = (w, f) => OPT.wert(w, f);
 import { klasseHtml, klassenDefinition } from './katalogansicht.js';
 import { sende, ergebnisMelden } from './befehle.js';
 import { warumDialog, bestaetigen } from './dialoge.js';
@@ -41,6 +44,8 @@ let nr = 0;                 // laufende Nummer des letzten Zeichnens (veraltete 
 let gerade = null;          // { id, kz } des dargestellten Elements
 let schmutzig = false;      // Eingabe läuft, noch nicht übernommen
 let reservierungsSig = '';
+let neuNochmals = 0;        // Wiederholungen, bis das neue Teil im Modell der Oberfläche ist
+let neuesTeil = null;       // Christian 09.11.2026: «beim zeichen die eigenschaften des neuen teils zeigen» – Kennzeichen, solange das Werkzeug läuft
 let hinweise = null;        // { id, texte } Hinweise des Kerns zum letzten angenommenen Befehl (Kasten oben, bis zur nächsten Eingabe oder Auswahl)
 const zu = new Set((() => { try { const g = localStorage.getItem('hlks.' + GRUPPEN_ZU); return g === null ? ANFANGS_ZU : JSON.parse(g); } catch { return ANFANGS_ZU; } })());
 
@@ -51,6 +56,16 @@ export function einrichten(w) {
   inhalt = wurzel.querySelector('.ep-inhalt');
 
   inhalt.addEventListener('change', beiAenderung);
+  // Typenwahl beim Zeichnen (Christian 09.11.2026: «produktelinie in den eigenschaften anzeigen. (wie bei revit, Typenwahl)»): Produktlinie des Werkzeugs
+  inhalt.addEventListener('change', (e) => {
+    const s = e.target.closest?.('.ep-wz-serie');
+    if (!s) return;
+    e.stopPropagation();
+    const wid = s.dataset.wz;
+    optSetze(wid, 'serie', s.value);
+    OPT.WERKZEUGE[wid]?.felder?.find((f) => f.id === 'serie')?.beiAenderung?.(s);
+    modusSetzen('werkzeug', { ...modus.daten });   // Optionsleiste nachführen
+  }, true);
   beiAuswahlMenge(() => { schmutzig = false; planen(); });
   inhalt.addEventListener('input', () => { schmutzig = true; });
   inhalt.addEventListener('keydown', (e) => {
@@ -103,6 +118,10 @@ export function einrichten(w) {
     if (sig !== reservierungsSig) { reservierungsSig = sig; planen(); }
   });
   beiFamilie(() => planen());
+  // neues Teil beim Zeichnen (basis.js meldet es nach jedem angenommenen Befehl); mit dem Ende des Werkzeugs wieder die Ansicht
+  window.addEventListener('hlks:neues-teil', (e) => { neuesTeil = e.detail; neuNochmals = 0; schmutzig = false; hinweise = null; planen(); });
+  beiModus(() => { if (neuesTeil && modus.id !== 'werkzeug') neuesTeil = null; if (!zustand.auswahl) planen(); });
+  abonnieren('modell', () => { if (neuesTeil && !zustand.auswahl && gerade?.kz !== neuesTeil) planen(); });
   zeichnen();
 }
 
@@ -125,8 +144,12 @@ async function zeichnen() {
   const mehr = auswahlElemente();
   if (mehr.length > 1) { await mehrfachZeigen(mein, mehr); return; }
 
-  const istAnsicht = !zustand.auswahl;
-  const ziel = istAnsicht ? element(zustand.aktiveAnsicht) : element(zustand.auswahl);
+  const neu = !zustand.auswahl && neuesTeil && modus.id === 'werkzeug' ? element(neuesTeil) : null;
+  // das neue Teil ist evtl. noch nicht im Modell der Oberfläche: kurz danach nochmals (höchstens 10 Mal)
+  if (!zustand.auswahl && neuesTeil && modus.id === 'werkzeug' && !neu && (neuNochmals = (neuNochmals ?? 0) + 1) <= 10) setTimeout(() => zeichnen(), 300);
+  if (neu) neuNochmals = 0;
+  const istAnsicht = !zustand.auswahl && !neu;
+  const ziel = neu ?? (istAnsicht ? element(zustand.aktiveAnsicht) : element(zustand.auswahl));
   if (!ziel) {
     gerade = null;
     inhalt.innerHTML = `<div class="ep-leer">${istAnsicht ? 'Nichts ausgewählt.<br>Eine Ansicht öffnen oder ein Element anklicken.' : 'Element nicht gefunden.'}</div>`;
@@ -295,10 +318,26 @@ const kennOption = (e) => [e.kennzeichen, e.name ? `${e.kennzeichen} – ${e.nam
 
 // ---------------------------------------------------------------------------------------------- Palette aufbauen
 
+/** Typenwahl oben in der Palette (Christian 09.11.2026: «produktelinie in den eigenschaften anzeigen. (wie bei revit, Typenwahl)»): bei einer Leitung ihre
+ *  Produktlinie (wie die Zeile «Produktlinie», data-ziel lt:serie), beim Zeichnen von Rohr/Kanal die Produktlinie des Werkzeugs, sonst die Klasse. */
+function typWahlHtml(el, istAnsicht, fam) {
+  const opts = (liste, aktuell) => [['', 'wählen …'], ...liste].map(([v, n]) => `<option value="${esc(v)}"${v === aktuell ? ' selected' : ''}>${esc(n)}</option>`).join('');
+  if (!istAnsicht && leitungsArt(el) === 'leitung' && fam?.f) {
+    const sl = serienListe(kategorieVon(el.klasse)).map((s) => [s.kz, s.name]);
+    return `<select data-ziel="lt:serie" data-typ="auswahl" title="Produktlinie (Typenwahl)">${opts(sl, fam.f.kennzeichen)}</select>`;
+  }
+  const wid = modus.id === 'werkzeug' ? modus.daten?.werkzeug : null;
+  if (istAnsicht && (wid === 'rohr' || wid === 'kanal')) {
+    const sl = serienListe(wid === 'kanal' ? 'Kanal' : 'Rohr').map((s) => [s.kz, s.name]);
+    return `<select class="ep-wz-serie" data-wz="${wid}" title="Produktlinie beim Zeichnen (Typenwahl)">${opts(sl, optWert(wid, 'serie') ?? '')}</select>`;
+  }
+  return `<select disabled title="Typwechsel folgt später"><option>${esc(el.klasse)}</option></select>`;
+}
+
 function palette(el, l, def, istAnsicht, fam = null, san = null, aus = null, sia = null) {
   const res = reservierungVon(el);
   let h = `<div class="ep-kopf"><div class="ep-typ"><span class="ep-sym">${symbol(symbolFuerKlasse(el.klasse, el.basis), 16)}</span>`
-    + `<select disabled title="Typwechsel folgt später"><option>${esc(el.klasse)}</option></select></div>`
+    + typWahlHtml(el, istAnsicht, fam) + `</div>`
     + `${istAnsicht ? `<div class="ep-hinweis">Ansichtseigenschaften – ${esc(el.name || el.kennzeichen)}</div>` : ''}`
     + `${res ? `<div class="ep-reserviert ${res.eigene ? 'eigene' : 'fremde'}">${res.eigene ? 'Von dir reserviert' : `Reserviert von ${esc(res.akteur)}@${esc(res.geraet)}`} bis ${esc(res.bis)}${res.eigene ? '' : ' – Änderungen werden abgelehnt.'}</div>` : ''}</div>`;
 

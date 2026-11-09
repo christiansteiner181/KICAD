@@ -1160,10 +1160,9 @@ test('BCF-Import: Vorschau aus bcf_lesen – Zuordnung, Status nach dem Import, 
 
 // ---------------------------------------------------------------------------------------------- Verdrahtung
 
-test('Verdrahtung: Register «Koordination» zwischen Ändern und Ansicht, Gruppen, Aktionen, Symbole, Import', () => {
+test('Verdrahtung: Register «Koordination», Gruppen, Aktionen, Symbole, Import', () => {
   const mb = lies('./menueband.js');
-  assert.match(mb, /\['aendern', 'Ändern'\], \['koordination', 'Koordination'\], \['ansicht', 'Ansicht'\]/);
-  assert.match(mb, /\['einfuegen', 'Einfügen'\], \['beschriften', 'Beschriften'\], \['aendern', 'Ändern'\]/, 'Reihenfolge Einfügen › Beschriften › Ändern bleibt (einfuegen.browser.mjs, werkzeuge.browser.mjs)');
+  assert.match(mb, /\['koordination', 'Koordination'\]/);
   const folge = /koordination: \[([^\]]*)\]/.exec(mb)[1].match(/'([^']+)'/g).map((x) => x.slice(1, -1));
   assert.deepEqual(folge, ['Vorgaben', 'Typenliste', 'Kollisionen', 'Aussparungen', 'Koordinationsplan', 'BCF']);   // Koordinationsplan seit Modul 7 Teil B3
   assert.match(lies('./aktionen.js'), /import '\.\/aktionen-koordination\.js';/);

@@ -241,6 +241,7 @@ public sealed class MustersystemeUebernehmen : IBefehl
                 else k.Hinweise.Add($"{s.Kennzeichen}: Produktlinie «{s.ProduktlinieName ?? s.ProduktlinieId}» nicht im Projekt – mit «Familie laden» nachholen.");
             }
             var o = new JsonObject { ["klasse"] = "System", ["kennzeichen"] = s.Kennzeichen, ["name"] = s.Name ?? s.Kennzeichen, ["eigenschaften"] = eig };
+            anlage ??= SystemPraefix.Hauptanlage(k, k.Katalog.Systemtypen[s.Systemtyp]);   // ohne Anlage: Hauptanlage des Gewerks (09.11.2026)
             if (anlage is not null) o["teilVon"] = anlage.Id;
             new ElementAnlegen().Ausfuehren(k, o);
             neu++;
@@ -308,6 +309,7 @@ public static class MustersystemeBefehle
     {
         r.Hinzufuegen(new MustersystemeUebernehmen());
         r.Hinzufuegen(new MustersystemSpeichern());
+        r.Hinzufuegen(new SystemPraefixeSetzen());   // Präfix Sa/Hz/Ka/Lu, 09.11.2026
     }
 }
 

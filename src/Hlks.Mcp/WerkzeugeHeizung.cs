@@ -61,6 +61,13 @@ public sealed partial class Werkzeuge
         [Description("Nur prüfen, nichts ändern")] bool trockenlauf = false) =>
         Befehl("mustersystem_speichern", Parameter(("systeme", systeme), ("entfernen", entfernen)), trockenlauf);
 
+    [McpServerTool(Name = "system_praefixe_setzen"), Description(SystemPraefixeSetzen.Text)]
+    public string SystemPraefixeSetzenWerkzeug(
+        [Description("Kennzeichen der Systeme; leer = alle")] System.Text.Json.JsonElement? systeme = null,
+        [Description("Alle Hauptanlagen (Sa, Hz, Ka, Lu) anlegen, auch ohne Systeme")] bool alle_hauptanlagen = false,
+        [Description("Nur prüfen, nichts ändern")] bool trockenlauf = false) =>
+        Befehl("system_praefixe_setzen", Parameter(("systeme", systeme), ("alle_hauptanlagen", alle_hauptanlagen ? true : null)), trockenlauf);
+
     [McpServerTool(Name = "heizgruppe_anlegen"), Description(HeizgruppeAnlegen.Text)]
     public string HeizgruppeAnlegenWerkzeug(
         [Description(HeizungBefehle.ParVerteiler)] string? verteiler = null,

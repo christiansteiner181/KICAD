@@ -56,7 +56,7 @@ public static class KiEinordnung
              "schema_anordnen", "schema_lage"]),
         new("Heizung", "Heizgruppen und Systempaare anlegen, ändern und aus dem Netz vorschlagen (Modul 5) – Modellarbeit, als Paket zurücknehmbar; " +
             "Temperaturen sind Eingaben ohne Vorgabewert; die Heizlast nach SIA 384.201 übernimmt heizlast_uebernehmen in die Räume.",
-            ["system_paar_anlegen", "heizgruppe_anlegen", "heizgruppe_aendern", "heizgruppen_vorschlagen", "heizlast_uebernehmen", "mustersysteme_uebernehmen"]),   // Mustersysteme übernehmen: Modellarbeit, zurücknehmbar (09.11.2026)
+            ["system_paar_anlegen", "heizgruppe_anlegen", "heizgruppe_aendern", "heizgruppen_vorschlagen", "heizlast_uebernehmen", "mustersysteme_uebernehmen", "system_praefixe_setzen"]),   // Mustersysteme übernehmen: Modellarbeit, zurücknehmbar (09.11.2026)
         new("MSRL planen", "Datenpunkte der Grundausstattung an Bauteilen vorschlagen (Modul 8, Gerüst) – Modellarbeit, als Paket zurücknehmbar; keine Verbindung zur Anlage.",
             ["datenpunkte_vorschlagen"]),
         new("Architektur und Hülle", "Wände, Decken, Öffnungen, Räume, Aufbauten, Materialien und Vorgaben im Projekt – Modellarbeit, zurücknehmbar; " +

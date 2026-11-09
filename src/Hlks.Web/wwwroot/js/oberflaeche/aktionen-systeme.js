@@ -59,7 +59,7 @@ export async function systemeDialog() {
         <td><select class="sy-linie">${linOpts(wert(s, 'produktlinie') ?? '')}</select></td>
         <td><input type="text" inputmode="decimal" class="sy-daemm" value="${esc(wert(s, 'daemmdicke') ?? '')}" size="4" data-kein-enter="1"></td>
         <td class="leise">${inBib.has(s.kennzeichen) ? 'in Bibliothek' : '–'}</td></tr>`).join('')}
-      <tr class="sy-neu"><td></td><td><input type="text" class="n-kz" placeholder="z. B. HZ-VL" size="8" data-kein-enter="1"></td>
+      <tr class="sy-neu"><td></td><td><input type="text" class="n-kz" placeholder="z. B. Hz-VL" size="8" data-kein-enter="1"></td>
         <td><input type="text" class="n-name" placeholder="Name" size="16" data-kein-enter="1"></td><td><select class="n-typ">${typOpts('')}</select></td>
         <td><select class="n-anlage">${anlOpts('')}</select></td><td></td><td><select class="n-linie">${linOpts('')}</select></td>
         <td><input type="text" inputmode="decimal" class="n-daemm" size="4" data-kein-enter="1"></td><td><button type="button" class="dlg-knopf n-anlegen">System anlegen</button></td></tr>
@@ -68,6 +68,7 @@ export async function systemeDialog() {
         <span>Neue Anlage:</span><input type="text" class="a-kz" placeholder="Kennzeichen, z. B. A-HZ" size="12" data-kein-enter="1">
         <input type="text" class="a-name" placeholder="Name, z. B. Heizung" size="16" data-kein-enter="1"><button type="button" class="dlg-knopf a-anlegen">Anlage anlegen</button>
         <span style="flex:1"></span>
+        <button type="button" class="dlg-knopf p-setzen" title="Präfix des Gewerks vor die Kennzeichen setzen (Sa-KW, Hz-VL, Ka-VL, Lu-ZUL) und Systeme ohne Anlage der Hauptanlage ihres Gewerks zuordnen">Präfixe und Hauptanlagen</button>
         <button type="button" class="dlg-knopf m-uebernehmen"${fehlen.length ? '' : ' disabled'}>Fehlende Mustersysteme übernehmen</button>
         <button type="button" class="dlg-knopf m-speichern">Gewählte als Mustersysteme speichern</button>
         <button type="button" class="dlg-knopf m-entfernen">Gewählte aus Bibliothek entfernen</button>
@@ -79,6 +80,19 @@ export async function systemeDialog() {
   async function ausfuehren(befehl, par) { const r = await sende(befehl, par); const ok = ergebnisMelden(r); if (ok) await laden(); return ok; }
 
   function binden() {
+    // Kennzeichen-Vorschlag mit Präfix (Christian 09.11.2026: «Mache bei allen Systemen einen Präfix. Sa, Hz, Ka, Lu usw.» – Format Sa-KW)
+    let vorschlag = '';
+    w.querySelector('.n-typ').onchange = (e) => {
+      const t = (zustand.katalog?.systemtypen ?? []).find((x) => x.name === e.target.value);
+      const feld = w.querySelector('.n-kz');
+      const neu = t?.praefix ? `${t.praefix}-${t.kurz || t.medium}` : '';
+      if (!feld.value.trim() || feld.value === vorschlag) feld.value = neu;
+      vorschlag = neu;
+      const name = w.querySelector('.n-name'); if (!name.value.trim() && t) name.value = t.name;
+      // Hauptanlage des Gewerks vorwählen (Christian 09.11.2026: «es braucht auch eine main-anlage für alle gewerke»)
+      const an = w.querySelector('.n-anlage'); if (!an.value && t?.praefix && [...an.options].some((o) => o.value === t.praefix)) an.value = t.praefix;
+    };
+    w.querySelector('.p-setzen').onclick = () => ausfuehren('system_praefixe_setzen', {});
     w.querySelector('.n-anlegen').onclick = async () => {
       const k = w.querySelector('.n-kz').value.trim(), typ = w.querySelector('.n-typ').value;
       if (!k || !typ) { ergebnisMelden({ angenommen: false, fehler: 'Kennzeichen und Systemtyp angeben.' }); return; }
@@ -87,7 +101,8 @@ export async function systemeDialog() {
       const d = Number(w.querySelector('.n-daemm').value.replace(',', '.')); if (d > 0) eig.daemmdicke = d;
       const o = { klasse: 'System', kennzeichen: k, name: w.querySelector('.n-name').value.trim() || typ, eigenschaften: eig };
       const an = w.querySelector('.n-anlage').value; if (an) o.teilVon = an;
-      await ausfuehren('element_anlegen', o);
+      // ohne Anlage: Hauptanlage des Gewerks (legt sie bei Bedarf an)
+      if (await ausfuehren('element_anlegen', o) && !an) await ausfuehren('system_praefixe_setzen', { systeme: [k] });
     };
     w.querySelector('.a-anlegen').onclick = async () => {
       const k = w.querySelector('.a-kz').value.trim();
