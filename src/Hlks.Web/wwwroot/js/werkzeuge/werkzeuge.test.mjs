@@ -590,3 +590,24 @@ test('Temporäre Masse: je Seite der nächste parallele Bezug, Wand mit beiden F
   assert.equal(ob.abstand, 400);
   assert.deepEqual(T.massVerschiebung(unten, 250), { dx: 0, dy: -150 });   // näher zur Wand
 });
+
+// ============================================================================================== Vorwand
+
+test('Vorwand: nach Anfangs- und Endpunkt greift der nächste Klick die Tiefe ab, die Klickseite gibt die Ausrichtung', async () => {
+  // Christian 09.11.2026: «nach dem absetzen der Vorwandlänge sollte mit dem nächsten mausklick die tiefe abgegriffen werden»
+  const { vorwandWerkzeug } = await import('./vorwand.js');
+  const w = vorwandWerkzeug(), z = w.neu();
+  const gesendet = [];
+  const ctx = { geschoss: 'EG', opt: { ...O.werte('vorwand'), hoehe: 1140 }, befehl: async (b, p) => { gesendet.push([b, p]); return { angenommen: true }; },
+    pflicht: () => assert.fail('Pflichtfeld'), fehler: (e) => assert.fail(String(e)) };
+  assert.equal(ctx.opt.mehrteilig, false);
+  await w.klick(z, { punkt: [0, 0] }, ctx);
+  await w.klick(z, { punkt: [3000, 0] }, ctx);
+  assert.equal(z.phase, 'tiefe');
+  await w.klick(z, { punkt: [1200, -220] }, ctx);   // Rohbauwand rechts der Zeichenrichtung, 220 mm hinter der Aussenkante
+  assert.equal(gesendet.length, 1);
+  const [befehl, p] = gesendet[0];
+  assert.equal(befehl, 'vorwand_zeichnen');
+  assert.equal(p.tiefe, 220);
+  assert.equal(p.aussenkante, 'rechts');
+});

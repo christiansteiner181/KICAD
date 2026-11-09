@@ -1,7 +1,7 @@
 // Werkzeuge der Geberit Vorwand (Register Sanitär › Vorwand, Christian 04.11.2026: «eine funktion zum erstellen von geberit duofix und
 // gis vorwänden», «auch die Profile und befestigungen müssen gezeichnet werden»).
 // - «Vorwand» (VW, Christian 06.11.2026: «1. aussenkannte der vorwand zeichnen, 2. tiefe am plan abgreiffen. jeweils als entwurf darstellen»):
-//   1. Aussenkante anklicken (Kette: Enter/Doppelklick beendet, sonst nach zwei Punkten), 2. Tiefe am Plan abgreifen – Klick auf die Rohbauwand
+//   1. Aussenkante anklicken (nach zwei Punkten fertig; mit «Kette» weitere Punkte, Enter/Doppelklick beendet), 2. Tiefe am Plan abgreifen – Klick auf die Rohbauwand
 //   (bzw. eingetippte Zahl; eine Tiefe in der Optionsleiste gilt fest, die Maus wählt dann nur die Seite) → vorwand_zeichnen mit aussenkante.
 //   Beide Schritte als Entwurf. Höhe Pflicht (raumhoch: leer = Raumhöhe); «Bestücken» setzt danach die Montageelemente hinter die Apparate.
 // - «Montageelement» (ME): Maus über eine Vorwand, Klick → montageelement_setzen mit dem gewählten Elementtyp an dieser Stelle.
@@ -70,7 +70,8 @@ export function vorwandWerkzeug() {
     neu: () => ({ punkte: [], phase: 'kante' }),
     hinweis: (z, ctx) => (z.phase === 'tiefe'
       ? (ctx?.opt?.tiefe > 0 ? `Seite der Rohbauwand anklicken (Tiefe fest ${ctx.opt.tiefe} mm).` : 'Tiefe am Plan abgreifen: Rohbauwand anklicken oder Tiefe eintippen.')
-      : z.punkte.length === 0 ? 'Aussenkante der Vorwand: Anfangspunkt anklicken.' : 'Aussenkante: nächster Punkt, Enter oder Doppelklick beendet die Kante.'),
+      : z.punkte.length === 0 ? 'Aussenkante der Vorwand: Anfangspunkt anklicken.'
+        : ctx?.opt?.mehrteilig ? 'Aussenkante: nächster Punkt, Enter oder Doppelklick beendet die Kante.' : 'Aussenkante: Endpunkt anklicken – danach greift der nächste Klick die Tiefe ab.'),
     letzterPunkt: (z) => (z.phase === 'kante' ? z.punkte.at(-1) ?? null : null),
     extraPunkte: (z) => z.punkte,
     eingabeMoeglich: (z) => z.phase === 'tiefe',
@@ -91,7 +92,7 @@ export function vorwandWerkzeug() {
       }
       if (z.punkte.length && abstand(p, z.punkte.at(-1)) < 1) return;
       z.punkte.push(p);
-      if (!o.kette && z.punkte.length === 2) z.phase = 'tiefe';
+      if (!o.mehrteilig && z.punkte.length === 2) z.phase = 'tiefe';   // Christian 09.11.2026: nächster Klick = Tiefe
     },
     async enter(z) {
       if (z.phase === 'kante') { if (z.punkte.length >= 2) z.phase = 'tiefe'; else z.punkte = []; }

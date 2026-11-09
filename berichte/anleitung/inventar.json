@@ -8847,8 +8847,8 @@
           "schritte": [
             "Beispielprojekt «Musterhaus 4 Räume» anlegen, Grundriss EG öffnen, Register Sanitär › Vorwand.",
             "Optionsleiste: System «Geberit GIS», Tiefe leer, Höhe 1140, Lage «an der Rohbauwand», Bodenaufbau 100.",
-            "Im Bad E.01 die Aussenkante der Vorwand anklicken: zwei Punkte parallel zur Südwand, etwa 20 cm davor (ohne Kette nach zwei Punkten fertig).",
-            "Die Maus zur Wand führen – der Entwurf zeigt das Band und «Tiefe … mm» – und auf der Wandfläche klicken."
+            "Im Bad E.01 die Aussenkante der Vorwand anklicken: Anfangs- und Endpunkt parallel zur Südwand, etwa 20 cm davor – danach ist die Kante fertig.",
+            "Die Maus zur Wand führen – der Entwurf zeigt das Band und «Tiefe … mm» – und mit dem nächsten Klick auf der Wandfläche die Tiefe abgreifen; die Seite des Klicks gibt die Ausrichtung."
           ],
           "erwartung": "Beim Zeichnen der Aussenkante eine Gummilinie mit Mass, danach ein Band von der Aussenkante bis zur Maus mit der abgegriffenen Tiefe. Nach dem Klick entsteht VW-… zwischen Aussenkante und Wand (Höhe 1140), Rohbauwand auf der Wandseite.",
           "pruefpunkte": [

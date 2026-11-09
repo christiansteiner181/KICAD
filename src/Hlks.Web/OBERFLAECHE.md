@@ -4163,8 +4163,9 @@ Christian 04.11.2026: «eine funktion zum erstellen von geberit duofix und gis v
 
 **Knöpfe:** Register Sanitär › Gruppe «Vorwand» (`aktionen-vorwand.js`):
 - **Vorwand** (Werkzeug `vorwand`, `werkzeuge/vorwand.js`; seit 06.11.2026, Christian «1. aussenkannte der vorwand zeichnen, 2. tiefe am plan abgreiffen. jeweils
-  als entwurf darstellen»): 1. **Aussenkante** anklicken (Kette: Enter/Doppelklick beendet, sonst nach zwei Punkten), 2. **Tiefe am Plan abgreifen** – Klick auf die
-  Rohbauwand oder Tiefe eintippen; beide Schritte als Entwurf (Band mit «Tiefe … mm») → `vorwand_zeichnen` mit `aussenkante`. Optionsleiste: System (GIS/Duofix),
+  als entwurf darstellen»): 1. **Aussenkante** anklicken: Anfangs- und Endpunkt, 2. der **nächste Klick greift die Tiefe ab** (seit 09.11.2026, Christian «nach dem absetzen der
+  Vorwandlänge sollte mit dem nächsten mausklick die tiefe abgegriffen werden. die ausrichtung ist dann klar») – Klick auf die Rohbauwand, die Seite des
+  Klicks gibt die Ausrichtung, oder Tiefe eintippen; mit «Kette» (Vorgabe aus) weitere Kantenpunkte, Enter/Doppelklick beendet; beide Schritte als Entwurf (Band mit «Tiefe … mm») → `vorwand_zeichnen` mit `aussenkante`. Optionsleiste: System (GIS/Duofix),
   Tiefe (leer = am Plan; eingetragen gilt sie fest, die Maus wählt nur die Seite), **Höhe** (Pflicht; raumhoch leer = Raumhöhe), Lage an der Rohbauwand bzw.
   frei stehend, Bauwerk massiv/Trockenbau, Bodenaufbau, Bauweise, Bestücken, Kette.
 - **System wechseln** (Eigenschaften der Vorwand): die Montageelemente der Vorwand wechseln mit auf das entsprechende Element des neuen Systems (gleicher Apparat,

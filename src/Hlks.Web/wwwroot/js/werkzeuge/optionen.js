@@ -62,9 +62,11 @@ export const WERKZEUGE = {
       { id: 'bodenaufbau', titel: 'Bodenaufbau', art: 'zahl', einheit: 'mm', platzhalter: '0', breite: 5 },
       { id: 'bauweise', titel: 'Bauweise', art: 'auswahl', werte: [['', 'nach System'], ['vorgefertigt', 'vorgefertigt'], ['vor_ort', 'vor Ort']], vorgabe: '' },
       { id: 'bestuecken', titel: 'Bestücken', art: 'bool', vorgabe: true },
-      { id: 'kette', titel: 'Kette', art: 'bool', vorgabe: true },
+      // Christian 09.11.2026: «nach dem absetzen der Vorwandlänge sollte mit dem nächsten mausklick die tiefe abgegriffen werden» → Kette aus;
+      // eigene id, damit ein gemerktes «kette: an» nicht weiter gilt
+      { id: 'mehrteilig', titel: 'Kette', art: 'bool', vorgabe: false },
     ],
-    hinweis: '1. Aussenkante zeichnen, 2. Tiefe am Plan abgreifen (oder fest eintragen). Tiefe inkl. Beplankung: GIS 100–700 mm, Duofix 135–220 mm (420 mit Verlängerung). Höhe ab OK Fertigboden; raumhoch ohne Höhe = Raumhöhe.',
+    hinweis: '1. Aussenkante: Anfangs- und Endpunkt anklicken, 2. nächster Klick greift die Tiefe ab – die Seite des Klicks gibt die Ausrichtung (oder Tiefe fest eintragen). Mit «Kette»: weitere Punkte, Enter beendet die Kante. Tiefe inkl. Beplankung: GIS 100–700 mm, Duofix 135–220 mm (420 mit Verlängerung). Höhe ab OK Fertigboden; raumhoch ohne Höhe = Raumhöhe.',
   },
   montageelement: {
     titel: 'Montageelement',
