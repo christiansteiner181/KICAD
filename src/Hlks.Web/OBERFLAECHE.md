@@ -4215,7 +4215,7 @@ Annäherungen (vollständige NCS-Liste lizenzpflichtig, NCS Inside Licence). Tes
 
 ## Lagemanager (Lagen der Rohre, Christian 05.11.2026)
 
-**Ort:** Register **Heizung** bzw. **Sanitär › Gruppe Leitungen › Lagemanager** (Aktion `gt.lagen`, Symbol `kote`; `aktionen-lagen.js`). Tabelle je Geschoss:
+**Ort:** Register **Koordination › Gruppe Vorgaben › Lagemanager** (seit 09.11.2026, Christian «lagen gelten für alle gewerke gleich und gehören in den tab koordination»; vorher Heizung/Sanitär › Leitungen) (Aktion `gt.lagen`, Symbol `kote`; `aktionen-lagen.js`). Tabelle je Geschoss:
 Kote, **UK roh Decke** (mm über Kote; leer = aus dem Modell, Unterkante der Decke darüber, sonst «fehlt»), **Lagen** (Abstand UK roh Decke bis Rohrachse in
 mm, durch Komma getrennt, Lage 1 zuerst; leer = 120, 240, 360, 480) und die daraus folgenden Achshöhen. Speichern setzt die Geschoss-Eigenschaften
 `ukRohdecke` und `lagen` (`element_aendern`, leer entfernt sie). Daten: Abfrage `lagen { geschoss? }` (Kern `Leitungen/Lagen.cs`, DOM-freier Cache

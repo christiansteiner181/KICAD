@@ -11,7 +11,7 @@ import { knoten, esc } from './werkzeug.js';
 import { sende, ergebnisMelden } from './befehle.js';
 
 registrieren({
-  id: 'gt.lagen', titel: 'Lagemanager', symbol: 'kote', kuerzel: null, register: ['heizung', 'sanitaer'], gruppe: 'Leitungen',
+  id: 'gt.lagen', titel: 'Lagemanager', symbol: 'kote', kuerzel: null, register: 'koordination', gruppe: 'Vorgaben',   // Christian 09.11.2026: «lagen gelten für alle gewerke gleich und gehören in den tab koordination»
   aktiv: () => !!zustand.status?.offen, hinweis: 'Zuerst ein Projekt öffnen.',
   ausfuehren: () => lagemanager(),
 });
