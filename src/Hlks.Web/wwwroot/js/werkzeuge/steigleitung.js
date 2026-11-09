@@ -73,7 +73,16 @@ export function steigleitungWerkzeug(wid = 'steigleitung') {
   const richtungVon = (a, b) => { const dx = b[0] - a[0], dy = b[1] - a[1], l = Math.hypot(dx, dy); return l < 1 ? null : [dx / l, dy / l]; };
   return {
     id: wid, titel: wid === 'steigleitungLueftung' ? 'Steigleitung Lüftung' : 'Steigleitung', planarten: ['grundriss'],
-    neu: () => ({ erster: null }),
+    // Christian 09.11.2026: «bei steigleitungen kann nur für KW eine dimension gewählt werden» – die Optionsleiste wurde nach dem Laden einer
+    // Produktlinie nicht neu gezeichnet (Haken nur im Werkzeug Rohr gesetzt); gemerkte Produktlinien beim Start laden
+    neu(ctx) {
+      if (ctx) {
+        D.haken.optionenNeu = () => ctx.optionenNeu();
+        for (const [m] of steigListe(wid)) { const kz = ctx.opt?.[steigId(m) + 'Serie']; if (ctx.opt?.[steigId(m)] && kz) D.serieLaden(kz); }
+      }
+      return { erster: null };
+    },
+    ende() { D.haken.optionenNeu = null; },
     hinweis: (z) => (z.erster ? 'Richtung der Reihe anklicken (Umschalt = orthogonal).' : 'Anfang der Steigzone bzw. Lage der ersten Leitung anklicken.'),
     letzterPunkt: (z) => z.erster,
     async klick(z, fang, ctx) {
