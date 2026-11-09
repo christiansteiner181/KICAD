@@ -302,7 +302,9 @@
     "eigenschaften": [
       { "name": "systemtyp", "typ": "auswahl", "pflicht": true, "beschreibung": "Name aus systemtypen.json, legt Medium und Fliessart fest",
         "auswahl": [ "Trinkwasser kalt", "Trinkwasser warm", "Zirkulation", "Schmutzwasser", "Regenwasser", "Heizung Vorlauf", "Heizung Rücklauf", "Heizung Vorlauf Glykol", "Heizung Rücklauf Glykol", "Kälte Vorlauf", "Kälte Rücklauf", "Kälte Vorlauf Glykol", "Kälte Rücklauf Glykol", "Aussenluft", "Zuluft", "Abluft", "Fortluft" ] },
-      { "name": "medium", "typ": "text", "beschreibung": "Medium-Kennung; wird aus dem Systemtyp gesetzt" } ] },
+      { "name": "medium", "typ": "text", "beschreibung": "Medium-Kennung; wird aus dem Systemtyp gesetzt" },
+      { "name": "produktlinie", "typ": "text", "beschreibung": "Vorgabe-Produktlinie (Kennzeichen der Familie): beim Zeichnen mit diesem System vorgeschlagen (Mustersysteme, Christian 09.11.2026)" },
+      { "name": "daemmdicke", "typ": "zahl", "einheit": "mm", "beschreibung": "Vorgabe-Dämmdicke beim Zeichnen mit diesem System (Mustersysteme, Christian 09.11.2026)" } ] },
   { "name": "Montageabschnitt", "kuerzel": "MA", "schicht": "system", "gewerk": "allgemein",
     "beschreibung": "Montageabschnitt (BIM to field, Entscheid Christian 02.11.2026: «einen Strang, nur Heizkörper, nur eine Trasse»): gespeicherte Auswahl nach Kriterien und von Hand gewählten Elementen; ein Element kann in mehreren Abschnitten stehen. Grundlage für Arbeitsplan und Materialauszug.",
     "eigenschaften": [

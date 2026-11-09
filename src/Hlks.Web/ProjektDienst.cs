@@ -197,7 +197,11 @@ public sealed class ProjektDienst(Einstellungen einstellungen, ILogger<ProjektDi
                 return (Kern.Projekt.Oeffnen(Katalog, sp, Einstellungen.Akteur, Einstellungen.Geraet, "mensch"), sp);
             }
             var leer = new AbgleichSpeicher(SpeicherFuer(ordner));
-            return (Kern.Projekt.Anlegen(Katalog, leer, name, Einstellungen.Akteur, Einstellungen.Geraet, "mensch"), leer);
+            var neu = Kern.Projekt.Anlegen(Katalog, leer, name, Einstellungen.Akteur, Einstellungen.Geraet, "mensch");
+            // Mustersysteme (Christian 09.11.2026: «wie die Familien in jedem Projekt als basis»): jedes neue Projekt erhält alle; ohne Bibliothek bleibt es leer
+            try { neu.Ausfuehren("mustersysteme_uebernehmen", new JsonObject()); }
+            catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or HlksFehler) { }
+            return (neu, leer);
         });
         await Umhaengen(p, sp);
         if (Einstellungen.ZuletztMerken) Zuletzt.Merken(ordner, p.Kopf.Name);

@@ -149,6 +149,7 @@ public sealed class GespraechDienst
         // Familienbibliothek: wie bei den KI-Aufträgen nur lesen (Entscheid Christian 19.10.2026: Übernahme nie automatisch)
         new("familie_in_bibliothek", "Schreibt in die projektübergreifende Bürobibliothek – entscheidet ein Mensch (wie bei den KI-Aufträgen)."),
         new("familie_aktualisieren", "Übernimmt eine Bibliotheksfassung ins Projekt – nie automatisch (Entscheid Christian 19.10.2026)."),
+        new("mustersystem_speichern", "Schreibt Mustersysteme in die projektübergreifende Systembibliothek – entscheidet ein Mensch (wie familie_in_bibliothek, 09.11.2026)."),
         new("familienauswahl_setzen", "Auswahl der sichtbaren Bibliotheksfamilien gilt für alle am Projekt – entscheidet ein Mensch."),
         // HKAP ist im Betrieb: nur der Mensch verknüpft, gleicht ab und sendet (auch die lesenden Werkzeuge fragen den Betriebsserver ab)
         new("hkap_verbindung", "HKAP im Betrieb – nur der Mensch arbeitet mit HKAP (Spezifikation 3c: alles hkap_*); fragt den Betriebsserver ab."),

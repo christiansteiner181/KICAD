@@ -43,6 +43,24 @@ public sealed partial class Werkzeuge
         [Description("Nur prüfen, nichts ändern")] bool trockenlauf = false) =>
         Befehl("system_paar_anlegen", Parameter(("vorlauf", vorlauf), ("ruecklauf", ruecklauf), ("systemtyp", systemtyp), ("anlage", anlage), ("name", name)), trockenlauf);
 
+    // Mustersysteme (Christian 09.11.2026): lesen, ins Projekt übernehmen, als Muster speichern (Speichern nur ein Mensch, Verbotsliste)
+    [McpServerTool(Name = "mustersysteme"), Description(Systembibliothek.AbfrageText)]
+    public string MustersystemeWerkzeug() =>
+        Lauf(() => Antwort((System.Text.Json.Nodes.JsonNode)Tuer.Abfrage(projekt, "mustersysteme", new System.Text.Json.Nodes.JsonObject())), synchronisieren: false);
+
+    [McpServerTool(Name = "mustersysteme_uebernehmen"), Description(MustersystemeUebernehmen.Text)]
+    public string MustersystemeUebernehmenWerkzeug(
+        [Description("Kennzeichen der Mustersysteme; leer = alle")] System.Text.Json.JsonElement? systeme = null,
+        [Description("Nur prüfen, nichts ändern")] bool trockenlauf = false) =>
+        Befehl("mustersysteme_uebernehmen", Parameter(("systeme", systeme)), trockenlauf);
+
+    [McpServerTool(Name = "mustersystem_speichern"), Description(MustersystemSpeichern.Text)]
+    public string MustersystemSpeichernWerkzeug(
+        [Description("Kennzeichen der Systeme des Projekts, die als Muster gespeichert werden")] System.Text.Json.JsonElement? systeme = null,
+        [Description("Kennzeichen der Mustersysteme, die aus der Bibliothek gelöscht werden")] System.Text.Json.JsonElement? entfernen = null,
+        [Description("Nur prüfen, nichts ändern")] bool trockenlauf = false) =>
+        Befehl("mustersystem_speichern", Parameter(("systeme", systeme), ("entfernen", entfernen)), trockenlauf);
+
     [McpServerTool(Name = "heizgruppe_anlegen"), Description(HeizgruppeAnlegen.Text)]
     public string HeizgruppeAnlegenWerkzeug(
         [Description(HeizungBefehle.ParVerteiler)] string? verteiler = null,

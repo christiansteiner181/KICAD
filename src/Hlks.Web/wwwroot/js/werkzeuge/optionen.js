@@ -343,7 +343,17 @@ function leitungFelder(wid, kategorie) {
       beiAenderung: () => { if (kategorie === 'Kanal') setze(wid, 'unterUkd', null); leitungHaken.hoeheGeaendert?.(); } },
     { id: 'gefaelle', titel: 'Gefälle', art: 'zahl', einheit: '%', platzhalter: 'kein', breite: 4, fluechtig: true },
     { id: 'system', titel: 'System', art: 'auswahl', get werte() { return systemOptionen(); }, leer: '–',
-      beiAenderung(el) { el?.blur?.(); const st = derKlasse('Strang').find((e) => kz(e) === wert(wid, 'strang')); if (st && st.teilVon !== wert(wid, 'system')) setze(wid, 'strang', ''); leitungHaken.optionenNeu?.(); } },
+      beiAenderung(el) {
+        el?.blur?.();
+        const st = derKlasse('Strang').find((e) => kz(e) === wert(wid, 'strang')); if (st && st.teilVon !== wert(wid, 'system')) setze(wid, 'strang', '');
+        // Vorgaben des Systems (Mustersysteme, Christian 09.11.2026): Produktlinie und Dämmdicke vorschlagen
+        const sy = derKlasse('System').find((e) => e.id === wert(wid, 'system') || kz(e) === wert(wid, 'system'));
+        const w = (n) => { const x = sy?.werte?.[n]; return x && typeof x === 'object' && 'wert' in x ? x.wert : x; };
+        if (w('daemmdicke') > 0) setze(wid, 'daemmdicke', w('daemmdicke'));
+        const pl = w('produktlinie');
+        if (pl && pl !== wert(wid, 'serie') && serienListe(kategorie).some((s) => s.kz === pl)) { setze(wid, 'serie', pl); nachSerie(); return; }
+        leitungHaken.optionenNeu?.();
+      } },
     { id: 'medium', titel: 'Medium', art: 'auswahl', get werte() { return mediumOptionen(); }, leer: '–',
       beiAenderung(el) { el?.blur?.(); leitungHaken.optionenNeu?.(); } },   // ohne System: Medium der Leitung (Christian 02.11.2026)
     { id: 'strang', titel: 'Strang', art: 'auswahl', get werte() { return strangOptionen(wid); }, leer: '–',

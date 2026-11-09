@@ -45,6 +45,7 @@ public static class Tuer
             "vorwand_stueckliste" => VorwandStueckliste.Abfrage(p, par),
             "farben" => Farben.Abfrage(p.Katalog),
             "lagen" => Lagen.Abfrage(p, par),
+            "mustersysteme" => Systembibliothek.Abfrage(p),
             "rohr_druckverlust" => RohrDruckverlust.Abfrage(p, par),
             "kanal_druckverlust" => KanalDruckverlust.Abfrage(p, par),
             "datenpunktliste" => Datenpunktliste.Abfrage(p, par),

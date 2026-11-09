@@ -58,6 +58,7 @@ public sealed class Abfragen(Projekt p)
         new("vorwand_stueckliste", VorwandStueckliste.Text, VorwandStueckliste.Parameter),   // Geberit Vorwand, 04.11.2026
         new("farben", Farben.Text, Farben.Parameter),   // Heizkörperfarben RAL/NCS, 04.11.2026
         new("lagen", Lagen.Text, Lagen.Parameter),   // Lagemanager, 05.11.2026
+        new("mustersysteme", Systembibliothek.AbfrageText, []),   // Mustersysteme, Christian 09.11.2026
         new("rohr_druckverlust", RohrDruckverlust.Text, RohrDruckverlust.Parameter),   // Modul 5 Teil B
         new("kanal_druckverlust", KanalDruckverlust.Text, KanalDruckverlust.Parameter),   // Modul 6 Teil B
         new("datenpunktliste", Datenpunktliste.Text, Datenpunktliste.Parameter),   // Modul 8 MSRL, Gerüst

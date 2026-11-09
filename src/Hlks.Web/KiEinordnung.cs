@@ -31,7 +31,7 @@ public static class KiEinordnung
              "raum_begehen",  // N15, 21.10.2026 (hlks-modul): Standort für «Raum begehen» (Standpunkt, Augenhöhe, Blick), rechnet nur
              "schnitthoehe_sia",   // N21, 21.10.2026 (hlks-modul, zur Bestätigung): Schnitthöhe des Grundrisses nach SIA 400, nur lesend
              "heizung_lesen", "heizung_leistung", "heizlast", "heizkoerper_auslegung", "rohr_druckverlust",   // Modul 5 Teil A-D (zurückgeholt 02.11.2026)
-             "vorwand_stueckliste", "farben", "lagen", "raumbezeichnungen_dwg",   // Geberit Vorwand; Heizkörperfarben RAL/NCS, 04.11.2026: Stückliste, Befunde, Annahmen, nur lesend
+             "vorwand_stueckliste", "farben", "lagen", "mustersysteme", "raumbezeichnungen_dwg",   // Geberit Vorwand; Heizkörperfarben RAL/NCS, 04.11.2026: Stückliste, Befunde, Annahmen, nur lesend
              "lueftung_varianten", "lueftung_schema", "kanal_druckverlust", "montageabschnitte", "rueckmeldung_lesen",
              "raumforderung"]),   // Modul 6 Teil A-7, 31.10.2026: Liste der Raumreservationen, nur lesend   // Modul 6 Teil A, 31.10.2026: Lüftungsvarianten und Raumbedarf, rechnet nur
         new("Familien lesen", "Familien des Projekts und der Bibliothek ansehen, vergleichen und nachmessen; nur lesend.",
@@ -56,7 +56,7 @@ public static class KiEinordnung
              "schema_anordnen", "schema_lage"]),
         new("Heizung", "Heizgruppen und Systempaare anlegen, ändern und aus dem Netz vorschlagen (Modul 5) – Modellarbeit, als Paket zurücknehmbar; " +
             "Temperaturen sind Eingaben ohne Vorgabewert; die Heizlast nach SIA 384.201 übernimmt heizlast_uebernehmen in die Räume.",
-            ["system_paar_anlegen", "heizgruppe_anlegen", "heizgruppe_aendern", "heizgruppen_vorschlagen", "heizlast_uebernehmen"]),
+            ["system_paar_anlegen", "heizgruppe_anlegen", "heizgruppe_aendern", "heizgruppen_vorschlagen", "heizlast_uebernehmen", "mustersysteme_uebernehmen"]),   // Mustersysteme übernehmen: Modellarbeit, zurücknehmbar (09.11.2026)
         new("MSRL planen", "Datenpunkte der Grundausstattung an Bauteilen vorschlagen (Modul 8, Gerüst) – Modellarbeit, als Paket zurücknehmbar; keine Verbindung zur Anlage.",
             ["datenpunkte_vorschlagen"]),
         new("Architektur und Hülle", "Wände, Decken, Öffnungen, Räume, Aufbauten, Materialien und Vorgaben im Projekt – Modellarbeit, zurücknehmbar; " +

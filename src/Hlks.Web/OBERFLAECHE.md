@@ -4233,6 +4233,24 @@ angegeben»): Werkzeug Kanal (DT), Feld **Achse unter UKD** (runde Produktlinie)
 Geschosses. Es setzt die **Achshöhe** = UKD − Wert (rund) bzw. UKD − Wert − Kanalhöhe/2 (eckig) und rechnet bei Wechsel von Produktlinie oder Grösse neu; eine
 von Hand eingetragene Achshöhe leert das Feld. **Plan** (Detailgrad fein): unter der Grössenangabe «Achse = −XYmm UKD» (runde Lüftungsleitungen) bzw. «OK = −XYmm UKD» (Kanäle), aus dem ersten waagrechten Stück und der UK roh Decke des Geschosses (`Leitungsbezeichnung.HoeheUkd`; ohne UK roh Decke keine Angabe).
 
+## Anlagen und Systeme, Mustersysteme (Christian 09.11.2026)
+
+Christian: «wir brauchen eine möglichkeit systeme zu erstellen. auf dieser basis werden dann mustersysteme erfasst die wie die Familien in jedem Projekt als basis
+vorliegen.» Entscheide 09.11.2026 (Fragefenster): Ablage neben den Familien auf W:, Inhalt Kennzeichen/Name/Systemtyp/Anlage/Gegenstück/Produktlinie/Dämmdicke,
+jedes neue Projekt erhält alle Mustersysteme.
+
+**Ort:** Register **Koordination › Gruppe Vorgaben › Anlagen und Systeme** (Aktion `koordination.systeme`, `aktionen-systeme.js`).
+- **Tabelle** der Systeme des Projekts: Name, Systemtyp (Katalog `systemtypen.json`: Medium, Fliessart), Anlage, Gegenstück (VL ↔ RL), **Produktlinie** und
+  **Dämmung** als Vorgabe beim Zeichnen; «Speichern» schreibt die geänderten Zeilen (`element_aendern`). Spalte «Muster»: schon in der Systembibliothek.
+- **System anlegen** (letzte Zeile) und **Anlage anlegen** (`element_anlegen`).
+- **Gewählte als Mustersysteme speichern** / **aus Bibliothek entfernen** (Spalte «Wahl»; `mustersystem_speichern`, nur ein Mensch – für Claude verboten wie
+  `familie_in_bibliothek`); **Fehlende Mustersysteme übernehmen** (`mustersysteme_uebernehmen`; vorhandene Kennzeichen bleiben unverändert, fehlende
+  Produktlinien werden aus der Familienbibliothek geladen).
+- **Systembibliothek:** `W:\03_CAD Bibliotheken\d_KICAD Systeme\mustersysteme.json` (`kataloge/buero.json` systembibliothek, Umgebungsvariable
+  `HLKS_SYSTEMBIBLIOTHEK`); ohne NAS gilt die lokale Kopie, gespeichert wird nur bei erreichbarer Bibliothek. Abfrage `mustersysteme`.
+- **Neues Projekt:** erhält alle Mustersysteme (`ProjektDienst.Anlegen`); Beispielprojekte behalten ihre eigenen Systeme.
+- **Zeichnen:** Wahl eines Systems in der Optionsleiste von Rohr/Kanal schlägt dessen Produktlinie und Dämmdicke vor.
+
 ## Raumbezeichnungen aus DWG (Christian 05.11.2026)
 
 **Ort:** Register **Architektur › Gruppe Raum › Raumbezeichnungen aus DWG** (Aktion `arch.raumtexte-dwg`, `aktionen-raumtexte.js`). Unterlage (DWG/DXF

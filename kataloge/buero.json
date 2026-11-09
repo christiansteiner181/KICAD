@@ -6,6 +6,12 @@
     "umgebungsvariable": "HLKS_FAMILIENBIBLIOTHEK",
     "hinweis": "Tests und Agenten setzen HLKS_FAMILIENBIBLIOTHEK immer auf einen Ordner unter %TEMP%; nie auf W: schreiben."
   },
+  "systembibliothek": {
+    "pfad": "W:\\03_CAD Bibliotheken\\d_KICAD Systeme",
+    "quelle": "Entscheid Christian Steiner, 09.11.2026 (Fragefenster): Mustersysteme neben den Familien auf W:, offline die lokale Kopie",
+    "umgebungsvariable": "HLKS_SYSTEMBIBLIOTHEK",
+    "hinweis": "Datei mustersysteme.json. Tests setzen HLKS_SYSTEMBIBLIOTHEK auf einen Ordner unter %TEMP%; nie auf W: schreiben."
+  },
   "projektablage": {
     "pfad": "W:\\02_Projektdateien Objekte",
     "kicadOrdner": "c_Pläne und Modelle\\e_KICAD",
