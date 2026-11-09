@@ -17,8 +17,12 @@ public static class Stifte
     public const string Duenn = "duenn";    // 0.18 mm: Mass- und Hilfslinien, Schraffuren, Sichtkanten (B.3.3 Tab. 4)
     public const string Mittel = "mittel";  // 0.35 mm
     public const string Dick = "dick";      // 0.70 mm: Schnittkanten der Hauptbauteile (B.3.3 Tab. 4)
+    // Haustechnik (Christian 09.11.2026: «linien stärken müssen noch angepasst werden. konturen 0.5mm, Achsen und hilfslinien 0.2mm»; gilt nur für
+    // die Haustechnik, die Architektur behält die drei Stifte nach SIA 400)
+    public const string Kontur = "kontur";  // 0.50 mm: Konturen von Leitungen, Kanälen, Formteilen, Steigleitungen und Familien der Haustechnik
+    public const string Hilf = "hilf";      // 0.20 mm: Achsen, Dämmkanten und Hilfslinien der Haustechnik
 
-    public static double Mm(string? stift) => stift switch { Dick => 0.70, Mittel => 0.35, _ => 0.18 };
+    public static double Mm(string? stift) => stift switch { Dick => 0.70, Kontur => 0.50, Mittel => 0.35, Hilf => 0.20, _ => 0.18 };
 }
 
 /// <summary>Wie ein Primitiv gezeichnet wird.</summary>

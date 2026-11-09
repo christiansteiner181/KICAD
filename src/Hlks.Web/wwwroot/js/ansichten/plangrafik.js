@@ -25,11 +25,11 @@ export function nachEbenen(teile) {
 }
 
 /** Stiftbreiten in Papier-mm (Spiegel von Stifte.Mm, SIA 400:2000 B.3.1). */
-export const STIFT_MM = Object.freeze({ duenn: 0.18, mittel: 0.35, dick: 0.70 });
+export const STIFT_MM = Object.freeze({ duenn: 0.18, mittel: 0.35, dick: 0.70, kontur: 0.50, hilf: 0.20 });   // kontur/hilf: Haustechnik (09.11.2026)
 export const stiftMm = (stift) => STIFT_MM[stift] ?? STIFT_MM.duenn;
 /** Strichbreite in Modell-mm bei Massstab 1:massstab. */
 export const strichbreite = (stift, massstab) => stiftMm(stift) * massstab;
-const STIFT_KLASSE = { duenn: 'sd', mittel: 'sm', dick: 'sk' };
+const STIFT_KLASSE = { duenn: 'sd', mittel: 'sm', dick: 'sk', kontur: 'skt', hilf: 'sh' };
 
 /** Strichmuster der Linienarten in Papier-mm (Strich, Lücke, …) – wie PdfZeichner.cs. */
 export const LINIENMUSTER = Object.freeze({ strich: [3.0, 1.0], strichpunkt: [6.0, 1.0, 0.5, 1.0], punkt: [0.5, 1.0], achse: [3.0, 0.6, 0.3, 0.6], strichfein: [0.8, 0.5] });

@@ -4291,6 +4291,13 @@ jedes neue Projekt erhält alle Mustersysteme.
 - **Lagewechsel beim Zeichnen** (Christian 09.11.2026: «wird beim zeichnen ein lagewechsel vorgenommen, gilt dies nur für die kommenden leitungen»): Lage
   bzw. Höhe in der Optionsleiste setzt am letzten Punkt eine Steigleitung, die folgenden Strecken liegen auf der neuen Lage; schon gezeichnete Strecken
   bleiben. Die Palette zeigt die Höhe des zuletzt gezeichneten Teils während des Zeichnens nur zum Lesen.
+- **Linienstärken Haustechnik** (Christian 09.11.2026: «konturen 0.5mm, Achsen und hilfslinien 0.2mm»; Entscheid: nur Haustechnik, Dämmkanten = Hilfslinien):
+  neue Stifte «kontur» 0.5 mm und «hilf» 0.2 mm (Bildschirm, PDF, SVG). Kontur: Ränder von Kanälen, Abwasser, verdeckten Leitungen, Steigleitungen und
+  Umrisse der Familien und Formteile; Hilf: Achsen, Achsenkreuze, Dämmkanten, Kanalrahmen, Fliesspfeil, Sichtkanten. Deckend gefüllte Rohre und ihre
+  Formteile ohne Rand (sonst in 1:50 breiter). Grob und Architektur unverändert.
+- **Dimension je Abschnitt** (Christian 09.11.2026: «beschriftungen von dimensionen müssen erst nach einer verzweigung erneut genannt werden»): die
+  Dimension steht einmal je Abschnitt (Leitungen über Bögen bis zum nächsten T-Stück, zur Reduktion, Armatur, zum Gerät oder offenen Ende), an der im
+  Plan längsten Leitung.
 - **Verdeckte Dämmkanten** (Christian 09.11.2026: «bei dämmungen passt die darstellung bei bogen nach oben/bogen nach unten. hier die unsichtbaren
   dämmkanten gestrichelt darstellen»): die gelbe Fläche bleibt eine; die schwarzen Ränder sind nach Höhe geschichtet. Was unter einer höher liegenden
   Dämmung liegt (z. B. der Ring der Steigleitung unter dem oberen Rohr, das untere Rohr unter dem Ring), ist fein gestrichelt (Linienart «strichfein»,

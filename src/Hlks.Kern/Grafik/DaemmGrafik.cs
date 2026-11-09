@@ -139,7 +139,7 @@ public static class DaemmGrafik
                     teil.Primitive.Add(new Primitiv
                     {
                         Art = "polylinie", Punkte = r.Select(q => new[] { q.x, q.y }).ToList(),
-                        Stil = new Stil { Stift = Stifte.Duenn, Linie = linie, Farbe = HlksGrafik.DaemmLinie },
+                        Stil = new Stil { Stift = Stifte.Hilf, Linie = linie, Farbe = HlksGrafik.DaemmLinie },
                     });
         }
         yield return teil;

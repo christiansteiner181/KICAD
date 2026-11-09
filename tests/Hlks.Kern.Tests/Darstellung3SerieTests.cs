@@ -119,7 +119,7 @@ public class Darstellung3SerieTests
         var b = Flaeche(dm);
         Assert.Equal(HlksGrafik.DaemmGelb, b.Stil.Fuellung);
         Assert.Null(b.Stil.Stift);   // Fläche ohne Rand; die Ränder sind dünne schwarze Linien
-        Assert.All(dm.Primitive.Where(x => x.Art == "polylinie"), x => { Assert.Equal(HlksGrafik.DaemmLinie, x.Stil.Farbe); Assert.Equal(Stifte.Duenn, x.Stil.Stift); Assert.Equal("voll", x.Stil.Linie); });
+        Assert.All(dm.Primitive.Where(x => x.Art == "polylinie"), x => { Assert.Equal(HlksGrafik.DaemmLinie, x.Stil.Farbe); Assert.Equal(Stifte.Hilf, x.Stil.Stift); Assert.Equal("voll", x.Stil.Linie); });
         Assert.Equal((3000.0, 65.0), Ausdehnung(b));
         Assert.True(plan.Teile.IndexOf(dm) < plan.Teile.FindIndex(x => x.Id == Hole(p, "RO-1").Id));   // hinter dem Rohr
         var t = Teil(p, "RO-1");

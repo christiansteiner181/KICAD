@@ -125,7 +125,7 @@ public class FamilieGrafikTests
         var t = Teil(Grafik.Plan(p, "AN-EG"), p, "HK-1");
         Assert.DoesNotContain(t.Primitive, x => x.Art == "polygon");   // Sinnbild ersetzt den Umriss
         var linie = t.Primitive.Single(x => x.Art == "linie" && !x.Stil.NurBildschirm);
-        Assert.Equal(Stifte.Mittel, linie.Stil.Stift);
+        Assert.Equal(Stifte.Kontur, linie.Stil.Stift);   // Haustechnik: mittel wird Kontur 0.5 mm (Christian 09.11.2026)
         // (0, 0) → (5000, 3000); (1000, 100) → (−100, 1000) → (4900, 4000)
         Etwa([5000, 3000], linie.Punkte[0], 1e-6);
         Etwa([4900, 4000], linie.Punkte[1], 1e-6);

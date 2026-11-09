@@ -370,6 +370,28 @@ public class AbwasserSerieTests
 
     /// <summary>Christian 09.11.2026: «bei dämmung auch bogenradien zeichnen» – der Bogen trägt das Dämmband der angeschlossenen Leitung entlang seiner Achse.</summary>
     [Fact]
+    public void Dimension_NurEinmalJeAbschnittBisZurVerzweigung()
+    {
+        // Christian 09.11.2026: «beschriftungen von dimensionen müssen erst nach einer verzweigung erneut genannt werden»
+        var p = MitPe();
+        Ok(PeZeichnen(p, "d 110", [[0, 0, 500], [3000, 0, 500], [3000, 2000, 500]]));
+        Ok(p.Ausfuehren("element_aendern", new JsonObject { ["element"] = "AN-EG", ["eigenschaften"] = new JsonObject { ["detailgrad"] = "fein" } }));
+        var d110 = Beschriftung(p, "RO-1");
+        int Dimensionen(string? text) => Grafik.Plan(p, "AN-EG").Teile.Where(t => p.Modell.Finde(t.Id ?? "") is { Klasse: "Rohr" })
+            .SelectMany(t => t.Primitive).Count(x => x.Art == "text" && x.Text == text);
+        Assert.True(p.Modell.DerKlasse("Rohr").Count() >= 2);   // Geraden über Bögen: ein Abschnitt
+        Assert.Equal(1, Dimensionen(d110));
+        // nach der Verzweigung (T-Stück) je Abschnitt wieder: vor und nach dem T je einmal, der Abzweig einmal
+        Ok(p.Ausfuehren("leitung_abzweigen", new JsonObject
+        {
+            ["leitung"] = "RO-1", ["punkt"] = new JsonArray(1500, 0, 500), ["richtung"] = new JsonArray(-1, -1, 0), ["laenge"] = 1000, ["groesse"] = "d 56",
+        }));
+        Assert.Equal(2, Dimensionen(d110));
+        var abzweig = p.Modell.DerKlasse("Rohr").Single(x => Familien.Typ(x) == "d 56");
+        Assert.Equal(1, Dimensionen(Beschriftung(p, abzweig.Kennzeichen)));
+    }
+
+    [Fact]
     public void Daemmung_AuchAmBogen()
     {
         var p = MitPe();

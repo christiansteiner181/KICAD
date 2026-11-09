@@ -209,7 +209,7 @@ public sealed class HlksGrafik : IGrafikquelle
                 // Dämmung hinter dem Rohr (Christian 09.11.2026: «darstellung dämmung … schwarze linien, gelb transparent hinterlegt», «auch auf mittel anwenden»)
                 // die Fläche zeichnet DaemmGrafik vereinigt für alle Leitungen und Formteile (09.11.2026); verdeckt nur die gestrichelten Ränder
                 if (mass.Daemmdicke > 0 && lauf.Verdeckt)
-                    teil.Primitive.AddRange(Raender(lauf.Xy, mass.DaemmBreite, DaemmLinie, "strich"));
+                    teil.Primitive.AddRange(Raender(lauf.Xy, mass.DaemmBreite, DaemmLinie, "strich", Stifte.Hilf));
                 if (lauf.Verdeckt)
                     teil.Primitive.AddRange(Raender(lauf.Xy, breite, farbe, "strich"));
                 else if (abwasser)
@@ -226,7 +226,7 @@ public sealed class HlksGrafik : IGrafikquelle
                     {
                         // Annahme: Deckkraft 0.2, Kontur dünn; an Knicken entstehen innere Kanten (Vereinigung folgt mit der Leitungsführung)
                         pr.Stil = pr.Art == "polygon"
-                            ? new Stil { Stift = Stifte.Duenn, Linie = linie, Farbe = farbe, Fuellung = farbe ?? "schnitt", Deckkraft = 0.2 }
+                            ? new Stil { Stift = Stifte.Kontur, Linie = linie, Farbe = farbe, Fuellung = farbe ?? "schnitt", Deckkraft = 0.2 }
                             : new Stil { Stift = null, Fuellung = farbe ?? "schnitt", Deckkraft = 0.2 };
                         teil.Primitive.Add(pr);
                     }
@@ -317,7 +317,7 @@ public sealed class HlksGrafik : IGrafikquelle
         double w = m.Winkel * Math.PI / 180, ux = Math.Cos(w), uy = Math.Sin(w), l = 3.0 * M, b = 0.8 * M;
         double sx = m.X + ux * l / 2, sy = m.Y + uy * l / 2;   // Spitze
         yield return new Primitiv { Art = "polygon", Punkte = [[sx, sy], [sx - ux * l - uy * b, sy - uy * l + ux * b], [sx - ux * l + uy * b, sy - uy * l - ux * b]],
-            Stil = new Stil { Stift = Stifte.Duenn, Farbe = farbe, Fuellung = farbe } };
+            Stil = new Stil { Stift = Stifte.Hilf, Farbe = farbe, Fuellung = farbe } };
         if (ctx.Detailgrad == "fein" && gef > 0.005)
         {
             var grad = HlksLinien.LesbarerWinkel(m.Winkel); var rad = grad * Math.PI / 180;
@@ -338,8 +338,8 @@ public sealed class HlksGrafik : IGrafikquelle
     internal const double DaemmPunktRadius = 0.8;
 
     static Stil DaemmStil(bool verdeckt) => verdeckt
-        ? new Stil { Stift = Stifte.Duenn, Linie = "strich", Farbe = DaemmLinie }
-        : new Stil { Stift = Stifte.Duenn, Linie = "voll", Farbe = DaemmLinie, Fuellung = DaemmGelb, Deckkraft = DaemmDeckkraft };
+        ? new Stil { Stift = Stifte.Hilf, Linie = "strich", Farbe = DaemmLinie }
+        : new Stil { Stift = Stifte.Hilf, Linie = "voll", Farbe = DaemmLinie, Fuellung = DaemmGelb, Deckkraft = DaemmDeckkraft };
 
     /// <summary>Dämmung als Band der Dämmbreite: dünne schwarze Ränder, gelbe transparente Füllung, ohne eigene Achse.</summary>
     internal static IEnumerable<Primitiv> DaemmBand(List<double[]> xy, double breite)
@@ -368,18 +368,19 @@ public sealed class HlksGrafik : IGrafikquelle
                 {
                     Art = "polygon",
                     Punkte = [[a[0] + ux * s0 + nx, a[1] + uy * s0 + ny], [a[0] + ux * s1 + nx, a[1] + uy * s1 + ny], [a[0] + ux * s1 - nx, a[1] + uy * s1 - ny], [a[0] + ux * s0 - nx, a[1] + uy * s0 - ny]],
-                    Stil = new Stil { Stift = Stifte.Duenn, Farbe = farbe, Fuellung = farbe ?? "schnitt", Deckkraft = 0.35 },
+                    Stil = new Stil { Stift = Stifte.Hilf, Farbe = farbe, Fuellung = farbe ?? "schnitt", Deckkraft = 0.35 },
                 };
         }
     }
 
-    internal static IEnumerable<Primitiv> Raender(List<double[]> xy, double b, string? farbe, string linienart)
+    /// <summary>Ränder eines Bands; Stift «kontur» 0.5 mm (Haustechnik, Christian 09.11.2026), Dämmkanten «hilf».</summary>
+    internal static IEnumerable<Primitiv> Raender(List<double[]> xy, double b, string? farbe, string linienart, string stift = Stifte.Kontur)
     {
         foreach (var vorzeichen in new[] { 1, -1 })
             yield return new Primitiv
             {
                 Art = "polylinie", Punkte = HlksLinien.Versatz(xy, vorzeichen * b / 2),
-                Stil = new Stil { Stift = Stifte.Duenn, Linie = linienart, Farbe = farbe },
+                Stil = new Stil { Stift = stift, Linie = linienart, Farbe = farbe },
             };
     }
 
@@ -412,9 +413,10 @@ public sealed class HlksGrafik : IGrafikquelle
             // achslinie»): leicht gefüllt, Kontur deckend; das Achsenkreuz nur bei runden Querschnitten (eckige Kanäle ohne)
             bool kanal = !mass.Rohrband;
             bool wieLeitung = (kanal || !mass.Rechteck) && fuellung is not null && !verdeckt;   // verdeckt (unter dem Geschossboden) bleibt gestrichelt
-            var stil = !wieLeitung ? new Stil { Stift = Stifte.Mittel, Linie = linienart, Farbe = farbe, Fuellung = fuellung }
-                : abwasser || kanal ? new Stil { Stift = Stifte.Duenn, Linie = linienart, Farbe = farbe, Fuellung = farbe ?? "schnitt", Deckkraft = LeitungDeckkraft }
-                : new Stil { Stift = Stifte.Duenn, Linie = linienart, Farbe = farbe, Fuellung = farbe ?? "schnitt" };
+            // Konturen 0.5 mm (Christian 09.11.2026); deckend gefüllte Rohre ohne Rand wie das Rohrband
+            var stil = !wieLeitung ? new Stil { Stift = Stifte.Kontur, Linie = linienart, Farbe = farbe, Fuellung = fuellung }
+                : abwasser || kanal ? new Stil { Stift = Stifte.Kontur, Linie = linienart, Farbe = farbe, Fuellung = farbe ?? "schnitt", Deckkraft = LeitungDeckkraft }
+                : new Stil { Stift = null, Linie = linienart, Farbe = farbe, Fuellung = farbe ?? "schnitt" };
             if (mass.Rechteck)
             {
                 if (mass.Daemmdicke > 0 && daemmung)
@@ -430,7 +432,7 @@ public sealed class HlksGrafik : IGrafikquelle
                 {
                     // Achsenkreuz mit Überstand, anthrazit (Christian 06.11.2026: «hier können die achskreuze verlängert werden», «achskreuze in antrazith»)
                     double r = b / 2, hk = r + Achslinien.Ueberstand(r, M);
-                    var kreuzStil = new Stil { Stift = Stifte.Duenn, Linie = Achslinien.Linie, Farbe = AchseAnthrazit };
+                    var kreuzStil = new Stil { Stift = Stifte.Hilf, Linie = Achslinien.Linie, Farbe = AchseAnthrazit };
                     yield return new Primitiv { Art = "linie", Punkte = [[x - hk, y], [x + hk, y]], Stil = kreuzStil };
                     yield return new Primitiv { Art = "linie", Punkte = [[x, y - hk], [x, y + hk]], Stil = kreuzStil };
                 }
@@ -521,7 +523,7 @@ public sealed class HlksGrafik : IGrafikquelle
     static IEnumerable<Primitiv> Kreuz(double x, double y, double M, string? farbe)
     {
         double h = 1.8 * SymbolRadius(M);
-        var stil = new Stil { Stift = Stifte.Duenn, Farbe = farbe };
+        var stil = new Stil { Stift = Stifte.Hilf, Farbe = farbe };
         yield return new Primitiv { Art = "linie", Punkte = [[x - h, y], [x + h, y]], Stil = stil };
         yield return new Primitiv { Art = "linie", Punkte = [[x, y - h], [x, y + h]], Stil = stil };
     }
@@ -600,6 +602,26 @@ public sealed class HlksGrafik : IGrafikquelle
     static List<double[]> Rechteck(double x, double y, double b, double h) =>
         [[x - b / 2, y - h / 2], [x + b / 2, y - h / 2], [x + b / 2, y + h / 2], [x - b / 2, y + h / 2]];
 
+    static readonly System.Runtime.CompilerServices.ConditionalWeakTable<GrafikKontext, Dictionary<string, bool>> dimensionBeschriften = new();
+
+    /// <summary>Dimension nur einmal je Abschnitt (Christian 09.11.2026: «beschriftungen von dimensionen müssen erst nach einer verzweigung erneut genannt
+    /// werden»): Abschnitt = Leitungen über Bögen bis zur nächsten Verzweigung (T-Stück), Reduktion, Armatur, Gerät oder zum offenen Ende
+    /// (Leitungszug ohne Reduktionen). Beschriftet wird die im Plan längste sichtbare Leitung des Abschnitts mit derselben Bezeichnung.</summary>
+    static bool DimensionBeschriften(GrafikKontext ctx, Element e, string text)
+    {
+        var merk = dimensionBeschriften.GetOrCreateValue(ctx);
+        if (merk.TryGetValue(e.Id, out var ja)) return ja;
+        var k = ctx.Katalog;
+        var zug = Leitungszug.Finden(ctx.Modell, k, e, x => k.IstArt(x, "Leitung") || (k.IstArt(x, "Bogen") && x.Anschluesse.Count == 2));
+        static double PlanLaenge(Element x) => x.Geometrie?.Punkte is { Count: >= 2 } q ? q.Zip(q.Skip(1)).Sum(s => Math.Sqrt(Math.Pow(s.Second[0] - s.First[0], 2) + Math.Pow(s.Second[1] - s.First[1], 2))) : 0;
+        var gleich = zug.Glieder.Select(g => g.Element)
+            .Where(x => k.IstArt(x, "Leitung") && Grafik.Sichtbar(ctx, x) && Leitungsbezeichnung.Text(ctx.Projekt, ctx.Ansicht, x) == text)
+            .OrderByDescending(PlanLaenge).ThenBy(x => x.Kennzeichen, StringComparer.Ordinal).ToList();
+        var beste = gleich.FirstOrDefault()?.Id ?? e.Id;
+        foreach (var x in gleich) merk[x.Id] = x.Id == beste;
+        return merk.TryGetValue(e.Id, out ja) ? ja : merk[e.Id] = true;
+    }
+
     /// <summary>Breite, neben der die Beschriftung steht (Christian 09.11.2026: «beschriftungsposition mit der Dämmung abgleichen»): im Grundriss mit
     /// gezeichneter Dämmung (fein, mittel; DaemmGrafik) der Aussenrand der Dämmung, sonst die Leitung.</summary>
     static double TextBreite(GrafikKontext ctx, Element e, double w) =>
@@ -614,7 +636,7 @@ public sealed class HlksGrafik : IGrafikquelle
         var grad = HlksLinien.LesbarerWinkel(m.Winkel);
         var rad = grad * Math.PI / 180;
         var abstand = w / 2 + 0.4 * ctx.Massstab;   // über der Linie, in Leserichtung gesehen
-        teil.Primitive.Add(new Primitiv
+        if (DimensionBeschriften(ctx, e, text)) teil.Primitive.Add(new Primitiv
         {
             Art = "text", Punkte = [[m.X - Math.Sin(rad) * abstand, m.Y + Math.Cos(rad) * abstand]],
             Text = text, Groesse = Schrift, Ausrichtung = "mitte", Winkel = grad, Mitdrehen = true,   // N9: folgt der Leitung

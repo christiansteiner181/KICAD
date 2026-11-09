@@ -122,14 +122,18 @@ public sealed class FamilienGrafik : IGrafikquelle
             teil.Primitive = teil.Primitive.SelectMany(p => p.Art == "polylinie" && p.Stil.Linie is not ("strichpunkt" or Achslinien.Linie)
                 ? HlksGrafik.AmKreisUnterbrechen(ctx, p.Punkte, lage.Ursprung[2]).Select(st => new Primitiv { Art = "polylinie", Punkte = st, Stil = p.Stil })
                 : [p]).ToList();
-        else if (formteil) FormteilWieLeitung(ctx, e, teil, farbe);
+        else
+        {
+            if (!Architektur(ctx.Katalog, e)) HaustechnikStifte(teil);   // Konturen 0.5 mm, Achsen und Hilfslinien 0.2 mm (Christian 09.11.2026)
+            if (formteil) FormteilWieLeitung(ctx, e, teil, farbe);
+        }
         // IFC 1:1 Schritt 3: Körper aus einem Netz (Familie aus dem IFC bzw. 3D-Modell) zusätzlich auf Schnitthöhe geschnitten, über dem Umriss
         var netz = a.Sichtbare(ctx.Detailgrad).Where(k => k.Def.Art == "netz").Select(k => FamilienKoerper.Platzieren(k.Teil!, lage, null));
         // darunter die Sichtkanten von oben dünn (NetzDraufsicht), je Familie, Typ und Höhe über dem Einfügepunkt zwischengespeichert
         if (lage.Senkrecht && Draufsicht(a, ctx.Detailgrad, ctx.Schnitthoehe - lage.Ursprung[2]) is { Count: > 0 } kanten)
             teil.Primitive.InsertRange(teil.Primitive.FindLastIndex(p => p.Art == "polygon") + 1, kanten.Select(z => new Primitiv
             {
-                Art = "polylinie", Punkte = z.Select(q => W2([q[0], q[1], 0], lage)).ToList(), Stil = new Stil { Stift = Stifte.Duenn, Farbe = farbe },
+                Art = "polylinie", Punkte = z.Select(q => W2([q[0], q[1], 0], lage)).ToList(), Stil = new Stil { Stift = Architektur(ctx.Katalog, e) ? Stifte.Duenn : Stifte.Hilf, Farbe = farbe },
             }));
         teil.Primitive.AddRange(Schnittlinien(netz, ctx.Schnitthoehe, farbe));
         return [teil];
@@ -181,9 +185,22 @@ public sealed class FamilienGrafik : IGrafikquelle
         foreach (var p in teil.Primitive)
         {
             if (p.Art == "polygon" && p.Stil.Fuellung == "papier")
-                p.Stil = new Stil { Stift = p.Stil.Stift, Linie = p.Stil.Linie, Farbe = p.Stil.Farbe, Fuellung = farbe ?? "schnitt", Deckkraft = leicht ? HlksGrafik.LeitungDeckkraft : null };
+                p.Stil = new Stil { Stift = leicht ? p.Stil.Stift : null, Linie = p.Stil.Linie, Farbe = p.Stil.Farbe, Fuellung = farbe ?? "schnitt", Deckkraft = leicht ? HlksGrafik.LeitungDeckkraft : null };   // deckend ohne Rand wie das Rohrband
             else if (p.Art == "polylinie" && p.Stil.Linie is "strichpunkt" or Achslinien.Linie)   // Achsen anthrazit, fein (Christian 09.11.2026)
                 p.Stil = new Stil { Stift = p.Stil.Stift, Linie = Achslinien.Linie, Farbe = HlksGrafik.AchseAnthrazit };
+        }
+    }
+
+    /// <summary>Stifte der Haustechnik im Grundriss (mittel, fein; Christian 09.11.2026: «konturen 0.5mm, Achsen und hilfslinien 0.2mm»): Achsen und dünne
+    /// Linien «hilf», Umrisse (Papierfüllung) und mittlere bzw. dicke Linien «kontur»; Texte und Bildschirmmarken bleiben.</summary>
+    static void HaustechnikStifte(Grafikteil teil)
+    {
+        foreach (var p in teil.Primitive)
+        {
+            var s = p.Stil;
+            if (p.Art == "text" || s.Stift is null || s.NurBildschirm == true) continue;
+            s.Stift = s.Linie is "strichpunkt" or Achslinien.Linie ? Stifte.Hilf
+                : s.Fuellung == "papier" || s.Stift is Stifte.Mittel or Stifte.Dick or Stifte.Kontur ? Stifte.Kontur : Stifte.Hilf;
         }
     }
 
