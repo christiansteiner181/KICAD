@@ -4261,6 +4261,10 @@ jedes neue Projekt erhält alle Mustersysteme.
   `HLKS_SYSTEMBIBLIOTHEK`); ohne NAS gilt die lokale Kopie, gespeichert wird nur bei erreichbarer Bibliothek. Abfrage `mustersysteme`.
 - **Neues Projekt:** erhält alle Mustersysteme (`ProjektDienst.Anlegen`); Beispielprojekte behalten ihre eigenen Systeme.
 - **Zeichnen:** Wahl eines Systems in der Optionsleiste von Rohr/Kanal schlägt dessen Produktlinie und Dämmdicke vor.
+- **Dämmregel** (Spalte im Dialog, Systemeigenschaft `daemmregel`; Christian 09.11.2026: «dämmdicken gem. energiegesetzt»): «MuKEn 2014 (λ > 0,03 W/(m·K))» bzw.
+  «(λ ≤ 0,03 W/(m·K))» – beim Zeichnen ergibt sich die Dämmdicke aus der DN der gewählten Grösse nach MuKEn 2014 Anhang 4 (`kataloge/daemmung.json`, Quelle
+  Art. 1.17 Abs. 2–3, S. 25/27; Rechenregister `leitungen.daemmdicke`); geht der festen Dämmung vor. Die Standard-Mustersysteme Hz-VL/RL (auch Glykol), Sa-WW
+  und Sa-ZIR tragen die Regel mit λ > 0,03. Lüftung (SIA 382/1 Ziff. 5.9), Kälte und Kaltwasser: keine Werte hinterlegt.
 
 ## Raumbezeichnungen aus DWG (Christian 05.11.2026)
 

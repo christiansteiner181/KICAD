@@ -43,13 +43,15 @@ export async function systemeDialog() {
     const typOpts = (g) => opt('', '–', g) + typen.map((t) => opt(t.name, `${t.name} (${t.medium})`, g)).join('');
     const anlOpts = (g) => opt('', '–', g) + anlagen.map((a) => opt(a.kennzeichen, `${a.kennzeichen}${a.name ? ' – ' + a.name : ''}`, g)).join('');
     const sysOpts = (g, ohne) => opt('', '–', g) + systeme.filter((s) => s.kennzeichen !== ohne).map((s) => opt(s.kennzeichen, s.kennzeichen, g)).join('');
+    const regeln = (zustand.katalog?.daemmregeln ?? []).map((r) => r.name);
+    const regOpts = (g) => opt('', '–', g) + regeln.map((r) => opt(r, r, g)).join('');   // Dämmdicke nach Energiegesetz (09.11.2026)
     const linOpts = (g) => opt('', '–', g) + linien.map((l) => opt(l.kz, l.name, g)).join('');
     w.innerHTML = `
       <div class="leise">Mustersysteme: ${esc((muster?.systeme ?? []).length)} in der Systembibliothek ${esc(bib.pfad ?? '')}${bib.offline ? ' – <b>nicht erreichbar</b>, letzter bekannter Stand' : ''}.
         ${fehlen.length ? `${fehlen.length} fehlen im Projekt: ${esc(fehlen.map((s) => s.kennzeichen).join(', '))}.` : 'Alle sind im Projekt.'}
         ${muster?.hinweis ? `<br>${esc(muster.hinweis)}` : ''}</div>
       <table class="tabelle"><thead><tr><th title="Für «Als Mustersysteme speichern» bzw. «Aus Bibliothek entfernen» wählen">Wahl</th><th>Kennzeichen</th><th>Name</th>
-        <th>Systemtyp</th><th>Anlage</th><th>Gegenstück</th><th>Produktlinie</th><th>Dämmung [mm]</th><th>Muster</th></tr></thead>
+        <th>Systemtyp</th><th>Anlage</th><th>Gegenstück</th><th>Produktlinie</th><th title="Dämmdicke nach Energiegesetz (MuKEn 2014 Anhang 4) aus der DN; geht der festen Dämmung vor">Dämmregel</th><th>Dämmung [mm]</th><th>Muster</th></tr></thead>
       <tbody>${systeme.map((s) => `<tr data-id="${esc(s.id)}">
         <td><input type="checkbox" class="sy-wahl"></td><td>${esc(s.kennzeichen)}</td>
         <td><input type="text" class="sy-name" value="${esc(s.name ?? '')}" size="16" data-kein-enter="1"></td>
@@ -57,11 +59,12 @@ export async function systemeDialog() {
         <td><select class="sy-anlage">${anlOpts(kz(s.teilVon))}</select></td>
         <td><select class="sy-gegen">${sysOpts(kz(s.bezuege?.gegenstueck), s.kennzeichen)}</select></td>
         <td><select class="sy-linie">${linOpts(wert(s, 'produktlinie') ?? '')}</select></td>
+        <td><select class="sy-regel">${regOpts(wert(s, 'daemmregel') ?? '')}</select></td>
         <td><input type="text" inputmode="decimal" class="sy-daemm" value="${esc(wert(s, 'daemmdicke') ?? '')}" size="4" data-kein-enter="1"></td>
         <td class="leise">${inBib.has(s.kennzeichen) ? 'in Bibliothek' : '–'}</td></tr>`).join('')}
       <tr class="sy-neu"><td></td><td><input type="text" class="n-kz" placeholder="z. B. Hz-VL" size="8" data-kein-enter="1"></td>
         <td><input type="text" class="n-name" placeholder="Name" size="16" data-kein-enter="1"></td><td><select class="n-typ">${typOpts('')}</select></td>
-        <td><select class="n-anlage">${anlOpts('')}</select></td><td></td><td><select class="n-linie">${linOpts('')}</select></td>
+        <td><select class="n-anlage">${anlOpts('')}</select></td><td></td><td><select class="n-linie">${linOpts('')}</select></td><td><select class="n-regel">${regOpts('')}</select></td>
         <td><input type="text" inputmode="decimal" class="n-daemm" size="4" data-kein-enter="1"></td><td><button type="button" class="dlg-knopf n-anlegen">System anlegen</button></td></tr>
       </tbody></table>
       <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">
@@ -98,6 +101,7 @@ export async function systemeDialog() {
       if (!k || !typ) { ergebnisMelden({ angenommen: false, fehler: 'Kennzeichen und Systemtyp angeben.' }); return; }
       const eig = { systemtyp: typ };
       const lin = w.querySelector('.n-linie').value; if (lin) eig.produktlinie = lin;
+      const reg = w.querySelector('.n-regel').value; if (reg) eig.daemmregel = reg;
       const d = Number(w.querySelector('.n-daemm').value.replace(',', '.')); if (d > 0) eig.daemmdicke = d;
       const o = { klasse: 'System', kennzeichen: k, name: w.querySelector('.n-name').value.trim() || typ, eigenschaften: eig };
       const an = w.querySelector('.n-anlage').value; if (an) o.teilVon = an;
@@ -133,6 +137,7 @@ export async function systemeDialog() {
       if (name !== (s.name ?? '')) o.name = name;
       const typ = tr.querySelector('.sy-typ').value; if (typ && typ !== (wert(s, 'systemtyp') ?? '')) eig.systemtyp = typ;
       const lin = tr.querySelector('.sy-linie').value; if (lin !== (wert(s, 'produktlinie') ?? '')) eig.produktlinie = lin || null;
+      const reg = tr.querySelector('.sy-regel').value; if (reg !== (wert(s, 'daemmregel') ?? '')) eig.daemmregel = reg || null;
       const dt = tr.querySelector('.sy-daemm').value.trim().replace(',', '.'); const dAlt = wert(s, 'daemmdicke');
       if (dt !== String(dAlt ?? '')) eig.daemmdicke = dt === '' ? null : Number(dt);
       if (Object.keys(eig).length) o.eigenschaften = eig;

@@ -241,6 +241,14 @@ export function freiVorbelegen(wid, serie, nurLeere = false) {
  *  Gefälle, System/Strang, Dämmdicke, Winkelfang. */
 /** Leitungen der Steigleitung (Christian 06.11.2026): Medium, Kurzname, Vorgabe angehakt; Lüftung («es soll auch steigleitung lüftung geben AUL, FOL,
  *  ZUL, ABL rund und Eckig») mit Kanalserien rund oder eckig. */
+/** Minimale Dämmdicke in mm einer Dämmregel (daemmung.json) für eine Nennweite – gleiche Regel wie DaemmRegel.Dicke im Kern: Stufe mit DN im
+ *  Bereich bzw. die nächstgrössere (ANNAHME), unter der kleinsten deren Wert, über der grössten null. */
+export function daemmDicke(regel, dn) {
+  const st = [...(regel?.stufen ?? [])].sort((a, b) => a.dnVon - b.dnVon);
+  if (!st.length || !(dn > 0) || dn > st[st.length - 1].dnBis) return null;
+  return st.find((s) => dn <= s.dnBis)?.dicke ?? null;
+}
+
 export const STEIG_LEITUNGEN = [['KW', 'KW', true], ['WW', 'WW', true], ['ZIR', 'Zirk', true], ['HZ-VL', 'VL', false], ['HZ-RL', 'RL', false]];
 export const STEIG_LUEFTUNG = [['AUL', 'AUL', false], ['FOL', 'FOL', false], ['ZUL', 'ZUL', true], ['ABL', 'ABL', true]];
 export const steigId = (m) => m.toLowerCase().replace(/[^a-z]/g, '');
@@ -283,6 +291,7 @@ function leitungFelder(wid, kategorie) {
         if (wert(wid, 'groesse') && !groessenListe(d).some((g) => g.typ === wert(wid, 'groesse'))) setze(wid, 'groesse', '');
         freiVorbelegen(wid, d);
         ausUkd();
+        daemmVorschlag();
         leitungHaken.optionenNeu?.();
       });
     }
@@ -310,9 +319,26 @@ function leitungFelder(wid, kategorie) {
     leitungHaken.hoeheGeaendert?.();
   };
   // Normgrösse gewählt (freie Serie): die Zahlenfelder zeigen ihre Grösse, geändert werden sie von Hand
+  // Dämmdicke nach Energiegesetz (Christian 09.11.2026: «dämmdicken gem. energiegesetzt»): Dämmregel des Systems (MuKEn 2014 Anhang 4,
+  // Katalog daemmung.json über die Abfrage katalog) und DN der gewählten Grösse; sonst die feste Vorgabe-Dämmdicke des Systems
+  const daemmVorschlag = () => {
+    const sy = derKlasse('System').find((e) => e.id === wert(wid, 'system') || kz(e) === wert(wid, 'system'));
+    if (!sy) return;
+    const w = (n) => { const x = sy.werte?.[n]; return x && typeof x === 'object' && 'wert' in x ? x.wert : x; };
+    const regel = (zustand.katalog?.daemmregeln ?? []).find((r) => r.name === w('daemmregel'));
+    if (regel) {
+      const s = aktuelleSerie();
+      const g = s ? groessenListe(s).find((x) => x.typ === wert(wid, 'groesse')) : null;
+      const dn = g?.dn ?? Number(/DNs*(d+)/i.exec(String(wert(wid, 'groesse') ?? ''))?.[1]);
+      const d = daemmDicke(regel, dn);
+      if (d) { setze(wid, 'daemmdicke', d); return; }
+    }
+    if (w('daemmdicke') > 0) setze(wid, 'daemmdicke', w('daemmdicke'));
+  };
   const nachNormgroesse = (el) => {
     el?.blur?.();
     ausUkd();
+    daemmVorschlag();
     const s = aktuelleSerie();
     const g = istFrei(s) ? groessenListe(s).find((x) => x.typ === wert(wid, 'groesse')) : null;
     if (g) { setze(wid, 'freiB', g.b); setze(wid, 'freiH', g.h); setze(wid, 'freiD', g.d); }
@@ -349,7 +375,7 @@ function leitungFelder(wid, kategorie) {
         // Vorgaben des Systems (Mustersysteme, Christian 09.11.2026): Produktlinie und Dämmdicke vorschlagen
         const sy = derKlasse('System').find((e) => e.id === wert(wid, 'system') || kz(e) === wert(wid, 'system'));
         const w = (n) => { const x = sy?.werte?.[n]; return x && typeof x === 'object' && 'wert' in x ? x.wert : x; };
-        if (w('daemmdicke') > 0) setze(wid, 'daemmdicke', w('daemmdicke'));
+        daemmVorschlag();
         const pl = w('produktlinie');
         if (pl && pl !== wert(wid, 'serie') && serienListe(kategorie).some((s) => s.kz === pl)) { setze(wid, 'serie', pl); nachSerie(); return; }
         leitungHaken.optionenNeu?.();

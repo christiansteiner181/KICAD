@@ -612,3 +612,13 @@ test('Vorwand: nach Anfangs- und Endpunkt greift der nächste Klick die Tiefe ab
   assert.equal(p.tiefe, 220);
   assert.equal(p.aussenkante, 'rechts');
 });
+
+test('Dämmdicke nach MuKEn 2014 Anhang 4 aus der DN (Christian 09.11.2026: «dämmdicken gem. energiegesetzt»)', async () => {
+  const fs = await import('node:fs');
+  const kat = JSON.parse(fs.readFileSync(new URL('../../../../../kataloge/daemmung.json', import.meta.url), 'utf8'));
+  const r = kat.regeln.find((x) => x.name.includes('> 0,03'));
+  assert.equal(O.daemmDicke(r, 15), 40);
+  assert.equal(O.daemmDicke(r, 25), 50);
+  assert.equal(O.daemmDicke(r, 18), 50);
+  assert.equal(O.daemmDicke(r, 250), null);
+});

@@ -113,6 +113,8 @@ public sealed class Katalog
     public LueftungKatalog? Lueftung { get; private set; }
     /// <summary>Stoffwerte der Heiz- und Kältemedien (stoffwerte.json, Modul 5); null, wenn die Datei fehlt.</summary>
     public StoffwerteKatalog? Stoffwerte { get; private set; }
+    /// <summary>Dämmregeln (daemmung.json: MuKEn 2014 Anhang 4, Christian 09.11.2026); null, wenn die Datei fehlt.</summary>
+    public DaemmKatalog? Daemmung { get; private set; }
     public string Ordner { get; private set; } = "";
 
     /// <summary>Lädt klassen.json, medien.json, systemtypen.json (und ifc.json) aus dem Ordner und löst die Basisklassen auf.</summary>
@@ -134,6 +136,8 @@ public sealed class Katalog
         if (File.Exists(lue)) k.Lueftung = LueftungKatalog.Laden(lue);
         var stoff = Path.Combine(ordner, StoffwerteKatalog.Datei);
         if (File.Exists(stoff)) k.Stoffwerte = StoffwerteKatalog.Laden(stoff);
+        var daemm = Path.Combine(ordner, DaemmKatalog.Datei);
+        if (File.Exists(daemm)) k.Daemmung = DaemmKatalog.Laden(daemm);
         k.SanitaerAuswahlSetzen();
         k.Pruefen();
         return k;

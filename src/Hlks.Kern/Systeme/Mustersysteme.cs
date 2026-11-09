@@ -16,7 +16,7 @@ namespace Hlks.Kern;
 public sealed record Musteranlage(string Kennzeichen, string? Name, string? Beschreibung);
 
 public sealed record Mustersystem(string Kennzeichen, string? Name, string Systemtyp, string? Anlage, string? Gegenstueck,
-    string? ProduktlinieId, string? ProduktlinieName, double? Daemmdicke);
+    string? ProduktlinieId, string? ProduktlinieName, double? Daemmdicke, string? Daemmregel = null);
 
 public sealed class Musterdatei
 {
@@ -33,7 +33,7 @@ public sealed class Musterdatei
         foreach (var s in n?["systeme"] as JsonArray ?? [])
             if (Mj.Text(s?["kennzeichen"]) is { Length: > 0 } kz && Mj.Text(s?["systemtyp"]) is { Length: > 0 } typ)
                 d.Systeme.Add(new(kz, Mj.Text(s?["name"]), typ, Mj.Text(s?["anlage"]), Mj.Text(s?["gegenstueck"]),
-                    Mj.Text(s?["produktlinie"]?["id"]), Mj.Text(s?["produktlinie"]?["name"]), Json.Zahl(s?["daemmdicke"])));
+                    Mj.Text(s?["produktlinie"]?["id"]), Mj.Text(s?["produktlinie"]?["name"]), Json.Zahl(s?["daemmdicke"]), Mj.Text(s?["daemmregel"])));
         return d;
     }
 
@@ -50,7 +50,7 @@ public sealed class Musterdatei
     {
         ["kennzeichen"] = s.Kennzeichen, ["name"] = s.Name, ["systemtyp"] = s.Systemtyp, ["anlage"] = s.Anlage, ["gegenstueck"] = s.Gegenstueck,
         ["produktlinie"] = s.ProduktlinieId is null && s.ProduktlinieName is null ? null : new JsonObject { ["id"] = s.ProduktlinieId, ["name"] = s.ProduktlinieName },
-        ["daemmdicke"] = s.Daemmdicke,
+        ["daemmdicke"] = s.Daemmdicke, ["daemmregel"] = s.Daemmregel,
     };
 }
 
@@ -228,6 +228,7 @@ public sealed class MustersystemeUebernehmen : IBefehl
             }
             var eig = new JsonObject { ["systemtyp"] = s.Systemtyp };
             if (s.Daemmdicke is double dd) eig["daemmdicke"] = dd;
+            if (s.Daemmregel is { Length: > 0 } dr) eig["daemmregel"] = dr;   // Dämmdicke nach Energiegesetz (09.11.2026)
             if (s.ProduktlinieId is not null || s.ProduktlinieName is not null)
             {
                 var fam = Systembibliothek.Produktlinie(k.Arbeit, s.ProduktlinieId, s.ProduktlinieName);
@@ -283,7 +284,7 @@ public sealed class MustersystemSpeichern : IBefehl
             var fam = s.Text("produktlinie") is { Length: > 0 } pl ? m.Finde(pl) ?? m.DerKlasse(Familien.Klasse).FirstOrDefault(f => f.Name == pl) : null;
             var typ = s.Text("systemtyp") ?? throw new HlksFehler($"{s.Kennzeichen} hat keinen Systemtyp.", "Systemtyp in den Eigenschaften setzen.");
             return (Muster: new Mustersystem(s.Kennzeichen, s.Name, typ, anlage?.Kennzeichen, Heizgruppen.Gegenstueck(m, s)?.Kennzeichen,
-                fam is null ? null : Familien.DefinitionsId(fam), fam?.Name, s.Zahl("daemmdicke")), Anlage: anlage);
+                fam is null ? null : Familien.DefinitionsId(fam), fam?.Name, s.Zahl("daemmdicke"), s.Text("daemmregel")), Anlage: anlage);
         }).ToList();
         var ort = Systembibliothek.Ort(k.Katalog);
         var text = $"{muster.Count} Mustersystem(e) gespeichert{(entfernen.Count > 0 ? $", {entfernen.Count} entfernt" : "")} ({ort.Pfad}).";

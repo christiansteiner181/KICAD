@@ -529,6 +529,7 @@ public sealed class Abfragen(Projekt p)
             }).ToArray()),
             ["medien"] = Json.Knoten(K.Medien.Values.ToList()),
             ["systemtypen"] = Json.Knoten(K.Systemtypen.Values.ToList()),
+            ["daemmregeln"] = K.Daemmung is null ? null : Json.Knoten(K.Daemmung.Regeln),   // Dämmdicken nach MuKEn 2014 (09.11.2026)
             // Gewerke mit Koordinationsfarbe und Pastellton (gewerke.json): Hinterlegung im Projektbrowser, die Oberfläche kennt keine eigenen Farben
             ["gewerke"] = new JsonArray(K.Gewerke.Select(g => (JsonNode)new JsonObject
             { ["id"] = g.Id, ["titel"] = g.Titel, ["koordination"] = g.Koordination, ["pastell"] = g.Pastell }).ToArray()),

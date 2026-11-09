@@ -63,11 +63,13 @@
       "kuerzel": "MuKEn 2014",
       "ausgabe": "Nachführung 2018",
       "gebiete": [
-        "Lüftung"
+        "Lüftung",
+        "Heizung",
+        "Sanitär"
       ],
       "ablage": "energiehub-gebaeude.ch (online gelesen 31.10.2026); im Normenordner nur MuKEn2008_df.pdf",
       "vorliegend": "online",
-      "hinweis": "Art. 1.19 Abs. 3 (Luftgeschwindigkeiten); von Christian am 31.10.2026 bestätigt."
+      "hinweis": "Art. 1.19 Abs. 3 (Luftgeschwindigkeiten); von Christian am 31.10.2026 bestätigt. Art. 1.17 Abs. 2–3 und Anhang 4 (Dämmstärken Heizung/Warmwasser, kataloge/daemmung.json), gelesen am 09.11.2026 aus https://endk.ch/wp-content/uploads/2025/07/MuKEn2014_d-2018-04-20.pdf (Stand 9.1.2015 rev. 20.4.2018)."
     },
     {
       "id": "norm.sia400",

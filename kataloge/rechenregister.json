@@ -1967,6 +1967,46 @@
         "kataloge/stroemung.json"
       ],
       "abfrage": "rohr_druckverlust"
+    },
+    {
+      "id": "leitungen.daemmdicke",
+      "titel": "Dämmdicke einer Leitung nach Energiegesetz",
+      "gebiet": "Heizung/Sanitär",
+      "zweck": "Schlägt beim Zeichnen die minimale Dämmdicke einer Heizungs- bzw. Warmwasserleitung nach MuKEn 2014 Anhang 4 vor (Christian 09.11.2026: «dämmdicken gem. energiegesetzt»).",
+      "eingaben": [
+        "Dämmregel des Systems (Eigenschaft daemmregel: MuKEn 2014, λ-Spalte des Dämmstoffs)",
+        "Nennweite DN der gewählten Grösse der Produktlinie",
+        "Katalog daemmung.json"
+      ],
+      "rechenweg": [
+        "1. Hat das gewählte System eine Dämmregel, gilt sie; sonst die feste Vorgabe-Dämmdicke des Systems (daemmdicke).",
+        "2. Aus der Grösse die Nennweite DN.",
+        "3. Stufe der Tabelle mit DN im Bereich; liegt die DN zwischen zwei Stufen, die nächstgrössere (Annahme); unter DN 10 die erste Stufe.",
+        "4. Über DN 200: keine Vorgabe (die MuKEn nennt keinen Wert)."
+      ],
+      "ergebnis": "Vorschlag für das Feld «Dämmdicke» der Optionsleiste (Rohr); von Hand änderbar.",
+      "quellen": [
+        "MuKEn 2014 (EnDK), Stand 9.1.2015 rev. 20.4.2018, Art. 1.17 Abs. 2–3 (S. 25) und Anhang 4 (S. 27), gelesen am 09.11.2026",
+        "Christian Steiner, 31.10.2026: «Ja, MuKEn 2014» (Energiegesetz)",
+        "Christian Steiner, 09.11.2026: «dämmdicken gem. energiegesetzt»"
+      ],
+      "annahmen": [
+        "DN zwischen zwei Stufen gilt wie die nächstgrössere Stufe; DN unter 10 wie DN 10–15 (Hauptlauf 09.11.2026)."
+      ],
+      "grenzen": [
+        "Ob die Pflicht gilt (Heizung nur in unbeheizten Räumen und im Freien), entscheidet die Planung; Reduktionen nach Art. 1.17 Abs. 3 und Erhöhung über 90 °C nicht gerechnet.",
+        "Lüftung (SIA 382/1 Ziff. 5.9), Kälte und Kaltwasser: keine Werte hinterlegt."
+      ],
+      "grundlagen": [
+        "vorschrift.muken2014",
+        "buero.entscheide"
+      ],
+      "code": [
+        "kataloge/daemmung.json",
+        "src/Hlks.Kern/Kataloge/DaemmKatalog.cs (DaemmRegel.Dicke)",
+        "src/Hlks.Web/wwwroot/js/werkzeuge/optionen.js (Dämmdicke aus der Dämmregel)"
+      ],
+      "abfrage": "katalog"
     }
   ]
 }

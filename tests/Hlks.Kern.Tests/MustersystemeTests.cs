@@ -36,7 +36,7 @@ public sealed class MustersystemeTests : BibliothekTestBasis
         {
             var a = NeuesProjekt("Muster A");
             Neu(a, "Anlage", "A-HZ", "Heizung", new JsonObject { ["beschreibung"] = "Wärmeverteilung (fiktiv)" });
-            Neu(a, "System", "HZ-VL", "Heizung Vorlauf", new JsonObject { ["systemtyp"] = "Heizung Vorlauf", ["daemmdicke"] = 30 }, "A-HZ");
+            Neu(a, "System", "HZ-VL", "Heizung Vorlauf", new JsonObject { ["systemtyp"] = "Heizung Vorlauf", ["daemmdicke"] = 30, ["daemmregel"] = "MuKEn 2014 (λ > 0,03 W/(m·K))" }, "A-HZ");
             Neu(a, "System", "HZ-RL", "Heizung Rücklauf", new JsonObject { ["systemtyp"] = "Heizung Rücklauf", ["daemmdicke"] = 30 }, "A-HZ");
             Ok(a.Ausfuehren("system_paar_anlegen", new JsonObject { ["vorlauf"] = "HZ-VL", ["ruecklauf"] = "HZ-RL" }));
             Ok(a.Ausfuehren("mustersystem_speichern", new JsonObject { ["systeme"] = new JsonArray("HZ-VL", "HZ-RL") }));
@@ -52,6 +52,7 @@ public sealed class MustersystemeTests : BibliothekTestBasis
             Assert.Equal("A-HZ", b.Modell.Finde(vl.TeilVon)!.Kennzeichen);
             Assert.Equal("Heizung Vorlauf", vl.Text("systemtyp"));
             Assert.Equal(30, vl.Zahl("daemmdicke"));
+            Assert.Equal("MuKEn 2014 (λ > 0,03 W/(m·K))", vl.Text("daemmregel"));   // Dämmregel nach Energiegesetz (09.11.2026)
             Assert.True(Heizgruppen.IstPaar(b.Modell, vl, rl));
 
             // zweites Mal: nichts Neues, vorhandene bleiben unverändert

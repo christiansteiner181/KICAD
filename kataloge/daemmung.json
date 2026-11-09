@@ -1,0 +1,35 @@
+{
+  "beschreibung": "Dämmregeln für Leitungen (Christian 09.11.2026: «dämmdicken gem. energiegesetzt»). Energiegesetz = MuKEn 2014 (Entscheid Christian 31.10.2026: «Ja, MuKEn 2014»; KEnG und KEnV Bern nennen selbst keine Werte). Je Regel die minimale Dämmstärke nach Rohrnennweite DN; die Spalte der Wärmeleitfähigkeit λ des Dämmstoffs ist je Regel gewählt.",
+  "quelle": "MuKEn 2014, Mustervorschriften der Kantone im Energiebereich (EnDK), Stand 9.1.2015 rev. 20.4.2018, Art. 1.17 Abs. 2–3 (S. 25) und Anhang 4 «Minimale Dämmstärken bei Verteilleitungen der Heizung sowie bei Warmwasserleitungen» (S. 27); https://endk.ch/wp-content/uploads/2025/07/MuKEn2014_d-2018-04-20.pdf, gelesen am 09.11.2026",
+  "gilt": "Art. 1.17 Abs. 2: neue oder im Rahmen eines Umbaus neu erstellte Installationen inkl. Armaturen und Pumpen, durchgehend: a. Verteilleitungen der Heizung in unbeheizten Räumen und im Freien; b. alle warmgehaltenen Teile des Warmwasserverteilsystems, in beheizten oder unbeheizten Räumen und im Freien.",
+  "hinweis": "Art. 1.17 Abs. 3: in begründeten Fällen (Kreuzungen, Wand- und Deckendurchbrüche, maximale Vorlauftemperatur 30 °C, Armaturen, Pumpen) reduzierbar; die Dämmstärken gelten für Betriebstemperaturen bis 90 °C, darüber angemessen erhöhen. Lüftung: Art. 1.20 verweist auf SIA 382/1:2014 Ziffer 5.9 (nicht hinterlegt). Kälte und Kaltwasser: keine Werte in der MuKEn.",
+  "regeln": [
+    {
+      "name": "MuKEn 2014 (λ > 0,03 W/(m·K))",
+      "spalte": "λ > 0,03 W/(m·K) bis λ ≤ 0,05 W/(m·K)",
+      "stufen": [
+        { "dnVon": 10, "dnBis": 15, "dicke": 40 },
+        { "dnVon": 20, "dnBis": 32, "dicke": 50 },
+        { "dnVon": 40, "dnBis": 50, "dicke": 60 },
+        { "dnVon": 65, "dnBis": 80, "dicke": 80 },
+        { "dnVon": 100, "dnBis": 150, "dicke": 100 },
+        { "dnVon": 175, "dnBis": 200, "dicke": 120 }
+      ]
+    },
+    {
+      "name": "MuKEn 2014 (λ ≤ 0,03 W/(m·K))",
+      "spalte": "λ ≤ 0,03 W/(m·K)",
+      "stufen": [
+        { "dnVon": 10, "dnBis": 15, "dicke": 30 },
+        { "dnVon": 20, "dnBis": 32, "dicke": 40 },
+        { "dnVon": 40, "dnBis": 50, "dicke": 50 },
+        { "dnVon": 65, "dnBis": 80, "dicke": 60 },
+        { "dnVon": 100, "dnBis": 150, "dicke": 80 },
+        { "dnVon": 175, "dnBis": 200, "dicke": 80 }
+      ]
+    }
+  ],
+  "annahmen": [
+    "ANNAHME (Hauptlauf 09.11.2026): Eine DN zwischen zwei Stufen der Tabelle (z. B. DN 16–19) gilt wie die nächstgrössere Stufe; DN unter 10 wie DN 10–15. Über DN 200 nennt die MuKEn keinen Wert – keine Vorgabe, Hinweis."
+  ]
+}
