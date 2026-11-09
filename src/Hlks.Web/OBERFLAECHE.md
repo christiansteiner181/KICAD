@@ -4282,11 +4282,14 @@ jedes neue Projekt erhält alle Mustersysteme.
   (Vorschau des Kerns und Ausführen in einem); abgelehnt zeigt die Leiste den Vorschlag, Esc zeichnet weiter; ein einzelner Punkt wird verworfen; Esc ohne Zug
   beendet das Werkzeug.
 - **Abwasser – Fluss- und Gefällsrichtung** (Christian 09.11.2026: «bei abläufen muss die fluss und gefällsrichtung angezeigt und invertiert werden
-  können»): Pfeil auf der Achse (bei ¼ der Länge) in Fliessrichtung, im Detailgrad fein daneben das Gefälle in %; steigt die Leitung in Fliessrichtung, rot
+  können»): Pfeil auf der Achse (bei ¼ der Länge) in Fliessrichtung, im Detailgrad fein über der Leitung das Gefälle in % (Schriftfarbe des Designs); steigt die Leitung in Fliessrichtung, rot
   mit «Gegengefälle». Umkehren: Leitung wählen › Kontextregister › Netz › «Fliessrichtung umkehren» (`fliessrichtung_umkehren`: ganzer Zug, Gefälle mit
   demselben Wert in die neue Richtung; ein an ein Element mit Lage gebundenes Ende behält seine Höhe).
-- **Dämmung als eine Fläche** (09.11.2026, «bei den Isolationsbogen wird etwas noch nicht sauber dargestellt»): Fläche ohne Rand plus zwei durchgehende
-  Randlinien, keine Überlagerungen am Bogen. **Dunkles Design**: transparente Farbflächen werden mit Weiss vorgemischt (Deckkraft 0.85), damit sie nicht
+- **Dämmung als eine vereinigte Fläche** (09.11.2026, «überlappungen sind frablich anders als der rest. zudem hat es beim innenradius noch falsche
+  schwarze darstellungen»): `DaemmGrafik` vereinigt die Dämmbänder aller sichtbaren Leitungen und der angeschlossenen Formteile (entlang ihrer Achsen) zu
+  einer Fläche je Zusammenhang (Teil «daemmung», unter den Leitungen), gelb transparent, nur der Aussenrand schwarz dünn; aussen gerundet, innen scharf.
+- **Esc bei falsch gezeichnetem Zug** (Christian 09.11.2026: «ist ein rohr/kanal falsch gezeichnet muss esc. bis da beenden wo noch zeichenbar ist»): der
+  Zug wird von hinten gekürzt, bis der Kern ihn annimmt, und bis dort angelegt (Meldung «angelegt bis Punkt n»). **Dunkles Design**: transparente Farbflächen werden mit Weiss vorgemischt (mindestens 60 % Farbe, Deckkraft 0.85; Abwasser bleibt braun), damit sie nicht
   abgedunkelt wirken («die darstellung der transparenten flächen wird im dunklen modeu abgedunkelt. das ist nicht gewollt»; `plangrafik.js › mitWeiss`).
 - **Produktlinie nur im Eigenschaftsfenster** (Christian 09.11.2026): nicht mehr in der Optionsleiste von Rohr/Kanal/Fallleitung; die Typenwahl oben in der
   Palette ist doppelt so gross und gilt während des Zeichnens für die nächsten Teile.

@@ -101,7 +101,8 @@ function fuellung(stil) {
   const deck = Number.isFinite(d) && d < 1 ? ` fill-opacity="${zahl(Math.max(0, d))}"` : '';
   // Dunkles Design (Christian 09.11.2026: «die darstellung der transparenten flächen wird im dunklen modeu abgedunkelt. das ist nicht gewollt»): eine
   // transparente Farbfläche wird mit Weiss vorgemischt (wie auf weissem Papier) und fast deckend gezeichnet, statt mit dem dunklen Grund zu mischen
-  const hell = (f) => (dunkel() && deck ? { klasse: '', attr: ` fill="${mitWeiss(f, Math.max(0, d))}" fill-opacity="${zahl(DUNKEL_DECKKRAFT)}"` } : { klasse: '', attr: ` fill="${f}"${deck}` });
+  // mindestens 60 % der Farbe, damit sie erkennbar bleibt (Christian 09.11.2026: «ablaufrohre werden grau hinterlegt. dies muss braun sein»)
+  const hell = (f) => (dunkel() && deck ? { klasse: '', attr: ` fill="${mitWeiss(f, Math.max(DUNKEL_FARBANTEIL, d))}" fill-opacity="${zahl(DUNKEL_DECKKRAFT)}"` } : { klasse: '', attr: ` fill="${f}"${deck}` });
   switch (stil?.fuellung) {
     case undefined: case null: case '': return { klasse: '', attr: ' fill="none"' };
     case 'schnitt': { const f = hex(stil.farbe); return f ? hell(f) : { klasse: 'pf', attr: deck }; }
@@ -112,6 +113,8 @@ function fuellung(stil) {
 
 /** ANNAHME Gestaltung: Deckkraft der vorgemischten Füllung im dunklen Design (darunterliegende Linien bleiben leicht sichtbar). */
 const DUNKEL_DECKKRAFT = 0.85;
+/** ANNAHME Gestaltung: Mindestanteil der Farbe beim Vormischen mit Weiss im dunklen Design. */
+const DUNKEL_FARBANTEIL = 0.6;
 const dunkel = () => typeof document !== 'undefined' && document.documentElement?.dataset?.design === 'dunkel';
 /** #rrggbb mit Deckkraft d auf Weiss gemischt. */
 export function mitWeiss(f, d) {

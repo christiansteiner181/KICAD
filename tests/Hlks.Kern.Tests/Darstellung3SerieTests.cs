@@ -13,6 +13,10 @@ public class Darstellung3SerieTests
     static Grafikteil Teil(Projekt p, string kz, string ansicht = "AN-EG") =>
         Grafik.Plan(p, ansicht).Teile.Single(t => t.Id == Hole(p, kz).Id);
 
+    /// <summary>Vereinigte Dämmfläche des Grundrisses (DaemmGrafik, 09.11.2026) oder null.</summary>
+    static Grafikteil? Daemmung(Projekt p, string ansicht = "AN-EG") => Grafik.Plan(p, ansicht).Teile.SingleOrDefault(t => t.Id == "daemmung");
+    static (double Breite, double Hoehe) Ausdehnung(Primitiv x) => (x.Punkte.Max(q => q[0]) - x.Punkte.Min(q => q[0]), x.Punkte.Max(q => q[1]) - x.Punkte.Min(q => q[1]));
+
     static void Aendern(Projekt p, string kz, JsonObject eig) =>
         Ok(p.Ausfuehren("element_aendern", new JsonObject { ["element"] = kz, ["eigenschaften"] = eig }));
 
@@ -108,22 +112,22 @@ public class Darstellung3SerieTests
         var p = MitSerie(false);
         Ok(Rohr(p, "RO-1", "DN 20", [0, 0, 500], [3000, 0, 500]));
         Aendern(p, "RO-1", new JsonObject { ["daemmdicke"] = 20 });
+        // Handrechnung: 25 + 2 · 20 = 65 mm Dämmbreite; eine vereinigte Fläche mit dünnem schwarzem Rand, vor den Leitungen gezeichnet (darunter)
+        var plan = Grafik.Plan(p, "AN-EG");
+        var dm = plan.Teile.Single(x => x.Id == "daemmung");
+        var b = Assert.Single(dm.Primitive);
+        Assert.Equal(HlksGrafik.DaemmGelb, b.Stil.Fuellung);
+        Assert.Equal(HlksGrafik.DaemmLinie, b.Stil.Farbe);
+        Assert.Equal(Stifte.Duenn, b.Stil.Stift);
+        Assert.Equal((3000.0, 65.0), Ausdehnung(b));
+        Assert.True(plan.Teile.IndexOf(dm) < plan.Teile.FindIndex(x => x.Id == Hole(p, "RO-1").Id));   // hinter dem Rohr
         var t = Teil(p, "RO-1");
-        // Handrechnung: 25 + 2 · 20 = 65 mm Dämmbreite
-        var band = t.Primitive.Where(x => x.Art == "polygon" && x.Stil.Fuellung == HlksGrafik.DaemmGelb).ToList();
-        var b = Assert.Single(band);   // eine Fläche ohne Rand, dazu zwei schwarze Randlinien
-        Assert.Null(b.Stil.Stift);
-        Assert.Equal(65, Abstand(b.Punkte[0], b.Punkte[3]), 6);
-        var raender = t.Primitive.Where(x => x.Art == "polylinie" && x.Stil.Farbe == HlksGrafik.DaemmLinie).ToList();
-        Assert.Equal(2, raender.Count);
-        Assert.All(raender, r => Assert.Equal(Stifte.Duenn, r.Stil.Stift));
-        Assert.True(t.Primitive.IndexOf(b) < t.Primitive.FindIndex(x => x.Art == "polygon" && x.Stil.Fuellung != HlksGrafik.DaemmGelb));   // hinter dem Rohr
-        // das Rohr selbst bleibt 25 mm breit
-        var rohr = t.Primitive.First(x => x.Art == "polygon" && x.Stil.Fuellung != HlksGrafik.DaemmGelb);
-        Assert.Equal(25, Abstand(rohr.Punkte[0], rohr.Punkte[3]), 6);
-        // ohne Dämmdicke kein Band
+        Assert.DoesNotContain(t.Primitive, x => x.Stil.Fuellung == HlksGrafik.DaemmGelb);
+        var rohr = t.Primitive.First(x => x.Art == "polygon");
+        Assert.Equal(25, Abstand(rohr.Punkte[0], rohr.Punkte[3]), 6);   // das Rohr selbst bleibt 25 mm breit
+        // ohne Dämmdicke keine Dämmfläche
         Aendern(p, "RO-1", new JsonObject { ["daemmdicke"] = 0 });
-        Assert.DoesNotContain(Teil(p, "RO-1").Primitive, x => x.Stil.Fuellung == HlksGrafik.DaemmGelb);
+        Assert.Null(Daemmung(p));
     }
 
     [Fact]
@@ -133,13 +137,9 @@ public class Darstellung3SerieTests
         var p = MitSerie(false);
         Ok(Rohr(p, "RO-1", "DN 20", [0, 0, 500], [1000, 0, 500], [1000, 1000, 500]));
         Aendern(p, "RO-1", new JsonObject { ["daemmdicke"] = 20 });
-        var t = Teil(p, "RO-1");
-        Assert.Single(t.Primitive, x => x.Art == "polygon" && x.Stil.Fuellung == HlksGrafik.DaemmGelb);   // eine Fläche über den Knick
-        var raender = t.Primitive.Where(x => x.Art == "polylinie" && x.Stil.Farbe == HlksGrafik.DaemmLinie).ToList();
-        Assert.Equal(2, raender.Count);
-        Assert.All(raender, r => Assert.Equal(3, r.Punkte.Count));
-        Etwa([1032.5, -32.5], raender[1].Punkte[1], 1e-9);   // rechts der Laufrichtung: Gehrungspunkt (Abstand 65 mm)
-        Etwa([967.5, 32.5], raender[0].Punkte[1], 1e-9);
+        var b = Assert.Single(Daemmung(p)!.Primitive);   // eine Fläche über den Knick, ohne Schleife am Innenradius
+        Assert.Contains(b.Punkte, q => Math.Abs(q[0] - 967.5) < 0.5 && Math.Abs(q[1] - 32.5) < 0.5);   // innen eine scharfe Ecke
+        Assert.DoesNotContain(b.Punkte, q => Math.Abs(q[0] - 1032.5) < 0.5 && Math.Abs(q[1] + 32.5) < 0.5);   // aussen gerundet (keine Gehrungsecke)
     }
 
     [Fact]
@@ -347,8 +347,8 @@ public class Darstellung3SerieTests
     {
         var p = MitKanaelen();
         Aendern(p, "KA-2", new JsonObject { ["daemmdicke"] = 30 });
-        var band = Assert.Single(Teil(p, "KA-2").Primitive, x => x.Art == "polygon" && x.Stil.Fuellung == HlksGrafik.DaemmGelb);
-        Assert.Equal(460, Abstand(band.Punkte[0], band.Punkte[3]), 6);   // 400 + 2 · 30
+        var band = Assert.Single(Daemmung(p)!.Primitive);
+        Assert.Equal(460, Math.Min(Ausdehnung(band).Breite, Ausdehnung(band).Hoehe), 6);   // 400 + 2 · 30
         var teile = Grafik.Koerper(p, [Hole(p, "KA-2").Id]).Single().Teile.Where(t => t.Masse![0] == 2000).ToList();   // ohne die Rahmen
         Assert.Equal(2, teile.Count);
         Assert.Equal([2000.0, 400.0, 200.0], teile[0].Masse!);

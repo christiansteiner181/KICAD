@@ -38,6 +38,9 @@ public sealed class HlksGrafik : IGrafikquelle
     public static IReadOnlyList<double[]> Hindernisse(GrafikKontext ctx) =>
         ctx.Ablage.TryGetValue("hlks", out var o) && o is List<double[]> l ? l : [];
 
+    /// <summary>Dämmung als eine vereinigte Fläche (DaemmGrafik, 09.11.2026).</summary>
+    public IEnumerable<Grafikteil> Gemeinsam(GrafikKontext ctx) => DaemmGrafik.Teile(ctx);
+
     public void Vorbereiten(GrafikKontext ctx)
     {
         var liste = new List<double[]>();
@@ -201,8 +204,9 @@ public sealed class HlksGrafik : IGrafikquelle
             foreach (var lauf in laeufe)
             {
                 // Dämmung hinter dem Rohr (Christian 09.11.2026: «darstellung dämmung … schwarze linien, gelb transparent hinterlegt», «auch auf mittel anwenden»)
-                if (mass.Daemmdicke > 0)
-                    teil.Primitive.AddRange(lauf.Verdeckt ? Raender(lauf.Xy, mass.DaemmBreite, DaemmLinie, "strich") : DaemmBand(lauf.Xy, mass.DaemmBreite));
+                // die Fläche zeichnet DaemmGrafik vereinigt für alle Leitungen und Formteile (09.11.2026); verdeckt nur die gestrichelten Ränder
+                if (mass.Daemmdicke > 0 && lauf.Verdeckt)
+                    teil.Primitive.AddRange(Raender(lauf.Xy, mass.DaemmBreite, DaemmLinie, "strich"));
                 if (lauf.Verdeckt)
                     teil.Primitive.AddRange(Raender(lauf.Xy, breite, farbe, "strich"));
                 else if (abwasser)
@@ -234,7 +238,7 @@ public sealed class HlksGrafik : IGrafikquelle
                         [new Koerperteil { Achse = lauf.Xy.Select(q => new[] { q[0], q[1], 0.0 }).ToList(), AchseRadius = breite / 2 }],
                         q => [q[0], q[1]], M, abwasser || !mass.Rohrband ? AchseAnthrazit : !lauf.Verdeckt ? "#ffffff" : farbe, ueberstand: false));   // leicht gefüllt (Abwasser, Lüftung): anthrazit
             }
-            if (abwasser) teil.Primitive.AddRange(FliessPfeil(ctx, pts, xy, M));   // Fluss- und Gefällsrichtung (09.11.2026)
+            if (abwasser) teil.Primitive.AddRange(FliessPfeil(ctx, pts, xy, M, breite));   // Fluss- und Gefällsrichtung (09.11.2026)
             teil.Primitive.AddRange(Lagen.Zeichen(ctx.Projekt, e, xy, M));   // Lagezeichen (Lagemanager, 05.11.2026)
             LeitungsText(ctx, e, xy, breite, teil);
             teil.Fangpunkte = xy.Select(p => new[] { p[0], p[1] }).ToList();
@@ -296,7 +300,7 @@ public sealed class HlksGrafik : IGrafikquelle
     /// <summary>Fluss- und Gefällsrichtung einer Abwasserleitung (Christian 09.11.2026: «bei abläufen muss die fluss und gefällsrichtung angezeigt und
     /// invertiert werden können»): Pfeil auf der Achse bei einem Viertel der Länge in Fliessrichtung (anfang → ende), im Detailgrad fein daneben das Gefälle
     /// in %. Steigt die Leitung in Fliessrichtung (Gegengefälle), sind Pfeil und Text rot. ANNAHME Gestaltung: Pfeil 3 mm lang, 1.6 mm breit (Papier).</summary>
-    static IEnumerable<Primitiv> FliessPfeil(GrafikKontext ctx, List<double[]> pts, List<double[]> xy, double M)
+    static IEnumerable<Primitiv> FliessPfeil(GrafikKontext ctx, List<double[]> pts, List<double[]> xy, double M, double breite)
     {
         if (xy.Count < 2 || HlksLinien.PunktBeiLaenge(xy, HlksLinien.Laenge(xy) / 4) is not { } m) yield break;
         double gef = 0; bool gegen = false;
@@ -318,7 +322,8 @@ public sealed class HlksGrafik : IGrafikquelle
             var grad = HlksLinien.LesbarerWinkel(m.Winkel); var rad = grad * Math.PI / 180;
             yield return new Primitiv
             {
-                Art = "text", Punkte = [[m.X + Math.Sin(rad) * 2.2 * M, m.Y - Math.Cos(rad) * 2.2 * M]], Stil = new Stil { Farbe = farbe },
+                // über der Leitung (Text nicht über dem Pfeil), Schriftfarbe des Designs; nur Gegengefälle rot
+                Art = "text", Punkte = [[m.X - Math.Sin(rad) * (breite / 2 + 0.4 * M), m.Y + Math.Cos(rad) * (breite / 2 + 0.4 * M)]], Stil = gegen ? new Stil { Farbe = farbe } : new Stil(),
                 Text = (gegen ? "Gegengefälle " : "") + gef.ToString("0.0#", System.Globalization.CultureInfo.InvariantCulture) + " %", Groesse = Schrift, Ausrichtung = "mitte", Winkel = grad, Mitdrehen = true,
             };
         }
@@ -367,7 +372,7 @@ public sealed class HlksGrafik : IGrafikquelle
         }
     }
 
-    static IEnumerable<Primitiv> Raender(List<double[]> xy, double b, string? farbe, string linienart)
+    internal static IEnumerable<Primitiv> Raender(List<double[]> xy, double b, string? farbe, string linienart)
     {
         foreach (var vorzeichen in new[] { 1, -1 })
             yield return new Primitiv

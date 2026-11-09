@@ -144,6 +144,25 @@ function zuruecksetzen(z) {
   leisteAus();
 }
 
+/** Esc mit falsch gezeichnetem Zug (Christian 09.11.2026: «ist ein rohr/kanal falsch gezeichnet muss esc. bis da beenden wo noch zeichenbar ist»):
+ *  den Zug Punkt um Punkt von hinten kürzen, bis der Kern ihn annimmt, und diesen Teil anlegen; geht nichts, zeigt die Leiste den Vorschlag zum ganzen Zug. */
+async function bisZeichenbar(z, ctx) {
+  const alle = [...z.punkte];
+  for (let n = alle.length; n >= (z.abzweig ? 1 : 2); n--) {
+    z.punkte = alle.slice(0, n);
+    if (n < alle.length) z.nach = null;   // gekürzt: das Ende hängt nicht mehr am angeklickten Ziel
+    z.vorschau = null;
+    await vorschauHolen(z, ctx);
+    if (z.vorschau?.ok) {
+      if (n < alle.length) meldung(`Der Zug war ab Punkt ${n + 1} nicht zeichenbar – angelegt bis Punkt ${n}.`, 'info');
+      await ausfuehren(z, ctx);
+      return;
+    }
+  }
+  z.punkte = alle;
+  await vorschauHolen(z, ctx);   // nichts zeichenbar: Vorschlag des Kerns zum ganzen Zug zeigen
+}
+
 async function ausfuehren(z, ctx) {
   const v = z.vorschau;
   if (!v?.ok) { await vorschauHolen(z, ctx); return; }
@@ -315,8 +334,8 @@ if (typeof window !== 'undefined') {
       stop();
       if (ctx.lauf.tipp) { ctx.lauf.tipp = ''; ctx.lauf.hinweisAktualisieren(); ctx.neuZeichnen(); }   // zuerst die Längeneingabe leeren
       else if (z.vorschau?.ok) ctx.lauf.run(() => ausfuehren(z, ctx));
+      else if (z.punkte.length >= 2 || (z.abzweig && z.punkte.length)) ctx.lauf.run(() => bisZeichenbar(z, ctx));
       else if (z.vorschau) { z.vorschau = null; leisteAus(); ctx.lauf.hinweisAktualisieren(); ctx.neuZeichnen(); }
-      else if (z.punkte.length >= 2 || (z.abzweig && z.punkte.length)) ctx.lauf.run(async () => { await vorschauHolen(z, ctx); if (z.vorschau?.ok) await ausfuehren(z, ctx); });
       else { zuruecksetzen(z); ctx.lauf.hinweisAktualisieren(); ctx.neuZeichnen(); }   // nur ein Punkt: verwerfen
     } else if (e.key === 'Backspace' && !ctx.lauf.tipp && z.punkte.length) {
       stop(); punktZurueck(t);

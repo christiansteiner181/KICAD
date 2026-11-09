@@ -377,15 +377,12 @@ public class AbwasserSerieTests
         Ok(p.Ausfuehren("element_aendern", new JsonObject { ["element"] = "AN-EG", ["eigenschaften"] = new JsonObject { ["detailgrad"] = "mittel" } }));
         var boegen = p.Modell.DerKlasse("Bogen").ToList();   // 90° = 2 × 45°
         Assert.Equal(2, boegen.Count);
-        foreach (var bo in boegen)
-        {
-            var teil = Grafik.Plan(p, "AN-EG").Teile.Single(x => x.Id == bo.Id);
-            var band = teil.Primitive.Where(x => x.Art == "polygon" && x.Stil.Fuellung == HlksGrafik.DaemmGelb).ToList();
-            Assert.NotEmpty(band);
-            Assert.Equal(0, teil.Primitive.IndexOf(band[0]));   // hinter dem Formteil
-        }
+        // eine vereinigte Fläche über Rohre und Bögen (DaemmGrafik): reicht bis zum Ende des zweiten Rohrs, ohne Lücke an den Bögen
+        var dm = Grafik.Plan(p, "AN-EG").Teile.Single(x => x.Id == "daemmung");
+        var b = Assert.Single(dm.Primitive);
+        Assert.True(b.Punkte.Max(q => q[1]) > 1900);
         Ok(p.Ausfuehren("element_aendern", new JsonObject { ["element"] = "AN-EG", ["eigenschaften"] = new JsonObject { ["detailgrad"] = "grob" } }));
-        Assert.DoesNotContain(Grafik.Plan(p, "AN-EG").Teile.Single(x => x.Id == boegen[0].Id).Primitive, x => x.Stil.Fuellung == HlksGrafik.DaemmGelb);
+        Assert.DoesNotContain(Grafik.Plan(p, "AN-EG").Teile, x => x.Id == "daemmung");
     }
 
     /// <summary>Christian 09.11.2026: «Ablaufleitungen werden immer mit der Rohr Sole ab Decke beschriftet. immer am höchsten gefällspunkt.»</summary>
