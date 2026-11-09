@@ -4288,6 +4288,9 @@ jedes neue Projekt erhält alle Mustersysteme.
 - **Dämmung als eine vereinigte Fläche** (09.11.2026, «überlappungen sind frablich anders als der rest. zudem hat es beim innenradius noch falsche
   schwarze darstellungen»): `DaemmGrafik` vereinigt die Dämmbänder aller sichtbaren Leitungen und der angeschlossenen Formteile (entlang ihrer Achsen) zu
   einer Fläche je Zusammenhang (Teil «daemmung», unter den Leitungen), gelb transparent, nur der Aussenrand schwarz dünn; aussen gerundet, innen scharf.
+- **Lagewechsel beim Zeichnen** (Christian 09.11.2026: «wird beim zeichnen ein lagewechsel vorgenommen, gilt dies nur für die kommenden leitungen»): Lage
+  bzw. Höhe in der Optionsleiste setzt am letzten Punkt eine Steigleitung, die folgenden Strecken liegen auf der neuen Lage; schon gezeichnete Strecken
+  bleiben. Die Palette zeigt die Höhe des zuletzt gezeichneten Teils während des Zeichnens nur zum Lesen.
 - **Esc bei falsch gezeichnetem Zug** (Christian 09.11.2026: «ist ein rohr/kanal falsch gezeichnet muss esc. bis da beenden wo noch zeichenbar ist»): der
   Zug wird von hinten gekürzt, bis der Kern ihn annimmt, und bis dort angelegt (Meldung «angelegt bis Punkt n»). **Dunkles Design**: transparente Farbflächen werden mit Weiss vorgemischt (mindestens 60 % Farbe, Deckkraft 0.85; Abwasser bleibt braun), damit sie nicht
   abgedunkelt wirken («die darstellung der transparenten flächen wird im dunklen modeu abgedunkelt. das ist nicht gewollt»; `plangrafik.js › mitWeiss`).

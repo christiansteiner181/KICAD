@@ -385,7 +385,8 @@ function palette(el, l, def, istAnsicht, fam = null, san = null, aus = null, sia
   // Familie (Modul 2, C1): Familie, Typ, Exemplarparameter und Anschlüsse eines platzierten Elements
   // Leitungen (Modul 3, C1): Serie/Grösse/Dämmung statt der allgemeinen Familiengruppe; Altbestand: Aufteilen; Formteile: Art, Typ, Winkel
   const ltArt = leitungsArt(el);
-  if (ltArt === 'leitung' && fam?.f) h += leitungGruppe({ el, l, f: fam.f, serie: fam.serie ?? null, serien: serienListe(kategorieVon(el.klasse)), zug: fam.zug ?? null, befunde: fam.befunde ?? [] }, HELFER);
+  if (ltArt === 'leitung' && fam?.f) h += leitungGruppe({ el, l, f: fam.f, serie: fam.serie ?? null, serien: serienListe(kategorieVon(el.klasse)), zug: fam.zug ?? null, befunde: fam.befunde ?? [],
+    zeichnen: !zustand.auswahl && modus.id === 'werkzeug' && el.kennzeichen === neuesTeil }, HELFER);
   else if (ltArt === 'altbestand') h += altbestandGruppe({ el }, HELFER);
   else if (ltArt === 'formteil') h += formteilGruppe({ el, l, f: fam?.f ?? null }, HELFER);
   if (fam?.f && ltArt !== 'leitung') h += elementGruppen({ f: fam.f, lagen: fam.lagen, typ: l.eigenschaften?.familientyp?.wert ?? null, exemplar: l.eigenschaften?.parameter?.wert ?? null, kz: el.kennzeichen }, HELFER);

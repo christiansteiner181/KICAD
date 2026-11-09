@@ -104,7 +104,10 @@ export function leitungGruppe(d, H) {
   // Bearbeitungswerkzeuge A5: Gefälle und Höhe ändern den Leitungszug (leitung_gefaelle, leitung_hoehe) – Bögen wandern mit
   zeilen.push(H.zeile('Gefälle', `<input type="text" inputmode="decimal" data-ziel="lt:gefaelle" data-typ="zahl" value="${esc(zahl(wertVon(l, 'gefaelle')))}"><span class="ep-einheit">%</span>`, { titel: 'Gefälle in Fliessrichtung: neigt den ganzen Leitungszug ab seinem Anfang neu (leer = Angabe entfernen, Lage bleibt)' }));
   const h = hoeheUeberGeschoss(el);
-  if (h !== null) zeilen.push(H.zeile('Höhe', `<input type="text" inputmode="decimal" data-ziel="lt:hoehe" data-typ="zahl" value="${esc(zahl(h))}"><span class="ep-einheit">mm</span>`, { titel: 'Höhe der Achse am Anfang über OK Geschoss: hebt bzw. senkt den Leitungszug; an T-Stücken und Geräten entsteht ein Versatz' }));;
+  // Beim Zeichnen zeigt die Palette das zuletzt gezeichnete Teil (d.zeichnen): seine Höhe nur lesen – ein Lagewechsel beim Zeichnen gilt nur für die
+  // kommenden Leitungen (Christian 09.11.2026: «wird beim zeichnen ein lagewechsel vorgenommen, gilt dies nur für die kommenden leitungen»)
+  if (h !== null && d.zeichnen) zeilen.push(H.zeile('Höhe', H.nurLesen(`${zahl(h)} mm`), { titel: 'Höhe des gezeichneten Teils. Ein Lage- bzw. Höhenwechsel beim Zeichnen (Optionsleiste) gilt nur für die kommenden Leitungen; zum Ändern dieses Teils das Werkzeug beenden und das Teil anwählen.' }));
+  else if (h !== null) zeilen.push(H.zeile('Höhe', `<input type="text" inputmode="decimal" data-ziel="lt:hoehe" data-typ="zahl" value="${esc(zahl(h))}"><span class="ep-einheit">mm</span>`, { titel: 'Höhe der Achse am Anfang über OK Geschoss: hebt bzw. senkt den Leitungszug; an T-Stücken und Geräten entsteht ein Versatz' }));;
   zeilen.push(H.zeile('Dämmung', `<input type="text" data-ziel="eig:daemmung" data-typ="text" value="${esc(wertVon(l, 'daemmung') ?? '')}" placeholder="Art / Produkt">`, { titel: 'Art der Dämmung' }));
   zeilen.push(H.zeile('Dämmdicke', `<input type="text" inputmode="decimal" data-ziel="eig:daemmdicke" data-typ="zahl" value="${esc(zahl(wertVon(l, 'daemmdicke')))}"><span class="ep-einheit">mm</span>`, { titel: 'Dämmdicke (zweite Kontur im Plan)' }));
   const zt = zugText(zug);
