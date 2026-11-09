@@ -850,6 +850,8 @@ und – sind in der Kollisionsliste Häkchen gesetzt – «Nur die n gewählten 
 
 ## Startbildschirm (Teil S1, `entwurf/startbildschirm.md`)
 
+**Roter Hinweis W:** (seit 09.11.2026, Christian «es braucht einen roten hinweis auf der startseite wenn W nicht erreichbar ist») Ist die Projektablage oder die Familienbibliothek nicht erreichbar (`/api/projekte/ablage` bzw. `/api/familien/zuletzt` mit `erreichbar: false`/`offline`), steht oben im Hauptbereich ein roter Balken «Laufwerk W: nicht erreichbar – … offline. Netzwerk bzw. VPN prüfen …» (`start-text.js › netzHinweis`, Klasse `sb-netz-warnung`).
+
 Wie Revit «Home»: ohne offenes Projekt der Start (statt des früheren kleinen Dialogs «Projekt wählen»), mit offenem Projekt über dem Projekt (Haus-Symbol im Schnellzugriff, **Strg+D**, Adresse `/?start=1` des Desktop-Icons); Esc, ein Klick auf das offene Projekt, «Zurück zum Projekt» oder nochmals Strg+D kehren zurück, das Projekt bleibt im Hintergrund offen. Tasten erreichen das Projekt darunter nicht (Kürzel wie `DE`, Strg+Z). Ohne Projekt lässt sich der Startbildschirm nicht schliessen.
 
 | Datei | Inhalt |

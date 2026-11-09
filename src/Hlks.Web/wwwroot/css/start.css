@@ -43,6 +43,8 @@
 .sb-klein:hover:not(:disabled) { background: var(--ob-hover-tief); border-color: var(--akzent); }
 .sb-klein:disabled { opacity: .55; cursor: default; }
 .sb-hinweiszeile { margin: 0 0 8px; min-height: 16px; }
+/* W: nicht erreichbar (Christian 09.11.2026: «roter hinweis auf der startseite») */
+.sb-netz-warnung { margin: 0 0 12px; padding: 10px 14px; border-radius: 4px; background: #c62828; color: #ffffff; font-weight: 600; }
 .sb-hinweiszeile.warnung { padding: 4px 8px; border-left: 3px solid var(--warnung); background: var(--ob-warnung-flaeche); color: var(--text); }
 .sb-leer { margin: 4px 0; color: var(--text-leise); }
 

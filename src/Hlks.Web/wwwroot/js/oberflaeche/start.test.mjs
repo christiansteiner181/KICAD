@@ -388,3 +388,12 @@ test('Vorschaubild: Grösse 640 × 400, Blick von Südwesten, Adresse zum Speich
   assert.equal(V.vorschauSpeicherUrl('abc', 'C:\\a b'), '/api/projekt/vorschau?stand=abc&ort=C%3A%5Ca%20b');
   assert.equal(V.vorschauSpeicherUrl(null, null), '/api/projekt/vorschau?stand=&ort=');
 });
+
+test('Netzhinweis: roter Hinweis, wenn W: fehlt (Christian 09.11.2026)', () => {
+  const ablage = { pfad: 'W:\\02_Projektdateien Objekte', erreichbar: false };
+  const fam = { bibliothek: { pfad: 'W:\\03_CAD Bibliotheken\\d_KICAD Familien' }, erreichbar: false, offline: true };
+  assert.equal(T.netzHinweis({ ...ablage, erreichbar: true }, { ...fam, erreichbar: true, offline: false }), null);
+  assert.equal(T.netzHinweis(null, null), null);
+  assert.match(T.netzHinweis(ablage, fam), /^Laufwerk W: nicht erreichbar – Projektablage und Familienbibliothek offline/);
+  assert.match(T.netzHinweis({ ...ablage, erreichbar: true }, fam), /^Laufwerk W: nicht erreichbar – Familienbibliothek offline/);
+});

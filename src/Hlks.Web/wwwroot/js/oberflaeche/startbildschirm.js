@@ -12,7 +12,7 @@ import { meldung, kontextmenue, zeigen as dialogZeigen, oeffnenAusfuehren, proje
 import { knoten, fehlerText } from './werkzeug.js';
 import {
   esc, sym, kachelnSortieren, filtern, kachelnHtml, kachelMenue, ablageHtml, ablageStatusText, ablageTitel, familienHtml, bibliothekTabelleHtml,
-  gleicherOrdner, FELDER_PROJEKT, FELDER_FAMILIE,
+  gleicherOrdner, FELDER_PROJEKT, FELDER_FAMILIE, netzHinweis,
 } from './start-text.js';
 
 let wurzel = null;
@@ -54,6 +54,7 @@ export function einrichten() {
         <button type="button" class="dlg-knopf sb-zurueck" hidden>${sym('haus', 14)} Zurück zum Projekt</button>
         <label class="sb-suchfeld">${sym('suche', 14)}<input type="search" class="sb-suche" placeholder="Projekte und Familien suchen …" aria-label="Suchen" autocomplete="off" spellcheck="false"></label>
       </header>
+      <p class="sb-netz-warnung" role="alert" hidden></p>
       <div class="sb-inhalt">
         <div class="sb-links">
           <section class="sb-block" data-block="zuletzt"><h2>Zuletzt geöffnet</h2><div class="sb-kacheln"></div></section>
@@ -239,6 +240,15 @@ function alleZeichnen() {
   zeichnenKacheln(); zeichnenAblage(); zeichnenFamilien(); zeichnenInfo();
 }
 
+/** Roter Hinweis, wenn W: (Projektablage oder Familienbibliothek) nicht erreichbar ist (Christian 09.11.2026). */
+function zeichnenNetz() {
+  const el = wurzel?.querySelector('.sb-netz-warnung');
+  if (!el) return;
+  const text = netzHinweis(daten.ablageLaeuft ? null : daten.ablage, daten.familien);
+  el.hidden = !text;
+  el.textContent = text ?? '';
+}
+
 function zeichnenKacheln() {
   if (daten.zuletzt === null) { wurzel.querySelector('.sb-kacheln').innerHTML = '<p class="sb-leer">Wird geladen …</p>'; return; }
   kacheln = filtern(kachelnSortieren(daten.zuletzt), suche, ['name', 'objekt', 'ordner']);
@@ -253,6 +263,7 @@ function zeichnenAblage() {
   hinweis.textContent = daten.ablageLaeuft ? 'Die Ablage wird durchsucht …' : ablageStatusText(a);
   hinweis.classList.toggle('warnung', !!a && !a.erreichbar);
   wurzel.querySelector('.sb-neu-suchen').disabled = daten.ablageLaeuft;
+  zeichnenNetz();
   const ziel = wurzel.querySelector('.sb-ablage');
   if (!a) { ziel.innerHTML = ''; projekte = []; return; }
   projekte = filtern(a.projekte ?? [], suche, FELDER_PROJEKT);
@@ -267,6 +278,7 @@ function zeichnenFamilien() {
   if (!f) { ziel.innerHTML = '<p class="sb-leer">Wird geladen …</p>'; hinweis.textContent = ''; return; }
   hinweis.textContent = f.hinweis ?? '';
   hinweis.classList.toggle('warnung', !!f.hinweis);
+  zeichnenNetz();
   familien = filtern(f.familien ?? [], suche, FELDER_FAMILIE);
   ziel.innerHTML = familienHtml(familien, { leerText: suche.trim() ? 'Keine Familie passt zur Suche.' : (f.hinweis ? '' : 'Keine Familien in der Bibliothek.') });
 }

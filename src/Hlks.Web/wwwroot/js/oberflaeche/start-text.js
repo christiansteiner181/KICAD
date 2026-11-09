@@ -167,6 +167,20 @@ export function ablageStatusText(a, jetzt = new Date()) {
   return `${n} ${n === 1 ? 'Projekt' : 'Projekte'} · gesucht ${vorText(a.gesucht, jetzt)}${dauer ? ` (${dauer})` : ''}${a.hinweis ? ` · ${a.hinweis}` : ''}`;
 }
 
+/** Roter Hinweis oben auf dem Startbildschirm, wenn das Netzlaufwerk fehlt (Christian 09.11.2026: «es braucht einen roten hinweis auf der
+ *  startseite wenn W nicht erreichbar ist»): aus den Antworten von /api/projekte/ablage und /api/familien/zuletzt; null = alles erreichbar
+ *  bzw. noch nicht geladen. */
+export function netzHinweis(ablage, familien) {
+  const weg = [];
+  if (ablage && ablage.erreichbar === false) weg.push({ was: 'Projektablage', pfad: ablage.pfad });
+  if (familien && (familien.erreichbar === false || familien.offline)) weg.push({ was: 'Familienbibliothek', pfad: familien.bibliothek?.pfad });
+  if (!weg.length) return null;
+  const lw = [...new Set(weg.map((w) => /^([A-Za-z]:)/.exec(String(w.pfad ?? ''))?.[1]?.toUpperCase()).filter(Boolean))];
+  const kopf = lw.length ? `Laufwerk ${lw.join(', ')} nicht erreichbar` : 'Netzlaufwerk nicht erreichbar';
+  const teile = weg.map((w) => w.was).join(' und ');
+  return `${kopf} – ${teile} offline. Netzwerk bzw. VPN prüfen; bis dahin gilt der letzte bekannte Stand, Änderungen an der Bibliothek warten in der Warteschlange.`;
+}
+
 export function ablageTitel(a) {
   const pfad = a?.pfad ? String(a.pfad) : '';
   const laufwerk = /^([A-Za-z]:)/.exec(pfad)?.[1];
