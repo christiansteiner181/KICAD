@@ -219,7 +219,7 @@ export const WERKZEUGE = {
 // ------------------------------------------------------------------------------------------------ Leitungen (Modul 3, C1)
 
 const kz = (e) => e.kennzeichen;
-const systemOptionen = () => derKlasse('System').sort((a, b) => kz(a).localeCompare(kz(b), 'de', { numeric: true })).map((e) => [kz(e), e.name ? `${kz(e)} – ${e.name}` : kz(e)]);
+const systemOptionen = () => derKlasse('System').filter((e) => !leitungHaken.systemFilter || leitungHaken.systemFilter(e)).sort((a, b) => kz(a).localeCompare(kz(b), 'de', { numeric: true })).map((e) => [kz(e), e.name ? `${kz(e)} – ${e.name}` : kz(e)]);
 /** Medien des Katalogs (Kennung – Name) für Leitungen ohne System (Christian 02.11.2026: «leitungen gehören einem medium»). */
 const mediumOptionen = () => (zustand.katalog?.medien ?? []).slice().sort((a, b) => a.kennung.localeCompare(b.kennung, 'de', { numeric: true }))
   .map((m) => [m.kennung, m.name ? `${m.kennung} – ${m.name}` : m.kennung]);

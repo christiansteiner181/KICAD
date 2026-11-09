@@ -36,6 +36,17 @@ for (const [id, titel, symbol, kuerzel, kategorie, wid, register] of [
   });
 }
 
+// Sanitär: Abwasser- und Versorgungsleitung (Christian 09.11.2026: «bei sanitär braucht es zudem eine funktion abwasserleitung und Versorgungsleitung»)
+// – Rohr mit Systemauswahl nur Abwasser bzw. nur Versorgung (Druck) und eigenem Gedächtnis für System und Produktlinie
+for (const [id, titel, variante] of [['sa.abwasser', 'Abwasserleitung', 'abwasser'], ['sa.versorgung', 'Versorgungsleitung', 'versorgung']]) {
+  registrieren({
+    id, titel, symbol: 'rohr', kuerzel: null, register: 'sanitaer', gruppe: 'Leitungen',
+    aktiv: imGrundriss, hinweis: nurGrundriss,
+    gedrueckt: () => werkzeugAktiv() === variante,
+    ausfuehren() { werkzeugStarten(leitungWerkzeug('Rohr', variante)); },
+  });
+}
+
 // ---------------------------------------------------------------------------------------------- Fallleitung (06.11.2026)
 
 registrieren({

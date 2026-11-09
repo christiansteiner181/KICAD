@@ -9,7 +9,7 @@
 // beenden» – ersetzt «bis zum letzten Linksklick» vom 02.11.2026). Bei offener Vorschau zeichnet Esc weiter; Anlegen mit Enter bzw.
 // Doppelklick. Rückschritt nimmt den letzten Punkt zurück, H springt in das Feld «Höhe».
 
-import { element, alleElemente } from '../zustand.js';
+import { element, alleElemente, merken, zustand } from '../zustand.js';
 import { sende } from '../oberflaeche/befehle.js';
 import { meldung } from '../oberflaeche/dialoge.js';
 import { hinweisSetzen } from '../oberflaeche/register.js';
@@ -151,6 +151,7 @@ async function ausfuehren(z, ctx) {
   const r = await ctx.befehl(v.name, v.parameter, L.vorschauZeile(info));
   if (r.angenommen) {
     mediumUebernehmen(r, ctx);
+    zuletztMerken(ctx);
     zuruecksetzen(z);
     const b = L.neueBefundeTexte(r);
     if (b.length) meldung(b.join(' · '), 'warnung');
@@ -328,10 +329,30 @@ if (typeof window !== 'undefined') {
 
 // ------------------------------------------------------------------------------------------------ Werkzeug
 
-export function leitungWerkzeug(kategorie = 'Rohr') {
+// Letztes System, Produktlinie und Grösse je Gewerk-Tab bzw. Sanitär-Funktion (Christian 09.11.2026: «wird aus einem gewerk tab eine zeichenfunktion
+// gewählt, bsp. Rohr soll jeweils die letzte System und produkte linie gewählt werden, die mit dem befehl ausgeführt wurde»): gemerkt nach jedem
+// angenommenen Zug, beim Start des Werkzeugs wieder eingestellt.
+const ZULETZT = 'leitungZuletzt';
+function zuletztMerken(ctx) {
+  const k = laufend?.gedaechtnis;
+  if (!k) return;
+  const o = ctx.opt;
+  merken.schreiben(ZULETZT, { ...(merken.lesen(ZULETZT, {}) ?? {}), [k]: { system: o.system || null, serie: o.serie || null, groesse: o.groesse || null } });
+}
+
+/** Systemfilter der Sanitär-Funktionen (Christian 09.11.2026: «bei sanitär braucht es zudem eine funktion abwasserleitung und Versorgungsleitung»). */
+function systemFilter(variante) {
+  const typ = (e) => { const n = e.werte?.systemtyp; const name = n && typeof n === 'object' && 'wert' in n ? n.wert : n; return (zustand.katalog?.systemtypen ?? []).find((s) => s.name === name); };
+  if (variante === 'abwasser') return (e) => typ(e)?.fliessart === 'schwerkraft';
+  if (variante === 'versorgung') return (e) => typ(e)?.gewerk === 'sanitaer' && typ(e)?.fliessart !== 'schwerkraft';
+  return null;
+}
+
+export function leitungWerkzeug(kategorie = 'Rohr', variante = null) {
   const id = kategorie === 'Kanal' ? 'kanal' : 'rohr';
+  const titel = variante === 'abwasser' ? 'Abwasserleitung' : variante === 'versorgung' ? 'Versorgungsleitung' : kategorie === 'Kanal' ? 'Kanal' : 'Rohr';
   return {
-    id, titel: kategorie === 'Kanal' ? 'Kanal' : 'Rohr', planarten: ['grundriss'], mehrpunkt: true,
+    id: variante ?? id, optionen: id, titel, planarten: ['grundriss'], mehrpunkt: true,
     eingabeText: 'Länge',
     // Rechtsklick (Basis): verwirft den angefangenen Zug wie Esc, ohne einen neuen Zustand anzulegen (neu() baut die Leiste)
     zugAngefangen: (z) => z.punkte.length > 0 || !!z.vorschau,
@@ -339,9 +360,16 @@ export function leitungWerkzeug(kategorie = 'Rohr') {
 
     neu(ctx) {
       const z = { punkte: [], von: null, nach: null, abzweig: null, vorschau: null };
-      laufend = { z, ctx, id, kategorie, leiste: leisteErstellen(ctx) };
+      // Gedächtnis: Sanitär-Funktion bzw. Gewerk-Tab, aus dem das Werkzeug gestartet wurde
+      const gedaechtnis = `${variante ? 'sanitaer.' + variante : merken.lesen('menuebandRegister', kategorie === 'Kanal' ? 'lueftung' : 'heizung')}:${id}`;
+      if (!laufend || laufend.gedaechtnis !== gedaechtnis) {
+        const g = (merken.lesen(ZULETZT, {}) ?? {})[gedaechtnis];
+        if (g) { if (g.system) setze(id, 'system', g.system); if (g.serie) setze(id, 'serie', g.serie); if (g.groesse) setze(id, 'groesse', g.groesse); }
+      }
+      laufend = { z, ctx, id, kategorie, leiste: leisteErstellen(ctx), gedaechtnis };
       D.haken.hoeheGeaendert = hoeheGeaendert;
       D.haken.optionenNeu = () => ctx.optionenNeu();
+      D.haken.systemFilter = systemFilter(variante);
       (async () => {
         await familienLaden();
         if (ctx.lauf.fertig) return;                                          // inzwischen beendet
@@ -438,6 +466,7 @@ export function leitungWerkzeug(kategorie = 'Rohr') {
       laufend = null;
       D.haken.hoeheGeaendert = null;
       D.haken.optionenNeu = null;
+      D.haken.systemFilter = null;
     },
   };
 }

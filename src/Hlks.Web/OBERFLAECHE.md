@@ -4273,6 +4273,11 @@ jedes neue Projekt erhält alle Mustersysteme.
 - **Optionsleiste nur Dimension und Lage** (Christian 09.11.2026: «im gelben bereich sollen nur die Dimension und die Lage eingestellt werden müssen»): Rohr
   Grösse, Lage (Höhe nur ohne Lage), Kanal Grösse, unter UKD, Achshöhe; System, Medium, Strang, Gefälle, Dämmdicke und Winkelfang stehen in der
   Eigenschaftenpalette in der Gruppe «Zeichnen» (Vorgaben für die nächsten Teile; Felder mit `ort: 'palette'`).
+- **Gedächtnis je Gewerk-Tab** (Christian 09.11.2026: «wird aus einem gewerk tab eine zeichenfunktion gewählt, bsp. Rohr soll jeweils die letzte System und
+  produkte linie gewählt werden, die mit dem befehl ausgeführt wurde»): Rohr/Kanal merken nach jedem angenommenen Zug System, Produktlinie und Grösse je
+  Tab (Heizung, Sanitär, Lüftung) bzw. je Sanitär-Funktion (`merken` leitungZuletzt) und stellen sie beim nächsten Start ein.
+- **Sanitär › Abwasserleitung / Versorgungsleitung** (Christian 09.11.2026): Rohr mit Systemauswahl nur Abwasser (Fliessart Schwerkraft) bzw. nur
+  Versorgung (Sanitär, Druck), je mit eigenem Gedächtnis (Aktionen `sa.abwasser`, `sa.versorgung`).
 - **Esc bestätigt** (Christian 09.11.2026: «wird gezeichnet soll jeweils esc. den befehl bestätigen»): Rohr/Kanal – Esc legt den gezeichneten Zug an
   (Vorschau des Kerns und Ausführen in einem); abgelehnt zeigt die Leiste den Vorschlag, Esc zeichnet weiter; ein einzelner Punkt wird verworfen; Esc ohne Zug
   beendet das Werkzeug.
