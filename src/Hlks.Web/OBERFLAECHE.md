@@ -4216,13 +4216,20 @@ Annäherungen (vollständige NCS-Liste lizenzpflichtig, NCS Inside Licence). Tes
 ## Lagemanager (Lagen der Rohre, Christian 05.11.2026)
 
 **Ort:** Register **Koordination › Gruppe Vorgaben › Lagemanager** (seit 09.11.2026, Christian «lagen gelten für alle gewerke gleich und gehören in den tab koordination»; vorher Heizung/Sanitär › Leitungen) (Aktion `gt.lagen`, Symbol `kote`; `aktionen-lagen.js`). Tabelle je Geschoss:
-Kote, **UK roh Decke** (mm über Kote; leer = aus dem Modell, Unterkante der Decke darüber, sonst «fehlt»), **Lagen** (Abstand UK roh Decke bis Rohrachse in
-mm, durch Komma getrennt, Lage 1 zuerst; leer = 120, 240, 360, 480) und die daraus folgenden Achshöhen. Speichern setzt die Geschoss-Eigenschaften
-`ukRohdecke` und `lagen` (`element_aendern`, leer entfernt sie). Daten: Abfrage `lagen { geschoss? }` (Kern `Leitungen/Lagen.cs`, DOM-freier Cache
+Kote, **UK roh Decke** (mm über Kote; leer = aus dem Modell/IFC: Unterkante der **Betondecke** darüber – Aufbau mit «Beton», mindestens halb so gross
+wie die grösste Decke dort (ANNAHME) –, sonst der grössten Decke darüber, sonst «fehlt»; die Decke steht neben dem Wert, z. B. «aus dem Modell (D-49)»; seit
+09.11.2026, Christian «uk rohdecke soll aus dem IFC übernommen werden. dies ist im regelfall die betondecke»), **Lagen** (Abstand UK roh Decke bis Rohrachse in
+mm, durch Komma getrennt, Lage 1 zuerst) und die daraus folgenden Achshöhen. **Lagen für alle Geschosse** (Feld über der Tabelle, am Gebäude; seit 09.11.2026,
+Christian «lagen gelten default für alle etagen»; leer = 120, 240, 360, 480); ein Eintrag beim Geschoss weicht davon ab. Speichern setzt die Gebäude-Eigenschaft
+`lagen` und die Geschoss-Eigenschaften `ukRohdecke` und `lagen` (`element_aendern`, leer entfernt sie). Daten: Abfrage `lagen { geschoss? }` (Kern `Leitungen/Lagen.cs`, DOM-freier Cache
 `werkzeuge/lagen-daten.js`).
 **Zeichnen:** Werkzeug Rohr (PI), Feld **Lage** in der Optionsleiste (nur Rohre): setzt die Höhe = UK roh Decke − Abstand der Lage.
 **Plan:** Ein Rohr, dessen Achse (±5 mm) auf einer Lage liegt, trägt im Grundriss so viele Schrägstriche (Strich 3 mm, 45° zur Leitung) wie die
 Lagenummer – einmal bis zum nächsten Wechsel (kein Zeichen, wenn das Rohr davor, auch über ein Formteil, dieselbe Lage hat). Kanäle haben keine Lagen.
+**Lüftung** (seit 09.11.2026, Christian «Lüftungen beziehen sich nicht auf lagen. diese werden für Rohre immer als Achse = -xy UKD und bei kanälen immer OK = -xy UKD
+angegeben»): Werkzeug Kanal (DT), Feld **Achse unter UKD** (runde Produktlinie) bzw. **OK unter UKD** (eckige) in mm; Platzhalter zeigt die UK roh Decke des
+Geschosses. Es setzt die **Achshöhe** = UKD − Wert (rund) bzw. UKD − Wert − Kanalhöhe/2 (eckig) und rechnet bei Wechsel von Produktlinie oder Grösse neu; eine
+von Hand eingetragene Achshöhe leert das Feld.
 
 ## Raumbezeichnungen aus DWG (Christian 05.11.2026)
 

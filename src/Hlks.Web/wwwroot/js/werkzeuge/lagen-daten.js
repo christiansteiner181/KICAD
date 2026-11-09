@@ -20,3 +20,12 @@ export function lagenFuer(geschoss) {
   const e = cache.find((x) => x.geschoss === (g?.kennzeichen ?? geschoss));
   return (e?.lagen ?? []).filter((l) => Number.isFinite(l.hoehe));
 }
+
+/** UK roh Decke des Geschosses in mm über der Kote (Lagemanager bzw. Modell) oder null – für die Lüftung (Christian 09.11.2026: «Lüftungen beziehen
+ *  sich nicht auf lagen. diese werden für Rohre immer als Achse = -xy UKD und bei kanälen immer OK = -xy UKD angegeben und gezeichnet.»). */
+export function ukdFuer(geschoss) {
+  if (!cache) { lagenLaden(); return null; }
+  const g = element(geschoss);
+  const e = cache.find((x) => x.geschoss === (g?.kennzeichen ?? geschoss));
+  return Number.isFinite(e?.ukRohdecke) ? e.ukRohdecke : null;
+}

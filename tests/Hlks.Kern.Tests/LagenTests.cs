@@ -43,4 +43,53 @@ public class LagenTests
         Assert.Equal(2750, (double)l["ukRohdecke"]!);
         Assert.Equal(2630, (double)l["lagen"]![0]!["hoehe"]!);   // Vorgabe 1. Lage 120 mm
     }
+
+    static void Decke(Projekt p, string kz, double x0, double y0, double x1, double y1, double ok, double dicke, string? aufbau = null)
+    {
+        var o = new JsonObject
+        {
+            ["klasse"] = "Decke", ["kennzeichen"] = kz, ["geschoss"] = "EG",
+            ["geometrie"] = new JsonObject { ["art"] = "polygon", ["dicke"] = dicke,
+                ["punkte"] = new JsonArray(new JsonArray(x0, y0, ok), new JsonArray(x1, y0, ok), new JsonArray(x1, y1, ok), new JsonArray(x0, y1, ok)) },
+        };
+        if (aufbau is not null) o["eigenschaften"] = new JsonObject { ["aufbau"] = aufbau };
+        Ok(p.Ausfuehren("element_anlegen", o));
+    }
+
+    static JsonNode Geschoss(Projekt p, string kz) =>
+        ((JsonArray)((JsonObject)Tuer.Abfrage(p, "lagen", new JsonObject()))["geschosse"]!).Single(g => (string)g!["geschoss"]! == kz)!;
+
+    /// <summary>Christian 09.11.2026: «uk rohdecke soll aus dem IFC übernommen werden. dies ist im regelfall die betondecke.» Kleine Platten
+    /// (Podest, Sturz) verdrängen die grosse Decke nicht mehr; ist eine grosse Decke aus Beton, gilt sie.</summary>
+    [Fact]
+    public void UkRohdecke_Betondecke_vorKleinenPlatten()
+    {
+        var p = Neu();
+        Decke(p, "D-1", 0, 0, 6000, 4000, 2950, 200);                       // grosse Decke ohne Material
+        Decke(p, "D-2", 0, 0, 1000, 1000, 1400, 210, "Beton, Stahlbeton 210");   // zwei kleine Betonplatten (früher: häufigste Unterkante 1190)
+        Decke(p, "D-3", 2000, 0, 3000, 1000, 1400, 210, "Beton, Stahlbeton 210");
+        var g = Geschoss(p, "EG");
+        Assert.Equal(2750, (double)g["ukRohdecke"]!);
+        Assert.Equal("D-1", (string)g["decke"]!);
+        Decke(p, "D-4", 0, 0, 5000, 4000, 2900, 250, "Beton, Stahlbeton 250");   // grosse Betondecke (Bodenaufbau D-1 darüber ohne Material)
+        g = Geschoss(p, "EG");
+        Assert.Equal(2650, (double)g["ukRohdecke"]!);
+        Assert.Equal("D-4", (string)g["decke"]!);
+    }
+
+    /// <summary>Christian 09.11.2026: «lagen gelten default für alle etagen» – Lagen am Gebäude gelten für jedes Geschoss ohne eigene Lagen.</summary>
+    [Fact]
+    public void Lagen_AmGebaeude_GeltenFuerAlleGeschosse()
+    {
+        var p = Neu();
+        Ok(p.Ausfuehren("element_anlegen", new JsonObject { ["klasse"] = "Geschoss", ["kennzeichen"] = "OG", ["teilVon"] = "GEB", ["eigenschaften"] = new JsonObject { ["kote"] = 3000, ["hoehe"] = 3000, ["ukRohdecke"] = 2700 } }));
+        Ok(p.Ausfuehren("element_aendern", new JsonObject { ["element"] = "EG", ["eigenschaften"] = new JsonObject { ["ukRohdecke"] = 2700 } }));
+        Ok(p.Ausfuehren("element_aendern", new JsonObject { ["element"] = "GEB", ["eigenschaften"] = new JsonObject { ["lagen"] = "100, 200" } }));
+        Ok(p.Ausfuehren("element_aendern", new JsonObject { ["element"] = "OG", ["eigenschaften"] = new JsonObject { ["lagen"] = "150" } }));
+        var eg = Geschoss(p, "EG"); var og = Geschoss(p, "OG");
+        Assert.Equal("gebaeude", (string)eg["lagenQuelle"]!);
+        Assert.Equal([100.0, 200.0], ((JsonArray)eg["lagen"]!).Select(l => (double)l!["abstand"]!));
+        Assert.Equal("geschoss", (string)og["lagenQuelle"]!);
+        Assert.Equal([150.0], ((JsonArray)og["lagen"]!).Select(l => (double)l!["abstand"]!));
+    }
 }

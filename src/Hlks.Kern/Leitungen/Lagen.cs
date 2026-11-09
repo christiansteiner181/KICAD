@@ -2,7 +2,9 @@
 // und können etagenweise vergeben werden. es bräuchte also eine art lagemanager.»). Antworten im Fragefenster 05.11.2026:
 // - Lage = Abstand UK roh Decke bis Rohrachse, nur Rohre (nicht Kanäle); «1. Lage UKD −12cm, 2. Lage UKD −24cm usw.»
 // - die Lage wird beim Zeichnen bestimmt (Leitungen werden meist nach Lagen gezeichnet)
-// - UK roh Decke aus dem Modell (Decke über dem Geschoss), im Lagemanager überschreibbar
+// - UK roh Decke aus dem Modell (Decke über dem Geschoss), im Lagemanager überschreibbar; Christian 09.11.2026: «uk rohdecke soll aus dem IFC
+//   übernommen werden. dies ist im regelfall die betondecke.» → die Betondecke (Aufbau mit «Beton») darüber, sonst die grösste Decke
+// - Christian 09.11.2026: «lagen gelten default für alle etagen» → Lagen am Gebäude für alle Geschosse, am Geschoss nur Abweichungen
 // - im Plan: so viele Schrägstriche quer über das Rohr wie die Lagenummer, einmal bis zum nächsten Wechsel (Bilder Christian)
 // Geschoss: ukRohdecke (mm über Kote, überschreibt das Modell), lagen (Abstände UKD → Achse in mm, z. B. «120, 240, 360»).
 // VORGABE (Beispiel Christian 05.11.2026, «usw.»): ohne Angabe 120, 240, 360, 480 mm.
@@ -17,40 +19,61 @@ public static class Lagen
     public static readonly double[] Vorgabe = [120, 240, 360, 480];
     /// <summary>ANNAHME: Toleranz, mit der eine Rohrachse einer Lage zugeordnet wird (mm).</summary>
     public const double Toleranz = 5;
+    /// <summary>ANNAHME: Eine Betondecke gilt als massgebend, wenn ihre Fläche mindestens diesen Anteil der grössten Decke im Band erreicht –
+    /// kleine Betonplatten (Podeste, Stürze) sollen die grosse Decke nicht verdrängen, wenn deren Material im IFC fehlt.</summary>
+    public const double BetonMindestanteil = 0.5;
 
-    public const string Text = "Lagen eines Geschosses (Lagemanager): UK roh Decke über der Kote (aus dem Modell – Unterkante der Decke darüber – oder von Hand " +
-        "am Geschoss: ukRohdecke) und die Lagen als Abstand UK roh Decke bis Rohrachse (Geschoss: lagen, z. B. «120, 240, 360»; Vorgabe 120, 240, 360, 480 mm) " +
+    public const string Text = "Lagen eines Geschosses (Lagemanager): UK roh Decke über der Kote (aus dem Modell – Unterkante der Betondecke darüber, sonst der grössten Decke – oder von Hand " +
+        "am Geschoss: ukRohdecke) und die Lagen als Abstand UK roh Decke bis Rohrachse (Gebäude: lagen für alle Geschosse, Geschoss: lagen als Abweichung, z. B. «120, 240, 360»; Vorgabe 120, 240, 360, 480 mm) " +
         "mit der Achshöhe über der Kote je Lage. Nur Rohre haben Lagen; im Grundriss steht die Lage als Schrägstriche (Anzahl = Lage) bis zum nächsten Wechsel.";
     public const string ParGeschoss = "Geschoss (Kennzeichen); ohne: alle Geschosse";
     public static IReadOnlyList<ParameterDef> Parameter { get; } = [new("geschoss", "text", false, ParGeschoss)];
 
-    /// <summary>UK roh Decke über der Geschosskote: Eingabe am Geschoss, sonst die häufigste Unterkante der Decken darüber (auf 10 mm gerundet).</summary>
-    public static (double? Wert, string Quelle) UkRohdecke(Projekt p, Element g)
+    /// <summary>UK roh Decke über der Geschosskote: Eingabe am Geschoss, sonst die Unterkante der Betondecke darüber (Aufbau mit «Beton», grösste
+    /// Fläche), fehlt das Material, die grösste Decke darüber (auf 10 mm gerundet). Christian 09.11.2026: «dies ist im regelfall die betondecke».</summary>
+    public static (double? Wert, string Quelle) UkRohdecke(Projekt p, Element g) { var (w, q, _) = UkRohdeckeMit(p, g); return (w, q); }
+
+    /// <summary>Wie UkRohdecke, dazu das Kennzeichen der Decke, aus der der Wert stammt.</summary>
+    public static (double? Wert, string Quelle, string? Decke) UkRohdeckeMit(Projekt p, Element g)
     {
-        if (g.Zahl("ukRohdecke") is double eigen) return (eigen, "eingabe");
+        if (g.Zahl("ukRohdecke") is double eigen) return (eigen, "eingabe", null);
         double kote = g.Zahl("kote") ?? 0;
         double oben = kote + (g.Zahl("hoehe") ?? NaechsteKote(p, g, kote) - kote ?? 3000);
-        var uk = p.Modell.DerKlasse("Decke")
+        var kand = p.Modell.DerKlasse("Decke")
             .Where(d => d.Text("art") != "boden" && d.Geometrie is { Art: "polygon", Dicke: double dk } gg && dk > 0 && gg.Punkte.Count >= 3)
-            .Select(d => (Z: d.Geometrie!.Punkte.Max(q => q.Length > 2 ? q[2] : 0), Dicke: d.Geometrie.Dicke!.Value))
-            .Where(d => d.Z > kote + 500 && d.Z <= oben + 1000)
-            .Select(d => Math.Round((d.Z - d.Dicke - kote) / 10) * 10).ToList();
-        if (uk.Count == 0) return (null, "fehlt");
-        return (uk.GroupBy(x => x).OrderByDescending(x => x.Count()).ThenBy(x => x.Key).First().Key, "modell");
+            .Select(d => (D: d, Z: d.Geometrie!.Punkte.Max(q => q.Length > 2 ? q[2] : 0), Dicke: d.Geometrie.Dicke!.Value,
+                Flaeche: Math.Abs(Polygone.Flaecheninhalt(d.Geometrie.Punkte)), Beton: (d.Text("aufbau") ?? "").Contains("beton", StringComparison.OrdinalIgnoreCase)))
+            .Where(d => d.Z > kote + 500 && d.Z <= oben + 1000).ToList();
+        if (kand.Count == 0) return (null, "fehlt", null);
+        double groesste = kand.Max(d => d.Flaeche);
+        var beton = kand.Where(d => d.Beton && d.Flaeche >= BetonMindestanteil * groesste).ToList();
+        var w = (beton.Count > 0 ? beton : kand).OrderByDescending(d => d.Flaeche).ThenBy(d => d.D.Kennzeichen, StringComparer.Ordinal).First();
+        return (Math.Round((w.Z - w.Dicke - kote) / 10) * 10, "modell", w.D.Kennzeichen);
     }
 
     static double? NaechsteKote(Projekt p, Element g, double kote) =>
         p.Modell.DerKlasse("Geschoss").Where(x => x.TeilVon == g.TeilVon && (x.Zahl("kote") ?? double.MinValue) > kote + 1).Select(x => x.Zahl("kote")).Min();
 
-    /// <summary>Abstände UK roh Decke → Rohrachse je Lage (Lage 1 = erster Eintrag).</summary>
-    public static double[] Abstaende(Element g)
+    /// <summary>Abstände UK roh Decke → Rohrachse je Lage (Lage 1 = erster Eintrag): Geschoss, sonst Gebäude (gilt für alle Geschosse), sonst Vorgabe.</summary>
+    public static double[] Abstaende(Projekt p, Element g) => LagenQuelle(p, g).Abstaende;
+
+    /// <summary>Woher die Lagen eines Geschosses kommen: «geschoss», «gebaeude» oder «vorgabe».</summary>
+    public static (double[] Abstaende, string Quelle) LagenQuelle(Projekt p, Element g)
     {
-        var t = g.Text("lagen");
-        if (string.IsNullOrWhiteSpace(t)) return Vorgabe;
+        if (Lesen(g.Text("lagen")) is { } eigen) return (eigen, "geschoss");
+        if (Gebaeude(p, g) is { } geb && Lesen(geb.Text("lagen")) is { } alle) return (alle, "gebaeude");
+        return (Vorgabe, "vorgabe");
+    }
+
+    static Element? Gebaeude(Projekt p, Element g) => g.TeilVon is { } t ? p.Modell.Finde(t) : null;
+
+    static double[]? Lesen(string? t)
+    {
+        if (string.IsNullOrWhiteSpace(t)) return null;
         var w = t.Split([',', ';', ' '], StringSplitOptions.RemoveEmptyEntries)
             .Select(s => double.TryParse(s.Replace("cm", "").Replace("mm", ""), NumberStyles.Float, CultureInfo.InvariantCulture, out var v) ? v : double.NaN)
             .Where(v => v > 0).ToArray();
-        return w.Length > 0 ? w : Vorgabe;
+        return w.Length > 0 ? w : null;
     }
 
     /// <summary>Lage eines Rohrs (1 …) aus der Höhe seiner Achse; null, wenn es kein Rohr ist, senkrecht oder keiner Lage entspricht.</summary>
@@ -62,7 +85,7 @@ public static class Lagen
             if (Math.Abs(pts[i][0] - pts[i - 1][0]) + Math.Abs(pts[i][1] - pts[i - 1][1]) > 1 && pts[i].Length > 2) z = pts[i - 1][2];
         if (z is null || UkRohdecke(p, g).Wert is not double ukd) return null;
         double ab = (g.Zahl("kote") ?? 0) + ukd - z.Value;
-        var a = Abstaende(g);
+        var a = Abstaende(p, g);
         for (int i = 0; i < a.Length; i++) if (Math.Abs(a[i] - ab) <= Toleranz) return i + 1;
         return null;
     }
@@ -77,12 +100,15 @@ public static class Lagen
         {
             ["geschosse"] = new JsonArray(gs.Select(g =>
             {
-                var (ukd, quelle) = UkRohdecke(p, g);
+                var (ukd, quelle, decke) = UkRohdeckeMit(p, g);
+                var (abst, lq) = LagenQuelle(p, g);
+                var geb = Gebaeude(p, g);
                 return (JsonNode)new JsonObject
                 {
-                    ["geschoss"] = g.Kennzeichen, ["name"] = g.Name, ["kote"] = g.Zahl("kote") ?? 0, ["ukRohdecke"] = ukd, ["quelle"] = quelle,
-                    ["vorgabe"] = string.IsNullOrWhiteSpace(g.Text("lagen")),
-                    ["lagen"] = new JsonArray(Abstaende(g).Select((a, i) => (JsonNode)new JsonObject
+                    ["geschoss"] = g.Kennzeichen, ["name"] = g.Name, ["kote"] = g.Zahl("kote") ?? 0, ["ukRohdecke"] = ukd, ["quelle"] = quelle, ["decke"] = decke,
+                    ["vorgabe"] = lq != "geschoss", ["lagenQuelle"] = lq,
+                    ["gebaeude"] = geb?.Kennzeichen, ["lagenGebaeude"] = geb?.Text("lagen") is { Length: > 0 } lg ? lg : null,
+                    ["lagen"] = new JsonArray(abst.Select((a, i) => (JsonNode)new JsonObject
                     {
                         ["nr"] = i + 1, ["abstand"] = a, ["hoehe"] = ukd is double u ? u - a : null,
                     }).ToArray()),

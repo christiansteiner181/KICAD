@@ -14,7 +14,7 @@ import { serienListe, serieDef, serieLaden, haken as leitungHaken } from './leit
 import { groessenListe } from './leitung-logik.js';
 import { elementWerte } from './vorwand-typen.js';
 import { istFrei, istRechteck, istAbwasser, groessenOptionen, vorbelegung, freiHinweis, abwasserHinweis, beschriftungVon } from './leitung-frei.js';
-import { lagenFuer } from './lagen-daten.js';
+import { lagenFuer, ukdFuer } from './lagen-daten.js';
 
 const BEZUGSLINIEN = [['mitte', 'Mitte'], ['links', 'Links'], ['rechts', 'Rechts']];
 
@@ -282,15 +282,37 @@ function leitungFelder(wid, kategorie) {
         if (!d || wert(wid, 'serie') !== kzS) return;
         if (wert(wid, 'groesse') && !groessenListe(d).some((g) => g.typ === wert(wid, 'groesse'))) setze(wid, 'groesse', '');
         freiVorbelegen(wid, d);
+        ausUkd();
         leitungHaken.optionenNeu?.();
       });
     }
     if (wert(wid, 'groesse') && s && !groessenListe(s).some((g) => g.typ === wert(wid, 'groesse'))) setze(wid, 'groesse', '');
     leitungHaken.optionenNeu?.();
   };
+  // Lüftung (Christian 09.11.2026: «Lüftungen beziehen sich nicht auf lagen. diese werden für Rohre immer als Achse = -xy UKD und bei kanälen immer
+  // OK = -xy UKD angegeben und gezeichnet.»): Feld «unter UKD» setzt die Achshöhe – rund: Achse = UKD − x, eckig: OK = UKD − x (Achse = OK − h/2)
+  const eckig = () => istRechteck(aktuelleSerie());
+  const kanalH = () => {
+    const s = aktuelleSerie();
+    if (frei()) return wert(wid, 'freiH');
+    const g = s ? groessenListe(s).find((x) => x.typ === wert(wid, 'groesse')) : null;
+    if (g?.h > 0) return g.h;
+    const m = String(wert(wid, 'groesse') ?? '').match(/(d+(?:.d+)?)s*[x×]s*(d+(?:.d+)?)/);
+    return m ? Number(m[2]) : null;
+  };
+  const ukdGeschoss = () => ukdFuer(element(zustand.aktiveAnsicht)?.geschoss);
+  const ausUkd = () => {
+    const x = wert(wid, 'unterUkd'), ukd = ukdGeschoss();
+    if (kategorie !== 'Kanal' || !(x >= 0) || x === null || !Number.isFinite(ukd)) return;
+    const h = eckig() ? kanalH() : 0;
+    if (!(h >= 0) || h === null) return;
+    setze(wid, 'hoehe', Math.round(ukd - x - h / 2));
+    leitungHaken.hoeheGeaendert?.();
+  };
   // Normgrösse gewählt (freie Serie): die Zahlenfelder zeigen ihre Grösse, geändert werden sie von Hand
   const nachNormgroesse = (el) => {
     el?.blur?.();
+    ausUkd();
     const s = aktuelleSerie();
     const g = istFrei(s) ? groessenListe(s).find((x) => x.typ === wert(wid, 'groesse')) : null;
     if (g) { setze(wid, 'freiB', g.b); setze(wid, 'freiH', g.h); setze(wid, 'freiD', g.d); }
@@ -306,7 +328,7 @@ function leitungFelder(wid, kategorie) {
       beiAenderung: nachNormgroesse },
     // Freie Grösse (Nachtrag): Zahlenfelder statt der Typwahl, vorbelegt mit der Vorlage; Grenzen und Schritt prüft der Kern
     { id: 'freiB', titel: 'Breite', art: 'zahl', einheit: 'mm', pflicht: true, platzhalter: 'b', breite: 5, sichtbar: () => frei() && istRechteck(aktuelleSerie()) },
-    { id: 'freiH', titel: 'Kanalhöhe', art: 'zahl', einheit: 'mm', pflicht: true, platzhalter: 'h', breite: 5, sichtbar: () => frei() && istRechteck(aktuelleSerie()) },
+    { id: 'freiH', titel: 'Kanalhöhe', art: 'zahl', einheit: 'mm', pflicht: true, platzhalter: 'h', breite: 5, sichtbar: () => frei() && istRechteck(aktuelleSerie()), beiAenderung: () => ausUkd() },
     { id: 'freiD', titel: 'Durchmesser', art: 'zahl', einheit: 'mm', pflicht: true, platzhalter: 'd', breite: 5, sichtbar: () => frei() && !istRechteck(aktuelleSerie()) },
     { id: 'freiHinweis', art: 'hinweis', klasse: 'ol-info', get text() { return freiHinweis(aktuelleSerie()); }, sichtbar: frei },
     { id: 'abwasserHinweis', art: 'hinweis', klasse: 'ol-info', get text() { const s = aktuelleSerie(); return abwasserHinweis(s, s ? beschriftungVon(s, wert(wid, 'groesse')) : null); }, sichtbar: () => istAbwasser(aktuelleSerie()) },
@@ -314,8 +336,11 @@ function leitungFelder(wid, kategorie) {
     { id: 'lage', titel: 'Lage', art: 'auswahl', leer: '–', sichtbar: () => kategorie === 'Rohr',
       get werte() { return lagenFuer(element(zustand.aktiveAnsicht)?.geschoss).map((l) => [String(l.nr), `L${l.nr} (UKD −${l.abstand})`]); },
       beiAenderung(el) { el?.blur?.(); const l = lagenFuer(element(zustand.aktiveAnsicht)?.geschoss).find((x) => String(x.nr) === wert(wid, 'lage')); if (l) { setze(wid, 'hoehe', Math.round(l.hoehe)); leitungHaken.hoeheGeaendert?.(); } leitungHaken.optionenNeu?.(); } },
-    { id: 'hoehe', titel: 'Höhe', art: 'zahl', einheit: 'mm', pflicht: true, platzhalter: 'ab OK Geschoss', breite: 12,
-      beiAenderung: () => leitungHaken.hoeheGeaendert?.() },
+    { id: 'unterUkd', get titel() { return eckig() ? 'OK unter UKD' : 'Achse unter UKD'; }, art: 'zahl', einheit: 'mm', breite: 5, sichtbar: () => kategorie === 'Kanal',
+      get platzhalter() { const u = ukdGeschoss(); return Number.isFinite(u) ? `UKD ${Math.round(u)}` : 'UKD fehlt'; },
+      beiAenderung: () => ausUkd() },
+    { id: 'hoehe', get titel() { return kategorie === 'Kanal' ? 'Achshöhe' : 'Höhe'; }, art: 'zahl', einheit: 'mm', pflicht: true, platzhalter: 'ab OK Geschoss', breite: 12,
+      beiAenderung: () => { if (kategorie === 'Kanal') setze(wid, 'unterUkd', null); leitungHaken.hoeheGeaendert?.(); } },
     { id: 'gefaelle', titel: 'Gefälle', art: 'zahl', einheit: '%', platzhalter: 'kein', breite: 4, fluechtig: true },
     { id: 'system', titel: 'System', art: 'auswahl', get werte() { return systemOptionen(); }, leer: '–',
       beiAenderung(el) { el?.blur?.(); const st = derKlasse('Strang').find((e) => kz(e) === wert(wid, 'strang')); if (st && st.teilVon !== wert(wid, 'system')) setze(wid, 'strang', ''); leitungHaken.optionenNeu?.(); } },

@@ -4,6 +4,7 @@
     "eigenschaften": [
       { "name": "adresse", "typ": "text", "beschreibung": "Strasse, PLZ, Ort" },
       { "name": "egid", "typ": "text", "beschreibung": "Eidg. Gebäudeidentifikator aus dem GWR" },
+      { "name": "lagen", "typ": "text", "beschreibung": "Lagen der Rohre für alle Geschosse (Lagemanager; Christian 09.11.2026: «lagen gelten default für alle etagen»): Abstand UK roh Decke bis Rohrachse in mm, durch Komma getrennt, Lage 1 zuerst; ein Geschoss mit eigenen Lagen weicht ab; ohne Angabe 120, 240, 360, 480" },
       { "name": "terrain", "typ": "zahl", "einheit": "mm", "beschreibung": "Terrainhöhe über ±0.00 (Modul 1c): Bauteilflächen darunter grenzen an Erdreich; ohne Angabe ±0" },
       { "name": "n50", "typ": "zahl", "einheit": "1/h", "beschreibung": "Luftdichtheit: Luftwechsel bei 50 Pa (gemessen oder Ziel), mit Quelle" },
       { "name": "q50", "typ": "zahl", "einheit": "m³/(h·m²)", "beschreibung": "Luftdichtheit: Leckagestrom bei 50 Pa je m² Hüllfläche, mit Quelle" },
@@ -23,7 +24,7 @@
       { "name": "kurz", "typ": "text", "beschreibung": "Kürzel für Raumnummern, z. B. U, E, 1, 2, A" },
       { "name": "einbringlaenge", "typ": "zahl", "einheit": "mm", "beschreibung": "Grösste Länge eines vorgefertigten Segments (z. B. GIS-Vorwand aus der Werkstatt), das sich in die Wohnung einbringen lässt (Treppenhaus, Lift, Gänge) in mm; Eingabe von Hand (Christian 04.11.2026). Geschoss vor Projekt; fehlt sie, teilt KICAD nicht und meldet es." },
       { "name": "ukRohdecke", "typ": "zahl", "einheit": "mm", "beschreibung": "UK roh Decke über der Kote in mm für die Lagen (Lagemanager, Christian 05.11.2026); ohne Angabe aus dem Modell (Unterkante der Decke darüber)." },
-      { "name": "lagen", "typ": "text", "beschreibung": "Lagen der Rohre: Abstand UK roh Decke bis Rohrachse in mm, durch Komma getrennt, Lage 1 zuerst (z. B. «120, 240, 360»); ohne Angabe 120, 240, 360, 480 (Beispiel Christian 05.11.2026)." } ] },
+      { "name": "lagen", "typ": "text", "beschreibung": "Lagen der Rohre in diesem Geschoss, abweichend von den Lagen des Gebäudes: Abstand UK roh Decke bis Rohrachse in mm, durch Komma getrennt, Lage 1 zuerst (z. B. «120, 240, 360»); ohne Angabe die Lagen des Gebäudes, sonst 120, 240, 360, 480 (Beispiel Christian 05.11.2026)." } ] },
 
   { "name": "Raum", "kuerzel": "R", "schicht": "raum", "gewerk": "architektur", "ifc": "IfcSpace", "geometrie": "polygon", "brauchtGeschoss": true,
     "beschreibung": "Ein Raum mit Grundfläche als Polygon (mm). Fläche und Volumen werden aus der Geometrie berechnet.",
