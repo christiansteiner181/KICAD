@@ -85,3 +85,5 @@ body.zeichnung { margin: 0; height: 100vh; display: flex; flex-direction: column
 .z-werkzeuge button.z-mit-symbol:hover { border-color: var(--akzent); background: var(--flaeche-hell); }
 .z-werkzeuge button.z-mit-symbol.aktiv { background: var(--akzent-hell); color: #1f1f1f; border-color: var(--akzent); }
 .z-werkzeuge .z-gruppe { writing-mode: vertical-rl; transform: rotate(180deg); font-size: 10px; letter-spacing: .5px; }
+.z-werkzeuge { flex-wrap: wrap; row-gap: 2px; }
+.z-werkzeuge button.z-mit-symbol { min-width: 46px; padding: 2px 4px 1px; font-size: 11px; }

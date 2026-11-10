@@ -63,10 +63,14 @@ public static class ZeichnungBearbeiten
     public const string ZeichnenText = "Zeichnet Objekte in die geöffnete Zeichnung (ein Rückgängig-Schritt). objekte: Liste aus " +
         "{art:\"linie\", von:[x,y], bis:[x,y]} · {art:\"polylinie\", punkte:[[x,y] oder [x,y,ausbuchtung],…], geschlossen} · {art:\"rechteck\", ecke1:[x,y], ecke2:[x,y]} · " +
         "{art:\"kreis\", mitte:[x,y], radius} · {art:\"bogen\", mitte:[x,y], radius, vonGrad, bisGrad} bzw. {art:\"bogen\", punkte:[[x,y],[x,y],[x,y]]} (Anfang, Punkt auf dem Bogen, Ende) · " +
-        "{art:\"text\", ort:[x,y], text, hoehe, drehungGrad}. Je Objekt wahlweise layer, farbe (ACI-Nummer 1–255, \"#rrggbb\" oder \"vonLayer\") und linientyp. " +
+        "{art:\"text\", ort:[x,y], text, hoehe, drehungGrad} · {art:\"absatztext\", ort, text (mit Zeilenumbrüchen), hoehe, breite} · {art:\"ellipse\", mitte, hauptachse:[x,y] (Endpunkt), verhaeltnis} · " +
+        "{art:\"polygon\", mitte, radius, seiten, drehungGrad, inkreis} · {art:\"punkt\", ort} · {art:\"schraffur\", muster: voll|linien|kreuz, abstand, winkelGrad, objekte:[Kennungen geschlossener Polylinien/Kreise] bzw. grenzen:[[[x,y],…],…]} · " +
+        "{art:\"bemassung\", von, bis, ort (Lage der Masslinie), richtung: waagrecht|senkrecht|ausgerichtet}. Je Objekt wahlweise layer, farbe (ACI-Nummer 1–255, \"#rrggbb\" oder \"vonLayer\") und linientyp. " +
         "Ohne layer gilt der aktuelle Layer. Koordinaten in Zeichnungseinheiten. Antwort: die Kennungen der neuen Objekte. Die Datei ändert sich erst mit zeichnung_speichern.";
     public const string AendernText = "Ändert Objekte der Zeichnung (ein Rückgängig-Schritt). kennungen: Liste der Objekte (aus zeichnung_objekte). aktion: " +
-        "loeschen · verschieben {dx, dy} · kopieren {dx, dy} · drehen {um:[x,y], winkelGrad} · skalieren {um:[x,y], faktor} · eigenschaften {layer, farbe, linientyp}. " +
+        "loeschen · verschieben {dx, dy} · kopieren {dx, dy} · drehen {um:[x,y], winkelGrad} · skalieren {um:[x,y], faktor} · eigenschaften {layer, farbe, linientyp} · spiegeln {achse:[[x,y],[x,y]], kopie} · versetzen {abstand, seite:[x,y]} · " +
+        "stutzen {punkt:[x,y] auf dem Teil, der weg soll, grenzen:[Kennungen] (leer = alle)} · dehnen {punkt nahe dem Ende, grenzen} · abrunden {radius, punkte:[[x,y],[x,y]]} (zwei Linien) · fasen {abstand1, abstand2, punkte} · " +
+        "ursprung (Polylinie/Block zerlegen) · verbinden (Linien, Bögen, offene Polylinien zu einer Polylinie) · reihe {zeilen, spalten, dx, dy} · uebertragen {quelle: Kennung}. " +
         "Antwort: Anzahl und bei kopieren die neuen Kennungen. Die Datei ändert sich erst mit zeichnung_speichern.";
     public const string SpeichernText = "Speichert die Zeichnung als DWG oder DXF. Ohne datei an ihren Ort (die vorherige Fassung bleibt als .bak daneben), mit datei als neue Datei " +
         "(«Speichern unter»). fassung: 2000, 2004, 2010, 2013 oder 2018 (Vorgabe: wie geöffnet; DWG 2007 wird als 2010 geschrieben). Nach dem Schreiben wird die Datei " +
@@ -77,10 +81,10 @@ public static class ZeichnungBearbeiten
 
     // ---------- Hilfen ----------
 
-    static double Zahl(JsonObject o, string name, double? vorgabe = null) =>
+    internal static double Zahl(JsonObject o, string name, double? vorgabe = null) =>
         Json.Zahl(o[name]) ?? vorgabe ?? throw new HlksFehler($"«{name}» fehlt oder ist keine Zahl.", "Zahl in Zeichnungseinheiten bzw. Grad angeben.");
 
-    static (double X, double Y) Punkt(JsonNode? n, string name)
+    internal static (double X, double Y) Punkt(JsonNode? n, string name)
     {
         if (n is JsonArray { Count: >= 2 } a && Json.Zahl(a[0]) is double x && Json.Zahl(a[1]) is double y && double.IsFinite(x) && double.IsFinite(y)) return (x, y);
         throw new HlksFehler($"«{name}» muss ein Punkt [x, y] sein.", "Zwei Zahlen in Zeichnungseinheiten, z. B. [1200, 500].");
@@ -184,7 +188,7 @@ public static class ZeichnungBearbeiten
                 return e;
             }
             default:
-                throw new HlksFehler($"Die Art «{art}» lässt sich nicht zeichnen.", "Erlaubt: linie, polylinie, rechteck, kreis, bogen, text.");
+                return ZeichnungGeoBefehle.Bauen(z, art, o) ?? throw new HlksFehler($"Die Art «{art}» lässt sich nicht zeichnen.", "Erlaubt: linie, polylinie, rechteck, kreis, bogen, text, ellipse, polygon, punkt, absatztext, schraffur, bemassung.");
         }
     }
 
@@ -216,7 +220,14 @@ public static class ZeichnungBearbeiten
             Eigenschaften(z, e, o, vorgabe);
             neu.Add(e);
         }
-        void Vor() { foreach (var e in neu) block.Entities.Add(e); }
+        void Vor()
+        {
+            foreach (var e in neu)
+            {
+                block.Entities.Add(e);
+                if (e is Dimension d) { try { d.UpdateBlock(); } catch (Exception ex) when (ex is not OutOfMemoryException) { } }   // Bild der Bemassung erzeugen
+            }
+        }
         void Zurueck() { foreach (var e in neu) block.Entities.Remove(e); }
         Vor();
         z.Journal.Dazu(neu.Count == 1 ? ZeichnungAbfragen.Art(neu[0]) + " zeichnen" : $"{neu.Count} Objekte zeichnen", Zurueck, Vor);
@@ -318,7 +329,8 @@ public static class ZeichnungBearbeiten
                 break;
             }
             default:
-                throw new HlksFehler($"Die Aktion «{aktion}» gibt es nicht.", "Erlaubt: loeschen, verschieben, kopieren, drehen, skalieren, eigenschaften.");
+                (name, vor, zurueck) = ZeichnungGeoBefehle.Aendern(z, liste, aktion.Trim().ToLowerInvariant(), par, antwort);
+                break;
         }
         vor();
         z.Journal.Dazu(name, zurueck, vor);

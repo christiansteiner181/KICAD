@@ -1,7 +1,7 @@
 // Tests zu js/zeichnung/logik.js: Messwerte (Rechenwerte) und Objektfang.
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { fangpunkte, Fangraster, messwerte, laengeText, flaecheText } from './logik.js';
+import { fangpunkte, Fangraster, strecken, Streckenraster, fangSuchen, messwerte, laengeText, flaecheText } from './logik.js';
 
 test('messwerte: Strecke, Winkel, Fläche und Umfang eines Dreiecks 3-4-5', () => {
   const w = messwerte([[0, 0], [3, 0], [3, 4]]);
@@ -30,4 +30,12 @@ test('Fang: Endpunkt gewinnt vor Mittelpunkt, Zentrum eines Kreises, ausserhalb 
   assert.deepEqual(raster.suche(50.4, 49.8, 1), { x: 50, y: 50, art: 2 });
   assert.equal(raster.suche(20, 20, 1), null);
   assert.equal(fangpunkte(prim, [-1, -1, 6, 6]).length / 3, 2);   // nur Anfang und Mitte der Linie liegen im Fenster
+});
+
+test('Fang: Schnittpunkt zweier Linien und Lot vom letzten Punkt', () => {
+  const prim = [['l', 0, [0, 0, 100, 0]], ['l', 0, [40, -50, 40, 50]]];
+  const linien = new Streckenraster(strecken(prim), 5), punkte = new Fangraster(fangpunkte(prim), 5);
+  assert.deepEqual(fangSuchen(punkte, linien, 41, 1, 3), { x: 40, y: 0, art: 3 });          // Schnittpunkt
+  assert.deepEqual(fangSuchen(punkte, linien, 71, 1, 3, [70, 30]), { x: 70, y: 0, art: 4 }); // Lot von (70, 30) auf die waagrechte Linie
+  assert.equal(fangSuchen(punkte, linien, 71, 1, 3), null);                                  // ohne letzten Punkt kein Lot
 });

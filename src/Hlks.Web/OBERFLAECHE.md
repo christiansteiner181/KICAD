@@ -4430,3 +4430,24 @@ Christian 10.11.2026: «verwende Autodesk Symbole oder annäherungen»), Kern `Z
   Ein Stern am Namen zeigt ungespeicherte Änderungen; beim Verlassen fragt der Browser nach.
 - **Noch nicht** (Stufe 2 Teil 2 und Stufe 3): Spiegeln, Versetzen, Stutzen, Dehnen, Abrunden, Fasen, Strecken, Bruch, Verbinden, Reihe, Ursprung,
   Eigenschaften übertragen, Griffe · Ellipse, Polygon, Spline, Punkt, Schraffur, Absatztext · Bemassung, Führung · Blöcke einfügen/erstellen.
+
+## 2D-CAD «Zeichnung» – weitere Zeichen- und Änderungsbefehle (Stufe 2 Teil 2, 10.11.2026)
+
+Christian 10.11.2026: «zudem müssen alle zeichnungsfunktionen vorhanden sein». Kern `Zeichnung/ZeichnungGeoBefehle.cs` (Schnitte, Befehle, Objektarten),
+Oberfläche `js/zeichnung/befehle.js`, Fang `js/zeichnung/logik.js` (Streckenraster). Die Werkzeugleiste hat drei Gruppen; das Kürzel steht im Tooltip.
+
+- **Zeichnen:** Ellipse (EL: Mitte, Ende der Hauptachse, halbe Nebenachse) · Polygon (PG: Seitenzahl, Mitte, Eckpunkt oder Radius) · Punkt (PU) ·
+  Schraffur (H: geschlossene Polylinien/Kreise wählen, Muster voll/linien/kreuz, Abstand, Winkel).
+- **Beschriften:** Absatz (MT, `
+` trennt Zeilen) · Mass (BEM: zwei Punkte, Lage der Masslinie – waagrecht oder senkrecht je nach Lage) · Mass schräg (BAU).
+  Texthöhe und Pfeile der Bemassung kommen aus dem Bemassungsstil der Zeichnung (in mm-Plänen sehr klein – Massstab des Stils ist noch nicht einstellbar).
+- **Ändern:** Spiegeln (SP/MI: Achse aus zwei Punkten, Quellobjekte löschen J/N; Text bleibt lesbar) · Versetzen (VE/O: Abstand, Objekt, Seite – wiederholt) ·
+  Stutzen (SU/TR: Teil anklicken, der weg soll; Schnittkanten sind alle sichtbaren Objekte) · Dehnen (DE/EX: nahe dem Ende anklicken) ·
+  Abrunden (AR/F: Radius, zwei Linien auf dem Teil anklicken, der bleibt; 0 = scharfe Ecke) · Fasen (FA/CHA: zwei Abstände) · Reihe (RH: Zeilen, Spalten, Abstände) ·
+  Ursprung (UR/X: Polylinie in Linien und Bögen, Block in seine Objekte) · Verbinden (VB/J: Linien, Bögen, offene Polylinien zu einer Polylinie) ·
+  Eigenschaften übertragen (EÜ/MA: Quellobjekt, dann Zielobjekte).
+- **Fang** zusätzlich: Schnittpunkt ✕ (zwischen Linien/Polylinien) und Lot ⊥ (vom letzten Punkt auf eine Linie).
+- **Geändert:** SP ist jetzt Spiegeln; Speichern über Strg+S, den Knopf oder `SPEICHERN`.
+- **Grenzen:** Polylinien mit Bögen lassen sich noch nicht stutzen und versetzen (vorher «Ursprung»); Stutzen/Dehnen/Abrunden ersetzen das Objekt durch
+  neue (neue Kennung); Schraffuren, Bemassungen, Splines lassen sich noch nicht spiegeln. **Noch nicht:** Strecken, Bruch, Griffe · Spline, Führung ·
+  Radius-/Winkel-/Kettenbemassung, Bemassungsstil · Blöcke einfügen/erstellen · Schnittpunktfang an Bögen, Tangente, Polarfang.

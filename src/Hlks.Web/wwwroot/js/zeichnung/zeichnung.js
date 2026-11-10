@@ -6,7 +6,7 @@
 // Koordinaten werden beim Laden um einen festen Ursprung verschoben (Landeskoordinaten sind zu gross für die Leinwand).
 
 import { holen, senden } from '../api.js';
-import { fangpunkte, Fangraster, FANGNAMEN, messwerte, laengeText, flaecheText } from './logik.js';
+import { fangpunkte, Fangraster, strecken, Streckenraster, fangSuchen, FANGNAMEN, messwerte, laengeText, flaecheText } from './logik.js';
 import { symboleSetzen } from './symbole.js';
 import { BEFEHLE, KUERZEL, NAMEN as BEFEHLSNAMEN, Abbruch, punktLesen, ortho } from './befehle.js';
 
@@ -89,7 +89,7 @@ async function grafikLaden(grenzen) {
 function aufbereiten(g) {
   if (!z.ursprung) { const u = g.umriss || g.papier || [0, 0, 0, 0]; z.ursprung = [(u[0] + u[2]) / 2, (u[1] + u[3]) / 2]; }
   const [ox, oy] = z.ursprung;
-  const fangListen = [];
+  const fangListen = [], streckenListen = [];
   const teile = [];
   for (const teil of g.teile) {
     const stuecke = [];
@@ -138,6 +138,7 @@ function aufbereiten(g) {
     }
     const fenster = teil.fenster ? [teil.fenster[0] - ox, teil.fenster[1] - oy, teil.fenster[2] - ox, teil.fenster[3] - oy] : null;
     fangListen.push(fangpunkte(teil.p, fenster));
+    streckenListen.push(strecken(teil.p, fenster));
     teile.push({ fenster, stuecke });
   }
   const verschoben = b => (b ? [b[0] - ox, b[1] - oy, b[2] - ox, b[3] - oy] : null);
@@ -146,7 +147,12 @@ function aufbereiten(g) {
   const alle = new Float64Array(n); let o = 0;
   for (const l of fangListen) { alle.set(l, o); o += l.length; }
   const b = z.grafik.umriss || [0, 0, 1000, 1000];
-  z.fang = new Fangraster(alle, Math.max(b[2] - b[0], b[3] - b[1], 1e-6) / 400);
+  const zelle = Math.max(b[2] - b[0], b[3] - b[1], 1e-6) / 400;
+  z.fang = new Fangraster(alle, zelle);
+  let m = 0; for (const l of streckenListen) m += l.length;
+  const linien = new Float64Array(m); o = 0;
+  for (const l of streckenListen) { linien.set(l, o); o += l.length; }
+  z.fangLinien = new Streckenraster(linien, zelle);
 }
 
 // ---------- Ansicht ----------
@@ -309,6 +315,8 @@ function malen() {
     ctx.strokeStyle = '#2ee66b'; ctx.lineWidth = 1.8; ctx.beginPath();
     if (z.fangpunkt.art === 0) ctx.rect(x - 6, y - 6, 12, 12);
     else if (z.fangpunkt.art === 1) { ctx.moveTo(x, y - 7); ctx.lineTo(x + 7, y + 6); ctx.lineTo(x - 7, y + 6); ctx.closePath(); }
+    else if (z.fangpunkt.art === 3) { ctx.moveTo(x - 6, y - 6); ctx.lineTo(x + 6, y + 6); ctx.moveTo(x + 6, y - 6); ctx.lineTo(x - 6, y + 6); }
+    else if (z.fangpunkt.art === 4) { ctx.moveTo(x - 7, y - 7); ctx.lineTo(x - 7, y + 7); ctx.lineTo(x + 7, y + 7); ctx.moveTo(x - 7, y); ctx.lineTo(x, y); ctx.lineTo(x, y + 7); }
     else ctx.arc(x, y, 7, 0, 2 * Math.PI);
     ctx.stroke();
   }
@@ -362,25 +370,31 @@ const io = {
   punkt: (prompt, opt) => erwarten('punkt', prompt, opt),
   zahl: (prompt, opt) => erwarten('zahl', prompt, opt),
   text: prompt => erwarten('text', prompt),
+  /** Ein Objekt anklicken: { kennung, objekt, punkt (Klick, Leinwand) } oder null (Eingabetaste). */
+  objekt: prompt => erwarten('objekt', prompt),
+  /** Schritt ausführen; ein Fehler des Servers wird gemeldet, der Befehl läuft weiter. */
+  async versuchen(schritt) { try { await schritt(); } catch (e) { if (e instanceof Abbruch) throw e; melden(fehlerText(e), true); } },
+  auswahlLeeren() { z.auswahl.clear(); eigenschaftenZeigen(); zeichnen(); },
   async auswahl(prompt) {
     if (z.auswahl.size) return [...z.auswahl.keys()];
     return erwarten('auswahl', prompt);
   },
   /** Boxen der Auswahl in Leinwand-Koordinaten (Vorschau beim Schieben). */
   boxen: () => [...z.auswahl.values()].filter(o => o.box).slice(0, 300).map(o => [...sicht([o.box[0], o.box[1]]), ...sicht([o.box[2], o.box[3]])]),
-  async zeichnen(objekte) {
+  async zeichnen(objekte, opt = { auswahlBehalten: true }) {
     // Punkte der Befehle sind Leinwand-Koordinaten: für den Server zurück in die Zeichnung
     const um = o => {
       const n = { ...o };
-      for (const k of ['von', 'bis', 'ecke1', 'ecke2', 'mitte', 'ort']) if (n[k]) n[k] = echt(n[k]);
+      for (const k of ['von', 'bis', 'ecke1', 'ecke2', 'mitte', 'ort', 'hauptachse']) if (n[k]) n[k] = echt(n[k]);
       if (n.punkte) n.punkte = n.punkte.map(p => [...echt(p), ...p.slice(2)]);
       return n;
     };
-    await nachAenderung(await senden('/api/zeichnung/zeichnen', { zeichnung: z.info.pfad, layout: z.layout, objekte: objekte.map(um) }), { auswahlBehalten: true });
+    await nachAenderung(await senden('/api/zeichnung/zeichnen', { zeichnung: z.info.pfad, layout: z.layout, objekte: objekte.map(um) }), opt);
   },
   async aendern(kennungen, aktion, angaben, opt) {
     const a = { ...angaben };
-    if (a.um) a.um = echt(a.um);
+    for (const k of ['um', 'seite', 'punkt']) if (a[k]) a[k] = echt(a[k]);
+    for (const k of ['punkte', 'achse']) if (a[k]) a[k] = a[k].map(echt);
     await nachAenderung(await senden('/api/zeichnung/aendern', { zeichnung: z.info.pfad, kennungen, aktion, angaben: a }), opt);
   },
   async layerAnlegen(name) {
@@ -428,6 +442,7 @@ function eingabeAbschicken() {
   if (e) {
     if (e.art === 'text') return erfuellen(t.trim() || null);
     if (e.art === 'auswahl') return erfuellen([...z.auswahl.keys()]);
+    if (e.art === 'objekt') return erfuellen(null);
     if (e.art === 'punkt') {
       if (!t.trim()) return erfuellen(null);
       const zp = zeigerPunkt();
@@ -444,7 +459,7 @@ function eingabeAbschicken() {
   if (z.werkzeug === 'messen' && !t.trim()) return messenAbschliessen(false);
   if (!t.trim()) { if (z.letzterBefehl) befehlStarten(z.letzterBefehl); return; }
   const name = KUERZEL[t.trim().toLowerCase()];
-  if (name) befehlStarten(name); else melden(`Unbekannter Befehl «${t.trim()}». Kürzel: L, PL, RE, K, B, T, S, KO, DR, V, LÖ, Z, DI.`, true);
+  if (name) befehlStarten(name); else melden(`Unbekannter Befehl «${t.trim()}». Kürzel stehen an den Knöpfen (z. B. L, PL, K, S, KO, SU, DE, AR, VE, SP, BEM).`, true);
 }
 
 // ---------- Maus ----------
@@ -486,7 +501,7 @@ leinwand.addEventListener('pointermove', e => {
   if (!z.grafik) return;
   const g = groesse();
   const [wx, wy] = zuWelt(m.px, m.py, g);
-  z.fangpunkt = $('z-fang').checked && z.fang && !zug?.bewegt && willPunkt() ? z.fang.suche(wx, wy, 10 / z.ansicht.zoom) : null;
+  z.fangpunkt = $('z-fang').checked && z.fang && !zug?.bewegt && willPunkt() ? fangSuchen(z.fang, z.fangLinien, wx, wy, 10 / z.ansicht.zoom, z.erwartet?.opt?.von || (z.werkzeug === 'messen' && !z.messFertig ? z.messpunkte.at(-1) : null)) : null;
   const ort = zeigerPunkt() || [wx, wy];
   const [ox, oy] = z.ursprung;
   $('z-koord').textContent = `${(ort[0] + ox).toFixed(3)}, ${(ort[1] + oy).toFixed(3)}`;
@@ -510,6 +525,7 @@ leinwand.addEventListener('pointerup', e => {
     const von = erw.opt.von;
     return erfuellen(erw.opt.art === 'winkel' ? Math.round(Math.atan2(p[1] - von[1], p[0] - von[0]) * 180 / Math.PI * 1e6) / 1e6 : Math.hypot(p[0] - von[0], p[1] - von[1]));
   }
+  if (erw?.art === 'objekt') { objektKlick(frei); return; }
   if (erw && erw.art !== 'auswahl') return;   // Zahl bzw. Text wird getippt
   if (z.werkzeug === 'messen') {
     if (z.messFertig) { z.messpunkte = []; z.messFertig = false; }
@@ -523,6 +539,16 @@ leinwand.addEventListener('dblclick', e => { if (z.werkzeug === 'messen') { e.pr
 leinwand.addEventListener('auxclick', e => { if (e.button === 1 && e.detail === 2) zoomGrenzen(); });
 leinwand.addEventListener('contextmenu', e => { e.preventDefault(); if (z.erwartet || z.werkzeug === 'messen') eingabeAbschicken(); });
 leinwand.addEventListener('pointerleave', () => { z.maus = null; z.fangpunkt = null; zeichnen(); });
+
+/** Klick, wenn ein Befehl ein einzelnes Objekt verlangt: Objekt am Punkt suchen und dem Befehl geben. */
+async function objektKlick(p) {
+  const [ox, oy] = z.ursprung;
+  try {
+    const r = await holen(`/api/zeichnung/treffer?${q()}&x=${p[0] + ox}&y=${p[1] + oy}&r=${7 / z.ansicht.zoom}`);
+    if (z.erwartet?.art !== 'objekt') return;
+    if (r.objekt) erfuellen({ kennung: r.objekt.kennung, objekt: r.objekt, punkt: p }); else melden('An dieser Stelle liegt kein Objekt.');
+  } catch (e) { melden(fehlerText(e), true); }
+}
 
 // ---------- Auswahl ----------
 
@@ -878,6 +904,8 @@ symboleSetzen();
 zuletztZeigen();
 promptZeigen();
 // Für Prüfungen von aussen (Browserprüfung)
-window.hlksZeichnung = { zustand: z, oeffnen, zoomGrenzen, befehlStarten, befehlsnamen: BEFEHLSNAMEN };
+window.hlksZeichnung = { zustand: z, oeffnen, zoomGrenzen, befehlStarten, befehlsnamen: BEFEHLSNAMEN,
+  /** Ort eines Zeichnungspunkts im Browserfenster (Bildpunkte). */
+  zuFenster(x, y) { const p = zuBild(...sicht([x, y]), groesse()), r = leinwand.getBoundingClientRect(); return [p[0] + r.left, p[1] + r.top]; } };
 const start = new URLSearchParams(location.search).get('datei');
 if (start) oeffnen(start);

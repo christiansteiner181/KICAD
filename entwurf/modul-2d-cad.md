@@ -140,6 +140,10 @@ bei den Unterlagen), nie ausserhalb.
 - **Stufe 2 Teil 1 gebaut (10.11.2026):** Zeichnen (Linie, Polylinie, Rechteck, Kreis, Bogen, Text), Ändern (Schieben, Kopieren, Drehen, Skalieren,
   Löschen, Eigenschaften), Layer anlegen, Rückgängig/Wiederholen, Neu, Speichern als DWG 2000–2018/DXF mit .bak und Gegenprobe; Befehlszeile mit
   Kürzeln und getippten Punkten, Ortho, Auswahlfenster, Symbole im Stil von AutoCAD. Kern `ZeichnungBearbeiten.cs`, MCP sieben weitere Werkzeuge.
+- **Stufe 2 Teil 2 gebaut (10.11.2026):** Spiegeln, Versetzen, Stutzen, Dehnen, Abrunden, Fasen, Reihe, Ursprung, Verbinden, Eigenschaften übertragen ·
+  Ellipse, Polygon, Punkt, Schraffur, Absatztext, Bemassung (waagrecht/senkrecht/ausgerichtet) · Fang Schnittpunkt und Lot. Kern `ZeichnungGeoBefehle.cs`
+  (über `zeichnung_zeichnen`/`zeichnung_aendern` auch für die KI). Die Liste im nächsten Punkt ist entsprechend kürzer: offen bleiben Strecken, Bruch,
+  Griffe, Spline, Führung, Radius-/Winkel-/Kettenbemassung mit Stil, Blöcke/Attribute, Tangenten-/Polarfang, Stutzen/Versetzen von Polylinien mit Bögen.
 - **Christian 10.11.2026: «zudem müssen alle zeichnungsfunktionen vorhanden sein»** – offen: Spiegeln, Versetzen, Stutzen, Dehnen, Abrunden, Fasen,
   Strecken, Bruch, Verbinden, Reihe, Ursprung, Eigenschaften übertragen, Griffe · Ellipse, Polygon, Spline, Punkt, Schraffur, Absatztext ·
   Bemassung, Führung · Blöcke einfügen/erstellen, Attribute · Schnittpunkt-/Lot-/Tangentenfang, Polarfang.

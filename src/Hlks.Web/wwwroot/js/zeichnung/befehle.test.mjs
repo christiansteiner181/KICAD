@@ -28,6 +28,7 @@ test('Kürzel: deutsch und englisch führen zum selben Befehl; jeder Zeichen- un
   assert.equal(KUERZEL.k, KUERZEL.c); assert.equal(KUERZEL.b, KUERZEL.a);
   assert.equal(KUERZEL.s, KUERZEL.m); assert.equal(KUERZEL.ko, KUERZEL.co); assert.equal(KUERZEL.dr, KUERZEL.ro);
   assert.equal(KUERZEL['lö'], KUERZEL.e); assert.equal(KUERZEL.z, KUERZEL.u);
+  assert.equal(KUERZEL.su, KUERZEL.tr); assert.equal(KUERZEL.de, KUERZEL.ex); assert.equal(KUERZEL.ar, KUERZEL.f); assert.equal(KUERZEL.sp, KUERZEL.mi); assert.equal(KUERZEL.ve, KUERZEL.o);
   for (const name of Object.keys(BEFEHLE)) assert.ok(Object.values(KUERZEL).includes(name), name);
 });
 
@@ -48,4 +49,23 @@ test('Befehl Polylinie: «s» schliesst; Befehl Schieben: Versatz aus Basis- und
   let aufruf;
   await BEFEHLE.schieben({ auswahl: async () => ['A1', 'B2'], boxen: () => [], punkt: async () => punkte.shift(), aendern: async (...a) => { aufruf = a; } });
   assert.deepEqual(aufruf, [['A1', 'B2'], 'verschieben', { dx: 20, dy: -5 }]);
+});
+
+test('Befehl Stutzen: klickt Objekt für Objekt, ein Fehlschlag beendet nicht; Befehl Abrunden: Radius, zwei Linien mit Klickpunkten', async () => {
+  const klicks = [{ kennung: 'A', punkt: [5, 0] }, { kennung: 'B', punkt: [9, 9] }, null];
+  const aufrufe = [];
+  await BEFEHLE.stutzen({ objekt: async () => klicks.shift(), versuchen: async f => { try { await f(); } catch { /* gemeldet */ } },
+    aendern: async (...a) => { aufrufe.push(a); if (a[0][0] === 'A') throw new Error('kein Schnitt'); } });
+  assert.deepEqual(aufrufe, [[['A'], 'stutzen', { punkt: [5, 0] }], [['B'], 'stutzen', { punkt: [9, 9] }]]);
+
+  const linien = [{ kennung: 'L1', punkt: [50, 0] }, { kennung: 'L2', punkt: [0, 50] }];
+  let rund;
+  await BEFEHLE.abrunden({ merken: {}, zahl: async () => 10, objekt: async () => linien.shift(), aendern: async (...a) => { rund = a; } });
+  assert.deepEqual(rund, [['L1', 'L2'], 'abrunden', { radius: 10, punkte: [[50, 0], [0, 50]] }]);
+});
+
+test('Bemassung: waagrecht, wenn die Masslinie über/unter den Punkten liegt, sonst senkrecht', async () => {
+  const lauf = async ort => { const p = [[0, 0], [100, 20], ort]; let o; await BEFEHLE.bemassung({ punkt: async () => p.shift(), zeichnen: async z => { o = z[0]; } }); return o.richtung; };
+  assert.equal(await lauf([50, -40]), 'waagrecht');
+  assert.equal(await lauf([150, 10]), 'senkrecht');
 });

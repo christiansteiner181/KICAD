@@ -21,7 +21,7 @@
     <button id="z-wieder" title="Wiederholen (Strg+Y)" disabled>↷</button>
     <span class="z-trenner"></span>
     <button id="z-grenzen" title="Ganze Zeichnung zeigen (Pos1 oder Doppelklick mit dem Mausrad)">Grenzen</button>
-    <label title="Objektfang: Endpunkt, Mittelpunkt, Zentrum (F3)"><input type="checkbox" id="z-fang" checked> Fang</label>
+    <label title="Objektfang: Endpunkt, Schnittpunkt, Mittelpunkt, Zentrum, Lot (F3)"><input type="checkbox" id="z-fang" checked> Fang</label>
     <label title="Ortho: nur waagrecht und senkrecht (F8)"><input type="checkbox" id="z-ortho"> Ortho</label>
     <label title="Linienstärken der Zeichnung anzeigen"><input type="checkbox" id="z-staerken" checked> Linienstärken</label>
     <label title="Heller Hintergrund wie auf dem Papier"><input type="checkbox" id="z-hell"> Hell</label>
@@ -38,13 +38,32 @@
     <button data-befehl="rechteck" title="Rechteck (RE)">Rechteck</button>
     <button data-befehl="kreis" title="Kreis: Mittelpunkt, Radius (K)">Kreis</button>
     <button data-befehl="bogen" title="Bogen durch drei Punkte (B)">Bogen</button>
-    <button data-befehl="text" title="Text (T)">Text</button>
+    <button data-befehl="ellipse" title="Ellipse: Mittelpunkt, Hauptachse, Nebenachse (EL)">Ellipse</button>
+    <button data-befehl="polygon" title="Regelmässiges Vieleck (PG)">Polygon</button>
+    <button data-befehl="punkt" title="Punkt (PU)">Punkt</button>
+    <button data-befehl="schraffur" title="Schraffur in geschlossenen Polylinien und Kreisen (H)">Schraffur</button>
+    <span class="z-trenner"></span>
+    <span class="z-gruppe">Beschriften</span>
+    <button data-befehl="text" title="Einzeiliger Text (T)">Text</button>
+    <button data-befehl="absatztext" title="Absatztext, mehrzeilig (MT)">Absatz</button>
+    <button data-befehl="bemassung" title="Bemassung waagrecht oder senkrecht (BEM)">Mass</button>
+    <button data-befehl="bemausg" title="Bemassung ausgerichtet (BAU)">Mass schräg</button>
     <span class="z-trenner"></span>
     <span class="z-gruppe">Ändern</span>
     <button data-befehl="schieben" title="Schieben (S oder M)">Schieben</button>
     <button data-befehl="kopieren" title="Kopieren (KO oder CO)">Kopieren</button>
     <button data-befehl="drehen" title="Drehen (DR oder RO)">Drehen</button>
+    <button data-befehl="spiegeln" title="Spiegeln (SP oder MI)">Spiegeln</button>
     <button data-befehl="skalieren" title="Skalieren (V oder SC)">Skalieren</button>
+    <button data-befehl="versetzen" title="Versetzen: parallele Kopie im Abstand (VE oder O)">Versetzen</button>
+    <button data-befehl="stutzen" title="Stutzen an den nächsten Schnittkanten (SU oder TR)">Stutzen</button>
+    <button data-befehl="dehnen" title="Dehnen bis zur nächsten Kante (DE oder EX)">Dehnen</button>
+    <button data-befehl="abrunden" title="Abrunden zweier Linien (AR oder F)">Abrunden</button>
+    <button data-befehl="fasen" title="Fasen zweier Linien (FA oder CHA)">Fasen</button>
+    <button data-befehl="reihe" title="Rechteckige Reihe (RH)">Reihe</button>
+    <button data-befehl="ursprung" title="Ursprung: Polylinie oder Block zerlegen (UR oder X)">Ursprung</button>
+    <button data-befehl="verbinden" title="Verbinden zu einer Polylinie (VB oder J)">Verbinden</button>
+    <button data-befehl="uebertragen" title="Eigenschaften übertragen (EÜ oder MA)">Eig. übertr.</button>
     <button data-befehl="loeschen" title="Löschen (LÖ, E oder Entf)">Löschen</button>
     <span class="z-trenner"></span>
     <button data-befehl="messen" title="Abstand, Winkel und Fläche messen (DI)">Messen</button>
@@ -88,7 +107,7 @@
   <div class="z-befehlszeile">
     <span id="z-prompt" class="z-prompt">Befehl:</span>
     <input id="z-eingabe" type="text" autocomplete="off" spellcheck="false"
-      title="Befehl oder Kürzel (L, PL, RE, K, B, T, S, KO, DR, V, LÖ, Z, DI) · Punkt: x,y · @dx,dy · @Länge<Winkel · Länge in Zeigerrichtung">
+      title="Befehl oder Kürzel (stehen an den Knöpfen: L, PL, K, S, KO, SU, DE, AR, VE, SP, BEM …) · Punkt: x,y · @dx,dy · @Länge<Winkel · Länge in Zeigerrichtung">
   </div>
 
   <footer class="z-fuss">
