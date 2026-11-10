@@ -3,7 +3,7 @@
 //   Bauen     ellipse · polygon · punkt · absatztext · schraffur · bemassung (linear, ausgerichtet)
 // Aufgerufen aus ZeichnungBearbeiten (eine Tür: Aendern bzw. Zeichnen). Befehle, die ein Objekt umformen (stutzen, dehnen, abrunden, fasen,
 // ursprung, verbinden), ersetzen es durch neue Objekte mit denselben Eigenschaften – das neue Objekt hat eine neue Kennung.
-// Grenzen: Polylinien mit Bögen lassen sich noch nicht stutzen und versetzen (vorher «ursprung»); Schraffuren und Bemassungen nicht spiegeln.
+// Polylinien mit Bögen stutzt und versetzt ZeichnungPolyPfad. Grenzen: Schraffuren und Bemassungen lassen sich nicht spiegeln.
 
 using System.Text.Json.Nodes;
 using ACadSharp.Entities;
@@ -229,7 +229,7 @@ public static class ZeichnungGeoBefehle
                 }
                 case LwPolyline p:
                 {
-                    if (p.Vertices.Any(v => v.Bulge != 0)) throw new HlksFehler("Polylinien mit Bögen lassen sich noch nicht versetzen.", "Zuerst mit «ursprung» in Linien und Bögen zerlegen.");
+                    if (p.Vertices.Any(v => v.Bulge != 0)) { k = Wie(e, ZeichnungPolyPfad.Versetzen(p, d, sx, sy)); break; }   // mit Bögen: als Pfad
                     var v = p.Vertices.Select(q => (q.Location.X, q.Location.Y)).ToList();
                     var o = PolylinieVersetzen(v, p.IsClosed, d, sx, sy);
                     var q2 = Wie(e, new LwPolyline { IsClosed = p.IsClosed });
@@ -297,6 +297,8 @@ public static class ZeichnungGeoBefehle
         var e = liste[0];
         var (px, py) = Punkt(par["punkt"], "punkt");
         var grenzen = Grenzen(z, par, e);
+        if (e is LwPolyline bogig && bogig.Vertices.Any(v => v.Bulge != 0))   // Polylinie mit Bögen: als Pfad (ZeichnungPolyPfad)
+            return Ersetzen("stutzen", [(e, BlockVon(e), ZeichnungPolyPfad.Stutzen(bogig, grenzen, px, py).Select(teil => (Entity)Wie(e, teil)).ToList())]);
         var neu = new List<Entity>();
         const double Rand = 1e-7;
         HlksFehler Kein() => new("An dieser Stelle gibt es keinen Schnitt mit einer Grenze: nichts zu stutzen.", "Ein Objekt wählen, das von einer Schnittkante gekreuzt wird, oder es löschen.");

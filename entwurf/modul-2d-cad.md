@@ -150,6 +150,9 @@ bei den Unterlagen), nie ausserhalb.
 - **Stufe 2 Teil 4 gebaut (10.11.2026):** Darstellung von Abdeckflächen und externen Referenzen, genaue Linienstärken, Winkelmass (Bild von KICAD selbst),
   Spline, Blockattribute (anlegen beim Einfügen, ändern), Polar- und Tangentenfang. Offen bleiben: Polylinien mit Bögen stutzen/versetzen, Bruch an
   Polylinien, Schnittpunktfang an Bögen, Linienarten genau, CTB, Schriften, Rasterbilder, Tabellen, Multi-Führungslinien.
+- **Stufe 2 Teil 5 gebaut (10.11.2026):** Polylinien mit Bögen stutzen, versetzen, brechen (`ZeichnungPolyPfad.cs`), Linienarten mit den Strichlängen der
+  DWG (`Stil.StrichEinheiten`), Schnittpunktfang an Kreisen und Bögen. Damit sind die Zeichen- und Änderungsbefehle von AutoCAD LT im Kern vorhanden;
+  offen bleiben Plotstile (CTB), Schriften (SHX), Rasterbilder, Tabellen, Multi-Führungslinien, dynamische Blöcke und die Abnahme gegen AutoCAD.
 - **Christian 10.11.2026: «zudem müssen alle zeichnungsfunktionen vorhanden sein»** – offen: Spiegeln, Versetzen, Stutzen, Dehnen, Abrunden, Fasen,
   Strecken, Bruch, Verbinden, Reihe, Ursprung, Eigenschaften übertragen, Griffe · Ellipse, Polygon, Spline, Punkt, Schraffur, Absatztext ·
   Bemassung, Führung · Blöcke einfügen/erstellen, Attribute · Schnittpunkt-/Lot-/Tangentenfang, Polarfang.

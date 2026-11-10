@@ -12,7 +12,7 @@
 //                                            { layout, einheit, mmJeEinheit, papierMm?, ausdehnung, umriss, nichtDargestellt, stile: [{ f, s, l, fl }],
 //                                              teile: [{ fenster?, p: [ ["l", stil, [x, y, …]] | ["g", stil, [[x, y, …], …]] | ["k", stil, x, y, r]
 //                                                                       | ["b", stil, x, y, r, vonGrad, bisGrad] | ["t", stil, x, y, höhe, winkel, ausrichtung, text] ] }] }
-//                                            f Farbe (#rrggbb, null = Planfarbe), s Linienstärke mm (null = keine Kontur), l Linienart, fl Füllung
+//                                            f Farbe (#rrggbb, null = Planfarbe), s Linienstärke mm (null = keine Kontur), l Linienart, m genaues Strichmuster in Einheiten, fl Füllung
 //   GET  /api/zeichnung/layer?zeichnung=     Layerliste
 //   POST /api/zeichnung/layer                { zeichnung, layer: [name], ein }
 //   GET  /api/zeichnung/treffer?zeichnung=&layout=&x=&y=&r=   Objekt am Punkt: { objekt } bzw. { objekt: null }
@@ -232,6 +232,7 @@ public static class ZeichnungEndpunkte
                 if (s.Farbe is not null) w.WriteString("f", s.Farbe);
                 if (s.Stift is not null) w.WriteNumber("s", s.Mm ?? Stifte.Mm(s.Stift));
                 if (s.Linie != "voll") w.WriteString("l", s.Linie);
+                if (s.StrichEinheiten is { } striche) { w.WriteStartArray("m"); foreach (var v in striche) w.WriteNumberValue(Math.Round(v, 5)); w.WriteEndArray(); }
                 if (s.Fuellung is not null) w.WriteString("fl", s.Fuellung);
                 w.WriteEndObject();
             }

@@ -135,14 +135,40 @@ public static class ZeichnungGrafik
             return punkt && strich ? "strichpunkt" : punkt ? "punkt" : "strich";
         }
 
+        /// <summary>Strichmuster des Linientyps in Einheiten des Layouts (Strich, Lücke, …): Längen der DWG × LTSCALE × Massstab des Objekts × Massstab
+        /// der Blockreferenz. null bei VonBlock, bei Linientypen mit Text oder Symbolen und wenn das Muster nicht mit einem Strich beginnt.</summary>
+        double[]? Striche(Entity e, Layer? layer, Kontext k)
+        {
+            var lt = e.LineType;
+            if (lt is null || lt.Name.Equals("ByBlock", StringComparison.OrdinalIgnoreCase)) return null;
+            if (lt.Name.Equals("ByLayer", StringComparison.OrdinalIgnoreCase)) lt = layer?.LineType;
+            if (lt is null || lt.Segments.Any(x => x.IsShape || x.IsText)) return null;   // Linientypen mit Text oder Symbolen: vereinfachtes Muster
+            var seg = lt.Segments.Select(x => x.Length).ToList();
+            if (seg.Count < 2 || seg[0] < 0) return null;
+            double f = (z.Dokument.Header.LineTypeScale > 0 ? z.Dokument.Header.LineTypeScale : 1) * (e.LineTypeScale > 0 ? e.LineTypeScale : 1) * k.T.Skala;
+            // Strich und Lücke im Wechsel: gleichartige Nachbarn zusammenfassen, Punkt = sehr kurzer Strich
+            var aus = new List<double>();
+            bool strich = true;
+            foreach (var l in seg)
+            {
+                bool istStrich = l >= 0;
+                double laenge = Math.Abs(l) * f;
+                if (aus.Count > 0 && istStrich == strich) aus[^1] += laenge; else { aus.Add(laenge); strich = istStrich; }
+            }
+            if (aus.Count % 2 == 1) { aus[0] += aus[^1]; aus.RemoveAt(aus.Count - 1); }   // endet auf Strich: läuft in den ersten über
+            return aus.Count >= 2 && aus.All(v => v >= 0) && aus.Sum() > 0 ? aus.ToArray() : null;
+        }
+
         /// <summary>Linienstärke auf den nächsten Stift des Kerns (0.18 · 0.20 · 0.35 · 0.50 · 0.70 mm).</summary>
         static string Stift(double mm) => mm <= 0.19 ? Stifte.Duenn : mm <= 0.27 ? Stifte.Hilf : mm <= 0.42 ? Stifte.Mittel : mm <= 0.60 ? Stifte.Kontur : Stifte.Dick;
 
         Stil StilVon(Entity e, Layer? layer, Kontext k)
         {
             double mm = Mm(e, layer, k);
-            var key = (Farbe(e, layer, k), mm.ToString("0.###", System.Globalization.CultureInfo.InvariantCulture), Linie(e, layer, k));
-            if (!stile.TryGetValue(key, out var st)) stile[key] = st = new Stil { Farbe = key.Item1, Stift = Stift(mm), Mm = mm > 0 ? mm : null, Linie = key.Item3 };
+            var linie = Linie(e, layer, k);
+            var striche = linie == "voll" ? null : Striche(e, layer, k);
+            var key = (Farbe(e, layer, k), mm.ToString("0.###", System.Globalization.CultureInfo.InvariantCulture), striche is null ? linie : string.Join("|", striche.Select(v => v.ToString("0.####", System.Globalization.CultureInfo.InvariantCulture))));
+            if (!stile.TryGetValue(key, out var st)) stile[key] = st = new Stil { Farbe = key.Item1, Stift = Stift(mm), Mm = mm > 0 ? mm : null, Linie = linie, StrichEinheiten = striche };
             return st;
         }
 

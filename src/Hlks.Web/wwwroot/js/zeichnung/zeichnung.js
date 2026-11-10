@@ -114,7 +114,7 @@ function aufbereiten(g) {
         }
         case 'b': {
           p[2] -= ox; p[3] -= oy;
-          if (kreise.length < 20000) kreise.push([p[2], p[3], p[4]]);
+          if (kreise.length < 20000) kreise.push([p[2], p[3], p[4], p[5], p[6]]);
           const a = p[5] * Math.PI / 180; let e = p[6] * Math.PI / 180;
           if (e <= a) e += 2 * Math.PI;
           const pfad = strich(p[1]);
@@ -253,7 +253,9 @@ function malen() {
         if (st.s == null) continue;
         ctx.strokeStyle = st.f || planfarbe;
         ctx.lineWidth = (staerken ? Math.max(1, st.s / 0.25) : 1) / a.zoom;
-        ctx.setLineDash(st.l && STRICHE[st.l] ? STRICHE[st.l].map(v => v / a.zoom) : []);
+        // genaues Muster der DWG (Einheiten der Zeichnung); zu fein für den Bildschirm (Periode unter 4 Bildpunkten) = durchgezogen
+        if (st.m) ctx.setLineDash(st.m.reduce((x, y) => x + y, 0) * a.zoom >= 4 ? st.m.map(v => Math.max(v, 1 / a.zoom)) : []);
+        else ctx.setLineDash(st.l && STRICHE[st.l] ? STRICHE[st.l].map(v => v / a.zoom) : []);
         ctx.stroke(s.pfad);
       } else if (s.art === 'f') {
         ctx.fillStyle = st.fl === '#ffffff' ? grund : !st.fl || st.fl === 'schnitt' ? planfarbe : st.fl;   // weisse Füllung deckt ab: Farbe des Hintergrunds

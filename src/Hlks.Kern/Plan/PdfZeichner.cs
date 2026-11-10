@@ -74,11 +74,17 @@ public sealed class PdfZeichner
         return XColor.FromArgb(a, 0, 0, 0);   // null = Planfarbe: auf dem Papier schwarz
     }
 
-    XPen Stift(Stil s, double? mm = null)
+    XPen Stift(Stil s, double? mm = null, double skala = 0)
     {
         // Deckkraft gilt der Füllung; ohne Füllung der Linie (Unterlagen DWG/IFC: graue Linien halb deckend)
         var pen = new XPen(Farbe(s.Farbe, s.Fuellung is null ? s.Deckkraft : null), (mm ?? s.Mm ?? Stifte.Mm(s.Stift)) * PtJeMm) { LineJoin = XLineJoin.Miter };
         var muster = s.Linie switch { "strich" => Strich, "strichpunkt" => Strichpunkt, "punkt" => Punkt, "achse" => Achse, "strichfein" => Strichfein, _ => null };
+        // genaues Muster der DWG (Einheiten der Zeichnung × Massstab der Ausgabe); zu fein für das Papier (Periode unter 0.3 mm) = durchgezogen
+        if (s.StrichEinheiten is { Length: >= 2 } einheiten && skala > 0)
+        {
+            var genau = einheiten.Select(v => Math.Max(v * skala, 0.05)).ToArray();
+            muster = genau.Sum() >= 0.3 ? genau : null;
+        }
         if (muster is not null)
         {
             // PDFsharp gibt DashPattern als Vielfache der Strichbreite an
@@ -168,7 +174,7 @@ public sealed class PdfZeichner
     void Linien(Primitiv p, Abbildung abb)
     {
         if (p.Punkte.Count < 2 || p.Stil.Stift is null) return;
-        var pen = Stift(p.Stil);
+        var pen = Stift(p.Stil, null, abb.S);
         var pts = Punkte(p.Punkte, abb);
         if (pts.Length == 2) gfx.DrawLine(pen, pts[0], pts[1]);
         else gfx.DrawLines(pen, pts);
@@ -201,7 +207,7 @@ public sealed class PdfZeichner
         var pfad = Pfad(p, abb);
         if (Pinsel(p.Stil) is { } pinsel) gfx.DrawPath(pinsel, pfad);
         if (Schraffuren.Definition(p.Stil.Muster) is { } muster) Schraffieren(p, abb, pfad, muster);
-        if (p.Stil.Stift is not null) gfx.DrawPath(Stift(p.Stil), pfad);
+        if (p.Stil.Stift is not null) gfx.DrawPath(Stift(p.Stil, null, abb.S), pfad);
     }
 
     /// <summary>Schraffur im Papier-Raster (Muster liegen deshalb an Nachbarflächen lückenlos aneinander), auf das Polygon geclippt.</summary>
@@ -285,7 +291,7 @@ public sealed class PdfZeichner
         var o = Pt(abb.X(m[0]) - r, abb.Y(m[1]) + r);
         double d = 2 * r * PtJeMm;
         if (Pinsel(p.Stil) is { } pinsel) gfx.DrawEllipse(pinsel, o.X, o.Y, d, d);
-        if (p.Stil.Stift is not null) gfx.DrawEllipse(Stift(p.Stil), o.X, o.Y, d, d);
+        if (p.Stil.Stift is not null) gfx.DrawEllipse(Stift(p.Stil, null, abb.S), o.X, o.Y, d, d);
     }
 
     void Bogen(Primitiv p, Abbildung abb)
@@ -297,7 +303,7 @@ public sealed class PdfZeichner
         var o = Pt(abb.X(m[0]) - r, abb.Y(m[1]) + r);
         double d = 2 * r * PtJeMm;
         // Im PDF zeigt y nach unten: ein Bogen von «von» nach «bis» im Gegenuhrzeigersinn beginnt dort bei -bis und läuft im Uhrzeigersinn.
-        gfx.DrawArc(Stift(p.Stil), o.X, o.Y, d, d, -(von + sweep), sweep);
+        gfx.DrawArc(Stift(p.Stil, null, abb.S), o.X, o.Y, d, d, -(von + sweep), sweep);
     }
 
 

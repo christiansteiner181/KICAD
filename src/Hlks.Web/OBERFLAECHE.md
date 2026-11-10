@@ -4483,3 +4483,12 @@ vier Gruppen (Zeichnen, Beschriften, Block, Ändern).
 - **Fang Tangente** ○̅: vom letzten Punkt an einen Kreis oder Bogen.
 - **Noch nicht:** Polylinien mit Bögen stutzen/versetzen, Bruch an Polylinien, Schnittpunktfang an Bögen, Linienarten genau, Plotstile (CTB), AutoCAD-Schriften,
   Rasterbilder, Tabellen, Multi-Führungslinien, dynamische Blöcke bearbeiten.
+
+## 2D-CAD «Zeichnung» – Polylinien mit Bögen, genaue Linienarten, Schnittpunktfang an Bögen (Stufe 2 Teil 5, 10.11.2026)
+
+- **Stutzen, Versetzen, Bruch** gehen jetzt auch für Polylinien mit Bögen (Kern `Zeichnung/ZeichnungPolyPfad.cs`): das Ergebnis bleibt eine Polylinie mit
+  Bögen; beim Versetzen ändern die Bögen ihren Radius. Ist der Abstand grösser als ein Bogenradius, meldet KICAD das.
+- **Linienarten** werden mit den Strichlängen des Linientyps der DWG gezeichnet (× LTSCALE × Massstab des Objekts), am Bildschirm und im PDF. Ist das Muster
+  zu fein für die Ansicht, erscheint die Linie durchgezogen (wie in AutoCAD beim Herauszoomen). Linientypen mit Text oder Symbolen bleiben vereinfacht.
+- **Fang Schnittpunkt** findet auch Schnitte von Kreisen und Bögen mit Linien und untereinander.
+- **Noch nicht:** Plotstile (CTB), AutoCAD-Schriften (SHX), Rasterbilder, Tabellen, Multi-Führungslinien, dynamische Blöcke bearbeiten, Linientypen mit Text.

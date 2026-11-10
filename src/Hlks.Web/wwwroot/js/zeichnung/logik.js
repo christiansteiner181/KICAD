@@ -78,6 +78,47 @@ export function tangente(kreise, x, y, r, von) {
   return best;
 }
 
+/** Liegt der Punkt auf dem Kreis bzw. – bei einem Bogen [cx, cy, r, vonGrad, bisGrad] – innerhalb seines Winkels? */
+function aufBogen(k, px, py) {
+  if (k.length < 5) return true;
+  const w = ((Math.atan2(py - k[1], px - k[0]) * 180 / Math.PI - k[3]) % 360 + 360) % 360, sweep = ((k[4] - k[3]) % 360 + 360) % 360 || 360;
+  return w <= sweep + 1e-6;
+}
+
+/** Schnittpunkt nahe dem Zeiger, an dem ein Kreis oder Bogen beteiligt ist: Kreis–Linie und Kreis–Kreis. kreise: [[cx, cy, r, vonGrad?, bisGrad?], …]. */
+export function kreisSchnitt(kreise, linien, x, y, r) {
+  const nah = kreise.filter(k => Math.abs(Math.hypot(x - k[0], y - k[1]) - k[2]) <= r).slice(0, 40);
+  if (!nah.length) return null;
+  let best = null;
+  const pruefen = (px, py, ...beteiligte) => {
+    const ab = Math.hypot(px - x, py - y);
+    if (ab <= r && beteiligte.every(k => aufBogen(k, px, py)) && (!best || ab < best.d)) best = { x: px, y: py, art: 3, d: ab };
+  };
+  for (const k of nah) {
+    const [cx, cy, rad] = k;
+    if (linien) {
+      const d = linien.d;
+      for (const i of linien.nahe(x, y, r)) {
+        if (linien.abstand(i, x, y) > r) continue;
+        const dx = d[i + 2] - d[i], dy = d[i + 3] - d[i + 1], fx = d[i] - cx, fy = d[i + 1] - cy;
+        const a = dx * dx + dy * dy, b = 2 * (fx * dx + fy * dy), c = fx * fx + fy * fy - rad * rad, disk = b * b - 4 * a * c;
+        if (a === 0 || disk < 0) continue;
+        for (const t of [(-b - Math.sqrt(disk)) / (2 * a), (-b + Math.sqrt(disk)) / (2 * a)])
+          if (t >= -1e-9 && t <= 1 + 1e-9) pruefen(d[i] + t * dx, d[i + 1] + t * dy, k);
+      }
+    }
+    for (const o of nah) {
+      if (o === k) continue;
+      const dx = o[0] - cx, dy = o[1] - cy, dd = Math.hypot(dx, dy);
+      if (dd < 1e-12 || dd > rad + o[2] || dd < Math.abs(rad - o[2])) continue;
+      const a = (rad * rad - o[2] * o[2] + dd * dd) / (2 * dd), h = Math.sqrt(Math.max(rad * rad - a * a, 0));
+      const mx = cx + a * dx / dd, my = cy + a * dy / dd;
+      pruefen(mx - h * dy / dd, my + h * dx / dd, k, o); pruefen(mx + h * dy / dd, my - h * dx / dd, k, o);
+    }
+  }
+  return best;
+}
+
 /** Polarfang: liegt die Richtung von «von» zum Punkt innerhalb der Toleranz an einem Vielfachen des Schritts, wird der Punkt auf diesen Strahl gelegt.
  *  Rückgabe { p, winkel } oder null. */
 export function polar(p, von, schrittGrad, toleranzGrad = 3) {
@@ -176,6 +217,7 @@ export function fangSuchen(punkte, linien, x, y, r, von = null, kreise = null) {
   const pruefen = k => { if (!k) return; const m = Math.hypot(k.x - x, k.y - y) * gewicht[k.art]; if (m < mass) { mass = m; best = { x: k.x, y: k.y, art: k.art }; } };
   pruefen(punkte?.suche(x, y, r));
   if (linien) { pruefen(linien.schnitt(x, y, r)); if (von) pruefen(linien.lot(x, y, r, von)); }
+  if (kreise) pruefen(kreisSchnitt(kreise, linien, x, y, r));
   if (kreise && von) pruefen(tangente(kreise, x, y, r, von));
   return best;
 }

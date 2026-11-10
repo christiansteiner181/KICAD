@@ -32,6 +32,9 @@ public sealed class Stil
     public string? Stift { get; set; } = Stifte.Duenn;
     /// <summary>Genaue Strichstärke in Papier-mm, wenn sie nicht einem der Stifte entspricht (2D-CAD «Zeichnung»: Linienstärken der DWG); null = Stärke des Stifts.</summary>
     public double? Mm { get; set; }
+    /// <summary>Genaues Strichmuster in Einheiten der Zeichnung: Strich, Lücke, Strich, … (2D-CAD «Zeichnung»: Linientyp der DWG mit seinen Massstäben);
+    /// null = Muster nach «Linie». PdfZeichner rechnet mit dem Massstab der Ausgabe in Papier-mm um.</summary>
+    public double[]? StrichEinheiten { get; set; }
     /// <summary>voll | strich | strichpunkt | punkt | achse (Achslinien, feiner Strichpunkt) | strichfein (verdeckte Dämmkanten)</summary>
     public string Linie { get; set; } = "voll";
     /// <summary>Linienfarbe #rrggbb; null = Planfarbe (schwarz auf Papier, hell im dunklen Design).</summary>

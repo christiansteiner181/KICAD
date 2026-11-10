@@ -1,7 +1,17 @@
 // Tests zu js/zeichnung/logik.js: Tangenten- und Polarfang (Rechenwerte).
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { tangente, polar, fangSuchen } from './logik.js';
+import { tangente, polar, fangSuchen, kreisSchnitt, strecken, Streckenraster } from './logik.js';
+
+test('Schnittpunkt mit Kreis und Bogen: Linie–Kreis, Kreis–Kreis, und nur auf dem vorhandenen Teil eines Bogens', () => {
+  const linien = new Streckenraster(strecken([['l', 0, [-20, 0, 20, 0]]]), 5);
+  const s = kreisSchnitt([[0, 0, 10]], linien, 10.4, 0.3, 1);                 // Kreis um den Ursprung, waagrechte Linie
+  assert.ok(Math.abs(s.x - 10) < 1e-9 && Math.abs(s.y) < 1e-9 && s.art === 3);
+  const k = kreisSchnitt([[0, 0, 10], [12, 0, 10]], null, 6.2, 8.1, 1);       // zwei Kreise: Schnitt bei (6, 8)
+  assert.ok(Math.abs(k.x - 6) < 1e-9 && Math.abs(k.y - 8) < 1e-9);
+  assert.equal(kreisSchnitt([[0, 0, 10, 90, 270]], linien, 10.4, 0.3, 1), null);   // Bogen nur links: rechts kein Schnitt
+  assert.ok(kreisSchnitt([[0, 0, 10, 90, 270]], linien, -10.4, 0.3, 1));
+});
 
 test('Tangente: Berührpunkt vom Punkt (0, 0) an den Kreis um (10, 0) mit Radius 6 – Abstand zum Punkt 8, rechter Winkel zum Radius', () => {
   // Berührpunkte: (6.4, ±4.8); Zeiger nahe dem oberen

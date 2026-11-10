@@ -180,6 +180,9 @@ public static class ZeichnungWeitere
                 if (neu.Count == 0 || (zweiter is null && neu.Count < 2)) throw new HlksFehler("Die Bruchstelle liegt am Ende des Bogens.", "Einen Punkt auf dem Bogen wählen.");
                 break;
             }
+            case LwPolyline pl:
+                neu.AddRange(ZeichnungPolyPfad.Bruch(pl, px, py, zweiter).Select(teil => (Entity)Wie(e, teil)));
+                break;
             case Circle c:
             {
                 if (zweiter is not { } q) throw new HlksFehler("Ein Kreis braucht zwei Bruchstellen.", "punkt und punkt2 angeben: das Stück im Gegenuhrzeigersinn von punkt nach punkt2 fällt weg.");
@@ -188,7 +191,7 @@ public static class ZeichnungWeitere
                 neu.Add(Wie(e, new Arc { Center = c.Center, Radius = c.Radius, StartAngle = Norm(w2), EndAngle = Norm(w1) }));
                 break;
             }
-            default: throw new HlksFehler($"Bruch geht nicht für ein Objekt der Art «{ZeichnungAbfragen.Art(e)}».", "Linien, Bögen und Kreise lassen sich brechen; Polylinien vorher mit «ursprung» zerlegen.");
+            default: throw new HlksFehler($"Bruch geht nicht für ein Objekt der Art «{ZeichnungAbfragen.Art(e)}».", "Linien, Bögen, Kreise und Polylinien lassen sich brechen.");
         }
         var block = BlockVon(e);
         return ("bruch", () => { block.Entities.Remove(e); foreach (var n in neu) block.Entities.Add(n); }, () => { foreach (var n in neu) block.Entities.Remove(n); block.Entities.Add(e); });
