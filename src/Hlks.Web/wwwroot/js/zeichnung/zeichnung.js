@@ -249,7 +249,7 @@ function malen() {
         ctx.setLineDash(st.l && STRICHE[st.l] ? STRICHE[st.l].map(v => v / a.zoom) : []);
         ctx.stroke(s.pfad);
       } else if (s.art === 'f') {
-        ctx.fillStyle = st.fl === '#ffffff' ? grund : st.fl || planfarbe;   // weisse Füllung deckt ab: Farbe des Hintergrunds
+        ctx.fillStyle = st.fl === '#ffffff' ? grund : !st.fl || st.fl === 'schnitt' ? planfarbe : st.fl;   // weisse Füllung deckt ab: Farbe des Hintergrunds
         ctx.fill(s.pfad, 'evenodd');
       } else {
         const px = s.h * a.zoom;
@@ -272,6 +272,8 @@ function malen() {
   // Auswahl
   let n = 0;
   for (const o of z.auswahl.values()) { if (++n > 800) break; markieren(o, g); }
+  // Griffe des einzeln gewählten Objekts
+  for (const [x, y] of griffe()) { const p = zuBild(x, y, g); ctx.fillStyle = '#1e90ff'; ctx.strokeStyle = '#ffffff'; ctx.lineWidth = 1; ctx.fillRect(p[0] - 4, p[1] - 4, 8, 8); ctx.strokeRect(p[0] - 4, p[1] - 4, 8, 8); }
   const zp = zeigerPunkt();
   // Auswahlfenster: nach rechts ganz darin (durchgezogen, blau), nach links berührt (gestrichelt, grün)
   if (z.fensterStart && z.maus) {
@@ -320,6 +322,13 @@ function malen() {
     else ctx.arc(x, y, 7, 0, 2 * Math.PI);
     ctx.stroke();
   }
+}
+
+/** Griffe des einzeln gewählten Objekts in Leinwand-Koordinaten (leer, wenn ein Befehl läuft oder mehrere gewählt sind). */
+function griffe() {
+  if (z.befehl || z.werkzeug === 'messen' || z.auswahl.size !== 1) return [];
+  const o = z.auswahl.values().next().value;
+  return (o.griffe || []).map(sicht);
 }
 
 function markieren(o, g) {
@@ -375,6 +384,23 @@ const io = {
   /** Schritt ausführen; ein Fehler des Servers wird gemeldet, der Befehl läuft weiter. */
   async versuchen(schritt) { try { await schritt(); } catch (e) { if (e instanceof Abbruch) throw e; melden(fehlerText(e), true); } },
   auswahlLeeren() { z.auswahl.clear(); eigenschaftenZeigen(); zeichnen(); },
+  melden: text => melden(text),
+  /** Objekte im Fenster a–b (berührt) wählen: Kennungen. */
+  async imFenster(a, b) {
+    const r = await holen('/api/zeichnung/auswahl?' + q() + '&fenster=' + [...echt(a), ...echt(b)].join(',') + '&kreuzen=1');
+    z.auswahl.clear();
+    for (const o of r.objekte) z.auswahl.set(o.kennung, o);
+    eigenschaftenZeigen(); zeichnen();
+    return r.objekte.map(o => o.kennung);
+  },
+  async bloecke() { return (await holen('/api/zeichnung/bloecke?zeichnung=' + encodeURIComponent(z.info.pfad))).bloecke.map(b => b.name); },
+  async bemassungsstil(angaben) {
+    const r = await senden('/api/zeichnung/bemassungsstil', { zeichnung: z.info.pfad, ...angaben });
+    if (angaben.massstab != null || angaben.texthoehe != null) await nachAenderung(r);
+    return r;
+  },
+  /** Der angeklickte Griff: { kennung, index, ort (Leinwand) }. */
+  griff: () => z.griffWahl,
   async auswahl(prompt) {
     if (z.auswahl.size) return [...z.auswahl.keys()];
     return erwarten('auswahl', prompt);
@@ -393,8 +419,9 @@ const io = {
   },
   async aendern(kennungen, aktion, angaben, opt) {
     const a = { ...angaben };
-    for (const k of ['um', 'seite', 'punkt']) if (a[k]) a[k] = echt(a[k]);
+    for (const k of ['um', 'seite', 'punkt', 'punkt2', 'basis', 'nach']) if (a[k]) a[k] = echt(a[k]);
     for (const k of ['punkte', 'achse']) if (a[k]) a[k] = a[k].map(echt);
+    if (a.fenster) a.fenster = [...echt(a.fenster[0]), ...echt(a.fenster[1])];
     await nachAenderung(await senden('/api/zeichnung/aendern', { zeichnung: z.info.pfad, kennungen, aktion, angaben: a }), opt);
   },
   async layerAnlegen(name) {
@@ -501,7 +528,7 @@ leinwand.addEventListener('pointermove', e => {
   if (!z.grafik) return;
   const g = groesse();
   const [wx, wy] = zuWelt(m.px, m.py, g);
-  z.fangpunkt = $('z-fang').checked && z.fang && !zug?.bewegt && willPunkt() ? fangSuchen(z.fang, z.fangLinien, wx, wy, 10 / z.ansicht.zoom, z.erwartet?.opt?.von || (z.werkzeug === 'messen' && !z.messFertig ? z.messpunkte.at(-1) : null)) : null;
+  z.fangpunkt = $('z-fang').checked && z.fang && !zug?.bewegt && willPunkt() && !z.erwartet?.opt?.ohneFang ? fangSuchen(z.fang, z.fangLinien, wx, wy, 10 / z.ansicht.zoom, z.erwartet?.opt?.von || (z.werkzeug === 'messen' && !z.messFertig ? z.messpunkte.at(-1) : null)) : null;
   const ort = zeigerPunkt() || [wx, wy];
   const [ox, oy] = z.ursprung;
   $('z-koord').textContent = `${(ort[0] + ox).toFixed(3)}, ${(ort[1] + oy).toFixed(3)}`;
@@ -532,7 +559,12 @@ leinwand.addEventListener('pointerup', e => {
     z.messpunkte.push(zeigerPunkt() || frei);
     massZeigen(z.messpunkte);
     zeichnen();
-  } else waehlen(frei[0], frei[1], war.px);
+  } else {
+    // Klick auf einen Griff des gewählten Objekts: Griff ziehen
+    const gr = griffe(), i = gr.findIndex(p => { const s = zuBild(p[0], p[1], g); return Math.abs(s[0] - war.px) <= 7 && Math.abs(s[1] - war.py) <= 7; });
+    if (i >= 0) { z.griffWahl = { kennung: z.auswahl.keys().next().value, index: i, ort: gr[i] }; befehlStarten('griff'); return; }
+    waehlen(frei[0], frei[1], war.px);
+  }
 });
 
 leinwand.addEventListener('dblclick', e => { if (z.werkzeug === 'messen') { e.preventDefault(); messenAbschliessen(true); } });

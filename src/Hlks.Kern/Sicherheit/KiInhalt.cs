@@ -17,7 +17,7 @@ public static class KiInhalt
         "norm_lesen", "normen_suchen",                                            // Normen und Merkblätter (Text bzw. Auszüge)
         "unterlage_aus_url",                                                      // Web (Zusammenfassung der abgerufenen Datei)
         "ifc_pruefen", "bcf_lesen",                                               // IFC- und BCF-Dateien anderer (Namen, Kommentare)
-        "zeichnung_oeffnen", "zeichnung_layer", "zeichnung_objekte", "zeichnung_bild",   // 2D-CAD: Layernamen, Texte und Bild fremder DWG/DXF
+        "zeichnung_oeffnen", "zeichnung_layer", "zeichnung_objekte", "zeichnung_bild", "zeichnung_bloecke",   // 2D-CAD: Layernamen, Texte und Bild fremder DWG/DXF
     ];
 
     /// <summary>Text ohne die Kopfzeile am Anfang (für Leser, die das Ergebnis als JSON auswerten).</summary>

@@ -144,6 +144,9 @@ bei den Unterlagen), nie ausserhalb.
   Ellipse, Polygon, Punkt, Schraffur, Absatztext, Bemassung (waagrecht/senkrecht/ausgerichtet) · Fang Schnittpunkt und Lot. Kern `ZeichnungGeoBefehle.cs`
   (über `zeichnung_zeichnen`/`zeichnung_aendern` auch für die KI). Die Liste im nächsten Punkt ist entsprechend kürzer: offen bleiben Strecken, Bruch,
   Griffe, Spline, Führung, Radius-/Winkel-/Kettenbemassung mit Stil, Blöcke/Attribute, Tangenten-/Polarfang, Stutzen/Versetzen von Polylinien mit Bögen.
+- **Stufe 2 Teil 3 gebaut (10.11.2026):** Blöcke einfügen und erstellen, Griffe, Strecken, Bruch, Ketten-, Radius- und Durchmessermass, Führung,
+  Bemassungsstil mit Gesamtmassstab (`zeichnung_bemassungsstil`), Blockliste (`zeichnung_bloecke`). Kern `ZeichnungWeitere.cs`. Offen bleiben:
+  Winkelbemassung, Spline, Attribute, Tangenten-/Polarfang, Polylinien mit Bögen stutzen/versetzen, Darstellung Wipeout/Rasterbild/XRef.
 - **Christian 10.11.2026: «zudem müssen alle zeichnungsfunktionen vorhanden sein»** – offen: Spiegeln, Versetzen, Stutzen, Dehnen, Abrunden, Fasen,
   Strecken, Bruch, Verbinden, Reihe, Ursprung, Eigenschaften übertragen, Griffe · Ellipse, Polygon, Spline, Punkt, Schraffur, Absatztext ·
   Bemassung, Führung · Blöcke einfügen/erstellen, Attribute · Schnittpunkt-/Lot-/Tangentenfang, Polarfang.

@@ -21,6 +21,17 @@ export const KUERZEL = {
   di: 'messen', messen: 'messen', abstand: 'messen', dist: 'messen',
   la: 'layer', layer: 'layer',
   zg: 'grenzen', grenzen: 'grenzen',
+  // Stufe 2 Teil 3
+  str: 'strecken', strecken: 'strecken', stretch: 'strecken',
+  br: 'bruch', bruch: 'bruch', break: 'bruch',
+  bl: 'block', block: 'block',
+  ein: 'einfuegen', i: 'einfuegen', einfüge: 'einfuegen', einfuegen: 'einfuegen', einfügen: 'einfuegen', insert: 'einfuegen',
+  bra: 'radiusmass', dra: 'radiusmass', bemradius: 'radiusmass', radiusmass: 'radiusmass', dimradius: 'radiusmass',
+  bdu: 'durchmessermass', ddi: 'durchmessermass', bemdurchm: 'durchmessermass', durchmessermass: 'durchmessermass', dimdiameter: 'durchmessermass',
+  bke: 'bemkette', dco: 'bemkette', bemweiter: 'bemkette', bemkette: 'bemkette', dimcontinue: 'bemkette',
+  fü: 'fuehrung', fu: 'fuehrung', le: 'fuehrung', führung: 'fuehrung', fuehrung: 'fuehrung', leader: 'fuehrung',
+  bms: 'bemstil', bemstil: 'bemstil', dimscale: 'bemstil', bemfkt: 'bemstil',
+  griff: 'griff',
   // Stufe 2 Teil 2
   el: 'ellipse', ellipse: 'ellipse',
   pg: 'polygon', pol: 'polygon', polygon: 'polygon',
@@ -89,6 +100,17 @@ async function jeObjekt(io, aktion, prompt) {
     const o = await io.objekt(prompt);
     if (!o) return;
     await io.versuchen(() => io.aendern([o.kennung], aktion, { punkt: o.punkt }));
+  }
+}
+
+/** Radius- bzw. Durchmessermass: Kreis oder Bogen anklicken, dann die Lage der Masszahl. */
+async function kreismass(io, art, name) {
+  for (;;) {
+    const o = await io.objekt(name + ' – Kreis oder Bogen anklicken (Eingabetaste beendet)');
+    if (!o) return;
+    const ort = await io.punkt('Lage der Masszahl', { ohneOrtho: true });
+    if (!Array.isArray(ort)) return;
+    await io.versuchen(() => io.zeichnen([{ art, objekt: o.kennung, ort }]));
   }
 }
 
@@ -369,6 +391,114 @@ export const BEFEHLE = {
     io.auswahlLeeren();
     const k = await io.auswahl('Zielobjekte wählen (Eingabetaste bestätigt)');
     if (k.length) await io.aendern(k, 'uebertragen', { quelle: q.kennung });
+  },
+
+  // ---------- Stufe 2 Teil 3: Strecken, Bruch, Griffe, Blöcke, weitere Bemassungen, Führung ----------
+
+  async strecken(io) {
+    const a = await io.punkt('Strecken – erste Ecke des Fensters (über die Enden, die wandern sollen)', { ohneFang: true });
+    if (!Array.isArray(a)) return;
+    const b = await io.punkt('Gegenüberliegende Ecke', { ohneOrtho: true, ohneFang: true, vorschau: m => [{ art: 'box', b: [Math.min(a[0], m[0]), Math.min(a[1], m[1]), Math.max(a[0], m[0]), Math.max(a[1], m[1])], d: [0, 0] }] });
+    if (!Array.isArray(b)) return;
+    const k = await io.imFenster(a, b);
+    if (!k.length) { io.melden('Im Fenster liegt nichts.'); return; }
+    const p = await io.punkt('Basispunkt');
+    if (!Array.isArray(p)) return;
+    const q = await io.punkt('Zielpunkt', { von: p, vorschau: m => [{ art: 'linie', p: [p, m] }] });
+    if (!Array.isArray(q)) return;
+    await io.aendern(k, 'strecken', { fenster: [a, b], dx: q[0] - p[0], dy: q[1] - p[1] });
+  },
+
+  async bruch(io) {
+    const o = await io.objekt('Bruch – Objekt an der ersten Bruchstelle anklicken');
+    if (!o) return;
+    const p2 = await io.punkt('Zweite Bruchstelle (Eingabetaste: nur an der ersten teilen)', { von: o.punkt, ohneOrtho: true });
+    await io.aendern([o.kennung], 'bruch', Array.isArray(p2) ? { punkt: o.punkt, punkt2: p2 } : { punkt: o.punkt });
+  },
+
+  /** Griff eines gewählten Objekts versetzen (gestartet durch Klick auf den Griff). */
+  async griff(io) {
+    const g = io.griff();
+    if (!g) return;
+    const p = await io.punkt('Griff – neuer Ort', { von: g.ort, ohneOrtho: true, vorschau: m => [{ art: 'linie', p: [g.ort, m] }] });
+    if (Array.isArray(p)) await io.aendern([g.kennung], 'griff', { index: g.index, nach: p });
+  },
+
+  async block(io) {
+    const k = await io.auswahl('Block erstellen – Objekte wählen (Eingabetaste bestätigt)');
+    if (!k.length) return;
+    const name = await io.text('Name des Blocks');
+    if (!name) return;
+    const basis = await io.punkt('Basispunkt (Einfügepunkt)');
+    if (Array.isArray(basis)) await io.aendern(k, 'block', { name, basis });
+  },
+
+  async einfuegen(io) {
+    const namen = await io.bloecke();
+    if (!namen.length) { io.melden('Die Zeichnung enthält keine Blöcke. Mit «Erstellen» (BL) einen anlegen.'); return; }
+    let name = await io.text('Block einfügen – Name [' + namen.slice(0, 12).join(', ') + (namen.length > 12 ? ', …' : '') + ']' + (io.merken.block ? ' <' + io.merken.block + '>' : ''));
+    name = name || io.merken.block;
+    if (!name) return;
+    name = namen.find(n => n.toLowerCase() === name.toLowerCase()) || name;
+    io.merken.block = name;
+    const m = (await io.zahl('Massstab', { vorgabe: 1 })) ?? 1, w = (await io.zahl('Drehung in Grad', { vorgabe: 0 })) ?? 0;
+    for (;;) {
+      const ort = await io.punkt('Einfügepunkt (Eingabetaste beendet)');
+      if (!Array.isArray(ort)) return;
+      await io.zeichnen([{ art: 'block', name, ort, massstab: m, drehungGrad: w }]);
+    }
+  },
+
+  async radiusmass(io) { await kreismass(io, 'radiusmass', 'Radiusmass'); },
+  async durchmessermass(io) { await kreismass(io, 'durchmessermass', 'Durchmessermass'); },
+
+  /** Kettenmass: nach dem ersten Mass jedes weitere vom letzten Punkt aus, auf derselben Masslinie. */
+  async bemkette(io) {
+    let a = await io.punkt('Kettenmass – erster Masspunkt');
+    if (!Array.isArray(a)) return;
+    let b = await io.punkt('Zweiter Masspunkt', { von: a, vorschau: m => [{ art: 'linie', p: [a, m] }] });
+    if (!Array.isArray(b)) return;
+    const ort = await io.punkt('Lage der Masslinie', { ohneOrtho: true });
+    if (!Array.isArray(ort)) return;
+    const richtung = Math.abs(ort[1] - (a[1] + b[1]) / 2) >= Math.abs(ort[0] - (a[0] + b[0]) / 2) ? 'waagrecht' : 'senkrecht';
+    for (;;) {
+      await io.zeichnen([{ art: 'bemassung', von: a, bis: b, ort, richtung }]);
+      const c = await io.punkt('Nächster Masspunkt (Eingabetaste beendet)', { von: b, ohneOrtho: true });
+      if (!Array.isArray(c)) return;
+      a = b; b = c;
+    }
+  },
+
+  async fuehrung(io) {
+    const p = [];
+    const a = await io.punkt('Führung – Pfeilspitze');
+    if (!Array.isArray(a)) return;
+    p.push(a);
+    for (;;) {
+      const b = await io.punkt(p.length < 2 ? 'Nächster Punkt' : 'Nächster Punkt (Eingabetaste: weiter zum Text)', { von: p[p.length - 1], vorschau: m => [{ art: 'linie', p: [...p, m] }] });
+      if (!Array.isArray(b)) break;
+      p.push(b);
+    }
+    if (p.length < 2) return;
+    const t = await io.text('Text (leer = ohne)');
+    const objekte = [{ art: 'fuehrung', punkte: p }];
+    if (t) {
+      const h = await io.zahl('Texthöhe', { vorgabe: io.merken.texthoehe });
+      if (h == null || !(h > 0)) return;
+      io.merken.texthoehe = h;
+      const e = p[p.length - 1], rechts = e[0] >= p[p.length - 2][0];
+      objekte.push({ art: 'text', ort: [e[0] + (rechts ? h * 0.4 : -h * 0.4 - h * 0.6 * t.length), e[1] - h / 2], text: t, hoehe: h });
+    }
+    await io.zeichnen(objekte);
+  },
+
+  async bemstil(io) {
+    const s = await io.bemassungsstil({});
+    const m = await io.zahl('Bemassungsstil «' + s.stil + '» – Gesamtmassstab (z. B. 50 für einen Plan 1:50 in mm)', { vorgabe: s.massstab });
+    if (m == null || !(m > 0)) return;
+    const h = await io.zahl('Texthöhe auf dem Papier', { vorgabe: s.texthoehe });
+    if (h == null || !(h > 0)) return;
+    await io.bemassungsstil({ massstab: m, texthoehe: h });
   },
 
   async layer(io) {

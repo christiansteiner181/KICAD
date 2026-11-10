@@ -69,3 +69,15 @@ test('Bemassung: waagrecht, wenn die Masslinie über/unter den Punkten liegt, so
   assert.equal(await lauf([50, -40]), 'waagrecht');
   assert.equal(await lauf([150, 10]), 'senkrecht');
 });
+
+test('Kettenmass: jedes weitere Mass beginnt am letzten Punkt und liegt auf derselben Masslinie; Strecken gibt Fenster und Versatz weiter', async () => {
+  const p = [[0, 0], [800, 0], [400, 500], [2000, 0], null];
+  const masse = [];
+  await BEFEHLE.bemkette({ punkt: async () => p.shift(), zeichnen: async o => masse.push(o[0]) });
+  assert.deepEqual(masse.map(m => [m.von, m.bis, m.ort, m.richtung]), [[[0, 0], [800, 0], [400, 500], 'waagrecht'], [[800, 0], [2000, 0], [400, 500], 'waagrecht']]);
+
+  const q = [[90, -10], [110, 60], [0, 0], [40, 0]];
+  let aufruf;
+  await BEFEHLE.strecken({ punkt: async () => q.shift(), imFenster: async () => ['R1'], aendern: async (...a) => { aufruf = a; } });
+  assert.deepEqual(aufruf, [['R1'], 'strecken', { fenster: [[90, -10], [110, 60]], dx: 40, dy: 0 }]);
+});

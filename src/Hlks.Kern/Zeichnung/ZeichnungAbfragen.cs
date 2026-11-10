@@ -232,6 +232,7 @@ public static class ZeichnungAbfragen
         if (TextVon(e) is { Length: > 0 } text) o["text"] = text.Length > 500 ? text[..500] + "…" : text;
         if (laenge is double ll) o["laenge"] = R(ll);
         if (flaeche is double ff) o["flaeche"] = R(ff);
+        if (ZeichnungWeitere.Griffe(e) is { Count: > 0 and <= 60 } griffe) o["griffe"] = new JsonArray(griffe.Select(g => (JsonNode?)P(g.X, g.Y)).ToArray());
         return o;
     }
 

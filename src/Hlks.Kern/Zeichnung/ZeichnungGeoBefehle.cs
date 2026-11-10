@@ -151,8 +151,8 @@ public static class ZeichnungGeoBefehle
             case "reihe": return Reihe(liste, par);
             case "uebertragen": return Uebertragen(z, liste, par);
             default:
-                throw new HlksFehler($"Die Aktion «{aktion}» gibt es nicht.",
-                    "Erlaubt: loeschen, verschieben, kopieren, drehen, skalieren, eigenschaften, spiegeln, versetzen, stutzen, dehnen, abrunden, fasen, ursprung, verbinden, reihe, uebertragen.");
+                return ZeichnungWeitere.Aendern(z, liste, aktion, par) ?? throw new HlksFehler($"Die Aktion «{aktion}» gibt es nicht.",
+                    "Erlaubt: loeschen, verschieben, kopieren, drehen, skalieren, eigenschaften, spiegeln, versetzen, stutzen, dehnen, abrunden, fasen, ursprung, verbinden, reihe, uebertragen, strecken, bruch, griff, block.");
         }
     }
 
@@ -690,7 +690,7 @@ public static class ZeichnungGeoBefehle
                 if (z.Dokument.Header.CurrentDimensionStyle is { } stil) d.Style = stil;
                 return d;
             }
-            default: return null;
+            default: return ZeichnungWeitere.Bauen(z, art, o);
         }
     }
 }

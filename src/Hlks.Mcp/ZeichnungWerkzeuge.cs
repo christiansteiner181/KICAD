@@ -177,6 +177,18 @@ public sealed class ZeichnungWerkzeuge(ZeichnungSitzung sitzung)
         [Description("Zeichnung (Dateiname); ohne Angabe die zuletzt geöffnete")] string? zeichnung = null) => Lauf(() =>
         ZeichnungBearbeiten.LayerAnlegen(sitzung.Holen(zeichnung), name, farbe is { ValueKind: not (JsonValueKind.Null or JsonValueKind.Undefined) } f ? JsonNode.Parse(f.GetRawText()) : null, linientyp, aktuell));
 
+    [McpServerTool(Name = "zeichnung_bloecke"), Description(ZeichnungWeitere.BloeckeText)]
+    public string Bloecke([Description("Zeichnung (Dateiname); ohne Angabe die zuletzt geöffnete")] string? zeichnung = null) =>
+        Lauf(() => ZeichnungWeitere.Bloecke(sitzung.Holen(zeichnung)));
+
+    [McpServerTool(Name = "zeichnung_bemassungsstil"), Description(ZeichnungWeitere.BemassungsstilText)]
+    public string Bemassungsstil(
+        [Description("Gesamtmassstab der Bemassung (DIMSCALE)")] double? massstab = null,
+        [Description("Texthöhe vor dem Massstab")] double? texthoehe = null,
+        [Description("Pfeilgrösse vor dem Massstab")] double? pfeil = null,
+        [Description("Zeichnung (Dateiname); ohne Angabe die zuletzt geöffnete")] string? zeichnung = null) =>
+        Lauf(() => ZeichnungWeitere.Bemassungsstil(sitzung.Holen(zeichnung), massstab, texthoehe, pfeil));
+
     [McpServerTool(Name = "zeichnung_rueckgaengig"), Description(ZeichnungBearbeiten.RueckgaengigText)]
     public string Rueckgaengig([Description("Zeichnung (Dateiname); ohne Angabe die zuletzt geöffnete")] string? zeichnung = null) =>
         Lauf(() => ZeichnungBearbeiten.Rueckgaengig(sitzung.Holen(zeichnung)));

@@ -4451,3 +4451,21 @@ Oberfläche `js/zeichnung/befehle.js`, Fang `js/zeichnung/logik.js` (Streckenras
 - **Grenzen:** Polylinien mit Bögen lassen sich noch nicht stutzen und versetzen (vorher «Ursprung»); Stutzen/Dehnen/Abrunden ersetzen das Objekt durch
   neue (neue Kennung); Schraffuren, Bemassungen, Splines lassen sich noch nicht spiegeln. **Noch nicht:** Strecken, Bruch, Griffe · Spline, Führung ·
   Radius-/Winkel-/Kettenbemassung, Bemassungsstil · Blöcke einfügen/erstellen · Schnittpunktfang an Bögen, Tangente, Polarfang.
+
+## 2D-CAD «Zeichnung» – Blöcke, Griffe, Strecken, Bruch, weitere Bemassungen (Stufe 2 Teil 3, 10.11.2026)
+
+Kern `Zeichnung/ZeichnungWeitere.cs`, MCP zusätzlich `zeichnung_bloecke` und `zeichnung_bemassungsstil`. Die Werkzeugleiste hat jetzt 39 Werkzeuge in
+vier Gruppen (Zeichnen, Beschriften, Block, Ändern).
+
+- **Block:** Einfügen (EIN/I: Name aus der Liste, Massstab, Drehung, dann Einfügepunkte – wiederholt) · Erstellen (BL: Objekte wählen, Name, Basispunkt;
+  die Objekte werden durch die Blockreferenz ersetzt). Ursprung (UR/X) zerlegt eine Referenz wieder.
+- **Griffe:** Ein einzeln gewähltes Objekt zeigt blaue Griffe. Griff anklicken, neuen Ort anklicken oder tippen: Linienende, Polylinienecke, Bogenende,
+  Kreisradius (Quadrant); Mittelgriff bzw. Einfügepunkt verschiebt das Objekt.
+- **Strecken** (STR): Fenster über die Enden aufziehen, die wandern sollen (zwei Klicks), Basispunkt, Zielpunkt. Punkte im Fenster wandern, der Rest bleibt.
+- **Bruch** (BR): Objekt an der Bruchstelle anklicken; zweite Stelle = das Stück dazwischen fällt weg, Eingabetaste = nur teilen. Linie, Bogen, Kreis.
+- **Bemassung:** Kette (BKE: nach dem ersten Mass jedes weitere vom letzten Punkt, gleiche Masslinie) · Radius (BRA) und Durchmesser (BDU: Kreis/Bogen
+  anklicken, Lage der Masszahl) · **Mass-Stil** (BMS: Gesamtmassstab – z. B. 50 für einen Plan 1:50 in mm – und Texthöhe auf dem Papier; alle Masse des
+  Stils werden neu gezeichnet). Neue Zeichnungen haben einen metrischen Stil (Text 2.5, Pfeil 2.5).
+- **Führung** (FÜ/LE): Pfeilspitze, weitere Punkte, Eingabetaste, Text und Texthöhe.
+- **Noch nicht:** Winkelbemassung, Spline, Attribute bearbeiten, Tangenten-/Polarfang, Schnittpunktfang an Bögen, Stutzen/Versetzen von Polylinien mit
+  Bögen, Bruch an Polylinien, Abdeckflächen/Rasterbilder/externe Referenzen in der Darstellung.

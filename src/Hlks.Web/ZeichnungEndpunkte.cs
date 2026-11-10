@@ -116,6 +116,10 @@ public static class ZeichnungEndpunkte
         g.MapPost("/speichern", (HttpRequest r) => Befehl(r, (z, p) =>
             ZeichnungBearbeiten.Speichern(z, Param.Text(p, "datei") is { Length: > 0 } d ? sitzung.ZielPruefen(d) : null, Param.Text(p, "fassung"))));
 
+        //   GET  /bloecke?zeichnung=                einfügbare Blöcke        POST /bemassungsstil { zeichnung, massstab?, texthoehe?, pfeil? }
+        g.MapGet("/bloecke", (string? zeichnung) => Lauf(() => Antwort(ZeichnungWeitere.Bloecke(sitzung.Holen(zeichnung)))));
+        g.MapPost("/bemassungsstil", (HttpRequest r) => Befehl(r, (z, p) => ZeichnungWeitere.Bemassungsstil(z, Json.Zahl(p["massstab"]), Json.Zahl(p["texthoehe"]), Json.Zahl(p["pfeil"]))));
+
         g.MapGet("/pdf",(string? zeichnung, string? layout, double? massstab, string? blatt, string? farbig, string? fenster) => Lauf(() =>
         {
             var z = sitzung.Holen(zeichnung);

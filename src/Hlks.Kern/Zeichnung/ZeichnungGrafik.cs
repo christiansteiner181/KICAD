@@ -147,8 +147,8 @@ public static class ZeichnungGrafik
 
         Stil Fuellung(string? farbe)
         {
-            var f = farbe ?? "#000000";
-            if (!fuellungen.TryGetValue(f, out var st)) fuellungen[f] = st = new Stil { Stift = null, Fuellung = f, Farbe = f };
+            var f = farbe ?? "schnitt";   // ohne eigene Farbe: Planfarbe (schwarz auf Papier, hell auf dunklem Bildschirm)
+            if (!fuellungen.TryGetValue(f, out var st)) fuellungen[f] = st = new Stil { Stift = null, Fuellung = f, Farbe = farbe };
             return st;
         }
 
@@ -388,6 +388,15 @@ public static class ZeichnungGrafik
                     break;
                 case Leader le:
                     Linien(teil, StilVon(e, layer, k), t, le.Vertices.Select(v => (v.X, v.Y)).ToList(), false);
+                    if (le.ArrowHeadEnabled && le.Vertices.Count >= 2)
+                    {
+                        // Pfeilspitze am ersten Punkt (Grösse aus dem Bemassungsstil), als gefülltes Dreieck
+                        var (a, b) = (le.Vertices[0], le.Vertices[1]);
+                        double dx = b.X - a.X, dy = b.Y - a.Y, len = Math.Sqrt(dx * dx + dy * dy);
+                        double g = (le.Style?.ArrowSize is > 0 and var ps ? ps : 2.5) * (le.Style?.ScaleFactor is > 0 and var sf ? sf : 1);
+                        if (len > 0 && g < len)
+                            Flaeche(teil, Fuellung(Farbe(e, layer, k, true)), t, [[(a.X, a.Y), (a.X + dx / len * g - dy / len * g / 6, a.Y + dy / len * g + dx / len * g / 6), (a.X + dx / len * g + dy / len * g / 6, a.Y + dy / len * g - dx / len * g / 6)]]);
+                    }
                     break;
                 case Point:
                     break;   // Punkte werden nicht geplottet (Hilfspunkte, Bemassungspunkte)

@@ -239,6 +239,8 @@ public sealed class ZeichnungSitzung
         if (File.Exists(pfad)) throw new HlksFehler($"Die Datei «{Path.GetFileName(pfad)}» gibt es schon.", "Einen anderen Namen wählen oder die Datei öffnen.");
         var doc = new CadDocument(ACadVersion.AC1032);
         doc.Header.InsUnits = ACadSharp.Types.Units.UnitsType.Millimeters;
+        // Bemassungsstil metrisch (die Vorgabe der Bibliothek ist Zoll: Text 0.18): Papier-mm wie die ISO-Vorlage von AutoCAD
+        foreach (var st in doc.DimensionStyles) { st.TextHeight = 2.5; st.ArrowSize = 2.5; st.ExtensionLineOffset = 0.625; st.ExtensionLineExtension = 1.25; st.DimensionLineGap = 0.625; }
         Directory.CreateDirectory(Path.GetDirectoryName(pfad)!);
         if (pfad.EndsWith(".dxf", StringComparison.OrdinalIgnoreCase)) { using var w = new DxfWriter(pfad, doc, false); w.Write(); }
         else { using var w = new DwgWriter(pfad, doc); w.Write(); }
