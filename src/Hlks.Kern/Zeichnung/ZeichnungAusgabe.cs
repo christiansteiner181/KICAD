@@ -14,7 +14,7 @@ public static class ZeichnungAusgabe
     public const string BildText = "Zeigt die Zeichnung oder einen Ausschnitt als Bild (PNG) – mit Farben, Linienstärken und Schraffuren der Datei. " +
         "Die Antwort nennt den gezeigten Bereich in Zeichnungseinheiten; damit lassen sich Bildpunkte in Koordinaten umrechnen. Masse nie aus dem Bild schätzen, sondern mit zeichnung_messen bzw. zeichnung_objekte lesen.";
     public const string PdfText = "Schreibt ein Layout der Zeichnung als Vektor-PDF. Modellbereich: massstäblich mit massstab (z. B. 50 für 1:50) oder eingepasst auf blatt (A4–A0); " +
-        "Papierbereich (Layout): 1:1 auf seinem Papierformat mit den Ansichtsfenstern. Ohne datei nach %TEMP%\\HLKS_CAD\\<Name>.pdf. Antwort: datei, blattMm, massstab, groesseBytes.";
+        "Papierbereich (Layout): 1:1 auf seinem Papierformat mit den Ansichtsfenstern und – wenn vorhanden – dem Plotstil des Layouts. plotstil: Name aus zeichnung_plotstile, «ohne» oder «layout». Ohne datei nach %TEMP%\\HLKS_CAD\\<Name>.pdf. Antwort: datei, blattMm, massstab, groesseBytes.";
 
     public const int VorgabeBreite = 1400, MinBreite = 200, MaxBreite = 4000;
     const long MaxSeitenPixel = 36_000_000;
@@ -52,18 +52,49 @@ public static class ZeichnungAusgabe
         return ms.ToArray();
     }
 
+    public const string PlotstileText = "Plotstile für zeichnung_pdf und zeichnung_bild: die eingebauten (monochrom, graustufen) und die CTB-Dateien neben der Zeichnung, " +
+        "im Ordner HLKS_PLOTSTILE, in %LOCALAPPDATA%\\HLKS_CAD\\plotstile und in den «Plot Styles» von AutoCAD; dazu der Plotstil, den jedes Layout nennt.";
+
+    /// <summary>Plotstil der Ausgabe wählen. wahl: null/leer = Vorgabe (beim PDF eines Layouts der Plotstil des Layouts, sonst keiner) · «ohne» · «layout» · Name.</summary>
+    static (Plotstil? Stil, string Text) PlotstilWaehlen(Zeichnungsdatei z, ACadSharp.Objects.Layout? lay, string? wahl, bool vorgabeLayout)
+    {
+        var ordner = Path.GetDirectoryName(z.Pfad);
+        wahl = wahl?.Trim() ?? "";
+        if (wahl.Equals("ohne", StringComparison.OrdinalIgnoreCase)) return (null, "ohne");
+        if (wahl.Length == 0 || wahl.Equals("layout", StringComparison.OrdinalIgnoreCase))
+        {
+            if (wahl.Length == 0 && !vorgabeLayout) return (null, "ohne");
+            var name = lay?.StyleSheet;
+            if (string.IsNullOrWhiteSpace(name)) return (null, lay is null ? "ohne" : "ohne (das Layout nennt keinen Plotstil)");
+            var gefunden = Plotstil.Finden(name, ordner);
+            return gefunden is null ? (null, $"ohne – der Plotstil «{name}» des Layouts wurde nicht gefunden (CTB-Datei neben die Zeichnung legen)") : (gefunden, gefunden.Datei is null ? $"{name} (eingebaut als {gefunden.Name})" : name);
+        }
+        var stil = Plotstil.Finden(wahl, ordner)
+            ?? throw new HlksFehler($"Den Plotstil «{wahl}» gibt es nicht.", "Vorhanden: " + string.Join(", ", Plotstil.Vorhandene(ordner).Select(v => v.Name)) + "; oder «ohne» bzw. «layout».");
+        return (stil, stil.Name);
+    }
+
+    public static JsonObject Plotstile(Zeichnungsdatei z)
+    {
+        var liste = new JsonArray(Plotstil.Vorhandene(Path.GetDirectoryName(z.Pfad)).Select(v => (JsonNode?)new JsonObject { ["name"] = v.Name, ["eingebaut"] = v.Datei is null }).ToArray());
+        var layouts = new JsonObject();
+        foreach (var l in z.Dokument.Layouts.Where(l => l.IsPaperSpace)) layouts[l.Name] = string.IsNullOrWhiteSpace(l.StyleSheet) ? null : l.StyleSheet;
+        return new JsonObject { ["zeichnung"] = z.Name, ["plotstile"] = liste, ["jeLayout"] = layouts };
+    }
+
     static JsonObject Hinweise(Zeichnungsdatei z, ZeichnungBild bild, JsonObject o)
     {
         if (bild.NichtDargestellt.Count > 0)
             o["nichtDargestellt"] = new JsonObject(bild.NichtDargestellt.Select(n => KeyValuePair.Create(n.Key, (JsonNode?)n.Value)));
-        o["hinweis"] = "Schriften als Arial, Linienstärken auf 0.18/0.20/0.35/0.50/0.70 mm gerundet, Linienarten als Strich, Strichpunkt oder Punkt.";
+        o["hinweis"] = "Schriften als Arial; Linienstärken und Strichmuster wie in der Zeichnung (Linientypen mit Text oder Symbolen vereinfacht).";
         return o;
     }
 
     // ---------- Bild ----------
 
-    public static (JsonObject Info, byte[] Png) Bild(Zeichnungsdatei z, string? layout, double[]? ausschnitt, int? breite, bool farbig = true)
+    public static (JsonObject Info, byte[] Png) Bild(Zeichnungsdatei z, string? layout, double[]? ausschnitt, int? breite, bool farbig = true, string? plotstil = null)
     {
+        var (stil, stilText) = PlotstilWaehlen(z, z.Layout(layout), plotstil, vorgabeLayout: false);
         int b = Math.Clamp(breite ?? VorgabeBreite, MinBreite, MaxBreite);
         if (ausschnitt is not null && (ausschnitt.Length != 4 || ausschnitt.Any(v => double.IsNaN(v) || double.IsInfinity(v))))
             throw new HlksFehler("ausschnitt muss [x0, y0, x1, y1] sein.", "Vier Zahlen in Zeichnungseinheiten (Layout: mm des Blatts).");
@@ -73,7 +104,7 @@ public static class ZeichnungAusgabe
         if (ausschnitt is not null) { x0 = Math.Min(ausschnitt[0], ausschnitt[2]); x1 = Math.Max(ausschnitt[0], ausschnitt[2]); y0 = Math.Min(ausschnitt[1], ausschnitt[3]); y1 = Math.Max(ausschnitt[1], ausschnitt[3]); }
         else
         {
-            var probe = ZeichnungGrafik.Erzeugen(z, lay, 1, farbig);
+            var probe = ZeichnungGrafik.Erzeugen(z, lay, 1, farbig, stil);
             var u = probe.Umriss ?? throw new HlksFehler($"Das Layout «{lay?.Name ?? "Model"}» von {z.Name} enthält nichts, das sich zeichnen lässt.", "Ein anderes Layout wählen (zeichnung_oeffnen nennt die Layouts) oder Layer einschalten.");
             (x0, y0, x1, y1) = (u[0], u[1], u[2], u[3]);
         }
@@ -84,7 +115,7 @@ public static class ZeichnungAusgabe
         // Papier höchstens 400 mm an der langen Seite: so bleiben Linienstärken im Bild lesbar
         double s = (400 - 2 * Rand) / Math.Max(cw, ch);
         double papB = cw * s + 2 * Rand, papH = ch * s + 2 * Rand;
-        var bild = ZeichnungGrafik.Erzeugen(z, lay, s, farbig);
+        var bild = ZeichnungGrafik.Erzeugen(z, lay, s, farbig, stil);
         var pdf = PdfBytes(bild, papB, papH, new Abbildung(s, Rand - x0 * s, Rand - y0 * s));
         double skala = Math.Min(b / (papB * 72 / 25.4), Math.Sqrt(MaxSeitenPixel / (papB * papH * Math.Pow(72 / 25.4, 2))));
         var (w, h, bgra) = PdfSeiteBild.Rendern(null, pdf, 1, skala);
@@ -100,6 +131,7 @@ public static class ZeichnungAusgabe
             ["bildpunkte"] = new JsonArray(w, h),
             ["einheitenJeBildpunkt"] = Math.Round((cw + 2 * randE) / w, 5),
             ["gezeichnet"] = bild.Anzahl,
+            ["plotstil"] = stilText,
         };
         if (bild.Ausdehnung is { } a) info["ausdehnung"] = new JsonArray(a.Select(v => (JsonNode?)Math.Round(v, 3)).ToArray());
         return (Hinweise(z, bild, info), png);
@@ -107,8 +139,9 @@ public static class ZeichnungAusgabe
 
     // ---------- PDF ----------
 
-    public static JsonObject Pdf(Zeichnungsdatei z, string? layout, double[]? fenster, double? massstab, string? blatt, string ziel, bool farbig = true)
+    public static JsonObject Pdf(Zeichnungsdatei z, string? layout, double[]? fenster, double? massstab, string? blatt, string ziel, bool farbig = true, string? plotstil = null)
     {
+        var (stil, stilText) = PlotstilWaehlen(z, z.Layout(layout), plotstil, vorgabeLayout: true);
         if (fenster is not null && fenster.Length != 4) throw new HlksFehler("fenster muss [x0, y0, x1, y1] sein.", "Vier Zahlen in Zeichnungseinheiten.");
         if (massstab is <= 0) throw new HlksFehler("massstab muss grösser als 0 sein.", "Für 1:50 den Wert 50 angeben.");
         var lay = z.Layout(layout);
@@ -127,7 +160,7 @@ public static class ZeichnungAusgabe
             }
             else
             {
-                var u = ZeichnungGrafik.Erzeugen(z, lay, 1, farbig).Ausdehnung ?? throw new HlksFehler($"Das Layout «{lay.Name}» ist leer.");
+                var u = ZeichnungGrafik.Erzeugen(z, lay, 1, farbig, stil).Ausdehnung ?? throw new HlksFehler($"Das Layout «{lay.Name}» ist leer.");
                 papB = u[2] - u[0] + 2 * Rand; papH = u[3] - u[1] + 2 * Rand;
                 abb = new Abbildung(1, Rand - u[0], Rand - u[1]);
             }
@@ -137,7 +170,7 @@ public static class ZeichnungAusgabe
         {
             double[] u = fenster is not null
                 ? [Math.Min(fenster[0], fenster[2]), Math.Min(fenster[1], fenster[3]), Math.Max(fenster[0], fenster[2]), Math.Max(fenster[1], fenster[3])]
-                : ZeichnungGrafik.Erzeugen(z, lay, 1, farbig).Umriss ?? throw new HlksFehler($"Das Layout «{lay?.Name ?? "Model"}» ist leer.", "Ein anderes Layout wählen oder Layer einschalten.");
+                : ZeichnungGrafik.Erzeugen(z, lay, 1, farbig, stil).Umriss ?? throw new HlksFehler($"Das Layout «{lay?.Name ?? "Model"}» ist leer.", "Ein anderes Layout wählen oder Layer einschalten.");
             double cw = u[2] - u[0], ch = u[3] - u[1];
             if (cw <= 0 || ch <= 0) throw new HlksFehler("Das Fenster hat keine Fläche.", "fenster [x0, y0, x1, y1] mit x1 > x0 und y1 > y0 angeben.");
             double mm = lay is null ? z.MmJeEinheit : 1;   // Layout-Einheit = mm
@@ -172,7 +205,7 @@ public static class ZeichnungAusgabe
             // Ausschnitt auf dem Blatt zentriert
             abb = new Abbildung(s, (papB - cw * s) / 2 - u[0] * s, (papH - ch * s) / 2 - u[1] * s);
         }
-        var bild = ZeichnungGrafik.Erzeugen(z, lay, s, farbig);
+        var bild = ZeichnungGrafik.Erzeugen(z, lay, s, farbig, stil);
         var bytes = PdfBytes(bild, papB, papH, abb);
         Directory.CreateDirectory(Path.GetDirectoryName(ziel)!);
         File.WriteAllBytes(ziel, bytes);
@@ -181,6 +214,7 @@ public static class ZeichnungAusgabe
             ["zeichnung"] = z.Name, ["layout"] = lay?.Name ?? "Model", ["datei"] = ziel,
             ["blattMm"] = new JsonArray(Math.Round(papB, 1), Math.Round(papH, 1)), ["groesseBytes"] = bytes.Length, ["gezeichnet"] = bild.Anzahl,
         };
+        o["plotstil"] = stilText;
         if (gewaehlt is double g) o["massstab"] = "1:" + Math.Round(g, 2).ToString(System.Globalization.CultureInfo.InvariantCulture);
         else o["massstab"] = "eingepasst (Einheit der Datei unbekannt)";
         return Hinweise(z, bild, o);

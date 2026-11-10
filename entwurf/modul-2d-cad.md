@@ -153,6 +153,9 @@ bei den Unterlagen), nie ausserhalb.
 - **Stufe 2 Teil 5 gebaut (10.11.2026):** Polylinien mit Bögen stutzen, versetzen, brechen (`ZeichnungPolyPfad.cs`), Linienarten mit den Strichlängen der
   DWG (`Stil.StrichEinheiten`), Schnittpunktfang an Kreisen und Bögen. Damit sind die Zeichen- und Änderungsbefehle von AutoCAD LT im Kern vorhanden;
   offen bleiben Plotstile (CTB), Schriften (SHX), Rasterbilder, Tabellen, Multi-Führungslinien, dynamische Blöcke und die Abnahme gegen AutoCAD.
+- **Plotstile gebaut (10.11.2026, Christian: «Erst Plotstile»):** CTB lesen (`ZeichnungPlotstil.cs`), eingebaut «monochrom» und «graustufen», im PDF-Dialog,
+  bei `zeichnung_pdf`/`zeichnung_bild` und als Vorgabe der Plotstil des Layouts. Geprüft an einer selbst erzeugten CTB – **eine echte Büro-CTB fehlt** (weder
+  auf dem PC noch auf W:); Christian legt sie neben eine Zeichnung oder nach `%LOCALAPPDATA%\HLKS_CAD\plotstile`.
 - **Christian 10.11.2026: «zudem müssen alle zeichnungsfunktionen vorhanden sein»** – offen: Spiegeln, Versetzen, Stutzen, Dehnen, Abrunden, Fasen,
   Strecken, Bruch, Verbinden, Reihe, Ursprung, Eigenschaften übertragen, Griffe · Ellipse, Polygon, Spline, Punkt, Schraffur, Absatztext ·
   Bemassung, Führung · Blöcke einfügen/erstellen, Attribute · Schnittpunkt-/Lot-/Tangentenfang, Polarfang.

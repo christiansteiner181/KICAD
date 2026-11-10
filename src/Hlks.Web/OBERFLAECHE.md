@@ -4492,3 +4492,17 @@ vier Gruppen (Zeichnen, Beschriften, Block, Ändern).
   zu fein für die Ansicht, erscheint die Linie durchgezogen (wie in AutoCAD beim Herauszoomen). Linientypen mit Text oder Symbolen bleiben vereinfacht.
 - **Fang Schnittpunkt** findet auch Schnitte von Kreisen und Bögen mit Linien und untereinander.
 - **Noch nicht:** Plotstile (CTB), AutoCAD-Schriften (SHX), Rasterbilder, Tabellen, Multi-Führungslinien, dynamische Blöcke bearbeiten, Linientypen mit Text.
+
+## 2D-CAD «Zeichnung» – Plotstile (CTB) (10.11.2026)
+
+Kern `Zeichnung/ZeichnungPlotstil.cs`, MCP `zeichnung_plotstile` und Parameter `plotstil` bei `zeichnung_pdf` und `zeichnung_bild`.
+
+- **PDF … → Plotstil:** «Vorgabe» nimmt bei einem Layout dessen eigenen Plotstil (steht in der Zeile), im Modell keinen · «ohne» · «monochrom» und
+  «graustufen» (eingebaut) · gefundene CTB-Dateien. Die Antwort bzw. das PDF nennt, welcher Plotstil galt; ein im Layout genannter, aber nicht gefundener
+  Plotstil wird gemeldet (dann ohne geplottet).
+- **Wo CTB-Dateien gesucht werden:** neben der Zeichnung · Ordner der Umgebungsvariable `HLKS_PLOTSTILE` · `%LOCALAPPDATA%\HLKS_CAD\plotstile` · die
+  «Plot Styles» einer AutoCAD-Installation (`%APPDATA%\Autodesk\…`).
+- **Was ein Plotstil bewirkt:** je AutoCAD-Farbe 1–255 die Plotfarbe, die Strichstärke und die Rasterung. Er gilt nur für Objekte mit Indexfarbe –
+  Echtfarben plotten in ihrer Farbe (wie in AutoCAD). Am Bildschirm bleiben die Farben der Zeichnung.
+- **Nicht unterstützt:** benannte Plotstile (STB), Linientyp-, Füll- und Endstile aus der Tabelle.
+- **Stand der Prüfung:** an einer selbst erzeugten CTB getestet; auf diesem PC und auf W: liegt keine CTB aus AutoCAD – die Probe mit der Büro-Tabelle ist offen.

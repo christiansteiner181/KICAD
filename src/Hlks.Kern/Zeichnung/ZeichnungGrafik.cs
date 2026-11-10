@@ -40,9 +40,10 @@ public static class ZeichnungGrafik
 
     /// <param name="papierMmJeEinheit">Papier-mm je Layout-Einheit der Ausgabe (für die Schriftgrösse).</param>
     /// <param name="farbig">false: alles in Planfarbe (schwarz auf Papier).</param>
-    public static ZeichnungBild Erzeugen(Zeichnungsdatei z, ACadSharp.Objects.Layout? layout, double papierMmJeEinheit, bool farbig = true)
+    /// <param name="plotstil">Plotstil der Ausgabe (Farbe, Strichstärke, Rasterung je AutoCAD-Farbe); null = Farben und Stärken der Objekte.</param>
+    public static ZeichnungBild Erzeugen(Zeichnungsdatei z, ACadSharp.Objects.Layout? layout, double papierMmJeEinheit, bool farbig = true, Plotstil? plotstil = null)
     {
-        var lauf = new Lauf(z, papierMmJeEinheit, farbig);
+        var lauf = new Lauf(z, papierMmJeEinheit, farbig, plotstil);
         var haupt = new ZeichnungTeil();
         lauf.Bild.Teile.Add(haupt);
         var fenster = new List<Viewport>();
@@ -75,7 +76,7 @@ public static class ZeichnungGrafik
         public static readonly Kontext Oben = new(Afin.Eins, null, null, 0.25, "voll", null, 0);
     }
 
-    sealed class Lauf(Zeichnungsdatei z, double s, bool farbig)
+    sealed class Lauf(Zeichnungsdatei z, double s, bool farbig, Plotstil? plotstil)
     {
         public ZeichnungBild Bild { get; } = new();
         readonly Dictionary<(string?, string, string), Stil> stile = [];
@@ -106,16 +107,36 @@ public static class ZeichnungGrafik
 
         string? Farbe(Entity e, Layer? layer, Kontext k, bool fuellung = false)
         {
-            if (!farbig && !fuellung) return null;
+            if (plotstil is null && !farbig && !fuellung) return null;
             var c = e.Color;
             if (c.IsByBlock) return k.FarbeBlock;
             if (c.IsByLayer) { if (layer is null) return null; c = layer.Color; }
             var hex = Hex(c, fuellung);
+            if (plotstil is not null)
+            {
+                // Plotstil: nur für Indexfarben; Schwarz = Planfarbe (null); Rasterung hellt zum Papierweiss auf
+                if (c.IsTrueColor) return hex;
+                var p = plotstil.Eintrag(c.Index);
+                if (p.Farbe is { } pf) hex = pf == "#000000" ? null : pf;
+                if (p.Raster < 100)
+                {
+                    int rgb = hex is null ? 0 : Convert.ToInt32(hex[1..], 16);
+                    int Auf(int kanal) => (int)Math.Round(255 - (255 - kanal) * p.Raster / 100.0);
+                    hex = $"#{Auf((rgb >> 16) & 255):x2}{Auf((rgb >> 8) & 255):x2}{Auf(rgb & 255):x2}";
+                }
+                return hex;
+            }
             return farbig || hex is null or "#ffffff" ? hex : "#c8c8c8";   // schwarz-weiss: farbige Füllungen hellgrau
         }
 
-        static double Mm(Entity e, Layer? layer, Kontext k)
+        double Mm(Entity e, Layer? layer, Kontext k)
         {
+            if (plotstil is not null)
+            {
+                // Strichstärke aus dem Plotstil, wenn er für die Indexfarbe des Objekts eine vorgibt
+                var c = e.Color.IsByLayer ? layer?.Color : e.Color;
+                if (c is { IsByBlock: false, IsTrueColor: false } farbe && plotstil.Eintrag(farbe.Index).Mm is double pm) return pm;
+            }
             var w = e.LineWeight;
             if (w == LineWeightType.ByBlock) return k.MmBlock;
             if (w == LineWeightType.ByLayer) w = layer?.LineWeight ?? LineWeightType.Default;

@@ -123,13 +123,14 @@ public sealed class ZeichnungWerkzeuge(ZeichnungSitzung sitzung)
         [Description("Ausschnitt [x0, y0, x1, y1] in Zeichnungseinheiten; Vorgabe: der Hauptteil der Zeichnung")] JsonElement? ausschnitt = null,
         [Description("Breite des Bildes in Bildpunkten (Vorgabe 1400, 200–4000)")] double? breite = null,
         [Description("false: schwarz auf weiss statt in den Farben der Datei")] bool farbig = true,
+        [Description("Plotstil wie beim Plotten: Name aus zeichnung_plotstile (z. B. monochrom) oder «layout»; ohne Angabe die Farben der Datei")] string? plotstil = null,
         [Description("Zeichnung (Dateiname); ohne Angabe die zuletzt geöffnete")] string? zeichnung = null)
     {
         lock (sitzung)
         {
             try
             {
-                var (info, png) = ZeichnungAusgabe.Bild(sitzung.Holen(zeichnung), layout, Zahlen(ausschnitt, "ausschnitt"), breite is double b ? (int)b : null, farbig);
+                var (info, png) = ZeichnungAusgabe.Bild(sitzung.Holen(zeichnung), layout, Zahlen(ausschnitt, "ausschnitt"), breite is double b ? (int)b : null, farbig, plotstil);
                 return new CallToolResult { Content = [new TextContentBlock { Text = Json.Text(info) }, ImageContentBlock.FromBytes(png, "image/png")] };
             }
             catch (Exception ex) { return new CallToolResult { IsError = true, Content = [new TextContentBlock { Text = FehlerText(ex) }] }; }
@@ -144,10 +145,11 @@ public sealed class ZeichnungWerkzeuge(ZeichnungSitzung sitzung)
         [Description("Blattformat A4, A3, A2, A1 oder A0; ohne Angabe das kleinste passende (mit massstab) bzw. A3 (eingepasst)")] string? blatt = null,
         [Description("Zieldatei (.pdf) in einem freigegebenen Ordner; ohne Angabe %TEMP%\\HLKS_CAD\\<Name>.pdf")] string? datei = null,
         [Description("false: schwarz auf weiss statt in den Farben der Datei")] bool farbig = true,
+        [Description("Plotstil: Name aus zeichnung_plotstile (z. B. monochrom), «ohne» oder «layout»; ohne Angabe bei einem Layout dessen Plotstil")] string? plotstil = null,
         [Description("Zeichnung (Dateiname); ohne Angabe die zuletzt geöffnete")] string? zeichnung = null) => Lauf(() =>
     {
         var z = sitzung.Holen(zeichnung);
-        return ZeichnungAusgabe.Pdf(z, layout, Zahlen(fenster, "fenster"), massstab, blatt, Ziel(z, layout, datei), farbig);
+        return ZeichnungAusgabe.Pdf(z, layout, Zahlen(fenster, "fenster"), massstab, blatt, Ziel(z, layout, datei), farbig, plotstil);
     });
 
     // ---------- Stufe 2: zeichnen, ändern, speichern ----------
@@ -176,6 +178,10 @@ public sealed class ZeichnungWerkzeuge(ZeichnungSitzung sitzung)
         [Description("true: als aktuellen Layer für neue Objekte setzen")] bool aktuell = false,
         [Description("Zeichnung (Dateiname); ohne Angabe die zuletzt geöffnete")] string? zeichnung = null) => Lauf(() =>
         ZeichnungBearbeiten.LayerAnlegen(sitzung.Holen(zeichnung), name, farbe is { ValueKind: not (JsonValueKind.Null or JsonValueKind.Undefined) } f ? JsonNode.Parse(f.GetRawText()) : null, linientyp, aktuell));
+
+    [McpServerTool(Name = "zeichnung_plotstile"), Description(ZeichnungAusgabe.PlotstileText)]
+    public string Plotstile([Description("Zeichnung (Dateiname); ohne Angabe die zuletzt geöffnete")] string? zeichnung = null) =>
+        Lauf(() => ZeichnungAusgabe.Plotstile(sitzung.Holen(zeichnung)));
 
     [McpServerTool(Name = "zeichnung_bloecke"), Description(ZeichnungWeitere.BloeckeText)]
     public string Bloecke([Description("Zeichnung (Dateiname); ohne Angabe die zuletzt geöffnete")] string? zeichnung = null) =>

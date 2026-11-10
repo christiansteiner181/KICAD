@@ -168,7 +168,7 @@ public class SicherheitTests
             // 2D-CAD «Zeichnung» (eigene Werkzeugklasse, hängt an der Sitzung statt am Projekt)
             .Concat(["zeichnungen", "zeichnung_oeffnen", "zeichnung_schliessen", "zeichnung_layer", "zeichnung_layer_setzen", "zeichnung_objekte",
                 "zeichnung_messen", "zeichnung_bild", "zeichnung_pdf", "zeichnung_zeichnen", "zeichnung_aendern", "zeichnung_layer_anlegen",
-                "zeichnung_rueckgaengig", "zeichnung_wiederholen", "zeichnung_speichern", "zeichnung_neu", "zeichnung_bloecke", "zeichnung_bemassungsstil"]).Distinct().Order(StringComparer.Ordinal).ToList();
+                "zeichnung_rueckgaengig", "zeichnung_wiederholen", "zeichnung_speichern", "zeichnung_neu", "zeichnung_bloecke", "zeichnung_bemassungsstil", "zeichnung_plotstile"]).Distinct().Order(StringComparer.Ordinal).ToList();
         Assert.Equal(erwartet, alle);
         Assert.All(KiInhalt.Werkzeuge, w => Assert.Contains(w, alle));   // jedes Werkzeug mit Kopfzeile gibt es
     }

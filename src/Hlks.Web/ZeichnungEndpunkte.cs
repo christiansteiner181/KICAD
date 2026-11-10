@@ -120,7 +120,9 @@ public static class ZeichnungEndpunkte
         g.MapGet("/bloecke", (string? zeichnung) => Lauf(() => Antwort(ZeichnungWeitere.Bloecke(sitzung.Holen(zeichnung)))));
         g.MapPost("/bemassungsstil", (HttpRequest r) => Befehl(r, (z, p) => ZeichnungWeitere.Bemassungsstil(z, Json.Zahl(p["massstab"]), Json.Zahl(p["texthoehe"]), Json.Zahl(p["pfeil"]))));
 
-        g.MapGet("/pdf",(string? zeichnung, string? layout, double? massstab, string? blatt, string? farbig, string? fenster) => Lauf(() =>
+        //   GET  /plotstile?zeichnung=              Plotstile (eingebaute und CTB-Dateien) und der Plotstil je Layout; /pdf nimmt &plotstil=Name|ohne|layout
+        g.MapGet("/plotstile", (string? zeichnung) => Lauf(() => Antwort(ZeichnungAusgabe.Plotstile(sitzung.Holen(zeichnung)))));
+        g.MapGet("/pdf", (string? zeichnung, string? layout, double? massstab, string? blatt, string? farbig, string? fenster, string? plotstil) => Lauf(() =>
         {
             var z = sitzung.Holen(zeichnung);
             double[]? f = null;
@@ -131,7 +133,7 @@ public static class ZeichnungEndpunkte
             }
             var name = Path.GetFileNameWithoutExtension(z.Name) + (string.IsNullOrWhiteSpace(layout) ? "" : "_" + string.Concat(layout.Split(Path.GetInvalidFileNameChars())));
             var ziel = Path.Combine(Path.GetTempPath(), "HLKS_CAD", name + ".pdf");
-            ZeichnungAusgabe.Pdf(z, layout, f, massstab, blatt, ziel, farbig is null || farbig is "1" or "true" or "ja");
+            ZeichnungAusgabe.Pdf(z, layout, f, massstab, blatt, ziel, farbig is null || farbig is "1" or "true" or "ja", plotstil);
             return Results.File(File.ReadAllBytes(ziel), "application/pdf", name + ".pdf");
         }));
 

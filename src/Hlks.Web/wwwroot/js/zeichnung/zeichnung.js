@@ -794,7 +794,7 @@ function hinweiseZeigen() {
   const ziel = $('z-hinweise');
   const zeilen = Object.entries(z.grafik.nichtDargestellt || {}).map(([k, n]) => `${n} × ${k}`);
   ziel.replaceChildren(absatz(zeilen.length ? 'Nicht dargestellt: ' + zeilen.join(', ') + '.' : 'Alles dargestellt.'),
-    absatz(`Fassung ${z.info.fassung}. Schriften als Arial, Linienarten vereinfacht.`));
+    absatz(`Fassung ${z.info.fassung}. Schriften als Arial. Plotstile gelten nur für PDF und Bild.`));
 }
 
 // ---------- Öffnen-Dialog ----------
@@ -853,13 +853,22 @@ function pdfOeffnen() {
   if (!z.grafik) return;
   $('z-p-hinweis').textContent = z.layout !== 'Model' ? 'Ein Layout wird ohne weitere Angabe 1:1 auf seinem Blatt ausgegeben.'
     : /unbekannt/.test(z.grafik.einheit) ? 'Die Datei nennt keine Einheit: nur «eingepasst» ist möglich.' : '';
+  // Plotstile: Vorgabe (beim Layout sein eigener), ohne, eingebaute und gefundene CTB-Dateien
+  const wahl = $('z-p-plotstil'), option = (wert, text) => { const o = document.createElement('option'); o.value = wert; o.textContent = text; return o; };
+  wahl.replaceChildren(option('', 'Vorgabe'), option('ohne', 'ohne'));
   $('z-pdf-dialog').showModal();
+  holen('/api/zeichnung/plotstile?zeichnung=' + encodeURIComponent(z.info.pfad)).then(r => {
+    const eigener = r.jeLayout?.[z.layout];
+    wahl.options[0].textContent = z.layout === 'Model' ? 'Vorgabe (ohne)' : eigener ? 'Vorgabe: wie im Layout (' + eigener + ')' : 'Vorgabe (das Layout nennt keinen)';
+    for (const p of r.plotstile) wahl.append(option(p.name, p.name + (p.eingebaut ? ' (eingebaut)' : '')));
+  }).catch(() => {});
 }
 
 async function pdfLos() {
   const p = new URLSearchParams({ zeichnung: z.info.pfad, layout: z.layout, farbig: $('z-p-farbig').value });
   if ($('z-p-massstab').value) p.set('massstab', $('z-p-massstab').value);
   if ($('z-p-blatt').value) p.set('blatt', $('z-p-blatt').value);
+  if ($('z-p-plotstil').value) p.set('plotstil', $('z-p-plotstil').value);
   if ($('z-p-bereich').value === 'ansicht') {
     const g = groesse(), a = echt(zuWelt(0, g.h, g)), b = echt(zuWelt(g.w, 0, g));
     p.set('fenster', [...a, ...b].map(v => v.toFixed(4)).join(','));
