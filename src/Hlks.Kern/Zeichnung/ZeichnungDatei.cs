@@ -70,6 +70,37 @@ public sealed class Zeichnungsdatei
         return z;
     }
 
+    // ---------- Externe Referenzen ----------
+
+    /// <summary>Prüft, ob eine referenzierte Datei gelesen werden darf (die Sitzung der KI lässt nur freigegebene Ordner zu); null = nur der Ordner der Zeichnung.</summary>
+    public Func<string, bool>? XrefErlaubt { get; set; }
+    readonly Dictionary<string, List<Entity>?> xrefs = new(StringComparer.OrdinalIgnoreCase);
+
+    /// <summary>Objekte des Modellbereichs einer externen Referenz (gelesen aus der Datei neben der Zeichnung bzw. unter ihrem gespeicherten Pfad); null = nicht verfügbar.</summary>
+    public IReadOnlyList<Entity>? Xref(BlockRecord block)
+    {
+        var roh = block.BlockEntity?.XRefPath;
+        if (string.IsNullOrWhiteSpace(roh)) return null;
+        if (xrefs.TryGetValue(roh, out var da)) return da;
+        List<Entity>? inhalt = null;
+        try
+        {
+            var ordner = Path.GetDirectoryName(Pfad)!;
+            var kandidaten = new[] { Path.IsPathRooted(roh) ? roh : Path.Combine(ordner, roh), Path.Combine(ordner, Path.GetFileName(roh.Replace('\\', '/'))) };
+            foreach (var k in kandidaten.Select(Path.GetFullPath).Distinct(StringComparer.OrdinalIgnoreCase))
+            {
+                bool erlaubt = XrefErlaubt?.Invoke(k) ?? string.Equals(Path.GetDirectoryName(k), ordner, StringComparison.OrdinalIgnoreCase);
+                if (!erlaubt || !File.Exists(k) || new FileInfo(k).Length > MaxBytes || string.Equals(k, Pfad, StringComparison.OrdinalIgnoreCase)) continue;
+                var doc = k.EndsWith(".dxf", StringComparison.OrdinalIgnoreCase) ? DxfReader.Read(k) : DwgReader.Read(k);
+                inhalt = doc.ModelSpace.Entities.ToList();
+                break;
+            }
+        }
+        catch (Exception ex) when (ex is not OutOfMemoryException) { inhalt = null; }
+        xrefs[roh] = inhalt;
+        return inhalt;
+    }
+
     // ---------- Layouts ----------
 
     /// <summary>Namen der Layouts: «Model» zuerst, dann die Papierbereiche in Reihenfolge der Register.</summary>
@@ -251,6 +282,7 @@ public sealed class ZeichnungSitzung
     {
         var pfad = Pruefen(datei);
         var z = Zeichnungsdatei.Oeffnen(pfad);
+        z.XrefErlaubt = ohneGrenze ? _ => true : Innerhalb;   // externe Referenzen: die KI nur aus den freigegebenen Ordnern
         var schluessel = Schluessel(z);
         offen[schluessel] = z;
         zuletzt = schluessel;

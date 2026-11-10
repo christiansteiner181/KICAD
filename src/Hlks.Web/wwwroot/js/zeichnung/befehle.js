@@ -21,6 +21,10 @@ export const KUERZEL = {
   di: 'messen', messen: 'messen', abstand: 'messen', dist: 'messen',
   la: 'layer', layer: 'layer',
   zg: 'grenzen', grenzen: 'grenzen',
+  // Stufe 2 Teil 4
+  bwi: 'winkelmass', dan: 'winkelmass', bemwinkel: 'winkelmass', winkelmass: 'winkelmass', dimangular: 'winkelmass',
+  spl: 'spline', spline: 'spline',
+  ate: 'attribut', attedit: 'attribut', attribut: 'attribut', eattedit: 'attribut',
   // Stufe 2 Teil 3
   str: 'strecken', strecken: 'strecken', stretch: 'strecken',
   br: 'bruch', bruch: 'bruch', break: 'bruch',
@@ -499,6 +503,48 @@ export const BEFEHLE = {
     const h = await io.zahl('Texthöhe auf dem Papier', { vorgabe: s.texthoehe });
     if (h == null || !(h > 0)) return;
     await io.bemassungsstil({ massstab: m, texthoehe: h });
+  },
+
+  // ---------- Stufe 2 Teil 4: Winkelmass, Spline, Attribute ----------
+
+  async winkelmass(io) {
+    const s = await io.punkt('Winkelmass – Scheitel');
+    if (!Array.isArray(s)) return;
+    const a = await io.punkt('Punkt auf dem ersten Schenkel', { von: s, vorschau: m => [{ art: 'linie', p: [s, m] }] });
+    if (!Array.isArray(a)) return;
+    const b = await io.punkt('Punkt auf dem zweiten Schenkel', { von: s, ohneOrtho: true, vorschau: m => [{ art: 'linie', p: [a, s, m] }] });
+    if (!Array.isArray(b)) return;
+    const ort = await io.punkt('Lage des Massbogens', { ohneOrtho: true, vorschau: m => [{ art: 'linie', p: [a, s, b] }, { art: 'kreis', m: s, r: Math.hypot(m[0] - s[0], m[1] - s[1]) }] });
+    if (Array.isArray(ort)) await io.zeichnen([{ art: 'winkelmass', scheitel: s, von: a, bis: b, ort }]);
+  },
+
+  async spline(io) {
+    const p = [];
+    const a = await io.punkt('Spline – erster Punkt');
+    if (!Array.isArray(a)) return;
+    p.push(a);
+    let geschlossen = false;
+    for (;;) {
+      const b = await io.punkt('Nächster Punkt (S schliesst, Eingabetaste beendet)', { von: p[p.length - 1], ohneOrtho: true, vorschau: m => [{ art: 'linie', p: [...p, m] }] });
+      if (typeof b === 'string') { if (/^(s|c|schliessen|close)$/i.test(b) && p.length >= 3) { geschlossen = true; break; } continue; }
+      if (!b) break;
+      p.push(b);
+    }
+    if (p.length >= 3) await io.zeichnen([{ art: 'spline', punkte: p, geschlossen }]);
+    else if (p.length === 2) io.melden('Ein Spline braucht mindestens drei Punkte.');
+  },
+
+  async attribut(io) {
+    const o = await io.objekt('Attribute – Block anklicken');
+    if (!o) return;
+    const att = Object.entries(o.objekt.attribute || {});
+    if (!att.length) { io.melden('Dieses Objekt hat keine Attribute.'); return; }
+    const werte = {};
+    for (const [tag, alt] of att) {
+      const t = await io.text(tag + ' <' + alt + '>');
+      if (t && t !== alt) werte[tag] = t;
+    }
+    if (Object.keys(werte).length) await io.aendern([o.kennung], 'attribut', { werte });
   },
 
   async layer(io) {

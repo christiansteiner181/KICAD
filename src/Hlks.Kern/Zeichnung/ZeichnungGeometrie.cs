@@ -75,6 +75,19 @@ public static class ZeichnungGeometrie
         List<XYZ>? punkte = null;
         try { punkte = sp.PolygonalVertexes(Math.Clamp((sp.ControlPoints.Count + sp.FitPoints.Count) * 8, 32, 400)); }
         catch (Exception ex) when (ex is not OutOfMemoryException) { }
+        if (punkte is { Count: >= 2 } && sp.ControlPoints.Count > 0) return punkte.Select(v => (v.X, v.Y)).ToList();
+        // Spline nur mit Stützpunkten (so schreibt ihn die Bibliothek ins DWG): die Kurve an einer Kopie aus den Stützpunkten rechnen
+        if (sp.FitPoints.Count >= 3)
+        {
+            try
+            {
+                var kopie = new Spline { Degree = sp.Degree > 0 ? sp.Degree : 3 };
+                kopie.FitPoints.AddRange(sp.FitPoints);
+                if (kopie.UpdateFromFitPoints(100) && kopie.PolygonalVertexes(Math.Clamp(sp.FitPoints.Count * 12, 32, 400)) is { Count: >= 2 } kurve)
+                    return kurve.Select(v => (v.X, v.Y)).ToList();
+            }
+            catch (Exception ex) when (ex is not OutOfMemoryException) { }
+        }
         if (punkte is { Count: >= 2 }) return punkte.Select(v => (v.X, v.Y)).ToList();
         return (sp.FitPoints.Count >= 2 ? sp.FitPoints : sp.ControlPoints).Select(v => (v.X, v.Y)).ToList();
     }

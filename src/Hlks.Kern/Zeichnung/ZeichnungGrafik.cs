@@ -140,8 +140,9 @@ public static class ZeichnungGrafik
 
         Stil StilVon(Entity e, Layer? layer, Kontext k)
         {
-            var key = (Farbe(e, layer, k), Stift(Mm(e, layer, k)), Linie(e, layer, k));
-            if (!stile.TryGetValue(key, out var st)) stile[key] = st = new Stil { Farbe = key.Item1, Stift = key.Item2, Linie = key.Item3 };
+            double mm = Mm(e, layer, k);
+            var key = (Farbe(e, layer, k), mm.ToString("0.###", System.Globalization.CultureInfo.InvariantCulture), Linie(e, layer, k));
+            if (!stile.TryGetValue(key, out var st)) stile[key] = st = new Stil { Farbe = key.Item1, Stift = Stift(mm), Mm = mm > 0 ? mm : null, Linie = key.Item3 };
             return st;
         }
 
@@ -369,7 +370,7 @@ public static class ZeichnungGrafik
                     break;
                 case Dimension d:
                     if (d.Block is null) { Nicht(d.GetType().Name + " (ohne Block)"); break; }
-                    Abstieg(e, layer, k, t, d.Block, teil);
+                    Abstieg(e, layer, k, t, d.Block.Entities, teil);
                     break;
                 case Insert ins:
                     Einsetzen(teil, layer, k, ins);
@@ -400,6 +401,19 @@ public static class ZeichnungGrafik
                     break;
                 case Point:
                     break;   // Punkte werden nicht geplottet (Hilfspunkte, Bemassungspunkte)
+                case Wipeout wo:
+                {
+                    // Abdeckfläche: deckt mit der Farbe des Hintergrunds ab, was darunter liegt. Eckpunkte in Bildkoordinaten (y nach unten, Mitte der
+                    // Bildpunkte): Ort = Einfügepunkt + U·(x + 0.5) + V·(Höhe − (y + 0.5)); rechteckig = zwei gegenüberliegende Ecken.
+                    var v = wo.ClipBoundaryVertices;
+                    if (v.Count < 2) { Nicht("Wipeout (ohne Grenze)"); break; }
+                    var ecken = wo.ClipType == ClipType.Rectangular && v.Count == 2 ? new List<XY> { v[0], new XY(v[1].X, v[0].Y), v[1], new XY(v[0].X, v[1].Y) } : v;
+                    double h = wo.Size.Y > 0 ? wo.Size.Y : 1;
+                    var ring = ecken.Select(q => (wo.InsertPoint.X + wo.UVector.X * (q.X + 0.5) + wo.VVector.X * (h - (q.Y + 0.5)),
+                                                 wo.InsertPoint.Y + wo.UVector.Y * (q.X + 0.5) + wo.VVector.Y * (h - (q.Y + 0.5)))).ToList();
+                    Flaeche(teil, Fuellung("#ffffff"), t, [ring]);
+                    break;
+                }
                 default:
                     Nicht(e.GetType().Name);
                     break;
@@ -407,10 +421,10 @@ public static class ZeichnungGrafik
         }
 
         /// <summary>Objekte eines Blocks zeichnen; VonBlock und Layer 0 erben von der Referenz <paramref name="e"/>.</summary>
-        void Abstieg(Entity e, Layer? layer, Kontext k, Afin t, BlockRecord block, ZeichnungTeil teil)
+        void Abstieg(Entity e, Layer? layer, Kontext k, Afin t, IEnumerable<Entity> inhalt, ZeichnungTeil teil)
         {
             var innen = new Kontext(t, layer, Farbe(e, layer, k), Mm(e, layer, k), Linie(e, layer, k), k.Gefroren, k.Tiefe + 1);
-            foreach (var c in block.Entities) Verarbeiten(c, teil, innen);
+            foreach (var c in inhalt) Verarbeiten(c, teil, innen);
         }
 
         void Einsetzen(ZeichnungTeil teil, Layer? layer, Kontext k, Insert ins)
@@ -418,7 +432,13 @@ public static class ZeichnungGrafik
             var block = ins.Block;
             if (block is null || k.Tiefe >= MaxTiefe) { Nicht(block is null ? "Insert (Block fehlt)" : "Insert (zu tief verschachtelt)"); return; }
             if (!Ocs(ins.Normal, k.T, out var o)) { Nicht("Insert (geneigt)"); return; }
-            if (block.Flags.HasFlag(BlockTypeFlags.XRef) && block.Entities.Count == 0) { Nicht("externe Referenz (nicht eingebunden)"); return; }
+            IEnumerable<Entity> inhalt = block.Entities;
+            if (block.Flags.HasFlag(BlockTypeFlags.XRef) && block.Entities.Count == 0)
+            {
+                // externe Referenz: die Datei daneben lesen (einmal je Zeichnung) und ihren Modellbereich zeichnen
+                if (z.Xref(block) is not { } fremd) { Nicht("externe Referenz (Datei nicht gefunden oder nicht lesbar)"); return; }
+                inhalt = fremd;
+            }
             double sx = ins.XScale == 0 ? 1 : ins.XScale, sy = ins.YScale == 0 ? 1 : ins.YScale;
             var basis = block.BlockEntity?.BasePoint ?? new XYZ(0, 0, 0);
             int zeilen = Math.Max(1, (int)ins.RowCount), spalten = Math.Max(1, (int)ins.ColumnCount);
@@ -431,7 +451,7 @@ public static class ZeichnungGrafik
                               .Nach(Afin.Verschiebung(c * ins.ColumnSpacing, r * ins.RowSpacing))
                               .Nach(Afin.Skalierung(sx, sy))
                               .Nach(Afin.Verschiebung(-basis.X, -basis.Y));
-                    Abstieg(ins, layer, k, tt, block, teil);
+                    Abstieg(ins, layer, k, tt, inhalt, teil);
                 }
             if (!ins.HasAttributes) return;
             var aussen = new Kontext(k.T, layer, Farbe(ins, layer, k), Mm(ins, layer, k), Linie(ins, layer, k), k.Gefroren, k.Tiefe + 1);
@@ -519,7 +539,6 @@ public static class ZeichnungGrafik
             double xl = Lo(mx, 0.05), xh = Lo(mx, 0.95), yl = Lo(my, 0.05), yh = Lo(my, 0.95), wx = xh - xl, wy = yh - yl;
             var haupt = boxen.Where(b => (b[0] + b[2]) / 2 >= xl - wx && (b[0] + b[2]) / 2 <= xh + wx && (b[1] + b[3]) / 2 >= yl - wy && (b[1] + b[3]) / 2 <= yh + wy).ToList();
             Bild.Umriss = haupt.Count > 0 ? Vereinigung(haupt) : Bild.Ausdehnung;
-            _ = z;
         }
     }
 }

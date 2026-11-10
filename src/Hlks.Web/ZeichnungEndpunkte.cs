@@ -230,7 +230,7 @@ public static class ZeichnungEndpunkte
             {
                 w.WriteStartObject();
                 if (s.Farbe is not null) w.WriteString("f", s.Farbe);
-                if (s.Stift is not null) w.WriteNumber("s", Stifte.Mm(s.Stift));
+                if (s.Stift is not null) w.WriteNumber("s", s.Mm ?? Stifte.Mm(s.Stift));
                 if (s.Linie != "voll") w.WriteString("l", s.Linie);
                 if (s.Fuellung is not null) w.WriteString("fl", s.Fuellung);
                 w.WriteEndObject();

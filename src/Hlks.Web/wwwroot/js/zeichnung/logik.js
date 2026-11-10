@@ -60,7 +60,34 @@ export class Fangraster {
   }
 }
 
-export const FANGNAMEN = ['Endpunkt', 'Mittelpunkt', 'Zentrum', 'Schnittpunkt', 'Lot'];
+export const FANGNAMEN = ['Endpunkt', 'Mittelpunkt', 'Zentrum', 'Schnittpunkt', 'Lot', 'Tangente'];
+
+/** Tangente vom Punkt «von» an einen Kreis nahe dem Zeiger: Berührpunkt im Umkreis r des Zeigers. kreise: [[cx, cy, radius], …]. */
+export function tangente(kreise, x, y, r, von) {
+  let best = null;
+  for (const [cx, cy, rad] of kreise) {
+    if (Math.abs(Math.hypot(x - cx, y - cy) - rad) > r) continue;   // Zeiger nicht am Kreis
+    const dx = von[0] - cx, dy = von[1] - cy, d = Math.hypot(dx, dy);
+    if (d <= rad) continue;                                          // von innen gibt es keine Tangente
+    const w = Math.atan2(dy, dx), a = Math.acos(rad / d);
+    for (const t of [w + a, w - a]) {
+      const px = cx + rad * Math.cos(t), py = cy + rad * Math.sin(t), ab = Math.hypot(px - x, py - y);
+      if (ab <= r && (!best || ab < best.d)) best = { x: px, y: py, art: 5, d: ab };
+    }
+  }
+  return best;
+}
+
+/** Polarfang: liegt die Richtung von «von» zum Punkt innerhalb der Toleranz an einem Vielfachen des Schritts, wird der Punkt auf diesen Strahl gelegt.
+ *  Rückgabe { p, winkel } oder null. */
+export function polar(p, von, schrittGrad, toleranzGrad = 3) {
+  const dx = p[0] - von[0], dy = p[1] - von[1], l = Math.hypot(dx, dy);
+  if (l === 0 || !(schrittGrad > 0)) return null;
+  const w = Math.atan2(dy, dx) * 180 / Math.PI, n = Math.round(w / schrittGrad) * schrittGrad;
+  if (Math.abs(w - n) > toleranzGrad) return null;
+  const b = n * Math.PI / 180, t = dx * Math.cos(b) + dy * Math.sin(b);   // Länge entlang des Strahls
+  return { p: [von[0] + t * Math.cos(b), von[1] + t * Math.sin(b)], winkel: ((n % 360) + 360) % 360 };
+}
 
 /** Strecken der Primitive (nur Linien und Polylinien) für Schnittpunkt- und Lotfang: Float64Array [ax, ay, bx, by, …]. */
 export function strecken(primitive, fenster = null) {
@@ -143,12 +170,13 @@ export class Streckenraster {
 }
 
 /** Bester Fangpunkt aus Punktraster und Streckenraster: Endpunkt vor Schnittpunkt vor Mittelpunkt/Zentrum vor Lot (bei ähnlichem Abstand). */
-export function fangSuchen(punkte, linien, x, y, r, von = null) {
-  const gewicht = [1, 1.25, 1.25, 1.05, 1.5];
+export function fangSuchen(punkte, linien, x, y, r, von = null, kreise = null) {
+  const gewicht = [1, 1.25, 1.25, 1.05, 1.5, 1.5];
   let best = null, mass = Infinity;
   const pruefen = k => { if (!k) return; const m = Math.hypot(k.x - x, k.y - y) * gewicht[k.art]; if (m < mass) { mass = m; best = { x: k.x, y: k.y, art: k.art }; } };
   pruefen(punkte?.suche(x, y, r));
   if (linien) { pruefen(linien.schnitt(x, y, r)); if (von) pruefen(linien.lot(x, y, r, von)); }
+  if (kreise && von) pruefen(tangente(kreise, x, y, r, von));
   return best;
 }
 

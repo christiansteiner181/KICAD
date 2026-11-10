@@ -21,8 +21,10 @@
     <button id="z-wieder" title="Wiederholen (Strg+Y)" disabled>↷</button>
     <span class="z-trenner"></span>
     <button id="z-grenzen" title="Ganze Zeichnung zeigen (Pos1 oder Doppelklick mit dem Mausrad)">Grenzen</button>
-    <label title="Objektfang: Endpunkt, Schnittpunkt, Mittelpunkt, Zentrum, Lot (F3)"><input type="checkbox" id="z-fang" checked> Fang</label>
+    <label title="Objektfang: Endpunkt, Schnittpunkt, Mittelpunkt, Zentrum, Lot, Tangente (F3)"><input type="checkbox" id="z-fang" checked> Fang</label>
     <label title="Ortho: nur waagrecht und senkrecht (F8)"><input type="checkbox" id="z-ortho"> Ortho</label>
+    <label title="Polarfang: rastet auf Vielfache des Winkels ein (F10)"><input type="checkbox" id="z-polar" checked> Polar</label>
+    <select id="z-polar-schritt" title="Winkelschritt des Polarfangs"><option>90</option><option selected>45</option><option>30</option><option>15</option></select>
     <label title="Linienstärken der Zeichnung anzeigen"><input type="checkbox" id="z-staerken" checked> Linienstärken</label>
     <label title="Heller Hintergrund wie auf dem Papier"><input type="checkbox" id="z-hell"> Hell</label>
     <span class="z-trenner"></span>
@@ -40,6 +42,7 @@
     <button data-befehl="bogen" title="Bogen durch drei Punkte (B)">Bogen</button>
     <button data-befehl="ellipse" title="Ellipse: Mittelpunkt, Hauptachse, Nebenachse (EL)">Ellipse</button>
     <button data-befehl="polygon" title="Regelmässiges Vieleck (PG)">Polygon</button>
+    <button data-befehl="spline" title="Spline durch Punkte (SPL)">Spline</button>
     <button data-befehl="punkt" title="Punkt (PU)">Punkt</button>
     <button data-befehl="schraffur" title="Schraffur in geschlossenen Polylinien und Kreisen (H)">Schraffur</button>
     <span class="z-trenner"></span>
@@ -51,12 +54,14 @@
     <button data-befehl="bemkette" title="Kettenmass: weiter vom letzten Masspunkt (BKE)">Kette</button>
     <button data-befehl="radiusmass" title="Radiusmass an Kreis oder Bogen (BRA)">Radius</button>
     <button data-befehl="durchmessermass" title="Durchmessermass (BDU)">Durchm.</button>
+    <button data-befehl="winkelmass" title="Winkelmass: Scheitel und zwei Schenkel (BWI)">Winkel</button>
     <button data-befehl="fuehrung" title="Führungslinie mit Text (FÜ oder LE)">Führung</button>
     <button data-befehl="bemstil" title="Bemassungsstil: Gesamtmassstab und Texthöhe (BMS)">Mass-Stil</button>
     <span class="z-trenner"></span>
     <span class="z-gruppe">Block</span>
     <button data-befehl="einfuegen" title="Block einfügen (EIN oder I)">Einfügen</button>
     <button data-befehl="block" title="Block aus Objekten erstellen (BL)">Erstellen</button>
+    <button data-befehl="attribut" title="Attribute eines Blocks ändern (ATE)">Attribute</button>
     <span class="z-trenner"></span>
     <span class="z-gruppe">Ändern</span>
     <button data-befehl="schieben" title="Schieben (S oder M)">Schieben</button>

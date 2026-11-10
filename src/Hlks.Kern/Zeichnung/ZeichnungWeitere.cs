@@ -27,7 +27,7 @@ public static class ZeichnungWeitere
     /// <summary>Bild einer Bemassung (ihr Block) neu erzeugen. ACadSharp rechnet den Gesamtmassstab des Stils (DIMSCALE) dabei nicht ein
     /// (Befund 10.11.2026: Text 0.18 statt 0.18 × 50); deshalb werden die Grössen des Stils für das Erzeugen mit dem Massstab multipliziert
     /// und danach zurückgestellt – im Stil bleibt DIMSCALE stehen, wie AutoCAD es erwartet.</summary>
-    public static void MassBild(Dimension d)
+    static void MassBildStandard(Dimension d)
     {
         var st = d.Style;
         double m = st is { ScaleFactor: > 0 } ? st.ScaleFactor : 1;
@@ -51,8 +51,51 @@ public static class ZeichnungWeitere
         "bruch" => Bruch(liste, par),
         "griff" => Griff(liste, par),
         "block" => BlockErstellen(z, liste, par),
+        "attribut" => Attribute(liste, par),
         _ => null,
     };
+
+    /// <summary>Bild einer Bemassung neu erzeugen (mit dem Gesamtmassstab des Stils); für das Winkelmass, dessen Bild die Bibliothek leer lässt,
+    /// zeichnet KICAD Bogen, Pfeile und Gradzahl selbst.</summary>
+    public static void MassBild(Dimension d)
+    {
+        MassBildStandard(d);
+        if (d is DimensionAngular3Pt w && d.Block is { } block && !block.Entities.Any(e => e is Arc or TextEntity or MText)) WinkelBild(w, block);
+    }
+
+    static void WinkelBild(DimensionAngular3Pt d, BlockRecord block)
+    {
+        try
+        {
+            var st = d.Style;
+            double m = st is { ScaleFactor: > 0 } ? st.ScaleFactor : 1, h = (st?.TextHeight is > 0 and var th ? th : 2.5) * m, pfeil = (st?.ArrowSize is > 0 and var ps ? ps : 2.5) * m;
+            double sx = d.AngleVertex.X, sy = d.AngleVertex.Y;
+            double r = Math.Sqrt(Math.Pow(d.DefinitionPoint.X - sx, 2) + Math.Pow(d.DefinitionPoint.Y - sy, 2));
+            if (!(r > 0)) return;
+            double wa = Math.Atan2(d.FirstPoint.Y - sy, d.FirstPoint.X - sx), wb = Math.Atan2(d.SecondPoint.Y - sy, d.SecondPoint.X - sx), wo = Math.Atan2(d.DefinitionPoint.Y - sy, d.DefinitionPoint.X - sx);
+            // der Bogen liegt in dem Winkelfeld, in dem der Punkt der Masslinie liegt
+            bool innen = Norm(wo - wa) <= Norm(wb - wa);
+            double von = innen ? wa : wb, sweep = innen ? Norm(wb - wa) : Norm(wa - wb);
+            foreach (var alt in block.Entities.ToList()) block.Entities.Remove(alt);
+            block.Entities.Add(new Arc { Center = new XYZ(sx, sy, 0), Radius = r, StartAngle = Norm(von), EndAngle = Norm(von + sweep), Color = ACadSharp.Color.ByBlock });
+            void Spitze(double winkel, double richtung)   // Pfeil an der Stelle «winkel», Schaft entlang des Bogens (richtung +1 = Gegenuhrzeigersinn)
+            {
+                double px = sx + r * Math.Cos(winkel), py = sy + r * Math.Sin(winkel);
+                double tx = -Math.Sin(winkel) * richtung, ty = Math.Cos(winkel) * richtung, nx = Math.Cos(winkel), ny = Math.Sin(winkel);
+                var e1 = new XYZ(px + tx * pfeil + nx * pfeil / 6, py + ty * pfeil + ny * pfeil / 6, 0); var e2 = new XYZ(px + tx * pfeil - nx * pfeil / 6, py + ty * pfeil - ny * pfeil / 6, 0);
+                block.Entities.Add(new Solid { FirstCorner = new XYZ(px, py, 0), SecondCorner = e1, ThirdCorner = e2, FourthCorner = e2, Color = ACadSharp.Color.ByBlock });
+            }
+            if (r * sweep > 2.5 * pfeil) { Spitze(von, 1); Spitze(von + sweep, -1); }
+            double mitte = von + sweep / 2, tr = r + h * 1.1;
+            var ort = new XYZ(sx + tr * Math.Cos(mitte), sy + tr * Math.Sin(mitte), 0);
+            var text = (sweep * 180 / Math.PI).ToString("0.#", System.Globalization.CultureInfo.InvariantCulture) + "°";
+            var t = new TextEntity { Value = text, Height = h, InsertPoint = ort, AlignmentPoint = ort, HorizontalAlignment = TextHorizontalAlignment.Center, VerticalAlignment = TextVerticalAlignmentType.Middle, Color = ACadSharp.Color.ByBlock };
+            if (st?.Style is { } schrift) t.Style = schrift;
+            block.Entities.Add(t);
+            d.TextMiddlePoint = ort;
+        }
+        catch (Exception ex) when (ex is not OutOfMemoryException) { }
+    }
 
     // ---------- Strecken ----------
 
@@ -266,6 +309,21 @@ public static class ZeichnungWeitere
             () => { ort.Entities.Remove(insert); foreach (var e in liste) ort.Entities.Add(e); z.Dokument.BlockRecords.Remove(name); });
     }
 
+    /// <summary>Attributwerte einer Blockreferenz setzen: werte = { TAG: Text, … }.</summary>
+    static (string, Action, Action) Attribute(List<Entity> liste, JsonObject par)
+    {
+        if (liste.Count != 1 || liste[0] is not Insert ins) throw new HlksFehler("Attribute gehören zu einer Blockreferenz.", "kennungen: ein Block; werte: { TAG: Text }.");
+        if (par["werte"] is not JsonObject werte || werte.Count == 0) throw new HlksFehler("«werte» fehlt.", "werte: { TAG: Text, … } – die Namen stehen in zeichnung_objekte unter attribute.");
+        var neu = new List<(AttributeEntity A, string Alt, string Neu)>();
+        foreach (var (tag, wert) in werte)
+        {
+            var a = ins.Attributes.FirstOrDefault(x => string.Equals(x.Tag, tag, StringComparison.OrdinalIgnoreCase))
+                ?? throw new HlksFehler($"Das Attribut «{tag}» gibt es an diesem Block nicht.", "Vorhanden: " + string.Join(", ", ins.Attributes.Select(x => x.Tag)));
+            neu.Add((a, a.Value, (wert as JsonValue)?.TryGetValue<string>(out var t) == true ? t : wert?.ToString() ?? ""));
+        }
+        return ($"{neu.Count} Attribut(e) ändern", () => neu.ForEach(n => n.A.Value = n.Neu), () => neu.ForEach(n => n.A.Value = n.Alt));
+    }
+
     // ---------- Weitere Objektarten ----------
 
     public static Entity? Bauen(Zeichnungsdatei z, string art, JsonObject o)
@@ -281,7 +339,16 @@ public static class ZeichnungWeitere
                 var (x, y) = Punkt(o["ort"], "ort");
                 double sx = Z("massstab", 1), sy = Z("massstabY", sx);
                 if (sx == 0 || sy == 0) throw new HlksFehler("Der Massstab darf nicht 0 sein.");
-                return new Insert(block) { InsertPoint = new XYZ(x, y, 0), XScale = sx, YScale = sy, ZScale = Math.Abs(sx), Rotation = Z("drehungGrad", 0) * Math.PI / 180 };
+                var ins = new Insert(block) { InsertPoint = new XYZ(x, y, 0), XScale = sx, YScale = sy, ZScale = Math.Abs(sx), Rotation = Z("drehungGrad", 0) * Math.PI / 180 };
+                // Attribute aus den Definitionen des Blocks anlegen und mit den mitgegebenen Werten füllen
+                if (block.Entities.OfType<AttributeDefinition>().Any())
+                {
+                    try { ins.UpdateAttributes(); } catch (Exception ex) when (ex is not OutOfMemoryException) { }
+                    if (o["attribute"] is JsonObject werte)
+                        foreach (var a in ins.Attributes)
+                            if (werte.FirstOrDefault(w => string.Equals(w.Key, a.Tag, StringComparison.OrdinalIgnoreCase)).Value is JsonValue v && v.TryGetValue<string>(out var text)) a.Value = text;
+                }
+                return ins;
             }
             case "radiusmass" or "durchmessermass":
             {
@@ -296,6 +363,25 @@ public static class ZeichnungWeitere
                 d.TextMiddlePoint = new XYZ(ox, oy, 0);
                 if (z.Dokument.Header.CurrentDimensionStyle is { } stil) d.Style = stil;
                 return d;
+            }
+            case "winkelmass":
+            {
+                var (sx, sy) = Punkt(o["scheitel"], "scheitel"); var (ax, ay) = Punkt(o["von"], "von"); var (bx, by) = Punkt(o["bis"], "bis"); var (ox, oy) = Punkt(o["ort"], "ort");
+                if ((ax == sx && ay == sy) || (bx == sx && by == sy)) throw new HlksFehler("Ein Schenkelpunkt liegt auf dem Scheitel.");
+                var d = new DimensionAngular3Pt { AngleVertex = new XYZ(sx, sy, 0), FirstPoint = new XYZ(ax, ay, 0), SecondPoint = new XYZ(bx, by, 0), DefinitionPoint = new XYZ(ox, oy, 0) };
+                if (z.Dokument.Header.CurrentDimensionStyle is { } stil) d.Style = stil;
+                return d;
+            }
+            case "spline":
+            {
+                if (o["punkte"] is not JsonArray { Count: >= 2 } liste) throw new HlksFehler("Ein Spline braucht mindestens zwei punkte.", "punkte: [[x, y], …] – die Kurve läuft durch diese Punkte.");
+                var sp = new Spline { Degree = 3 };
+                foreach (var n in liste) { var (x, y) = Punkt(n, "punkte"); sp.FitPoints.Add(new XYZ(x, y, 0)); }
+                if (o["geschlossen"] is JsonValue g && g.TryGetValue<bool>(out var zu) && zu && liste.Count > 2) sp.FitPoints.Add(sp.FitPoints[0]);
+                bool ok;
+                try { ok = sp.UpdateFromFitPoints(100); } catch (Exception ex) when (ex is not OutOfMemoryException) { ok = false; }
+                if (!ok || sp.ControlPoints.Count < 2) throw new HlksFehler("Aus diesen Punkten lässt sich kein Spline rechnen.", "Mindestens drei verschiedene Punkte angeben oder eine Polylinie zeichnen.");
+                return sp;
             }
             case "fuehrung":
             {

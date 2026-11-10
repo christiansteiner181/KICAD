@@ -66,13 +66,13 @@ public static class ZeichnungBearbeiten
         "{art:\"text\", ort:[x,y], text, hoehe, drehungGrad} · {art:\"absatztext\", ort, text (mit Zeilenumbrüchen), hoehe, breite} · {art:\"ellipse\", mitte, hauptachse:[x,y] (Endpunkt), verhaeltnis} · " +
         "{art:\"polygon\", mitte, radius, seiten, drehungGrad, inkreis} · {art:\"punkt\", ort} · {art:\"schraffur\", muster: voll|linien|kreuz, abstand, winkelGrad, objekte:[Kennungen geschlossener Polylinien/Kreise] bzw. grenzen:[[[x,y],…],…]} · " +
         "{art:\"bemassung\", von, bis, ort (Lage der Masslinie), richtung: waagrecht|senkrecht|ausgerichtet} · {art:\"radiusmass\"|\"durchmessermass\", objekt: Kennung eines Kreises/Bogens, ort} · " +
-        "{art:\"fuehrung\", punkte:[[x,y] Pfeilspitze, …]} · {art:\"block\", name, ort, massstab, drehungGrad} (Blöcke: zeichnung_bloecke). Je Objekt wahlweise layer, farbe (ACI-Nummer 1–255, \"#rrggbb\" oder \"vonLayer\") und linientyp. " +
+        "{art:\"winkelmass\", scheitel, von, bis, ort} · {art:\"fuehrung\", punkte:[[x,y] Pfeilspitze, …]} · {art:\"spline\", punkte, geschlossen} · {art:\"block\", name, ort, massstab, drehungGrad, attribute:{TAG:Text}} (Blöcke: zeichnung_bloecke). Je Objekt wahlweise layer, farbe (ACI-Nummer 1–255, \"#rrggbb\" oder \"vonLayer\") und linientyp. " +
         "Ohne layer gilt der aktuelle Layer. Koordinaten in Zeichnungseinheiten. Antwort: die Kennungen der neuen Objekte. Die Datei ändert sich erst mit zeichnung_speichern.";
     public const string AendernText = "Ändert Objekte der Zeichnung (ein Rückgängig-Schritt). kennungen: Liste der Objekte (aus zeichnung_objekte). aktion: " +
         "loeschen · verschieben {dx, dy} · kopieren {dx, dy} · drehen {um:[x,y], winkelGrad} · skalieren {um:[x,y], faktor} · eigenschaften {layer, farbe, linientyp} · spiegeln {achse:[[x,y],[x,y]], kopie} · versetzen {abstand, seite:[x,y]} · " +
         "stutzen {punkt:[x,y] auf dem Teil, der weg soll, grenzen:[Kennungen] (leer = alle)} · dehnen {punkt nahe dem Ende, grenzen} · abrunden {radius, punkte:[[x,y],[x,y]]} (zwei Linien) · fasen {abstand1, abstand2, punkte} · " +
         "ursprung (Polylinie/Block zerlegen) · verbinden (Linien, Bögen, offene Polylinien zu einer Polylinie) · reihe {zeilen, spalten, dx, dy} · uebertragen {quelle: Kennung} · strecken {fenster:[x0,y0,x1,y1], dx, dy} · bruch {punkt, punkt2} · " +
-        "griff {index, nach:[x,y]} (Griffe: zeichnung_objekte, Feld griffe) · block {name, basis:[x,y]} (Block aus den Objekten erstellen). " +
+        "griff {index, nach:[x,y]} (Griffe: zeichnung_objekte, Feld griffe) · block {name, basis:[x,y]} (Block aus den Objekten erstellen) · attribut {werte:{TAG:Text}} (an einer Blockreferenz). " +
         "Antwort: Anzahl und bei kopieren die neuen Kennungen. Die Datei ändert sich erst mit zeichnung_speichern.";
     public const string SpeichernText = "Speichert die Zeichnung als DWG oder DXF. Ohne datei an ihren Ort (die vorherige Fassung bleibt als .bak daneben), mit datei als neue Datei " +
         "(«Speichern unter»). fassung: 2000, 2004, 2010, 2013 oder 2018 (Vorgabe: wie geöffnet; DWG 2007 wird als 2010 geschrieben). Nach dem Schreiben wird die Datei " +
@@ -190,7 +190,7 @@ public static class ZeichnungBearbeiten
                 return e;
             }
             default:
-                return ZeichnungGeoBefehle.Bauen(z, art, o) ?? throw new HlksFehler($"Die Art «{art}» lässt sich nicht zeichnen.", "Erlaubt: linie, polylinie, rechteck, kreis, bogen, text, ellipse, polygon, punkt, absatztext, schraffur, bemassung, radiusmass, durchmessermass, fuehrung, block.");
+                return ZeichnungGeoBefehle.Bauen(z, art, o) ?? throw new HlksFehler($"Die Art «{art}» lässt sich nicht zeichnen.", "Erlaubt: linie, polylinie, rechteck, kreis, bogen, text, ellipse, polygon, punkt, absatztext, schraffur, bemassung, radiusmass, durchmessermass, winkelmass, fuehrung, spline, block.");
         }
     }
 

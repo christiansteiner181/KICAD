@@ -4469,3 +4469,17 @@ vier Gruppen (Zeichnen, Beschriften, Block, Ändern).
 - **Führung** (FÜ/LE): Pfeilspitze, weitere Punkte, Eingabetaste, Text und Texthöhe.
 - **Noch nicht:** Winkelbemassung, Spline, Attribute bearbeiten, Tangenten-/Polarfang, Schnittpunktfang an Bögen, Stutzen/Versetzen von Polylinien mit
   Bögen, Bruch an Polylinien, Abdeckflächen/Rasterbilder/externe Referenzen in der Darstellung.
+
+## 2D-CAD «Zeichnung» – Darstellung, Winkelmass, Spline, Attribute, Polar- und Tangentenfang (Stufe 2 Teil 4, 10.11.2026)
+
+- **Darstellung:** Abdeckflächen (Wipeout) decken mit der Hintergrundfarbe ab · Linienstärken genau wie in der DWG (statt auf fünf Stifte gerundet; `Stil.Mm`) ·
+  externe Referenzen werden aus der Datei neben der Zeichnung gelesen und mitgezeichnet (die KI über MCP nur aus freigegebenen Ordnern). Was fehlt, steht
+  unter «Hinweise»: Rasterbilder, nicht gefundene Referenzen.
+- **Winkel** (BWI): Scheitel, je ein Punkt auf beiden Schenkeln, Lage des Massbogens. Bogen, Pfeile und Gradzahl zeichnet KICAD selbst.
+- **Spline** (SPL): Punkte anklicken, S schliesst, Eingabetaste beendet (mindestens drei Punkte).
+- **Attribute** (ATE): Block anklicken, je Attribut den neuen Text tippen (Eingabetaste lässt den alten). Beim Einfügen eines Blocks mit Attributen werden
+  die Attribute mit ihren Vorgaben angelegt.
+- **Polar** (F10, Winkelschritt 90/45/30/15°): rastet die Richtung ab dem letzten Punkt innerhalb von 3° ein; unten steht «Polar 45°». Ortho (F8) hat Vorrang.
+- **Fang Tangente** ○̅: vom letzten Punkt an einen Kreis oder Bogen.
+- **Noch nicht:** Polylinien mit Bögen stutzen/versetzen, Bruch an Polylinien, Schnittpunktfang an Bögen, Linienarten genau, Plotstile (CTB), AutoCAD-Schriften,
+  Rasterbilder, Tabellen, Multi-Führungslinien, dynamische Blöcke bearbeiten.

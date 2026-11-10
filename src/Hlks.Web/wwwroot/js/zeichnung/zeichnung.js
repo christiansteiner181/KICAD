@@ -6,7 +6,7 @@
 // Koordinaten werden beim Laden um einen festen Ursprung verschoben (Landeskoordinaten sind zu gross für die Leinwand).
 
 import { holen, senden } from '../api.js';
-import { fangpunkte, Fangraster, strecken, Streckenraster, fangSuchen, FANGNAMEN, messwerte, laengeText, flaecheText } from './logik.js';
+import { fangpunkte, Fangraster, strecken, Streckenraster, fangSuchen, polar, FANGNAMEN, messwerte, laengeText, flaecheText } from './logik.js';
 import { symboleSetzen } from './symbole.js';
 import { BEFEHLE, KUERZEL, NAMEN as BEFEHLSNAMEN, Abbruch, punktLesen, ortho } from './befehle.js';
 
@@ -89,7 +89,7 @@ async function grafikLaden(grenzen) {
 function aufbereiten(g) {
   if (!z.ursprung) { const u = g.umriss || g.papier || [0, 0, 0, 0]; z.ursprung = [(u[0] + u[2]) / 2, (u[1] + u[3]) / 2]; }
   const [ox, oy] = z.ursprung;
-  const fangListen = [], streckenListen = [];
+  const fangListen = [], streckenListen = [], kreise = [];
   const teile = [];
   for (const teil of g.teile) {
     const stuecke = [];
@@ -107,12 +107,14 @@ function aufbereiten(g) {
         }
         case 'k': {
           p[2] -= ox; p[3] -= oy;
+          if (kreise.length < 20000) kreise.push([p[2], p[3], p[4]]);
           const pfad = strich(p[1]);
           pfad.moveTo(p[2] + p[4], p[3]); pfad.arc(p[2], p[3], p[4], 0, 2 * Math.PI);
           break;
         }
         case 'b': {
           p[2] -= ox; p[3] -= oy;
+          if (kreise.length < 20000) kreise.push([p[2], p[3], p[4]]);
           const a = p[5] * Math.PI / 180; let e = p[6] * Math.PI / 180;
           if (e <= a) e += 2 * Math.PI;
           const pfad = strich(p[1]);
@@ -153,6 +155,7 @@ function aufbereiten(g) {
   const linien = new Float64Array(m); o = 0;
   for (const l of streckenListen) { linien.set(l, o); o += l.length; }
   z.fangLinien = new Streckenraster(linien, zelle);
+  z.fangKreise = kreise;
 }
 
 // ---------- Ansicht ----------
@@ -198,7 +201,11 @@ function zeigerPunkt() {
   if (z.fangpunkt) return [z.fangpunkt.x, z.fangpunkt.y];
   const p = zuWelt(z.maus.px, z.maus.py, groesse());
   const o = z.erwartet?.opt;
-  return $('z-ortho').checked && o?.von && !o.ohneOrtho ? ortho(p, o.von) : p;
+  z.polarWinkel = null;
+  if (!o?.von || o.ohneOrtho) return p;
+  if ($('z-ortho').checked) return ortho(p, o.von);
+  if ($('z-polar').checked) { const t = polar(p, o.von, +$('z-polar-schritt').value); if (t) { z.polarWinkel = t.winkel; return t.p; } }
+  return p;
 }
 
 /** Bogen durch drei Punkte als Punktfolge (Vorschau). */
@@ -318,6 +325,7 @@ function malen() {
     if (z.fangpunkt.art === 0) ctx.rect(x - 6, y - 6, 12, 12);
     else if (z.fangpunkt.art === 1) { ctx.moveTo(x, y - 7); ctx.lineTo(x + 7, y + 6); ctx.lineTo(x - 7, y + 6); ctx.closePath(); }
     else if (z.fangpunkt.art === 3) { ctx.moveTo(x - 6, y - 6); ctx.lineTo(x + 6, y + 6); ctx.moveTo(x + 6, y - 6); ctx.lineTo(x - 6, y + 6); }
+    else if (z.fangpunkt.art === 5) { ctx.arc(x, y + 2, 5.5, 0, 2 * Math.PI); ctx.moveTo(x - 8, y - 4.5); ctx.lineTo(x + 8, y - 4.5); }
     else if (z.fangpunkt.art === 4) { ctx.moveTo(x - 7, y - 7); ctx.lineTo(x - 7, y + 7); ctx.lineTo(x + 7, y + 7); ctx.moveTo(x - 7, y); ctx.lineTo(x, y); ctx.lineTo(x, y + 7); }
     else ctx.arc(x, y, 7, 0, 2 * Math.PI);
     ctx.stroke();
@@ -528,11 +536,11 @@ leinwand.addEventListener('pointermove', e => {
   if (!z.grafik) return;
   const g = groesse();
   const [wx, wy] = zuWelt(m.px, m.py, g);
-  z.fangpunkt = $('z-fang').checked && z.fang && !zug?.bewegt && willPunkt() && !z.erwartet?.opt?.ohneFang ? fangSuchen(z.fang, z.fangLinien, wx, wy, 10 / z.ansicht.zoom, z.erwartet?.opt?.von || (z.werkzeug === 'messen' && !z.messFertig ? z.messpunkte.at(-1) : null)) : null;
+  z.fangpunkt = $('z-fang').checked && z.fang && !zug?.bewegt && willPunkt() && !z.erwartet?.opt?.ohneFang ? fangSuchen(z.fang, z.fangLinien, wx, wy, 10 / z.ansicht.zoom, z.erwartet?.opt?.von || (z.werkzeug === 'messen' && !z.messFertig ? z.messpunkte.at(-1) : null), z.fangKreise) : null;
   const ort = zeigerPunkt() || [wx, wy];
   const [ox, oy] = z.ursprung;
   $('z-koord').textContent = `${(ort[0] + ox).toFixed(3)}, ${(ort[1] + oy).toFixed(3)}`;
-  $('z-fangtext').textContent = z.fangpunkt ? FANGNAMEN[z.fangpunkt.art] : '';
+  $('z-fangtext').textContent = z.fangpunkt ? FANGNAMEN[z.fangpunkt.art] : z.polarWinkel != null ? `Polar ${z.polarWinkel}°` : '';
   if (z.werkzeug === 'messen' && z.messpunkte.length && !z.messFertig) massZeigen([...z.messpunkte, ort]);
   zeichnen();
 });
@@ -891,7 +899,7 @@ $('z-aktueller-layer').addEventListener('change', async e => {
   catch (f) { melden(fehlerText(f), true); }
   eingabe.focus();
 });
-for (const id of ['z-fang', 'z-ortho', 'z-staerken', 'z-hell']) $(id).addEventListener('change', () => { zeichnen(); eingabe.focus(); });
+for (const id of ['z-fang', 'z-ortho', 'z-polar', 'z-staerken', 'z-hell']) $(id).addEventListener('change', () => { zeichnen(); eingabe.focus(); });
 $('z-layer-filter').addEventListener('input', layerZeigen);
 $('z-layer-alle').addEventListener('click', () => layerSetzen(layerSichtbar().filter(l => !l.ein && !l.gefroren).map(l => l.name), true));
 $('z-layer-keine').addEventListener('click', () => layerSetzen(layerSichtbar().filter(l => l.ein && !l.gefroren).map(l => l.name), false));
@@ -921,6 +929,7 @@ window.addEventListener('keydown', e => {
   }
   if (e.key === 'F3') { e.preventDefault(); $('z-fang').checked = !$('z-fang').checked; zeichnen(); return; }
   if (e.key === 'F8') { e.preventDefault(); $('z-ortho').checked = !$('z-ortho').checked; zeichnen(); return; }
+  if (e.key === 'F10') { e.preventDefault(); $('z-polar').checked = !$('z-polar').checked; zeichnen(); return; }
   if (feld) return;
   if (e.key === 'Home') zoomGrenzen();
   else if (e.key === 'Delete' && !z.befehl && z.auswahl.size && eingabe.value === '') befehlStarten('loeschen');

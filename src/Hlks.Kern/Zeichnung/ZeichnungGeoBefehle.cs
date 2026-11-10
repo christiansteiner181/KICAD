@@ -152,7 +152,7 @@ public static class ZeichnungGeoBefehle
             case "uebertragen": return Uebertragen(z, liste, par);
             default:
                 return ZeichnungWeitere.Aendern(z, liste, aktion, par) ?? throw new HlksFehler($"Die Aktion «{aktion}» gibt es nicht.",
-                    "Erlaubt: loeschen, verschieben, kopieren, drehen, skalieren, eigenschaften, spiegeln, versetzen, stutzen, dehnen, abrunden, fasen, ursprung, verbinden, reihe, uebertragen, strecken, bruch, griff, block.");
+                    "Erlaubt: loeschen, verschieben, kopieren, drehen, skalieren, eigenschaften, spiegeln, versetzen, stutzen, dehnen, abrunden, fasen, ursprung, verbinden, reihe, uebertragen, strecken, bruch, griff, block, attribut.");
         }
     }
 

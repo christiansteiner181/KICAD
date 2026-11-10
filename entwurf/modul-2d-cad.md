@@ -147,6 +147,9 @@ bei den Unterlagen), nie ausserhalb.
 - **Stufe 2 Teil 3 gebaut (10.11.2026):** Blöcke einfügen und erstellen, Griffe, Strecken, Bruch, Ketten-, Radius- und Durchmessermass, Führung,
   Bemassungsstil mit Gesamtmassstab (`zeichnung_bemassungsstil`), Blockliste (`zeichnung_bloecke`). Kern `ZeichnungWeitere.cs`. Offen bleiben:
   Winkelbemassung, Spline, Attribute, Tangenten-/Polarfang, Polylinien mit Bögen stutzen/versetzen, Darstellung Wipeout/Rasterbild/XRef.
+- **Stufe 2 Teil 4 gebaut (10.11.2026):** Darstellung von Abdeckflächen und externen Referenzen, genaue Linienstärken, Winkelmass (Bild von KICAD selbst),
+  Spline, Blockattribute (anlegen beim Einfügen, ändern), Polar- und Tangentenfang. Offen bleiben: Polylinien mit Bögen stutzen/versetzen, Bruch an
+  Polylinien, Schnittpunktfang an Bögen, Linienarten genau, CTB, Schriften, Rasterbilder, Tabellen, Multi-Führungslinien.
 - **Christian 10.11.2026: «zudem müssen alle zeichnungsfunktionen vorhanden sein»** – offen: Spiegeln, Versetzen, Stutzen, Dehnen, Abrunden, Fasen,
   Strecken, Bruch, Verbinden, Reihe, Ursprung, Eigenschaften übertragen, Griffe · Ellipse, Polygon, Spline, Punkt, Schraffur, Absatztext ·
   Bemassung, Führung · Blöcke einfügen/erstellen, Attribute · Schnittpunkt-/Lot-/Tangentenfang, Polarfang.

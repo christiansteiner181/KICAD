@@ -50,6 +50,10 @@ const INHALT = {
   bemkette: `<path d="M3 6v12M11 6v12M21 6v12" stroke="currentColor" stroke-width="1.2"/><path d="M3 10h18" stroke="${B}" stroke-width="1.5"/>${pfeil(3, 10, 180, B)}${pfeil(11, 10, 0, B)}${pfeil(21, 10, 0, B)}`,
   fuehrung: `<path d="M4 19l7-10h9" stroke="${B}" stroke-width="1.6" fill="none"/>${pfeil(4, 19, 125, B)}<path d="M13 5h7M13 13h5" stroke="currentColor" stroke-width="1.3"/>`,
   bemstil: `<path d="M3 7v10M21 7v10" stroke="currentColor" stroke-width="1.2"/><path d="M3 10h18" stroke="${B}" stroke-width="1.5"/><circle cx="12" cy="17" r="3.2" stroke="${O}" stroke-width="1.4" fill="none"/><path d="M12 12.5v1.3M12 20.2v1.3M7.5 17h1.3M15.2 17h1.3" stroke="${O}" stroke-width="1.4"/>`,
+  // Teil 4
+  winkelmass: `<path d="M4 20h17M4 20L15 4" stroke="currentColor" stroke-width="1.4"/><path d="M15 20a11 11 0 0 0-4.8-9" stroke="${B}" stroke-width="1.6" fill="none"/>${pfeil(15, 20, 90, B)}${pfeil(10.2, 11, -150, B)}`,
+  spline: `<path d="M3 17c3-12 6-12 9-5s6 7 9-5" stroke="${B}" stroke-width="1.8" fill="none"/>${punkt(3, 17)}${punkt(12, 12)}${punkt(21, 7)}`,
+  attribut: `<path d="M4 6l8-3 8 3v9l-8 6-8-6z" stroke="currentColor" stroke-width="1.3" fill="none"/><path d="M9 15l3-8 3 8M10.2 12.5h3.6" stroke="${O}" stroke-width="1.6" fill="none"/>`,
   // Hilfen
   messen: `<path d="M3 15L15 3l6 6L9 21z" stroke="${O}" stroke-width="1.5" fill="none"/><path d="M7 11l2 2M10 8l2 2M13 5l2 2M5.5 13.5l1 1M8.5 10.5l1 1M11.5 7.5l1 1" stroke="${O}" stroke-width="1.1"/>`,
   layer: `<path d="M12 4l9 4.5-9 4.5-9-4.5z" stroke="${B}" stroke-width="1.5" fill="none"/><path d="M3 12.5l9 4.5 9-4.5M3 16.5l9 4.5 9-4.5" stroke="currentColor" stroke-width="1.3" fill="none"/>`,

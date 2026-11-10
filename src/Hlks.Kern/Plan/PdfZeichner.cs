@@ -77,7 +77,7 @@ public sealed class PdfZeichner
     XPen Stift(Stil s, double? mm = null)
     {
         // Deckkraft gilt der Füllung; ohne Füllung der Linie (Unterlagen DWG/IFC: graue Linien halb deckend)
-        var pen = new XPen(Farbe(s.Farbe, s.Fuellung is null ? s.Deckkraft : null), (mm ?? Stifte.Mm(s.Stift)) * PtJeMm) { LineJoin = XLineJoin.Miter };
+        var pen = new XPen(Farbe(s.Farbe, s.Fuellung is null ? s.Deckkraft : null), (mm ?? s.Mm ?? Stifte.Mm(s.Stift)) * PtJeMm) { LineJoin = XLineJoin.Miter };
         var muster = s.Linie switch { "strich" => Strich, "strichpunkt" => Strichpunkt, "punkt" => Punkt, "achse" => Achse, "strichfein" => Strichfein, _ => null };
         if (muster is not null)
         {
