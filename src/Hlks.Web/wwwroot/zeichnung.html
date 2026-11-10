@@ -1,0 +1,105 @@
+<!doctype html>
+<html lang="de-CH">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>KICAD Zeichnung</title>
+  <!-- 2D-CAD «Zeichnung» (entwurf/modul-2d-cad.md, Stufe 1): DWG/DXF ansehen, Layer schalten, messen, PDF. Eigene Seite, arbeitet ohne Projekt. -->
+  <script src="js/oberflaeche/design-start.js"></script>
+  <link rel="stylesheet" href="css/hlks.css">
+  <link rel="stylesheet" href="css/zeichnung.css">
+</head>
+<body class="zeichnung">
+  <header class="z-kopf">
+    <button id="z-oeffnen" title="DWG oder DXF öffnen (Strg+O)">Öffnen …</button>
+    <span id="z-name" class="z-name">Keine Zeichnung geöffnet</span>
+    <span class="z-trenner"></span>
+    <button id="z-auswahl" class="z-werkzeug aktiv" title="Objekt anklicken: Eigenschaften (Esc)">Auswahl</button>
+    <button id="z-messen" class="z-werkzeug" title="Abstand, Winkel und Fläche messen: Punkte anklicken, Eingabetaste schliesst ab (M)">Messen</button>
+    <span class="z-trenner"></span>
+    <button id="z-grenzen" title="Ganze Zeichnung zeigen (Pos1 oder Doppelklick mit dem Mausrad)">Grenzen</button>
+    <label title="Objektfang: Endpunkt, Mittelpunkt, Zentrum (F3)"><input type="checkbox" id="z-fang" checked> Fang</label>
+    <label title="Linienstärken der Zeichnung anzeigen"><input type="checkbox" id="z-staerken" checked> Linienstärken</label>
+    <label title="Heller Hintergrund wie auf dem Papier"><input type="checkbox" id="z-hell"> Hell</label>
+    <span class="z-trenner"></span>
+    <button id="z-pdf" title="Als PDF ausgeben">PDF …</button>
+    <span class="z-fuell"></span>
+    <a href="/" title="Zum KICAD-Arbeitsplatz">KICAD</a>
+  </header>
+
+  <main class="z-mitte">
+    <aside class="z-links">
+      <div class="z-titel">Layer <span id="z-layer-anzahl" class="z-leise"></span></div>
+      <div class="z-layer-kopf">
+        <input id="z-layer-filter" type="search" placeholder="Filter" autocomplete="off">
+        <button id="z-layer-alle" title="Alle angezeigten Layer einschalten">Alle ein</button>
+        <button id="z-layer-keine" title="Alle angezeigten Layer ausschalten">Alle aus</button>
+      </div>
+      <div id="z-layer" class="z-layer"></div>
+    </aside>
+
+    <section class="z-flaeche" id="z-flaeche">
+      <canvas id="z-leinwand"></canvas>
+      <div id="z-leer" class="z-leer">
+        <p>DWG oder DXF öffnen.</p>
+        <button id="z-oeffnen2">Öffnen …</button>
+        <div id="z-zuletzt" class="z-zuletzt"></div>
+      </div>
+      <div id="z-meldung" class="z-meldung" hidden></div>
+    </section>
+
+    <aside class="z-rechts">
+      <div class="z-titel">Eigenschaften</div>
+      <div id="z-eigenschaften" class="z-eig"><p class="z-leise">Objekt anklicken.</p></div>
+      <div class="z-titel">Messen</div>
+      <div id="z-mass" class="z-eig"><p class="z-leise">Werkzeug «Messen» wählen und Punkte anklicken.</p></div>
+      <div class="z-titel">Hinweise</div>
+      <div id="z-hinweise" class="z-eig z-leise"></div>
+    </aside>
+  </main>
+
+  <footer class="z-fuss">
+    <div id="z-layouts" class="z-layouts"></div>
+    <span class="z-fuell"></span>
+    <span id="z-fangtext" class="z-leise"></span>
+    <span id="z-koord" class="z-koord"></span>
+    <span id="z-einheit" class="z-leise"></span>
+  </footer>
+
+  <dialog id="z-dialog" class="z-dialog">
+    <form method="dialog">
+      <div class="z-titel">Zeichnung öffnen</div>
+      <div class="z-dialog-pfad">
+        <button type="button" id="z-d-hoch" title="Eine Ebene höher">↑</button>
+        <input id="z-d-pfad" type="text" placeholder="Ordner oder Datei (voller Pfad)" autocomplete="off" spellcheck="false">
+        <button type="button" id="z-d-los">Gehe zu</button>
+      </div>
+      <div id="z-d-liste" class="z-dialog-liste"></div>
+      <div class="z-dialog-fuss"><span id="z-d-fehler" class="z-fehler"></span><span class="z-fuell"></span><button value="abbrechen">Abbrechen</button></div>
+    </form>
+  </dialog>
+
+  <dialog id="z-pdf-dialog" class="z-dialog z-klein">
+    <form method="dialog">
+      <div class="z-titel">Als PDF ausgeben</div>
+      <div class="z-raster">
+        <label for="z-p-massstab">Massstab</label>
+        <select id="z-p-massstab">
+          <option value="">eingepasst</option><option value="1">1:1</option><option value="5">1:5</option><option value="10">1:10</option><option value="20">1:20</option>
+          <option value="50">1:50</option><option value="100">1:100</option><option value="200">1:200</option><option value="500">1:500</option>
+        </select>
+        <label for="z-p-blatt">Blatt</label>
+        <select id="z-p-blatt"><option value="">passend</option><option>A4</option><option>A3</option><option>A2</option><option>A1</option><option>A0</option></select>
+        <label for="z-p-bereich">Bereich</label>
+        <select id="z-p-bereich"><option value="alles">Ganze Zeichnung</option><option value="ansicht">Sichtbarer Ausschnitt</option></select>
+        <label for="z-p-farbig">Farben</label>
+        <select id="z-p-farbig"><option value="1">wie in der Zeichnung</option><option value="0">schwarz auf weiss</option></select>
+      </div>
+      <p class="z-leise" id="z-p-hinweis"></p>
+      <div class="z-dialog-fuss"><span class="z-fuell"></span><button value="abbrechen">Abbrechen</button><button type="button" id="z-p-los" class="z-haupt">PDF öffnen</button></div>
+    </form>
+  </dialog>
+
+  <script type="module" src="js/zeichnung/zeichnung.js"></script>
+</body>
+</html>

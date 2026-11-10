@@ -4390,3 +4390,22 @@ Seither richtet sich eine DWG beim Einfügen nur aus, wenn sie Wand-Layer hat (s
   Füsse bis in die Schiene (Planungshandbuch S. 188). Kein Profil und keine Schiene schneidet ein Element.
 - **Beispielprojekt anlegen** › Auswahl «Musterhaus 4 Räume» (`BeispielKlein.cs`, API `beispiel: "klein"`): 3 Geschosse (UG, EG, OG) je Bad, WC, Küche, Zimmer,
   Aussen- und Innenwände, Systeme SW/KW/WW, Grundrisse und 3D – ohne Apparate und Leitungen, zum Ausprobieren der Zeichenwerkzeuge.
+
+## 2D-CAD «Zeichnung» – Zeichenfläche (Stufe 1, 10.11.2026)
+
+Eigene Seite `/zeichnung.html` (Startbildschirm → «Zeichnungen → DWG öffnen …»), arbeitet ohne Projekt. Konzept: `entwurf/modul-2d-cad.md`.
+Dateien: `wwwroot/zeichnung.html`, `css/zeichnung.css`, `js/zeichnung/zeichnung.js` (Bedienung, Leinwand), `js/zeichnung/logik.js` (Fang, Messwerte),
+Server `ZeichnungEndpunkte.cs` (`/api/zeichnung/…`), Kern `Hlks.Kern/Zeichnung/`.
+
+- **Öffnen …** (Strg+O): Ordner durchgehen oder Pfad einfügen (Ordner oder Datei), DWG und DXF. Zuletzt geöffnete stehen auf der leeren Fläche.
+  Direkt per Adresse: `/zeichnung.html?datei=<voller Pfad>`.
+- **Ansicht:** Mausrad zoomt am Zeiger · Mausrad gedrückt oder linke Taste ziehen verschiebt · **Grenzen** (Pos1, Doppelklick Mausrad) zeigt alles.
+  Unten die Layouts: «Modell» und die Papierbereiche (Blatt weiss mit Ansichtsfenstern).
+- **Layer** (links): Haken schaltet ein/aus, Filter, «Alle ein/aus» für die angezeigten. Gefrorene Layer sind kursiv und gesperrt. Gilt für die
+  Sitzung; die Datei wird nicht geändert.
+- **Auswahl:** Objekt anklicken → rechts Kennung, Art, Layer, Text, Länge, Fläche, Block und Attribute. Esc hebt auf.
+- **Messen** (M): Punkte anklicken, mit **Fang** (F3) auf Endpunkt □, Mittelpunkt △, Zentrum ○. Zwei Punkte: Strecke, ΔX, ΔY, Richtung; ab drei:
+  Winkel, Linienzug, Umfang, Fläche. Eingabetaste, Doppelklick oder rechte Taste schliesst ab, Esc verwirft.
+- **Linienstärken**, **Hell** (weisser Hintergrund im Modell), **PDF …** (Massstab, Blatt, ganze Zeichnung oder sichtbarer Ausschnitt, farbig/schwarz).
+- Rechts unter «Hinweise» steht, was nicht dargestellt wird (Abdeckungen, Rasterbilder, nicht eingebundene Referenzen).
+- Noch nicht: Schnittpunkt- und Lotfang, Auswahl durch ein Ansichtsfenster hindurch, Zeichnen und Ändern (Stufe 2).

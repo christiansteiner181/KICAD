@@ -301,6 +301,7 @@ app.MapIfcExport(dienst);   // IFC-Export mit IDS und Bericht (Modul 7 Teil B2):
 app.MapHkXrVerbindung();   // HK_XR: /api/xr (Zugang, Kopplung, Teilnehmer, Kanal, Desktop) und /api/quest/app (App installieren, Netz einrichten, alte Apps); nicht für die KI
 app.MapXrModell(dienst);   // Quest App (Modul XR, P2): XrModellEndpunkte.cs – GLB je Geschoss (/api/xr/geschosse, /api/xr/geschoss/{id}.glb); reine Rechner-Funktion, nicht für die KI
 app.MapXrEbenen(dienst);   // Quest App P4b: XrEbenenEndpunkte.cs – Ebenen der Fachmodule (/api/xr/ebenen, /api/xr/ebene/{name}); reine Rechner-Funktion, nicht für die KI
+app.MapZeichnung();   // 2D-CAD «Zeichnung» (Stufe 1): ZeichnungEndpunkte.cs – /api/zeichnung/… für die Zeichenfläche /zeichnung.html (DWG/DXF, ohne Projekt)
 app.MapXrMarker(dienst);   // Quest App V1a: XrMarkerEndpunkte.cs – Problem-Marker aus der Brille (/api/xr/marker; Elemente ProblemMarker im Projekt); Rechner-Funktion, nicht für die KI
 
 Console.WriteLine($"HLKS-CAD läuft auf http://localhost:{port}  (Akteur {einstellungen.Akteur}@{einstellungen.Geraet})");

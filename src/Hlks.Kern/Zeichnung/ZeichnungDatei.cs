@@ -134,8 +134,13 @@ public sealed class ZeichnungSitzung
     readonly Dictionary<string, Zeichnungsdatei> offen = new(StringComparer.OrdinalIgnoreCase);
     string? zuletzt;
 
-    public ZeichnungSitzung(IEnumerable<string> freigegeben)
+    readonly bool ohneGrenze;
+
+    /// <param name="ohneGrenze">true: jede Datei dieses Rechners darf geöffnet werden – nur für den Arbeitsplatz des Menschen
+    /// (Oberfläche auf localhost), nie für die KI (MCP: dort gelten die freigegebenen Ordner).</param>
+    public ZeichnungSitzung(IEnumerable<string> freigegeben, bool ohneGrenze = false)
     {
+        this.ohneGrenze = ohneGrenze;
         foreach (var o in freigegeben.Where(o => !string.IsNullOrWhiteSpace(o)))
         {
             var voll = Path.TrimEndingDirectorySeparator(Path.GetFullPath(o));
@@ -151,6 +156,13 @@ public sealed class ZeichnungSitzung
     /// <summary>Voller Pfad einer Datei, wenn sie in einem freigegebenen Ordner liegt (sonst Fehler). Relative Angaben gelten ab den Ordnern.</summary>
     public string Pruefen(string datei)
     {
+        if (ohneGrenze)
+        {
+            if (string.IsNullOrWhiteSpace(datei) || !Path.IsPathRooted(datei)) throw new HlksFehler("Der Pfad der Zeichnung fehlt.", "Den vollen Pfad einer DWG- oder DXF-Datei angeben.");
+            if (!IstZeichnung(datei)) throw new HlksFehler($"«{Path.GetFileName(datei)}» ist keine DWG- oder DXF-Datei.", "Geöffnet werden .dwg und .dxf.");
+            var voll = Path.GetFullPath(datei);
+            return File.Exists(voll) ? voll : throw new HlksFehler($"Die Datei «{datei}» gibt es nicht.", "Pfad prüfen (Netzlaufwerk verbunden?).");
+        }
         if (ordner.Count == 0)
             throw new HlksFehler("Es ist kein Ordner für Zeichnungen freigegeben.", "Den MCP-Server mit --zeichnungen <Ordner> [<Ordner> …] starten.");
         if (string.IsNullOrWhiteSpace(datei)) throw new HlksFehler("datei fehlt.", "Dateiname oder Pfad einer DWG/DXF-Datei angeben.");

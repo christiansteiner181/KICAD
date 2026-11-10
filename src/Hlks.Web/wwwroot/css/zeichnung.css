@@ -1,0 +1,68 @@
+/* 2D-CAD «Zeichnung» (zeichnung.html): Kopf mit Werkzeugen, links Layer, Mitte Zeichenfläche, rechts Eigenschaften, unten Layouts.
+   Farben und Masse aus hlks.css (hell/dunkel). */
+body.zeichnung { margin: 0; height: 100vh; display: flex; flex-direction: column; background: var(--hintergrund); color: var(--text);
+  font-family: var(--schrift); font-size: var(--schriftgroesse); overflow: hidden; }
+.zeichnung button, .zeichnung select, .zeichnung input[type=text], .zeichnung input[type=search] {
+  background: var(--flaeche-hell); border: 1px solid var(--rand); border-radius: var(--radius); padding: 2px 8px; min-height: 22px; }
+.zeichnung button { cursor: pointer; }
+.zeichnung button:hover { border-color: var(--akzent); }
+.zeichnung button.aktiv, .zeichnung button.z-haupt { background: var(--akzent); color: var(--akzent-text); border-color: var(--akzent); }
+.zeichnung [hidden] { display: none !important; }
+.z-leise { color: var(--text-leise); }
+.z-fehler { color: var(--fehler); }
+.z-fuell { flex: 1; }
+.z-trenner { width: 1px; align-self: stretch; background: var(--trenner); margin: 2px 4px; }
+
+.z-kopf { display: flex; align-items: center; gap: 6px; padding: 4px 8px; background: var(--kopf); border-bottom: 1px solid var(--trenner); white-space: nowrap; }
+.z-kopf label { display: inline-flex; align-items: center; gap: 3px; }
+.z-kopf a { color: var(--text-leise); text-decoration: none; }
+.z-name { font-weight: 600; max-width: 34vw; overflow: hidden; text-overflow: ellipsis; }
+
+.z-mitte { flex: 1; display: flex; min-height: 0; }
+.z-links, .z-rechts { width: 240px; display: flex; flex-direction: column; background: var(--flaeche); min-height: 0; }
+.z-links { border-right: 1px solid var(--trenner); }
+.z-rechts { border-left: 1px solid var(--trenner); overflow-y: auto; }
+.z-titel { padding: 3px 8px; background: var(--flaeche-tief); font-weight: 600; border-bottom: 1px solid var(--rand-leise); }
+.z-layer-kopf { display: flex; gap: 4px; padding: 4px; }
+.z-layer-kopf input { flex: 1; min-width: 0; }
+.z-layer { flex: 1; overflow-y: auto; padding-bottom: 6px; }
+.z-layer label { display: flex; align-items: center; gap: 5px; padding: 1px 6px; cursor: pointer; }
+.z-layer label:hover { background: var(--akzent-hell); color: #1f1f1f; }
+.z-layer .z-farbe { width: 10px; height: 10px; border: 1px solid var(--rand); flex: none; }
+.z-layer .z-lname { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.z-layer .z-gefroren .z-lname { font-style: italic; opacity: .6; }
+
+.z-flaeche { flex: 1; position: relative; min-width: 0; background: #212830; }
+.z-flaeche.hell { background: #8f959c; }
+.z-flaeche canvas { position: absolute; inset: 0; width: 100%; height: 100%; display: block; cursor: crosshair; }
+.z-leer { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 10px; color: #cfd6dd; }
+.z-zuletzt { display: flex; flex-direction: column; gap: 3px; max-width: 70%; }
+.z-zuletzt a { color: #9cc7f5; cursor: pointer; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.z-meldung { position: absolute; left: 50%; top: 12px; transform: translateX(-50%); background: var(--flaeche-hell); color: var(--text);
+  border: 1px solid var(--rand); box-shadow: var(--schatten); padding: 6px 12px; max-width: 70%; }
+.z-meldung.fehler { border-color: var(--fehler); }
+
+.z-eig { padding: 6px 8px; overflow-wrap: anywhere; }
+.z-eig table { border-collapse: collapse; width: 100%; }
+.z-eig td { padding: 1px 4px 1px 0; vertical-align: top; }
+.z-eig td:first-child { color: var(--text-leise); white-space: nowrap; width: 1%; }
+.z-eig p { margin: 0 0 4px; }
+
+.z-fuss { display: flex; align-items: center; gap: 10px; padding: 2px 8px; background: var(--statusleiste); border-top: 1px solid var(--trenner); min-height: 24px; }
+.z-layouts { display: flex; gap: 2px; overflow-x: auto; }
+.z-layouts button { border-radius: 0; border-top: none; }
+.z-koord { font-family: var(--schrift-mono); min-width: 210px; text-align: right; }
+
+.z-dialog { background: var(--flaeche); color: var(--text); border: 1px solid var(--rand); box-shadow: var(--schatten); padding: 0; width: min(760px, 92vw); }
+.z-dialog.z-klein { width: min(380px, 92vw); }
+.z-dialog::backdrop { background: rgba(0, 0, 0, .35); }
+.z-dialog-pfad { display: flex; gap: 4px; padding: 8px; }
+.z-dialog-pfad input { flex: 1; }
+.z-dialog-liste { height: 50vh; overflow-y: auto; border-top: 1px solid var(--rand-leise); border-bottom: 1px solid var(--rand-leise); background: var(--flaeche-hell); }
+.z-dialog-liste div { display: flex; gap: 10px; padding: 3px 10px; cursor: pointer; }
+.z-dialog-liste div:hover { background: var(--akzent-hell); color: #1f1f1f; }
+.z-dialog-liste .z-ordner { font-weight: 600; }
+.z-dialog-liste .z-dname { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.z-dialog-fuss { display: flex; gap: 6px; padding: 8px; align-items: center; }
+.z-raster { display: grid; grid-template-columns: auto 1fr; gap: 6px 10px; padding: 10px; align-items: center; }
+.z-dialog p { margin: 0 10px 6px; }

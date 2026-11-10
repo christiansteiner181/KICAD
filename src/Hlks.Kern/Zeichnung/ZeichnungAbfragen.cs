@@ -278,6 +278,72 @@ public static class ZeichnungAbfragen
         };
     }
 
+    // ---------- Treffer (Klick in der Zeichenfläche) ----------
+
+    static double AbstandStrecke(double px, double py, double ax, double ay, double bx, double by)
+    {
+        double dx = bx - ax, dy = by - ay, l2 = dx * dx + dy * dy;
+        double t = l2 == 0 ? 0 : Math.Clamp(((px - ax) * dx + (py - ay) * dy) / l2, 0, 1);
+        return Math.Sqrt(Math.Pow(px - ax - t * dx, 2) + Math.Pow(py - ay - t * dy, 2));
+    }
+
+    /// <summary>Abstand des Punkts zur Geometrie des Objekts; null = nur über die Box bestimmbar.</summary>
+    static double? Abstand(Entity e, double x, double y)
+    {
+        switch (e)
+        {
+            case Line l: return AbstandStrecke(x, y, l.StartPoint.X, l.StartPoint.Y, l.EndPoint.X, l.EndPoint.Y);
+            case Arc a:
+            {
+                double w = Math.Atan2(y - a.Center.Y, x - a.Center.X);
+                double rel = ((w - a.StartAngle) % (2 * Math.PI) + 2 * Math.PI) % (2 * Math.PI), sweep = ((a.EndAngle - a.StartAngle) % (2 * Math.PI) + 2 * Math.PI) % (2 * Math.PI);
+                if (rel <= sweep) return Math.Abs(Math.Sqrt(Math.Pow(x - a.Center.X, 2) + Math.Pow(y - a.Center.Y, 2)) - a.Radius);
+                double d1 = Math.Sqrt(Math.Pow(x - a.Center.X - a.Radius * Math.Cos(a.StartAngle), 2) + Math.Pow(y - a.Center.Y - a.Radius * Math.Sin(a.StartAngle), 2));
+                double d2 = Math.Sqrt(Math.Pow(x - a.Center.X - a.Radius * Math.Cos(a.EndAngle), 2) + Math.Pow(y - a.Center.Y - a.Radius * Math.Sin(a.EndAngle), 2));
+                return Math.Min(d1, d2);
+            }
+            case Circle c: return Math.Abs(Math.Sqrt(Math.Pow(x - c.Center.X, 2) + Math.Pow(y - c.Center.Y, 2)) - c.Radius);
+            case TextEntity t: return TextAbstand(x, y, t.InsertPoint.X, t.InsertPoint.Y, t.Height, CadText.Einfach(t.Value).Length);
+            case MText m: return TextAbstand(x, y, m.InsertPoint.X, m.InsertPoint.Y, m.Height, CadText.MText(m.Value).Select(z => z.Length).DefaultIfEmpty(0).Max());
+        }
+        if (Ecken(e, out bool zu) is { Count: >= 2 } v)
+        {
+            double min = double.MaxValue;
+            int n = zu ? v.Count : v.Count - 1;
+            for (int i = 0; i < n; i++) min = Math.Min(min, AbstandStrecke(x, y, v[i].X, v[i].Y, v[(i + 1) % v.Count].X, v[(i + 1) % v.Count].Y));
+            return min;
+        }
+        return null;
+    }
+
+    /// <summary>Grobe Trefferfläche eines Texts: Kreis um den Einfügepunkt mit der halben geschätzten Textbreite.</summary>
+    static double TextAbstand(double x, double y, double tx, double ty, double hoehe, int zeichen) =>
+        Math.Max(0, Math.Sqrt(Math.Pow(x - tx, 2) + Math.Pow(y - ty, 2)) - Math.Max(hoehe, 0.35 * hoehe * zeichen));
+
+    /// <summary>Das Objekt am Punkt (innerhalb des Fangradius r), das der Geometrie nach am nächsten liegt; Flächen (Schraffur, Block) zuletzt.</summary>
+    public static JsonObject? Treffer(Zeichnungsdatei z, string? layout, double x, double y, double r)
+    {
+        Entity? bester = null;
+        double besterAbstand = double.MaxValue, besteFlaeche = double.MaxValue;
+        foreach (var e in z.Objekte(z.Layout(layout)))
+        {
+            if (e is Viewport || e.IsInvisible || (e.Layer is { } l && !Zeichnungsdatei.Sichtbar(l))) continue;
+            double abstand;
+            double flaeche = 0;
+            if (Abstand(e, x, y) is double d) abstand = d;
+            else
+            {
+                if (Box(e) is not { } b || x < b[0] - r || x > b[2] + r || y < b[1] - r || y > b[3] + r) continue;
+                abstand = r * 0.99;   // nur über die Box getroffen: hinter allem, was genau getroffen ist
+                flaeche = (b[2] - b[0]) * (b[3] - b[1]);
+            }
+            if (abstand > r) continue;
+            if (abstand < besterAbstand - 1e-12 || (Math.Abs(abstand - besterAbstand) <= 1e-12 && flaeche < besteFlaeche))
+                (bester, besterAbstand, besteFlaeche) = (e, abstand, flaeche);
+        }
+        return bester is null ? null : Beschreiben(bester);
+    }
+
     // ---------- Messen ----------
 
     public static JsonObject Messen(Zeichnungsdatei z, double[][]? punkte, string? objekt)

@@ -45,6 +45,8 @@ export function einrichten() {
       <button type="button" class="sb-aktion" data-aktion="beispiel">${sym('beispiel', 18)}<span>Beispielprojekt</span></button>
       <h2>Familien</h2>
       <button type="button" class="sb-aktion" data-aktion="bibliothek">${sym('buch', 18)}<span>Bibliothek …</span></button>
+      <h2>Zeichnungen</h2>
+      <button type="button" class="sb-aktion" data-aktion="zeichnung" title="DWG oder DXF ansehen, Layer schalten, messen, als PDF ausgeben">${sym('ordner', 18)}<span>DWG öffnen …</span></button>
       <div class="sb-stand"></div>
     </aside>
     <main class="sb-haupt">
@@ -318,6 +320,7 @@ async function seitenAktion(a) {
     else if (a === 'neu') await projektAnlegenDialog(false);
     else if (a === 'beispiel') await projektAnlegenDialog(true);
     else if (a === 'bibliothek') await bibliothekOeffnen();
+    else if (a === 'zeichnung') window.open('/zeichnung.html', '_blank');   // 2D-CAD «Zeichnung» (DWG/DXF), eigene Seite ohne Projekt
   } catch (e) { console.error(e); meldung(fehlerText(e), 'fehler'); }
 }
 

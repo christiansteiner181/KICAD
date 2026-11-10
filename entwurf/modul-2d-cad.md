@@ -131,7 +131,9 @@ bei den Unterlagen), nie ausserhalb.
   `zeichnung_layer`, `zeichnung_layer_setzen`, `zeichnung_objekte`, `zeichnung_messen`, `zeichnung_bild`, `zeichnung_pdf`.
   Start nur als 2D-CAD: `Hlks.Mcp --zeichnungen <Ordner> …` (ohne `--projekt`); mit Projekt zusätzlich `--zeichnungen`.
   Am Architektenplan EG geprüft: Modellbereich und Layout 840 × 594 mm mit gedrehtem Ansichtsfenster, Plankopf und Legende.
-- **Stufe 1, offen:** Zeichenfläche in der Oberfläche (Zoom, Pan, Objektfang, Messen mit der Maus) · Abdeckungen (Wipeout) und
+- **Stufe 1, Zeichenfläche gebaut (10.11.2026):** `/zeichnung.html` (Startbildschirm «DWG öffnen …»): Öffnen-Dialog, Zoom/Pan, Layouts,
+  Layer schalten, Auswahl mit Eigenschaften, Messen mit Objektfang (Endpunkt, Mittelpunkt, Zentrum), PDF-Dialog. Bedienung: `src/Hlks.Web/OBERFLAECHE.md`.
+- **Stufe 1, offen:** Schnittpunkt- und Lotfang · Auswahl durch ein Ansichtsfenster · Abdeckungen (Wipeout) und
   Rasterbilder · externe Referenzen laden · Linienstärken und Linienarten genau statt gerundet · Polylinienbreiten · Plotstil (CTB)
   · AutoCAD-Schriften · Vergleich mit dem AutoCAD-Ausdruck (Abnahme).
 
