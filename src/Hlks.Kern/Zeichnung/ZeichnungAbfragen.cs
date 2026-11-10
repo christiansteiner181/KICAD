@@ -344,6 +344,26 @@ public static class ZeichnungAbfragen
         return bester is null ? null : Beschreiben(bester);
     }
 
+    /// <summary>Auswahl mit einem Fenster: kreuzen = false nur ganz darin liegende Objekte, true auch berührte (nach der Box).
+    /// Antwort: kennung und box je Objekt (höchstens <paramref name="max"/>), dazu die Anzahl.</summary>
+    public static JsonObject Auswahl(Zeichnungsdatei z, string? layout, double[] fenster, bool kreuzen, int max = 5000)
+    {
+        if (fenster.Length != 4) throw new HlksFehler("fenster muss [x0, y0, x1, y1] sein.");
+        double x0 = Math.Min(fenster[0], fenster[2]), x1 = Math.Max(fenster[0], fenster[2]), y0 = Math.Min(fenster[1], fenster[3]), y1 = Math.Max(fenster[1], fenster[3]);
+        var liste = new JsonArray();
+        int anzahl = 0;
+        foreach (var e in z.Objekte(z.Layout(layout)))
+        {
+            if (e is Viewport || e.IsInvisible || (e.Layer is { } l && (!Zeichnungsdatei.Sichtbar(l) || l.Flags.HasFlag(LayerFlags.Locked)))) continue;
+            if (Box(e) is not { } b) continue;
+            bool drin = kreuzen ? b[2] >= x0 && b[0] <= x1 && b[3] >= y0 && b[1] <= y1 : b[0] >= x0 && b[2] <= x1 && b[1] >= y0 && b[3] <= y1;
+            if (!drin) continue;
+            anzahl++;
+            if (liste.Count < max) liste.Add(new JsonObject { ["kennung"] = Zeichnungsdatei.Kennung(e), ["art"] = Art(e), ["box"] = new JsonArray(R(b[0]), R(b[1]), R(b[2]), R(b[3])) });
+        }
+        return new JsonObject { ["anzahl"] = anzahl, ["objekte"] = liste };
+    }
+
     // ---------- Messen ----------
 
     public static JsonObject Messen(Zeichnungsdatei z, double[][]? punkte, string? objekt)

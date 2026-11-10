@@ -65,6 +65,11 @@ public sealed class ZeichnungWerkzeuge(ZeichnungSitzung sitzung)
         [Description("DWG- oder DXF-Datei: voller Pfad oder Pfad ab einem freigegebenen Ordner")] string datei) =>
         Lauf(() => ZeichnungAbfragen.Info(sitzung.Oeffnen(datei)));
 
+    [McpServerTool(Name = "zeichnung_neu"), Description("Legt eine neue, leere Zeichnung an (Einheit Millimeter, DWG 2018 bzw. DXF) und öffnet sie. Eine bestehende Datei wird nie überschrieben.")]
+    public string Neu(
+        [Description("Neue Datei (.dwg oder .dxf) in einem freigegebenen Ordner")] string datei) =>
+        Lauf(() => ZeichnungAbfragen.Info(sitzung.Anlegen(datei)));
+
     [McpServerTool(Name = "zeichnung_schliessen"), Description("Schliesst eine geöffnete Zeichnung (gibt den Arbeitsspeicher frei). Die Datei bleibt unverändert.")]
     public string Schliessen(
         [Description("Zeichnung (Dateiname); ohne Angabe die zuletzt geöffnete")] string? zeichnung = null) => Lauf(() =>
@@ -144,6 +149,48 @@ public sealed class ZeichnungWerkzeuge(ZeichnungSitzung sitzung)
         var z = sitzung.Holen(zeichnung);
         return ZeichnungAusgabe.Pdf(z, layout, Zahlen(fenster, "fenster"), massstab, blatt, Ziel(z, layout, datei), farbig);
     });
+
+    // ---------- Stufe 2: zeichnen, ändern, speichern ----------
+
+    [McpServerTool(Name = "zeichnung_zeichnen"), Description(ZeichnungBearbeiten.ZeichnenText)]
+    public string Zeichnen(
+        [Description("Liste der Objekte (siehe Beschreibung)")] JsonElement objekte,
+        [Description("Layout: Model (Vorgabe) oder Name eines Papierbereichs")] string? layout = null,
+        [Description("Zeichnung (Dateiname); ohne Angabe die zuletzt geöffnete")] string? zeichnung = null) => Lauf(() =>
+        ZeichnungBearbeiten.Zeichnen(sitzung.Holen(zeichnung), layout, JsonNode.Parse(objekte.GetRawText()) as JsonArray ?? throw new HlksFehler("objekte muss eine Liste sein.", "Beispiel: [{\"art\":\"linie\",\"von\":[0,0],\"bis\":[1000,0]}]")));
+
+    [McpServerTool(Name = "zeichnung_aendern"), Description(ZeichnungBearbeiten.AendernText)]
+    public string Aendern(
+        [Description("Kennungen der Objekte, mehrere mit Komma")] string kennungen,
+        [Description("loeschen | verschieben | kopieren | drehen | skalieren | eigenschaften")] string aktion,
+        [Description("Angaben zur Aktion als Objekt, z. B. {\"dx\":500,\"dy\":0} oder {\"um\":[0,0],\"winkelGrad\":90} oder {\"layer\":\"H-Rohr\"}")] JsonElement? angaben = null,
+        [Description("Zeichnung (Dateiname); ohne Angabe die zuletzt geöffnete")] string? zeichnung = null) => Lauf(() =>
+        ZeichnungBearbeiten.Aendern(sitzung.Holen(zeichnung), kennungen.Split([',', ';', ' '], StringSplitOptions.RemoveEmptyEntries), aktion,
+            angaben is { ValueKind: JsonValueKind.Object } a ? (JsonObject)JsonNode.Parse(a.GetRawText())! : []));
+
+    [McpServerTool(Name = "zeichnung_layer_anlegen"), Description(ZeichnungBearbeiten.LayerAnlegenText)]
+    public string LayerAnlegen(
+        [Description("Name des Layers")] string name,
+        [Description("Farbe: ACI-Nummer 1–255 oder \"#rrggbb\"")] JsonElement? farbe = null,
+        [Description("Linientyp (muss in der Zeichnung vorhanden sein)")] string? linientyp = null,
+        [Description("true: als aktuellen Layer für neue Objekte setzen")] bool aktuell = false,
+        [Description("Zeichnung (Dateiname); ohne Angabe die zuletzt geöffnete")] string? zeichnung = null) => Lauf(() =>
+        ZeichnungBearbeiten.LayerAnlegen(sitzung.Holen(zeichnung), name, farbe is { ValueKind: not (JsonValueKind.Null or JsonValueKind.Undefined) } f ? JsonNode.Parse(f.GetRawText()) : null, linientyp, aktuell));
+
+    [McpServerTool(Name = "zeichnung_rueckgaengig"), Description(ZeichnungBearbeiten.RueckgaengigText)]
+    public string Rueckgaengig([Description("Zeichnung (Dateiname); ohne Angabe die zuletzt geöffnete")] string? zeichnung = null) =>
+        Lauf(() => ZeichnungBearbeiten.Rueckgaengig(sitzung.Holen(zeichnung)));
+
+    [McpServerTool(Name = "zeichnung_wiederholen"), Description(ZeichnungBearbeiten.WiederholenText)]
+    public string Wiederholen([Description("Zeichnung (Dateiname); ohne Angabe die zuletzt geöffnete")] string? zeichnung = null) =>
+        Lauf(() => ZeichnungBearbeiten.Wiederholen(sitzung.Holen(zeichnung)));
+
+    [McpServerTool(Name = "zeichnung_speichern"), Description(ZeichnungBearbeiten.SpeichernText)]
+    public string Speichern(
+        [Description("Zieldatei (.dwg oder .dxf) in einem freigegebenen Ordner für «Speichern unter»; ohne Angabe an den Ort der Zeichnung")] string? datei = null,
+        [Description("2000, 2004, 2010, 2013 oder 2018; ohne Angabe wie geöffnet")] string? fassung = null,
+        [Description("Zeichnung (Dateiname); ohne Angabe die zuletzt geöffnete")] string? zeichnung = null) => Lauf(() =>
+        ZeichnungBearbeiten.Speichern(sitzung.Holen(zeichnung), string.IsNullOrWhiteSpace(datei) ? null : sitzung.ZielPruefen(datei), fassung));
 
     /// <summary>Zieldatei des PDF: Vorgabe im Temp-Ordner des Kerns; eine genannte Datei muss in einem freigegebenen Ordner liegen.</summary>
     string Ziel(Zeichnungsdatei z, string? layout, string? datei)

@@ -45,6 +45,13 @@ public static class ZeichnungEndpunkte
             return await Lauf(() => Antwort(ZeichnungAbfragen.Info(sitzung.Oeffnen(Param.Text(p, "datei", true)!))));
         });
 
+        // POST /api/zeichnung/neu { datei }: leere Zeichnung (mm) anlegen und öffnen; überschreibt nie
+        g.MapPost("/neu", async (HttpRequest r) =>
+        {
+            var p = await KoerperLesen(r);
+            return await Lauf(() => Antwort(ZeichnungAbfragen.Info(sitzung.Anlegen(Param.Text(p, "datei", true)!))));
+        });
+
         g.MapPost("/schliessen", async (HttpRequest r) =>
         {
             var p = await KoerperLesen(r);
@@ -76,7 +83,40 @@ public static class ZeichnungEndpunkte
         g.MapGet("/treffer", (string? zeichnung, string? layout, double x, double y, double r) => Lauf(() =>
             Antwort(new JsonObject { ["objekt"] = ZeichnungAbfragen.Treffer(sitzung.Holen(zeichnung), layout, x, y, Math.Abs(r)) })));
 
-        g.MapGet("/pdf", (string? zeichnung, string? layout, double? massstab, string? blatt, string? farbig, string? fenster) => Lauf(() =>
+        // ---------- Stufe 2: zeichnen, ändern, rückgängig, speichern (ZeichnungBearbeiten) ----------
+        //   GET  /auswahl?zeichnung=&layout=&fenster=x0,y0,x1,y1&kreuzen=1   { anzahl, objekte: [{ kennung, art, box }] }
+        //   GET  /stand?zeichnung=                  { geaendert, rueckgaengig?, wiederholen?, aktuellerLayer }
+        //   POST /zeichnen      { zeichnung, layout, objekte: [...] }     POST /aendern   { zeichnung, kennungen: [..], aktion, angaben: {…} }
+        //   POST /rueckgaengig  { zeichnung }   POST /wiederholen { zeichnung }
+        //   POST /layer-anlegen { zeichnung, name, farbe?, linientyp?, aktuell? }
+        //   POST /speichern     { zeichnung, datei?, fassung? }
+        g.MapGet("/auswahl", (string? zeichnung, string? layout, string fenster, string? kreuzen) => Lauf(() =>
+        {
+            double[] f;
+            try { f = fenster.Split(',').Select(t => double.Parse(t, CultureInfo.InvariantCulture)).ToArray(); }
+            catch (FormatException) { throw new HlksFehler("fenster muss x0,y0,x1,y1 sein."); }
+            return Antwort(ZeichnungAbfragen.Auswahl(sitzung.Holen(zeichnung), layout, f, kreuzen is "1" or "true"));
+        }));
+        g.MapGet("/stand", (string? zeichnung) => Lauf(() => Antwort(ZeichnungBearbeiten.Antwort(sitzung.Holen(zeichnung), []))));
+
+        async Task<IResult> Befehl(HttpRequest r, Func<Zeichnungsdatei, JsonObject, JsonObject> arbeit)
+        {
+            var p = await KoerperLesen(r);
+            return await Lauf(() => Antwort(arbeit(sitzung.Holen(Param.Text(p, "zeichnung")), p)));
+        }
+        g.MapPost("/zeichnen", (HttpRequest r) => Befehl(r, (z, p) =>
+            ZeichnungBearbeiten.Zeichnen(z, Param.Text(p, "layout"), p["objekte"]?.DeepClone() as JsonArray ?? throw new HlksFehler("objekte fehlt."))));
+        g.MapPost("/aendern", (HttpRequest r) => Befehl(r, (z, p) =>
+            ZeichnungBearbeiten.Aendern(z, (p["kennungen"] as JsonArray ?? []).Select(n => n is JsonValue v && v.TryGetValue<string>(out var s) ? s : ""),
+                Param.Text(p, "aktion", true)!, p["angaben"]?.DeepClone() as JsonObject ?? [])));
+        g.MapPost("/rueckgaengig", (HttpRequest r) => Befehl(r, (z, _) => ZeichnungBearbeiten.Rueckgaengig(z)));
+        g.MapPost("/wiederholen", (HttpRequest r) => Befehl(r, (z, _) => ZeichnungBearbeiten.Wiederholen(z)));
+        g.MapPost("/layer-anlegen", (HttpRequest r) => Befehl(r, (z, p) =>
+            ZeichnungBearbeiten.LayerAnlegen(z, Param.Text(p, "name", true)!, p["farbe"]?.DeepClone(), Param.Text(p, "linientyp"), Param.Bool(p, "aktuell"))));
+        g.MapPost("/speichern", (HttpRequest r) => Befehl(r, (z, p) =>
+            ZeichnungBearbeiten.Speichern(z, Param.Text(p, "datei") is { Length: > 0 } d ? sitzung.ZielPruefen(d) : null, Param.Text(p, "fassung"))));
+
+        g.MapGet("/pdf",(string? zeichnung, string? layout, double? massstab, string? blatt, string? farbig, string? fenster) => Lauf(() =>
         {
             var z = sitzung.Holen(zeichnung);
             double[]? f = null;

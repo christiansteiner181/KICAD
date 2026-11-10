@@ -109,3 +109,87 @@ public class ZeichnungTests : IDisposable
         Assert.Null(ZeichnungGeometrie.SchraffurLinien([aussen], [(0, 0, 0, 0, 0.001, Array.Empty<double>())], 1000));   // zu dicht
     }
 }
+
+/// <summary>Stufe 2: zeichnen, ändern, rückgängig und speichern – geprüft am wiedergelesenen DWG.</summary>
+public class ZeichnungBearbeitenTests : IDisposable
+{
+    readonly string ordner = Path.Combine(Path.GetTempPath(), "hlks_zeichnung_b_" + Guid.NewGuid().ToString("N"));
+    public ZeichnungBearbeitenTests() => Directory.CreateDirectory(ordner);
+    public void Dispose() { try { Directory.Delete(ordner, true); } catch (IOException) { } }
+
+    Zeichnungsdatei Neu(string name)
+    {
+        var doc = new CadDocument();
+        doc.Header.InsUnits = ACadSharp.Types.Units.UnitsType.Millimeters;
+        var pfad = Path.Combine(ordner, name);
+        using (var w = new DwgWriter(pfad, doc)) w.Write();
+        return Zeichnungsdatei.Oeffnen(pfad);
+    }
+
+    static System.Text.Json.Nodes.JsonArray Json(string text) => (System.Text.Json.Nodes.JsonArray)System.Text.Json.Nodes.JsonNode.Parse(text)!;
+
+    [Fact]
+    public void Zeichnen_Aendern_Speichern_WiederlesenAlsDwg()
+    {
+        var z = Neu("a.dwg");
+        ZeichnungBearbeiten.LayerAnlegen(z, "H-Rohr", System.Text.Json.Nodes.JsonValue.Create(1), null, aktuell: true);
+        var r = ZeichnungBearbeiten.Zeichnen(z, null, Json("""
+            [ {"art":"linie","von":[0,0],"bis":[1000,0]},
+              {"art":"rechteck","ecke1":[0,0],"ecke2":[2000,1000]},
+              {"art":"kreis","mitte":[500,500],"radius":250},
+              {"art":"bogen","punkte":[[100,0],[0,100],[-100,0]]},
+              {"art":"text","ort":[10,20],"text":"VL 35 °C","hoehe":25,"layer":"0"} ]
+            """));
+        var k = r["kennungen"]!.AsArray().Select(n => n!.GetValue<string>()).ToList();
+        Assert.Equal(5, k.Count);
+        Assert.True(z.Geaendert);
+
+        ZeichnungBearbeiten.Aendern(z, [k[0]], "verschieben", new() { ["dx"] = 100, ["dy"] = 50 });
+        ZeichnungBearbeiten.Aendern(z, [k[2]], "kopieren", new() { ["dx"] = 1000, ["dy"] = 0 });
+        ZeichnungBearbeiten.Aendern(z, [k[1]], "drehen", new() { ["um"] = new System.Text.Json.Nodes.JsonArray(0, 0), ["winkelGrad"] = 90 });
+        ZeichnungBearbeiten.Aendern(z, [k[4]], "loeschen", []);
+        ZeichnungBearbeiten.Rueckgaengig(z);   // Text ist wieder da
+
+        var s = ZeichnungBearbeiten.Speichern(z, null, "2018");
+        Assert.True(s["geprueft"]!.GetValue<bool>());
+        Assert.False(z.Geaendert);
+        Assert.True(File.Exists(Path.Combine(ordner, "a.bak")));
+
+        var w = Zeichnungsdatei.Oeffnen(z.Pfad).Dokument;
+        Assert.Equal("AC1032", w.Header.Version.ToString());
+        var ms = w.ModelSpace.Entities;
+        Assert.Equal(6, ms.Count);
+        var linie = ms.OfType<Line>().Single();
+        Assert.Equal((100.0, 50.0, 1100.0, 50.0), (linie.StartPoint.X, linie.StartPoint.Y, linie.EndPoint.X, linie.EndPoint.Y));
+        Assert.Equal("H-Rohr", linie.Layer.Name);
+        Assert.Equal([500.0, 1500.0], ms.OfType<Circle>().Where(c => c is not Arc).Select(c => c.Center.X).Order());
+        var rechteck = ms.OfType<LwPolyline>().Single();   // um den Ursprung um 90° gedreht: (2000, 1000) → (−1000, 2000)
+        Assert.Contains(rechteck.Vertices, v => Math.Abs(v.Location.X + 1000) < 1e-6 && Math.Abs(v.Location.Y - 2000) < 1e-6);
+        var bogen = ms.OfType<Arc>().Single();             // Halbkreis oben: von 0° bis 180°
+        Assert.Equal(100, bogen.Radius, 6);
+        Assert.Equal(0, bogen.StartAngle, 6);
+        Assert.Equal(Math.PI, bogen.EndAngle, 6);
+        Assert.Equal("VL 35 °C", ms.OfType<TextEntity>().Single().Value);
+    }
+
+    [Fact]
+    public void Rueckgaengig_UndFehlerLassenDieZeichnungUnveraendert()
+    {
+        var z = Neu("b.dwg");
+        Assert.Throws<HlksFehler>(() => ZeichnungBearbeiten.Zeichnen(z, null, Json("""[ {"art":"linie","von":[0,0],"bis":[10,0]}, {"art":"kreis","mitte":[0,0],"radius":0} ]""")));
+        Assert.Empty(z.Dokument.ModelSpace.Entities);   // nichts halb gezeichnet
+        Assert.False(z.Geaendert);
+
+        var k = ZeichnungBearbeiten.Zeichnen(z, null, Json("""[ {"art":"linie","von":[0,0],"bis":[10,0]} ]"""))["kennungen"]![0]!.GetValue<string>();
+        ZeichnungBearbeiten.Aendern(z, [k], "skalieren", new() { ["um"] = new System.Text.Json.Nodes.JsonArray(0, 0), ["faktor"] = 3 });
+        Assert.Equal(30, z.Dokument.ModelSpace.Entities.OfType<Line>().Single().EndPoint.X, 9);
+        ZeichnungBearbeiten.Rueckgaengig(z);
+        Assert.Equal(10, z.Dokument.ModelSpace.Entities.OfType<Line>().Single().EndPoint.X, 9);
+        ZeichnungBearbeiten.Rueckgaengig(z);
+        Assert.Empty(z.Dokument.ModelSpace.Entities);
+        Assert.False(z.Geaendert);
+        ZeichnungBearbeiten.Wiederholen(z);
+        Assert.Single(z.Dokument.ModelSpace.Entities);
+        Assert.Throws<HlksFehler>(() => ZeichnungBearbeiten.Speichern(z, Path.Combine(ordner, "x.pdf"), null));
+    }
+}

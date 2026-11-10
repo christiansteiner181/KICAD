@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>KICAD Zeichnung</title>
-  <!-- 2D-CAD «Zeichnung» (entwurf/modul-2d-cad.md, Stufe 1): DWG/DXF ansehen, Layer schalten, messen, PDF. Eigene Seite, arbeitet ohne Projekt. -->
+  <!-- 2D-CAD «Zeichnung» (entwurf/modul-2d-cad.md, Stufen 1 und 2): DWG/DXF ansehen, messen, zeichnen, ändern, speichern, PDF. Eigene Seite, arbeitet ohne Projekt. -->
   <script src="js/oberflaeche/design-start.js"></script>
   <link rel="stylesheet" href="css/hlks.css">
   <link rel="stylesheet" href="css/zeichnung.css">
@@ -12,13 +12,17 @@
 <body class="zeichnung">
   <header class="z-kopf">
     <button id="z-oeffnen" title="DWG oder DXF öffnen (Strg+O)">Öffnen …</button>
+    <button id="z-neu" title="Neue, leere Zeichnung anlegen (Millimeter)">Neu …</button>
+    <button id="z-speichern" title="Speichern (Strg+S); die vorherige Datei bleibt als .bak" disabled>Speichern</button>
+    <button id="z-speichern-unter" title="Als neue Datei speichern, DWG oder DXF, Fassung wählbar" disabled>Speichern unter …</button>
     <span id="z-name" class="z-name">Keine Zeichnung geöffnet</span>
     <span class="z-trenner"></span>
-    <button id="z-auswahl" class="z-werkzeug aktiv" title="Objekt anklicken: Eigenschaften (Esc)">Auswahl</button>
-    <button id="z-messen" class="z-werkzeug" title="Abstand, Winkel und Fläche messen: Punkte anklicken, Eingabetaste schliesst ab (M)">Messen</button>
+    <button id="z-zurueck" title="Rückgängig (Strg+Z)" disabled>↶</button>
+    <button id="z-wieder" title="Wiederholen (Strg+Y)" disabled>↷</button>
     <span class="z-trenner"></span>
     <button id="z-grenzen" title="Ganze Zeichnung zeigen (Pos1 oder Doppelklick mit dem Mausrad)">Grenzen</button>
     <label title="Objektfang: Endpunkt, Mittelpunkt, Zentrum (F3)"><input type="checkbox" id="z-fang" checked> Fang</label>
+    <label title="Ortho: nur waagrecht und senkrecht (F8)"><input type="checkbox" id="z-ortho"> Ortho</label>
     <label title="Linienstärken der Zeichnung anzeigen"><input type="checkbox" id="z-staerken" checked> Linienstärken</label>
     <label title="Heller Hintergrund wie auf dem Papier"><input type="checkbox" id="z-hell"> Hell</label>
     <span class="z-trenner"></span>
@@ -26,6 +30,29 @@
     <span class="z-fuell"></span>
     <a href="/" title="Zum KICAD-Arbeitsplatz">KICAD</a>
   </header>
+
+  <div class="z-werkzeuge" id="z-werkzeuge">
+    <span class="z-gruppe">Zeichnen</span>
+    <button data-befehl="linie" title="Linie (L)">Linie</button>
+    <button data-befehl="polylinie" title="Polylinie (PL)">Polylinie</button>
+    <button data-befehl="rechteck" title="Rechteck (RE)">Rechteck</button>
+    <button data-befehl="kreis" title="Kreis: Mittelpunkt, Radius (K)">Kreis</button>
+    <button data-befehl="bogen" title="Bogen durch drei Punkte (B)">Bogen</button>
+    <button data-befehl="text" title="Text (T)">Text</button>
+    <span class="z-trenner"></span>
+    <span class="z-gruppe">Ändern</span>
+    <button data-befehl="schieben" title="Schieben (S oder M)">Schieben</button>
+    <button data-befehl="kopieren" title="Kopieren (KO oder CO)">Kopieren</button>
+    <button data-befehl="drehen" title="Drehen (DR oder RO)">Drehen</button>
+    <button data-befehl="skalieren" title="Skalieren (V oder SC)">Skalieren</button>
+    <button data-befehl="loeschen" title="Löschen (LÖ, E oder Entf)">Löschen</button>
+    <span class="z-trenner"></span>
+    <button data-befehl="messen" title="Abstand, Winkel und Fläche messen (DI)">Messen</button>
+    <span class="z-trenner"></span>
+    <label for="z-aktueller-layer">Layer</label>
+    <select id="z-aktueller-layer" title="Aktueller Layer für neue Objekte"></select>
+    <button data-befehl="layer" title="Layer anlegen und zum aktuellen machen (LA)">Neu …</button>
+  </div>
 
   <main class="z-mitte">
     <aside class="z-links">
@@ -52,11 +79,17 @@
       <div class="z-titel">Eigenschaften</div>
       <div id="z-eigenschaften" class="z-eig"><p class="z-leise">Objekt anklicken.</p></div>
       <div class="z-titel">Messen</div>
-      <div id="z-mass" class="z-eig"><p class="z-leise">Werkzeug «Messen» wählen und Punkte anklicken.</p></div>
+      <div id="z-mass" class="z-eig"><p class="z-leise">«Messen» wählen und Punkte anklicken.</p></div>
       <div class="z-titel">Hinweise</div>
       <div id="z-hinweise" class="z-eig z-leise"></div>
     </aside>
   </main>
+
+  <div class="z-befehlszeile">
+    <span id="z-prompt" class="z-prompt">Befehl:</span>
+    <input id="z-eingabe" type="text" autocomplete="off" spellcheck="false"
+      title="Befehl oder Kürzel (L, PL, RE, K, B, T, S, KO, DR, V, LÖ, Z, DI) · Punkt: x,y · @dx,dy · @Länge<Winkel · Länge in Zeigerrichtung">
+  </div>
 
   <footer class="z-fuss">
     <div id="z-layouts" class="z-layouts"></div>
@@ -76,6 +109,20 @@
       </div>
       <div id="z-d-liste" class="z-dialog-liste"></div>
       <div class="z-dialog-fuss"><span id="z-d-fehler" class="z-fehler"></span><span class="z-fuell"></span><button value="abbrechen">Abbrechen</button></div>
+    </form>
+  </dialog>
+
+  <dialog id="z-su-dialog" class="z-dialog">
+    <form method="dialog">
+      <div class="z-titel">Speichern unter</div>
+      <div class="z-raster">
+        <label for="z-su-pfad">Datei</label>
+        <input id="z-su-pfad" type="text" autocomplete="off" spellcheck="false" placeholder="Voller Pfad, Endung .dwg oder .dxf">
+        <label for="z-su-fassung">Fassung</label>
+        <select id="z-su-fassung"><option value="">wie geöffnet</option><option>2018</option><option>2013</option><option>2010</option><option>2004</option><option>2000</option></select>
+      </div>
+      <p class="z-leise">Besteht die Datei schon, bleibt ihre bisherige Fassung als .bak daneben. Nach dem Schreiben wird die Datei zur Kontrolle wiedergelesen.</p>
+      <div class="z-dialog-fuss"><span id="z-su-fehler" class="z-fehler"></span><span class="z-fuell"></span><button value="abbrechen">Abbrechen</button><button type="button" id="z-su-los" class="z-haupt">Speichern</button></div>
     </form>
   </dialog>
 

@@ -16,8 +16,21 @@ public sealed class Zeichnungsdatei
     /// <summary>Obergrenze der Dateigrösse beim Öffnen (Schutz des Arbeitsspeichers).</summary>
     public const long MaxBytes = 300L * 1024 * 1024;
 
-    public string Name { get; }
-    public string Pfad { get; }
+    public string Name { get; private set; }
+    public string Pfad { get; private set; }
+    /// <summary>Rückgängig/Wiederholen der Sitzung (Stufe 2, ZeichnungBearbeiten.cs).</summary>
+    public ZeichnungJournal Journal { get; } = new();
+    /// <summary>Seit dem Öffnen bzw. letzten Speichern geändert.</summary>
+    public bool Geaendert => Journal.Stand != gespeicherterStand;
+    int gespeicherterStand;
+
+    /// <summary>Nach dem Speichern: Stand merken, bei «Speichern unter» den neuen Pfad übernehmen.</summary>
+    internal void Gespeichert(string pfad)
+    {
+        gespeicherterStand = Journal.Stand;
+        Pfad = pfad;
+        Name = Path.GetFileName(pfad);
+    }
     public CadDocument Dokument { get; }
     /// <summary>Meldungen des Lesers, zusammengefasst (Text → Anzahl).</summary>
     public SortedDictionary<string, int> Meldungen { get; } = new(StringComparer.Ordinal);
@@ -175,6 +188,16 @@ public sealed class ZeichnungSitzung
             ?? throw new HlksFehler($"Die Datei «{datei}» gibt es in den freigegebenen Ordnern nicht.", "Mit zeichnungen die vorhandenen Dateien auflisten.");
     }
 
+    /// <summary>Voller Pfad einer Zieldatei zum Speichern (.dwg/.dxf, muss noch nicht bestehen): nur in den freigegebenen Ordnern.</summary>
+    public string ZielPruefen(string datei)
+    {
+        if (!IstZeichnung(datei)) throw new HlksFehler("Die Zieldatei muss auf .dwg oder .dxf enden.");
+        if (ohneGrenze) return Path.IsPathRooted(datei) ? Path.GetFullPath(datei) : throw new HlksFehler("Der Pfad der Zieldatei fehlt.", "Den vollen Pfad angeben.");
+        if (ordner.Count == 0) throw new HlksFehler("Es ist kein Ordner für Zeichnungen freigegeben.", "Den MCP-Server mit --zeichnungen <Ordner> starten.");
+        var voll = Path.GetFullPath(Path.IsPathRooted(datei) ? datei : Path.Combine(ordner[0], datei));
+        return Innerhalb(voll) ? voll : throw new HlksFehler($"«{datei}» liegt ausserhalb der freigegebenen Ordner.", "Freigegeben: " + string.Join(" · ", ordner));
+    }
+
     bool Innerhalb(string voll)
     {
         foreach (var o in ordner)
@@ -207,6 +230,19 @@ public sealed class ZeichnungSitzung
                 liste.Add((f, i.Length, i.LastWriteTime));
             }
         return liste;
+    }
+
+    /// <summary>Neue, leere Zeichnung (Millimeter, DWG 2018 bzw. DXF) anlegen und öffnen; eine bestehende Datei wird nie überschrieben.</summary>
+    public Zeichnungsdatei Anlegen(string datei)
+    {
+        var pfad = ZielPruefen(datei);
+        if (File.Exists(pfad)) throw new HlksFehler($"Die Datei «{Path.GetFileName(pfad)}» gibt es schon.", "Einen anderen Namen wählen oder die Datei öffnen.");
+        var doc = new CadDocument(ACadVersion.AC1032);
+        doc.Header.InsUnits = ACadSharp.Types.Units.UnitsType.Millimeters;
+        Directory.CreateDirectory(Path.GetDirectoryName(pfad)!);
+        if (pfad.EndsWith(".dxf", StringComparison.OrdinalIgnoreCase)) { using var w = new DxfWriter(pfad, doc, false); w.Write(); }
+        else { using var w = new DwgWriter(pfad, doc); w.Write(); }
+        return Oeffnen(pfad);
     }
 
     public Zeichnungsdatei Oeffnen(string datei)

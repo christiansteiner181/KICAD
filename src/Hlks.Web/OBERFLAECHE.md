@@ -4409,3 +4409,24 @@ Server `ZeichnungEndpunkte.cs` (`/api/zeichnung/…`), Kern `Hlks.Kern/Zeichnung
 - **Linienstärken**, **Hell** (weisser Hintergrund im Modell), **PDF …** (Massstab, Blatt, ganze Zeichnung oder sichtbarer Ausschnitt, farbig/schwarz).
 - Rechts unter «Hinweise» steht, was nicht dargestellt wird (Abdeckungen, Rasterbilder, nicht eingebundene Referenzen).
 - Noch nicht: Schnittpunkt- und Lotfang, Auswahl durch ein Ansichtsfenster hindurch, Zeichnen und Ändern (Stufe 2).
+
+## 2D-CAD «Zeichnung» – Zeichnen, Ändern, Speichern (Stufe 2 Teil 1, 10.11.2026)
+
+Dateien: `js/zeichnung/befehle.js` (Befehle, Kürzel, getippte Punkte), `js/zeichnung/symbole.js` (Symbole im Stil von AutoCAD, eigene Zeichnungen –
+Christian 10.11.2026: «verwende Autodesk Symbole oder annäherungen»), Kern `Zeichnung/ZeichnungBearbeiten.cs`, MCP `zeichnung_zeichnen`,
+`zeichnung_aendern`, `zeichnung_layer_anlegen`, `zeichnung_rueckgaengig`, `zeichnung_wiederholen`, `zeichnung_speichern`, `zeichnung_neu`.
+
+- **Werkzeugleiste** (zweite Zeile): Zeichnen – Linie, Polylinie, Rechteck, Kreis, Bogen (3 Punkte), Text · Ändern – Schieben, Kopieren, Drehen,
+  Skalieren, Löschen · Messen · aktueller Layer (Auswahl) und «Neu …» (Layer anlegen).
+- **Befehlszeile** (unten): Tippen irgendwo landet dort. Kürzel deutsch und englisch: L · PL · RE/REC · K/C · B/A · T · S/M · KO/CO · DR/RO · V/SC ·
+  LÖ/E · Z/U (zurück) · WI (wieder) · DI (messen) · LA (Layer) · ZG (Grenzen) · SP (speichern). Eingabetaste oder Leertaste bestätigt, leere Eingabe
+  wiederholt den letzten Befehl, Esc bricht ab, rechte Maustaste = Eingabetaste.
+- **Punkte:** Klick (mit Fang F3 und Ortho F8) oder getippt: `x,y` absolut · `@dx,dy` relativ · `@Länge<Winkel` polar · nur `Länge` = Abstand in
+  Richtung des Zeigers. Radius und Drehwinkel als Zahl oder per Klick.
+- **Auswahl:** Klick wählt bzw. hebt ab; Klick ins Leere beginnt ein Fenster – nach rechts aufgezogen «ganz darin» (blau), nach links «berührt»
+  (grün, gestrichelt). Entf löscht. Erst wählen, dann Befehl – oder umgekehrt (dann Eingabetaste nach der Wahl).
+- **Rückgängig/Wiederholen:** ↶ ↷, Strg+Z, Strg+Y. **Neu …** legt eine leere Zeichnung an (mm). **Speichern** (Strg+S) schreibt an den Ort, die
+  vorherige Datei bleibt als `.bak`; **Speichern unter …** mit Fassung 2000–2018 bzw. DXF. Nach dem Schreiben wird wiedergelesen und gezählt.
+  Ein Stern am Namen zeigt ungespeicherte Änderungen; beim Verlassen fragt der Browser nach.
+- **Noch nicht** (Stufe 2 Teil 2 und Stufe 3): Spiegeln, Versetzen, Stutzen, Dehnen, Abrunden, Fasen, Strecken, Bruch, Verbinden, Reihe, Ursprung,
+  Eigenschaften übertragen, Griffe · Ellipse, Polygon, Spline, Punkt, Schraffur, Absatztext · Bemassung, Führung · Blöcke einfügen/erstellen.

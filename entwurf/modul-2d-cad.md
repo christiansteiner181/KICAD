@@ -137,6 +137,13 @@ bei den Unterlagen), nie ausserhalb.
   Rasterbilder · externe Referenzen laden · Linienstärken und Linienarten genau statt gerundet · Polylinienbreiten · Plotstil (CTB)
   · AutoCAD-Schriften · Vergleich mit dem AutoCAD-Ausdruck (Abnahme).
 
+- **Stufe 2 Teil 1 gebaut (10.11.2026):** Zeichnen (Linie, Polylinie, Rechteck, Kreis, Bogen, Text), Ändern (Schieben, Kopieren, Drehen, Skalieren,
+  Löschen, Eigenschaften), Layer anlegen, Rückgängig/Wiederholen, Neu, Speichern als DWG 2000–2018/DXF mit .bak und Gegenprobe; Befehlszeile mit
+  Kürzeln und getippten Punkten, Ortho, Auswahlfenster, Symbole im Stil von AutoCAD. Kern `ZeichnungBearbeiten.cs`, MCP sieben weitere Werkzeuge.
+- **Christian 10.11.2026: «zudem müssen alle zeichnungsfunktionen vorhanden sein»** – offen: Spiegeln, Versetzen, Stutzen, Dehnen, Abrunden, Fasen,
+  Strecken, Bruch, Verbinden, Reihe, Ursprung, Eigenschaften übertragen, Griffe · Ellipse, Polygon, Spline, Punkt, Schraffur, Absatztext ·
+  Bemassung, Führung · Blöcke einfügen/erstellen, Attribute · Schnittpunkt-/Lot-/Tangentenfang, Polarfang.
+
 ## 8 Offen bei Christian
 
 1. Zehn Büro-DWG für Stufe 0 (Ordner nennen) und Öffnen der zurückgeschriebenen Dateien in AutoCAD LT.

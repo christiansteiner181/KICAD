@@ -1,0 +1,56 @@
+// 2D-CAD «Zeichnung»: Symbole der Werkzeuge im Stil von AutoCAD (Christian 10.11.2026: «verwende Autodesk Symbole oder annäherungen»).
+// Eigene Zeichnungen, den bekannten Symbolen nachempfunden – keine Autodesk-Grafiken (wie beim Menüband nach Revit-Muster).
+// Raster 24 × 24. Farben: Linie = Schriftfarbe (currentColor), Blau = das Gezeichnete bzw. Ergebnis, Orange = Punkte/Griffe, Grün = Richtung.
+
+const B = '#4da3ff', O = '#ffa23a', G = '#43d17a', R = '#ff5d5d';
+const punkt = (x, y, f = O) => `<rect x="${x - 2}" y="${y - 2}" width="4" height="4" fill="${f}" stroke="none"/>`;
+const pfeil = (x, y, w, f = G) => `<path d="M0 0l-5-2.6v5.2z" transform="translate(${x} ${y}) rotate(${w})" fill="${f}" stroke="none"/>`;
+
+/** Inhalt der Symbole (ohne <svg>-Hülle). */
+const INHALT = {
+  // Zeichnen
+  linie: `<path d="M4 19L20 5" stroke="${B}" stroke-width="1.8"/>${punkt(4, 19)}${punkt(20, 5)}`,
+  polylinie: `<path d="M3 19l6-9 5 5 7-10" stroke="${B}" stroke-width="1.8" fill="none"/>${punkt(3, 19)}${punkt(9, 10)}${punkt(14, 15)}${punkt(21, 5)}`,
+  rechteck: `<rect x="4" y="7" width="16" height="11" stroke="${B}" stroke-width="1.8" fill="none"/>${punkt(4, 18)}${punkt(20, 7)}`,
+  kreis: `<circle cx="12" cy="12" r="8" stroke="${B}" stroke-width="1.8" fill="none"/><path d="M12 12l5.7-5.7" stroke="currentColor" stroke-width="1" stroke-dasharray="2 1.5"/>${punkt(12, 12)}`,
+  bogen: `<path d="M4 18A11 11 0 0 1 20 18" stroke="${B}" stroke-width="1.8" fill="none"/>${punkt(4, 18)}${punkt(12, 8.2)}${punkt(20, 18)}`,
+  text: `<path d="M5 6h14M12 6v13M9 19h6" stroke="${B}" stroke-width="2.2" fill="none"/><path d="M5 6v2.5M19 6v2.5" stroke="${B}" stroke-width="1.6"/>`,
+  // Ändern
+  schieben: `<path d="M12 3v18M3 12h18" stroke="currentColor" stroke-width="1.5"/>${pfeil(12, 3, -90)}${pfeil(12, 21, 90)}${pfeil(3, 12, 180)}${pfeil(21, 12, 0)}`,
+  kopieren: `<circle cx="8.5" cy="9" r="5" stroke="currentColor" stroke-width="1.4" fill="none" stroke-dasharray="2.2 1.6"/><circle cx="15.5" cy="15" r="5" stroke="${B}" stroke-width="1.8" fill="none"/>`,
+  drehen: `<path d="M19 12a7 7 0 1 1-3-5.7" stroke="${G}" stroke-width="1.8" fill="none"/>${pfeil(16.4, 6.6, 35)}<rect x="9.5" y="9.5" width="5" height="5" stroke="${B}" stroke-width="1.4" fill="none" transform="rotate(20 12 12)"/>`,
+  skalieren: `<rect x="4" y="13" width="7" height="7" stroke="currentColor" stroke-width="1.4" fill="none"/><rect x="4" y="5" width="15" height="15" stroke="${B}" stroke-width="1.6" fill="none" stroke-dasharray="2.6 1.8"/><path d="M11 13l6.5-6.5" stroke="${G}" stroke-width="1.5"/>${pfeil(18.5, 5.5, -45)}`,
+  loeschen: `<path d="M5 16.5L13.5 8l4.5 4.5L11.5 19H8z" stroke="currentColor" stroke-width="1.4" fill="none"/><path d="M9.5 12l4.5 4.5" stroke="currentColor" stroke-width="1.2"/><path d="M5 6l4 4M9 6l-4 4" stroke="${R}" stroke-width="1.8"/>`,
+  // Hilfen
+  messen: `<path d="M3 15L15 3l6 6L9 21z" stroke="${O}" stroke-width="1.5" fill="none"/><path d="M7 11l2 2M10 8l2 2M13 5l2 2M5.5 13.5l1 1M8.5 10.5l1 1M11.5 7.5l1 1" stroke="${O}" stroke-width="1.1"/>`,
+  layer: `<path d="M12 4l9 4.5-9 4.5-9-4.5z" stroke="${B}" stroke-width="1.5" fill="none"/><path d="M3 12.5l9 4.5 9-4.5M3 16.5l9 4.5 9-4.5" stroke="currentColor" stroke-width="1.3" fill="none"/>`,
+  // Datei und Ansicht
+  oeffnen: `<path d="M3 19V6h6l2 2h8v3" stroke="currentColor" stroke-width="1.4" fill="none"/><path d="M3 19l3-8h16l-3 8z" stroke="${O}" stroke-width="1.5" fill="none"/>`,
+  neu: `<path d="M6 3h8l4 4v14H6z" stroke="currentColor" stroke-width="1.4" fill="none"/><path d="M14 3v4h4" stroke="currentColor" stroke-width="1.2" fill="none"/><path d="M12 11v6M9 14h6" stroke="${G}" stroke-width="1.8"/>`,
+  speichern: `<path d="M4 4h13l3 3v13H4z" stroke="${B}" stroke-width="1.5" fill="none"/><path d="M7 4v5h8V4M7 20v-7h10v7" stroke="currentColor" stroke-width="1.2" fill="none"/>`,
+  'speichern-unter': `<path d="M4 4h13l3 3v6M4 4v16h8" stroke="${B}" stroke-width="1.5" fill="none"/><path d="M7 4v5h8V4" stroke="currentColor" stroke-width="1.2" fill="none"/><path d="M14 21l1-3.5 5.5-5.5 2.5 2.5-5.5 5.5z" stroke="${O}" stroke-width="1.3" fill="none"/>`,
+  zurueck: `<path d="M8 9h7a5 5 0 0 1 0 10h-4" stroke="currentColor" stroke-width="1.8" fill="none"/>${pfeil(4, 9, 180, B)}`,
+  wieder: `<path d="M16 9H9a5 5 0 0 0 0 10h4" stroke="currentColor" stroke-width="1.8" fill="none"/>${pfeil(20, 9, 0, B)}`,
+  grenzen: `<circle cx="10.5" cy="10.5" r="6.5" stroke="currentColor" stroke-width="1.5" fill="none"/><path d="M15.5 15.5L21 21" stroke="currentColor" stroke-width="2"/><path d="M7.5 9V7.5H9M12 7.5h1.5V9M13.5 12v1.5H12M9 13.5H7.5V12" stroke="${B}" stroke-width="1.4" fill="none"/>`,
+  pdf: `<path d="M6 3h8l4 4v14H6z" stroke="currentColor" stroke-width="1.4" fill="none"/><path d="M14 3v4h4" stroke="currentColor" stroke-width="1.2" fill="none"/><path d="M8.5 17c2-3 3-6 3-8 0 3 2 6 4.5 6.5-3-.3-5.5.5-7.5 1.5z" stroke="${R}" stroke-width="1.2" fill="none"/>`,
+};
+
+export function symbol(name, groesse = 20) {
+  const inhalt = INHALT[name];
+  return inhalt ? `<svg class="z-symbol" viewBox="0 0 24 24" width="${groesse}" height="${groesse}" fill="none" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${inhalt}</svg>` : '';
+}
+
+/** Symbole in die Knöpfe der Seite setzen: Werkzeuge über data-befehl, Kopfzeile über die Id (z-oeffnen → oeffnen). */
+export function symboleSetzen(wurzel = document) {
+  for (const k of wurzel.querySelectorAll('button[data-befehl], .z-kopf button[id]')) {
+    const name = k.dataset.befehl || k.id.replace(/^z-/, '');
+    const s = symbol(name);
+    if (!s || k.querySelector('.z-symbol')) continue;
+    const text = k.textContent.trim();
+    const nurSymbol = name === 'zurueck' || name === 'wieder';
+    k.innerHTML = s + (nurSymbol ? '' : '<span></span>');
+    if (!nurSymbol) k.lastElementChild.textContent = text;
+    k.classList.add('z-mit-symbol');
+    if (!k.getAttribute('aria-label')) k.setAttribute('aria-label', text || k.title);
+  }
+}
