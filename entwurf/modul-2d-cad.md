@@ -122,7 +122,20 @@ bei den Unterlagen), nie ausserhalb.
 - **Tests** nur dort, wo sie Verhalten sichern: Lesen-Schreiben-Lesen je Objektart, Geometrie der Änderungsbefehle,
   Pfadprüfung der MCP-Werkzeuge. Keine Browserreihen aus Routine.
 
-## 7 Offen bei Christian
+## 7 Stand (10.11.2026)
+
+- **Stufe 0:** sechs Prüfdateien in `%USERPROFILE%\HLKS_CAD_testdaten\dwg_gegenprobe` (je Plan `…_original.dwg` und die von KICAD
+  zurückgeschriebene `…_KICAD.dwg`). Gegenprobe in AutoCAD LT durch Christian steht aus; zehn Büro-DWG fehlen noch.
+- **Stufe 1, Kern und MCP gebaut:** `src/Hlks.Kern/Zeichnung/` (Datei + Sitzung mit Ordnerfreigabe, Grafik, Geometrie, Abfragen,
+  Ausgabe), `src/Hlks.Mcp/ZeichnungWerkzeuge.cs`. Werkzeuge: `zeichnungen`, `zeichnung_oeffnen`, `zeichnung_schliessen`,
+  `zeichnung_layer`, `zeichnung_layer_setzen`, `zeichnung_objekte`, `zeichnung_messen`, `zeichnung_bild`, `zeichnung_pdf`.
+  Start nur als 2D-CAD: `Hlks.Mcp --zeichnungen <Ordner> …` (ohne `--projekt`); mit Projekt zusätzlich `--zeichnungen`.
+  Am Architektenplan EG geprüft: Modellbereich und Layout 840 × 594 mm mit gedrehtem Ansichtsfenster, Plankopf und Legende.
+- **Stufe 1, offen:** Zeichenfläche in der Oberfläche (Zoom, Pan, Objektfang, Messen mit der Maus) · Abdeckungen (Wipeout) und
+  Rasterbilder · externe Referenzen laden · Linienstärken und Linienarten genau statt gerundet · Polylinienbreiten · Plotstil (CTB)
+  · AutoCAD-Schriften · Vergleich mit dem AutoCAD-Ausdruck (Abnahme).
+
+## 8 Offen bei Christian
 
 1. Zehn Büro-DWG für Stufe 0 (Ordner nennen) und Öffnen der zurückgeschriebenen Dateien in AutoCAD LT.
 2. Reihenfolge gegenüber dem laufenden KICAD-Ablauf: einschieben oder nach dem aktuellen Modul?

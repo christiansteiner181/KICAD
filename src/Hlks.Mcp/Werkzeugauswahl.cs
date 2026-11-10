@@ -31,7 +31,7 @@ public static class Werkzeugauswahl
 
     /// <summary>Alle Werkzeuge dieses Servers (Werkzeuge und Sitzungswerkzeuge), wie sie registriert werden.</summary>
     public static IReadOnlyList<string> Alle() =>
-        [.. new[] { typeof(Werkzeuge), typeof(SitzungWerkzeuge) }.SelectMany(t => t.GetMethods())
+        [.. new[] { typeof(Werkzeuge), typeof(SitzungWerkzeuge), typeof(ZeichnungWerkzeuge) }.SelectMany(t => t.GetMethods())
             .Select(m => m.GetCustomAttribute<McpServerToolAttribute>()?.Name).Where(n => n is not null).Select(n => n!).Distinct().Order(StringComparer.Ordinal)];
 
     /// <summary>Entfernt aus den registrierten Werkzeugen alle, die nicht in der Liste stehen; meldet unbekannte Namen.</summary>
