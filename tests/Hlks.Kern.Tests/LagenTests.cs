@@ -26,6 +26,7 @@ public class LagenTests
         Assert.Equal(2, rohre.Count);
         Assert.All(rohre, r => Assert.Equal(2, Lagen.LageVon(p, r)));
         Assert.Equal(2, Striche(p, rohre[0].Kennzeichen).Count);
+        Assert.All(Striche(p, rohre[0].Kennzeichen), s => Assert.Equal("#000000", s.Stil.Farbe));   // schwarz (Christian 11.11.2026)
         Assert.Empty(Striche(p, rohre[1].Kennzeichen));
         // keine Lage: kein Zeichen
         Ok(Zeichnen(p, "DN 20", [[0, 1000, 2000], [2000, 1000, 2000]]));

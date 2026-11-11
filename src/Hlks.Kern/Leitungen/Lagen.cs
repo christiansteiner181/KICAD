@@ -136,7 +136,7 @@ public static class Lagen
         {
             double t = ab + (i - (n - 1) / 2.0) * sp;
             double cx = xy[k - 1][0] + dx * t, cy = xy[k - 1][1] + dy * t;
-            aus.Add(new Primitiv { Art = "linie", Punkte = [[cx - sx, cy - sy], [cx + sx, cy + sy]], Stil = new Stil { Stift = Stifte.Mittel } });
+            aus.Add(new Primitiv { Art = "linie", Punkte = [[cx - sx, cy - sy], [cx + sx, cy + sy]], Stil = new Stil { Stift = Stifte.Mittel, Farbe = "#000000" } });   // schwarz (Christian 11.11.2026: «lagen müssen schwarz dargestellt werden»)
         }
         return aus;
     }
