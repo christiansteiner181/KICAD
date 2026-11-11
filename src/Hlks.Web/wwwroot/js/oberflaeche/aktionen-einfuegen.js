@@ -93,6 +93,7 @@ async function ifcDialog(datei, { revit = false } = {}) {
   const ifcName = revit ? `${datei.name}.ifc` : datei.name;   // rvt_als_ifc legt «<Name>.rvt.ifc» ab
 
   const lesen = () => ({
+    nachzeichnen: q('input[name=nachzeichnen]:checked')?.value !== 'nein',
     bereiche: qa('.b-haken:checked').map((x) => x.value),
     geschosse: qa('.g-haken:checked').map((x) => x.value),
     ausrichtung: q('input[name=ausrichtung]:checked')?.value ?? null,
@@ -105,14 +106,14 @@ async function ifcDialog(datei, { revit = false } = {}) {
     return T.uebernahmeParameter({
       datei: abgelegt, bereiche: l.bereiche, alleBereiche: T.BEREICHE.map((b) => b[0]), geschosse: l.geschosse,
       alleGeschosse: pruefung.geschosse.map((g) => g.name), grundlage: l.grundlage, ausrichtung: l.ausrichtung,
-      koordinationskoerper: l.koordinationskoerper, konflikte: l.konflikte,
+      koordinationskoerper: l.koordinationskoerper, konflikte: l.konflikte, nachzeichnen: l.nachzeichnen,
     });
   };
   // Übernehmen verlangt bei Abweichung die ausdrückliche Wahl; die Vorschau (Trockenlauf) rechnet auch ohne Wahl mit dem Projektbezug
   const pruefen = (mitWahl = true) => {
     if (!bereit) return 'Die Datei wird noch geladen und geprüft.';
     const l = lesen();
-    return T.uebernahmePruefen({ bereiche: l.bereiche, geschosse: l.geschosse, lage: mitWahl ? pruefung.lage : null, ausrichtung: l.ausrichtung });
+    return T.uebernahmePruefen({ bereiche: l.bereiche, geschosse: l.geschosse, lage: mitWahl ? pruefung.lage : null, ausrichtung: l.ausrichtung, nachzeichnen: l.nachzeichnen });
   };
 
   function aufbauen() {
@@ -173,8 +174,20 @@ async function ifcDialog(datei, { revit = false } = {}) {
       </details>
       <h3>Vorschau</h3>
       <div class="ifc-vorschau"><p class="leise">Noch keine Vorschau. «Vorschau» rechnet einen Trockenlauf: nichts wird geändert, die Liste zeigt neu, geändert und gelöscht.</p></div>`;
+    // Nachzeichnen ja/nein zuoberst (Christian 11.11.2026: «beim importieren eines ifc, muss prominent gewählt werden können ob es nachgezeichnet
+    // werden soll. dies ist für architektur default "ja" für alle anderen default "nein"»)
+    const arch = T.istArchitektur(pruefung);
+    const nachzeichnenBlock = `<fieldset class="ausrichtung nachzeichnen"><legend>Nachzeichnen?</legend>
+        <label class="wahl"><input type="radio" name="nachzeichnen" value="ja"${arch ? ' checked' : ''}><span><b>Ja – als KICAD-Bauteile nachzeichnen</b><br><span class="leise">Die gewählten Bereiche werden zu Wänden, Räumen, Leitungen, Formteilen … in KICAD.</span></span></label>
+        <label class="wahl"><input type="radio" name="nachzeichnen" value="nein"${arch ? '' : ' checked'}><span><b>Nein – nur als Unterlage einlesen</b><br><span class="leise">Das Modell bleibt als Hintergrund sichtbar (Lage und Ausrichtung gelten); es entstehen keine KICAD-Bauteile.</span></span></label>
+        <p class="leise">Vorgabe: ${arch ? 'Architekturmodell erkannt – nachzeichnen' : 'Fachmodell (keine Architektur) erkannt – nur einlesen'}.</p>
+      </fieldset>`;
     // Bei Abweichung steht die Lage mit der Wahl vor der Übersicht: die ausdrückliche Wahl darf nicht übersehen werden
-    inhalt.innerHTML = (lage?.bewertung === 'abweichung' ? lageBlock + uebersicht : uebersicht + lageBlock) + rest;
+    inhalt.innerHTML = nachzeichnenBlock + (lage?.bewertung === 'abweichung' ? lageBlock + uebersicht : uebersicht + lageBlock) + rest;
+    const bereicheSchalten = () => { const nein = q('input[name=nachzeichnen]:checked')?.value === 'nein'; qa('.b-haken, .g-haken').forEach((x) => { if (!x.dataset.aus) x.disabled = nein; }); };
+    qa('.g-haken:disabled').forEach((x) => { x.dataset.aus = '1'; });
+    qa('input[name=nachzeichnen]').forEach((r) => r.addEventListener('change', () => { bereicheSchalten(); ctrlFehler?.(null); }));
+    bereicheSchalten();
     status.hidden = true;
     inhalt.hidden = false;
     qa('input[name=ausrichtung]').forEach((r) => r.addEventListener('change', () => ctrlFehler?.(null)));

@@ -323,6 +323,17 @@ export function lageHtml(lage, bezugProjekt, opt = {}) {
 
 // ---------------------------------------------------------------------------------------------- Übersicht der Datei
 
+/** Klassen der Architektur in der Zuordnung von ifc_pruefen (IfcArchitektur.Klassen). */
+export const ARCHITEKTUR_KLASSEN = ['Wand', 'Decke', 'Dach', 'Stuetze', 'Traeger', 'Tuer', 'Fenster', 'Achse'];
+
+/** Architekturmodell? Vorgabe für «nachzeichnen» (Christian 11.11.2026: «dies ist für architektur default "ja" für alle anderen default "nein"»):
+ *  mehr Architektur-Bauteile und Räume als übrige zugeordnete Bauteile (Leitungen, Formteile, Armaturen, Apparate …). */
+export function istArchitektur(pruefung) {
+  let arch = Number(pruefung?.raeume) || 0, rest = 0;
+  for (const [k, n] of Object.entries(pruefung?.zuordnung ?? {})) { if (ARCHITEKTUR_KLASSEN.includes(k)) arch += Number(n) || 0; else rest += Number(n) || 0; }
+  return arch > rest;
+}
+
 export const BEREICHE = [
   ['architektur', 'Architektur', 'Wände, Decken, Dächer, Stützen, Unterzüge, Türen, Fenster, Achsen'],
   ['raeume', 'Räume', 'Räume aus der Datei (ohne Räume: aus den Wänden)'],
@@ -398,11 +409,13 @@ export function hinweiseHtml(hinweise) {
  * ausrichtung nur, wenn gewählt.
  */
 export function uebernahmeParameter({ datei, bereiche, alleBereiche, geschosse, alleGeschosse, grundlage = true, ausrichtung = null,
-  koordinationskoerper = '', konflikte = 'kicad' }) {
+  koordinationskoerper = '', konflikte = 'kicad', nachzeichnen = true }) {
   const p = { datei };
-  if (bereiche && alleBereiche && bereiche.length < alleBereiche.length) p.bereiche = [...bereiche];
-  if (geschosse && alleGeschosse && geschosse.length < alleGeschosse.length) p.geschosse = [...geschosse];
-  if (grundlage === false) p.grundlage = false;
+  // Nicht nachzeichnen (Christian 11.11.2026): nur als Unterlage einlesen, sichtbar als Hintergrund – keine KICAD-Bauteile
+  if (!nachzeichnen) p.bereiche = ['keine'];
+  else if (bereiche && alleBereiche && bereiche.length < alleBereiche.length) p.bereiche = [...bereiche];
+  if (nachzeichnen && geschosse && alleGeschosse && geschosse.length < alleGeschosse.length) p.geschosse = [...geschosse];
+  if (grundlage === false && nachzeichnen) p.grundlage = false;
   if (ausrichtung) p.ausrichtung = ausrichtung;
   if (koordinationskoerper && String(koordinationskoerper).trim()) p.koordinationskoerper = String(koordinationskoerper).trim();
   if (konflikte && konflikte !== 'kicad') p.konflikte = konflikte;
@@ -410,9 +423,9 @@ export function uebernahmeParameter({ datei, bereiche, alleBereiche, geschosse, 
 }
 
 /** Prüft die Auswahl im Dialog und liefert einen Fehlertext oder true. */
-export function uebernahmePruefen({ bereiche, geschosse, lage, ausrichtung }) {
-  if (!bereiche || bereiche.length === 0) return 'Mindestens einen Bereich wählen (Architektur, Räume oder HLKS).';
-  if (!geschosse || geschosse.length === 0) return 'Mindestens ein Geschoss wählen.';
+export function uebernahmePruefen({ bereiche, geschosse, lage, ausrichtung, nachzeichnen = true }) {
+  if (nachzeichnen && (!bereiche || bereiche.length === 0)) return 'Mindestens einen Bereich wählen (Architektur, Räume oder HLKS).';
+  if (nachzeichnen && (!geschosse || geschosse.length === 0)) return 'Mindestens ein Geschoss wählen.';
   if (verlangtWahl(lage) && !ausrichtung) return 'Die Lage der Datei weicht vom Projektbezug ab: bitte die Ausrichtung ausdrücklich wählen.';
   return true;
 }

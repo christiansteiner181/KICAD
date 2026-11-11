@@ -558,3 +558,13 @@ test('Server: hochgeladene Testdatei → ifc_pruefen → Bausteine zeigen Lagebe
   const g = T.aenderungenGruppiert(r.aenderungen);
   assert.ok(g.summe.neu >= 1, 'Trockenlauf meldet neue Elemente');
 });
+
+test('IFC übernehmen: nachzeichnen – Architektur ja, Fachmodelle nein; nein liest nur als Unterlage ein (Christian 11.11.2026)', () => {
+  assert.equal(T.istArchitektur({ zuordnung: { Wand: 2412, Decke: 300, Tuer: 120 }, raeume: 300 }), true);
+  assert.equal(T.istArchitektur({ zuordnung: { Rohr: 1521, Bogen: 978, Ventil: 238, Wand: 0 }, raeume: 0 }), false);   // BKW HS Trimble Nova
+  assert.equal(T.istArchitektur({}), false);
+  const alle = { datei: 'abc_hk.ifc', bereiche: ['architektur', 'raeume', 'hlks'], alleBereiche: ['architektur', 'raeume', 'hlks'], geschosse: ['EG'], alleGeschosse: ['EG', 'OG'] };
+  assert.deepEqual(T.uebernahmeParameter({ ...alle, nachzeichnen: false, ausrichtung: 'projekt' }), { datei: 'abc_hk.ifc', bereiche: ['keine'], ausrichtung: 'projekt' });
+  assert.deepEqual(T.uebernahmeParameter({ ...alle, nachzeichnen: true }), { datei: 'abc_hk.ifc', geschosse: ['EG'] });
+  assert.equal(T.uebernahmePruefen({ bereiche: [], geschosse: [], lage: null, ausrichtung: null, nachzeichnen: false }), true);
+});

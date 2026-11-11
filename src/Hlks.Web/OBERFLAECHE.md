@@ -204,6 +204,11 @@ Die Oberfläche zeigt Dateinamen ohne die vorangestellte Prüfsumme (`ohnePruefs
   der Datei auf einem Kegel des Projekts liegen (≤ 50 mm, ANNAHME); ohne Kegel zählen Gelände- und Gebäudeursprung. Eindeutig → Empfehlung; beim Einpassen
   gilt diese Lage, wenn Wände und Räume fehlen oder nicht eindeutig sind (BKW HS: Gebäudetechnik-IFC von Trimble Nova ohne Wände, Ursprung auf dem Kegel →
   «projekt»). Der Projektbezug speichert die Kegel der ersten Datei (`referenzkegel`); ältere Projekte lesen sie aus der Bezugsdatei.
+- *Nachzeichnen?* (Christian 11.11.2026: «beim importieren eines ifc, muss prominent gewählt werden können ob es nachgezeichnet werden soll. dies ist
+  für architektur default "ja" für alle anderen default "nein"»): zuoberst im Dialog «IFC übernehmen» (blau umrandet). Ja = die gewählten Bereiche werden
+  KICAD-Bauteile; Nein = nur als Unterlage einlesen (`bereiche = ["keine"]`, Hintergrund mit Lage und Ausrichtung, keine Bauteile, nichts gelöscht).
+  Vorgabe: Ja, wenn die Datei mehr Architektur-Bauteile und Räume als übrige Bauteile hat (`istArchitektur`), sonst Nein. Bei Nein sind Bereiche und
+  Geschosse gesperrt.
 - *Weitere Optionen:* Hintergrund (`grundlage`), Konflikte (`konflikte` kicad | ifc), Name des Koordinationskörpers.
 - *Vorschau* = `ifc_uebernehmen` als Trockenlauf (auch ohne Wahl: der Kern rechnet dann mit dem Projektbezug und sagt es in den Hinweisen): Tabelle je Klasse mit neu / geändert / gelöscht
   (Verbindungen: neu = verbunden, gelöscht = getrennt), Summe, Hinweise des Kerns. *Übernehmen* = echter Lauf, danach ein Ergebnisdialog mit denselben Tabellen und allen Hinweisen.
