@@ -18,6 +18,9 @@ import { steigleitungWerkzeug } from '../werkzeuge/steigleitung.js';
 import { aufteilenDialog } from '../werkzeuge/leitung-bearbeiten.js';
 import { istAltbestand } from '../werkzeuge/leitung-logik.js';
 
+/** Nur bei Leitungen im Kontextregister zeigen (menueband.js fuer). */
+const istLeitungEl = (el) => ['Rohr', 'Kanal'].includes(el?.klasse);
+
 const projektOffen = () => !!zustand.status?.offen;
 const imGrundriss = () => projektOffen() && planAnsicht()?.art === 'grundriss';
 const nurGrundriss = () => (!projektOffen() ? 'Zuerst ein Projekt öffnen.' : planAnsicht() ? 'Geht nur in einem Grundriss.' : 'Zuerst einen Grundriss öffnen und aktivieren.');
@@ -52,7 +55,7 @@ for (const [id, titel, variante] of [['sa.abwasser', 'Abwasserleitung', 'abwasse
 // Kontextregister einer gewählten Leitung; Befehl fliessrichtung_umkehren (ganzer Zug, Gefälle in die neue Richtung)
 const leitungZumUmkehren = () => { const el = element(zustand.auswahl); return el && ['Rohr', 'Kanal'].includes(el.klasse) ? el : null; };
 registrieren({
-  id: 'kontext.fliess-umkehren', titel: 'Fliessrichtung umkehren', symbol: 'netzAuf', kuerzel: null, register: 'kontext', gruppe: 'Netz',
+  id: 'kontext.fliess-umkehren', fuer: istLeitungEl, titel: 'Fliessrichtung umkehren', symbol: 'netzAuf', kuerzel: null, register: 'kontext', gruppe: 'Netz',
   aktiv: () => !!leitungZumUmkehren(), hinweis: 'Zuerst eine Leitung auswählen.',
   async ausfuehren() { const el = leitungZumUmkehren(); if (el) ergebnisMelden(await sende('fliessrichtung_umkehren', { leitung: el.kennzeichen })); },
 });
@@ -95,22 +98,22 @@ async function daemmungDialog(bearbeiten) {
 }
 
 registrieren({
-  id: 'kontext.daemmung-hinzufuegen', titel: 'Dämmung hinzufügen', symbol: 'daemmung', kuerzel: null, register: 'kontext', gruppe: 'Dämmung',
+  id: 'kontext.daemmung-hinzufuegen', fuer: istLeitungEl, titel: 'Dämmung hinzufügen', symbol: 'daemmung', kuerzel: null, register: 'kontext', gruppe: 'Dämmung',
   aktiv: () => gewaehlteLeitungen().length > 0, hinweis: 'Zuerst eine Leitung auswählen.', ausfuehren: () => daemmungDialog(false),
 });
 registrieren({
-  id: 'kontext.daemmung-bearbeiten', titel: 'Dämmung bearbeiten', symbol: 'daemmungBearbeiten', kuerzel: null, register: 'kontext', gruppe: 'Dämmung',
+  id: 'kontext.daemmung-bearbeiten', fuer: istLeitungEl, titel: 'Dämmung bearbeiten', symbol: 'daemmungBearbeiten', kuerzel: null, register: 'kontext', gruppe: 'Dämmung',
   aktiv: gedaemmt, hinweis: 'Die gewählten Leitungen haben keine Dämmung.', ausfuehren: () => daemmungDialog(true),
 });
 registrieren({
-  id: 'kontext.daemmung-entfernen', titel: 'Dämmung entfernen', symbol: 'daemmungEntfernen', kuerzel: null, register: 'kontext', gruppe: 'Dämmung',
+  id: 'kontext.daemmung-entfernen', fuer: istLeitungEl, titel: 'Dämmung entfernen', symbol: 'daemmungEntfernen', kuerzel: null, register: 'kontext', gruppe: 'Dämmung',
   aktiv: gedaemmt, hinweis: 'Die gewählten Leitungen haben keine Dämmung.',
   ausfuehren: () => daemmungSetzen(gewaehlteLeitungen().filter((e) => dicke(e) > 0), { daemmdicke: null, daemmung: null }),
 });
 
 // Neigung (Revit «Neigung»): Gefälle des ganzen Leitungszugs der gewählten Leitung (leitung_gefaelle, zug)
 registrieren({
-  id: 'kontext.neigung', titel: 'Neigung', symbol: 'neigung', kuerzel: null, register: 'kontext', gruppe: 'Leitung',
+  id: 'kontext.neigung', fuer: istLeitungEl, titel: 'Neigung', symbol: 'neigung', kuerzel: null, register: 'kontext', gruppe: 'Leitung',
   aktiv: () => gewaehlteLeitungen().length === 1, hinweis: 'Genau eine Leitung auswählen.',
   async ausfuehren() {
     const el = gewaehlteLeitungen()[0];
@@ -172,7 +175,7 @@ registrieren({
   ausfuehren: (p) => aufteilenDialog(gewaehlteLeitung(p).kennzeichen),
 });
 registrieren({
-  id: 'kontext.leitung-aufteilen', titel: 'Aufteilen mit Produktlinie …', symbol: 'rohr', kuerzel: null, register: 'kontext', gruppe: 'Leitung',
+  id: 'kontext.leitung-aufteilen', fuer: istLeitungEl, titel: 'Aufteilen mit Produktlinie …', symbol: 'rohr', kuerzel: null, register: 'kontext', gruppe: 'Leitung',
   aktiv: aufteilenAktiv, hinweis: aufteilenHinweis,
   ausfuehren: (p) => aufteilenDialog(gewaehlteLeitung(p).kennzeichen),
 });

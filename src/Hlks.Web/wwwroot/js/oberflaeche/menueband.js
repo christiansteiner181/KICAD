@@ -256,6 +256,8 @@ function gruppenListe(registerId) {
   const m = new Map();
   for (const a of aktionen.values()) {
     if (!imRegister(a, registerId)) continue;
+    // Kontextknöpfe nur für passende Bauteile (Christian 11.11.2026 «Ja, ausblenden»: Leitungsbefehle nicht gesperrt bei anderen Bauteilen)
+    if (registerId === 'kontext' && typeof a.fuer === 'function' && !a.fuer(element(zustand.auswahl))) continue;
     if (!m.has(a.gruppe)) m.set(a.gruppe, []);
     m.get(a.gruppe).push(a);
   }

@@ -4306,6 +4306,8 @@ jedes neue Projekt erhält alle Mustersysteme.
   isolation angezeigt. richte dich dabei an der revit basis»): wird eine Leitung angewählt, springt das Menüband aus jedem Register auf «Ändern | Rohr»
   (nicht während ein Werkzeug läuft); beim Abwählen zurück. Neue Gruppe «Dämmung»: Dämmung hinzufügen, Dämmung bearbeiten (Art bzw. Produkt, Dicke; für
   alle gewählten Leitungen in einem Paket), Dämmung entfernen; in der Gruppe «Leitung» dazu «Neigung» (Gefälle des ganzen Zugs).
+  Leitungsbefehle im Kontextregister (Dämmung, Neigung, Fliessrichtung umkehren, Aufteilen) erscheinen nur bei Rohren und Kanälen, bei anderen Bauteilen
+  sind sie ausgeblendet (Christian 11.11.2026 «Ja, ausblenden»; Aktionseigenschaft `fuer`).
 - **Lage beim Weiterzeichnen** (Christian 11.11.2026: «wird an einer leitung weitergezeichnet, wird immer die Lage der bestehenden leitung übernommen»):
   beginnt ein Rohr an einem Anschluss bzw. als Abzweig, gilt die Lage, deren Höhe die Achse dort trifft (±5 mm); trifft keine, ist das Feld Lage leer und
   es gilt die Höhe des Punktes. Wurde die Lage bzw. Höhe im laufenden Werkzeug von Hand gewählt, bleibt sie (Christian 11.11.2026: «wird eine lage
