@@ -19,6 +19,7 @@ import { HILFE_ZEILE } from './hilfe.js';
 import { symbolWz } from '../werkzeuge/symbole.js';
 import { werkzeugOptionen } from '../werkzeuge/optionsleiste.js';
 import { familieAktiv } from '../familien/aktiv.js';
+import { istLeitungsklasse } from '../werkzeuge/leitung-logik.js';
 import { STUFEN, gruppenPlan, stufenWaehlen, minWeiter, minUmschalten, MIN_ZUSTAENDE } from './menueband-stufen.js';
 import { gewerkFarben } from './projektbrowser-gliederung.js';
 
@@ -125,7 +126,8 @@ export function einrichten(bandElement, optionsleisteElement, schnellzugriffElem
   const spaeter = entprellen(() => { zustandAnwenden(); optionenZeichnen(); }, 40);
   abonnieren('auswahl', (id) => {
     const el = id ? element(id) : null;
-    if (el && aktivesRegister === 'aendern') registerWaehlen('kontext', false);
+    // Leitung angewählt: Register «Ändern» aktiv (Christian 11.11.2026: «ist eine leitung angewählt soll der tab "ändern" aktiv sein»), aus jedem Register
+    if (el && (aktivesRegister === 'aendern' || (istLeitungsklasse(el.klasse) && aktivesRegister !== 'kontext' && modus.id !== 'werkzeug'))) registerWaehlen('kontext', false);
     else if (!el && aktivesRegister === 'kontext') registerWaehlen(zuvorRegister === 'kontext' ? 'aendern' : zuvorRegister, false);
     else { reiterZeichnen(); if (aktivesRegister === 'kontext') feldZeichnen(); }
     if (!el && modus.id === 'netz') modusSetzen('aendern');

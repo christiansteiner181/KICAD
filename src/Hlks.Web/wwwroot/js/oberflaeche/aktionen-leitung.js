@@ -6,9 +6,10 @@
 import { registrieren } from './register.js';
 import { zustand, element, derKlasse } from '../zustand.js';
 import { ansichtOeffnen } from '../fenster.js';
-import { meldung } from './dialoge.js';
+import { meldung, zeigen } from './dialoge.js';
 import { sende, ergebnisMelden } from './befehle.js';
-import { aufElement, freiesKennzeichen } from './werkzeug.js';
+import { aufElement, freiesKennzeichen, knoten, esc } from './werkzeug.js';
+import { auswahlElemente } from '../werkzeuge/auswahl.js';
 import { planAnsicht, werkzeugStarten, werkzeugAktiv } from '../werkzeuge/basis.js';
 import { leitungWerkzeug } from '../werkzeuge/leitung.js';
 import { parallelWerkzeug } from '../werkzeuge/parallel.js';
@@ -54,6 +55,72 @@ registrieren({
   id: 'kontext.fliess-umkehren', titel: 'Fliessrichtung umkehren', symbol: 'netzAuf', kuerzel: null, register: 'kontext', gruppe: 'Netz',
   aktiv: () => !!leitungZumUmkehren(), hinweis: 'Zuerst eine Leitung auswählen.',
   async ausfuehren() { const el = leitungZumUmkehren(); if (el) ergebnisMelden(await sende('fliessrichtung_umkehren', { leitung: el.kennzeichen })); },
+});
+
+// ---------------------------------------------------------------------------------------------- Dämmung und Neigung (Kontextregister)
+// Christian 11.11.2026: «ist eine leitung angewählt soll der tab "ändern" aktiv sein», «in ändern werden auch dinge wie isolation angezeigt. richte dich
+// dabei an der revit basis» – wie Revit «Ändern | Rohre»: Dämmung hinzufügen, Dämmung bearbeiten, Dämmung entfernen, Neigung. Gilt für alle gewählten
+// Leitungen (Mehrfachauswahl in einem Paket); die Formteile dazwischen bekommen die Dämmung ihrer Leitungen (DaemmGrafik).
+const gewaehlteLeitungen = () => auswahlElemente().filter((e) => ['Rohr', 'Kanal'].includes(e.klasse));
+const dicke = (e) => Number(e.werte?.daemmdicke) || 0;
+const gedaemmt = () => gewaehlteLeitungen().some((e) => dicke(e) > 0);
+
+async function daemmungSetzen(leitungen, eig) {
+  const kz = leitungen.map((e) => e.kennzeichen);
+  const r = kz.length === 1 ? await sende('element_aendern', { element: kz[0], eigenschaften: eig })
+    : await sende('elemente_aendern', { elemente: kz, eigenschaften: eig });
+  ergebnisMelden(r, eig.daemmdicke ? `Dämmung ${eig.daemmdicke} mm an ${kz.length} Leitung(en).` : `Dämmung an ${kz.length} Leitung(en) entfernt.`);
+}
+
+/** Dialog «Dämmung hinzufügen» bzw. «Dämmung bearbeiten» (wie Revit): Art bzw. Produkt und Dicke. Vorgabe: Werte der ersten gedämmten Leitung,
+ *  sonst die Dämmdicke ihres Systems. */
+async function daemmungDialog(bearbeiten) {
+  const l = gewaehlteLeitungen();
+  if (!l.length) return;
+  const muster = l.find((e) => dicke(e) > 0) ?? l[0];
+  const sys = element(muster.system);
+  const vorDicke = dicke(muster) || Number(sys?.werte?.daemmdicke) || '';
+  const w = knoten(`<div>
+    <label class="fz"><span>Dämmung (Art bzw. Produkt)</span><input type="text" class="d-art" value="${esc(muster.werte?.daemmung ?? '')}" placeholder="z. B. Mineralwolle alukaschiert"></label>
+    <label class="fz"><span>Dämmdicke [mm]</span><input type="text" class="d-dicke" inputmode="decimal" value="${esc(String(vorDicke))}"></label>
+    <p class="leise">${l.length} Leitung(en) gewählt. Die Dicke nach Energiegesetz (MuKEn 2014) gibt die Dämmregel des Systems vor (Koordination › Anlagen und Systeme).</p></div>`);
+  const ok = await zeigen({
+    titel: bearbeiten ? 'Dämmung bearbeiten' : 'Dämmung hinzufügen', inhalt: w, breite: 440,
+    knoepfe: [{ text: 'Abbrechen', wert: false }, { text: 'Übernehmen', wert: true, primaer: true,
+      pruefen: () => { const n = Number(w.querySelector('.d-dicke').value.replace(',', '.')); return Number.isFinite(n) && n > 0 && n <= 500 ? true : 'Dämmdicke in mm eingeben (grösser als 0).'; } }],
+  });
+  if (ok !== true) return;
+  const art = w.querySelector('.d-art').value.trim();
+  await daemmungSetzen(l, { daemmdicke: Math.round(Number(w.querySelector('.d-dicke').value.replace(',', '.'))), daemmung: art || null });
+}
+
+registrieren({
+  id: 'kontext.daemmung-hinzufuegen', titel: 'Dämmung hinzufügen', symbol: 'daemmung', kuerzel: null, register: 'kontext', gruppe: 'Dämmung',
+  aktiv: () => gewaehlteLeitungen().length > 0, hinweis: 'Zuerst eine Leitung auswählen.', ausfuehren: () => daemmungDialog(false),
+});
+registrieren({
+  id: 'kontext.daemmung-bearbeiten', titel: 'Dämmung bearbeiten', symbol: 'daemmungBearbeiten', kuerzel: null, register: 'kontext', gruppe: 'Dämmung',
+  aktiv: gedaemmt, hinweis: 'Die gewählten Leitungen haben keine Dämmung.', ausfuehren: () => daemmungDialog(true),
+});
+registrieren({
+  id: 'kontext.daemmung-entfernen', titel: 'Dämmung entfernen', symbol: 'daemmungEntfernen', kuerzel: null, register: 'kontext', gruppe: 'Dämmung',
+  aktiv: gedaemmt, hinweis: 'Die gewählten Leitungen haben keine Dämmung.',
+  ausfuehren: () => daemmungSetzen(gewaehlteLeitungen().filter((e) => dicke(e) > 0), { daemmdicke: null, daemmung: null }),
+});
+
+// Neigung (Revit «Neigung»): Gefälle des ganzen Leitungszugs der gewählten Leitung (leitung_gefaelle, zug)
+registrieren({
+  id: 'kontext.neigung', titel: 'Neigung', symbol: 'neigung', kuerzel: null, register: 'kontext', gruppe: 'Leitung',
+  aktiv: () => gewaehlteLeitungen().length === 1, hinweis: 'Genau eine Leitung auswählen.',
+  async ausfuehren() {
+    const el = gewaehlteLeitungen()[0];
+    const w = knoten(`<div><label class="fz"><span>Gefälle [%]</span><input type="text" class="n-g" inputmode="decimal" value="${esc(String(el.werte?.gefaelle ?? ''))}" placeholder="z. B. 2"></label>
+      <p class="leise">Neigt den ganzen Leitungszug in Fliessrichtung; 0 = waagrecht. Bögen wandern mit.</p></div>`);
+    const ok = await zeigen({ titel: `Neigung – ${el.kennzeichen}`, inhalt: w, breite: 400, knoepfe: [{ text: 'Abbrechen', wert: false }, { text: 'Übernehmen', wert: true, primaer: true,
+      pruefen: () => (Number.isFinite(Number(w.querySelector('.n-g').value.replace(',', '.'))) ? true : 'Gefälle in % eingeben.') }] });
+    if (ok !== true) return;
+    ergebnisMelden(await sende('leitung_gefaelle', { leitung: el.kennzeichen, gefaelle: Number(w.querySelector('.n-g').value.replace(',', '.')), zug: true }));
+  },
 });
 
 // ---------------------------------------------------------------------------------------------- Fallleitung (06.11.2026)

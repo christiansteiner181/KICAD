@@ -4302,6 +4302,10 @@ jedes neue Projekt erhält alle Mustersysteme.
 - **Dämmung als eine vereinigte Fläche** (09.11.2026, «überlappungen sind frablich anders als der rest. zudem hat es beim innenradius noch falsche
   schwarze darstellungen»): `DaemmGrafik` vereinigt die Dämmbänder aller sichtbaren Leitungen und der angeschlossenen Formteile (entlang ihrer Achsen) zu
   einer Fläche je Zusammenhang (Teil «daemmung», unter den Leitungen), gelb transparent, nur der Aussenrand schwarz dünn; aussen gerundet, innen scharf.
+- **Ändern | Rohr wie Revit** (Christian 11.11.2026: «ist eine leitung angewählt soll der tab "ändern" aktiv sein», «in ändern werden auch dinge wie
+  isolation angezeigt. richte dich dabei an der revit basis»): wird eine Leitung angewählt, springt das Menüband aus jedem Register auf «Ändern | Rohr»
+  (nicht während ein Werkzeug läuft); beim Abwählen zurück. Neue Gruppe «Dämmung»: Dämmung hinzufügen, Dämmung bearbeiten (Art bzw. Produkt, Dicke; für
+  alle gewählten Leitungen in einem Paket), Dämmung entfernen; in der Gruppe «Leitung» dazu «Neigung» (Gefälle des ganzen Zugs).
 - **Lage beim Weiterzeichnen** (Christian 11.11.2026: «wird an einer leitung weitergezeichnet, wird immer die Lage der bestehenden leitung übernommen»):
   beginnt ein Rohr an einem Anschluss bzw. als Abzweig, gilt die Lage, deren Höhe die Achse dort trifft (±5 mm); trifft keine, ist das Feld Lage leer und
   es gilt die Höhe des Punktes. Wurde die Lage bzw. Höhe im laufenden Werkzeug von Hand gewählt, bleibt sie (Christian 11.11.2026: «wird eine lage
