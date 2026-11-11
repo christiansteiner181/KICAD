@@ -337,7 +337,6 @@ function erstellen(behaelter, ansichtElement) {
       return;
     }
     if (werkzeug && anWerkzeug('pointerdown', e)) { e.preventDefault(); druck = null; return; }
-    if (e.button === 0 && fenster) { druck = { id: null, x: e.clientX, y: e.clientY, bewegt: false, taste: 0, fenster: true }; return; }
     if (e.button === 0) {
       druck = { id: idVon(e.target), x: e.clientX, y: e.clientY, bewegt: false, taste: 0 };
       if (leertaste) { druck.bewegt = true; schiebenStart(e); }
@@ -360,7 +359,8 @@ function erstellen(behaelter, ansichtElement) {
 
   function beiPointerMove(e) {
     koordZeigen(e);
-    if (fenster) { fensterZeigen(e.clientX, e.clientY); return; }
+    // Markieren nur bei gedrückter linker Taste (Christian 11.11.2026: «markieren sollte nur bei gedrückter linker maustaste erfolgen»): ohne Taste endet das Fenster
+    if (fenster) { if ((e.buttons & 1) === 0) fensterAbbrechen(); else fensterZeigen(e.clientX, e.clientY); return; }
     if (druck?.taste === 1 || (druck && schiebt)) {
       // Verschieben (mittlere Taste, Leertaste oder Ziehen auf leerer Fläche)
       const dx = e.clientX - druck.x, dy = e.clientY - druck.y;
@@ -399,11 +399,9 @@ function erstellen(behaelter, ansichtElement) {
     const d = druck;
     druck = null;
     if (schiebt) { schiebt = false; svg.classList.remove('schiebt'); try { svg.releasePointerCapture(e.pointerId); } catch { /* egal */ } }
-    if (fenster) { fensterAbschliessen(e.clientX, e.clientY); return; }   // zweiter Klick bzw. Loslassen nach dem Ziehen
-    if (d.taste === 0 && !d.bewegt) {
-      if (d.id) auswaehlen(d.id);
-      else fensterStarten(e.clientX, e.clientY, false, e.ctrlKey || e.metaKey || e.shiftKey);   // Klick ins Leere: erste Ecke
-    }
+    if (fenster) { fensterAbschliessen(e.clientX, e.clientY); return; }   // Loslassen nach dem Ziehen
+    // Klick ins Leere hebt die Auswahl auf; ein Auswahlfenster gibt es nur beim Ziehen mit gedrückter linker Taste (11.11.2026)
+    if (d.taste === 0 && !d.bewegt) auswaehlen(d.id ?? null);
   }
 
   function beiRad(e) {

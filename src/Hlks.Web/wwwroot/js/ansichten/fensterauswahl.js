@@ -1,5 +1,5 @@
-// Auswahlfenster wie in AutoCAD (Christian 02.11.2026: «auswahlfenster bei linksklick (analog autodesk cad)»): Klick ins Leere setzt die erste
-// Ecke, der nächste Klick die zweite (oder gedrückt ziehen und loslassen). Von links nach rechts = Fenster (nur, was ganz drin liegt; blau,
+// Auswahlfenster wie in AutoCAD (Christian 02.11.2026: «auswahlfenster bei linksklick (analog autodesk cad)»): seit 11.11.2026 nur mit gedrückter
+// linker Taste ziehen und loslassen (Christian: «markieren sollte nur bei gedrückter linker maustaste erfolgen»); ein Klick ins Leere hebt die Auswahl auf. Von links nach rechts = Fenster (nur, was ganz drin liegt; blau,
 // durchgezogen), von rechts nach links = Kreuzen (alles, was das Fenster berührt; grün, gestrichelt). Räume nur im Fenster, nicht beim
 // Kreuzen (sie berühren fast jedes Fenster). Reine Rechnung in Bildschirm-Pixeln, ohne DOM – in Node getestet (fensterauswahl.test.mjs).
 

@@ -361,7 +361,7 @@ tr.art-angelegt td:first-child { color: var(--ok); }
 .lage-abw-einpassen { font-weight: 600; }
 fieldset.ausrichtung { margin: 8px 0; }
 fieldset.ausrichtung:disabled { opacity: .75; }
-fieldset.nachzeichnen { border: 2px solid var(--akzent, #2f6fdf); border-radius: 6px; padding: 6px 10px 4px; }
+fieldset.nachzeichnen { border: 2px solid var(--akzent); border-radius: 6px; padding: 6px 10px 4px; }
 fieldset.nachzeichnen legend { font-weight: 600; padding: 0 4px; }
 label.wahl, label.bereich { display: grid; grid-template-columns: 18px 1fr; gap: 4px; align-items: start; padding: 3px 4px; border-radius: var(--radius); cursor: pointer; }
 label.wahl:hover:not(.aus), label.bereich:hover { background: var(--ob-hover); }
