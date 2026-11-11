@@ -4299,6 +4299,10 @@ jedes neue Projekt erhält alle Mustersysteme.
   bleiben. Die Palette zeigt die Höhe des zuletzt gezeichneten Teils während des Zeichnens nur zum Lesen.
 - **Löschen ohne Rückfrage** (Christian 09.11.2026: «löschen soll ohne nachfrage löschen»): Entf bzw. DE löscht sofort (Einzel- und Mehrfachauswahl
   in einem Paket); zurück mit Rückgängig (Strg+Z). Neue Warnungen/Fehler nennt die Meldung, Ablehnungen des Kerns kommen mit Vorschlag.
+- **Symbole der Leitungsbefehle** (Christian 11.11.2026: «bitte noch die symbole in KICad überarbeiten», mit Skizze): Rohr (Zylinder mit Achse),
+  Abwasser (Rohr mit Siphon), Versorgung (Rohr mit Hahn), Kanal (Kasten mit Tiefe), Steigleitung H/S (drei Kreise in gestrichelter Zone), Fallleitung (Kreis
+  in gestrichelter Zone), Steigleitung Lü (zwei Kanäle in gestrichelter Zone), Trasse H/S (drei Rohre mit Doppelstrich; Parallele Leitungen),
+  Trasse Koordination (Symbol `trasseKoordination` bereit, Befehl folgt).
 - **Esc ohne Fenster** (Christian 09.11.2026: «esc klappt, öffnet momentan aber noch ein fenster. es soll ohne dieses fenster gehen»): Esc legt den Zug
   ohne Vorschau-Leiste und ohne Erfolgsmeldung an (gekürzt bis zeichenbar, dann Hinweis «angelegt bis Punkt n»); geht nichts, nur eine Meldung, das
   nächste Esc verwirft. Enter zeigt weiterhin die Vorschau.

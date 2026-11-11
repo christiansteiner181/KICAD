@@ -86,7 +86,7 @@ public static class IfcReferenzpunkte
         {
             var g = gut[0];
             bericht["lage"] = g.Name; bericht["bezug"] = g.Bezug.AlsJson(); bericht["ergebnis"] = IfcEinpassen.Eindeutig;
-            var text = $"Referenzpunkte: {was} – {g.Treffer} Treffer auf den {projektKegel.Count} Kegeln des Projekts mit der Lage «{g.Name}» (≤ {ToleranzMm:0} mm), sonst keine.";
+            var text = $"Referenzpunkte: {was} – {g.Treffer} davon liegen mit der Lage «{g.Name}» auf einem der {projektKegel.Count} Kegel des Projekts (≤ {ToleranzMm:0} mm), mit den anderen Lagen keiner.";
             bericht["text"] = text;
             return new Ergebnis(bericht, g.Bezug, g.Name, text);
         }

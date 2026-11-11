@@ -40,7 +40,7 @@ for (const [id, titel, symbol, kuerzel, kategorie, wid, register] of [
 // – Rohr mit Systemauswahl nur Abwasser bzw. nur Versorgung (Druck) und eigenem Gedächtnis für System und Produktlinie
 for (const [id, titel, variante] of [['sa.abwasser', 'Abwasserleitung', 'abwasser'], ['sa.versorgung', 'Versorgungsleitung', 'versorgung']]) {
   registrieren({
-    id, titel, symbol: 'rohr', kuerzel: null, register: 'sanitaer', gruppe: 'Leitungen',
+    id, titel, symbol: variante, kuerzel: null, register: 'sanitaer', gruppe: 'Leitungen',
     aktiv: imGrundriss, hinweis: nurGrundriss,
     gedrueckt: () => werkzeugAktiv() === variante,
     ausfuehren() { werkzeugStarten(leitungWerkzeug('Rohr', variante)); },
@@ -59,21 +59,21 @@ registrieren({
 // ---------------------------------------------------------------------------------------------- Fallleitung (06.11.2026)
 
 registrieren({
-  id: 'sa.fallleitung', titel: 'Fallleitung', symbol: 'rohr', kuerzel: null, register: 'sanitaer', gruppe: 'Leitungen',
+  id: 'sa.fallleitung', titel: 'Fallleitung', symbol: 'fallleitung', kuerzel: null, register: 'sanitaer', gruppe: 'Leitungen',
   aktiv: imGrundriss, hinweis: nurGrundriss,
   gedrueckt: () => werkzeugAktiv() === 'fallleitung',
   ausfuehren() { werkzeugStarten(fallleitungWerkzeug()); },
 });
 
 registrieren({
-  id: 'gt.steigleitung', titel: 'Steigleitung', symbol: 'rohr', kuerzel: null, register: ['sanitaer', 'heizung'], gruppe: 'Leitungen',
+  id: 'gt.steigleitung', titel: 'Steigleitung', symbol: 'steigleitung', kuerzel: null, register: ['sanitaer', 'heizung'], gruppe: 'Leitungen',
   aktiv: imGrundriss, hinweis: nurGrundriss,
   gedrueckt: () => werkzeugAktiv() === 'steigleitung',
   ausfuehren() { werkzeugStarten(steigleitungWerkzeug()); },
 });
 
 registrieren({
-  id: 'lu.steigleitung', titel: 'Steigleitung', symbol: 'kanal', kuerzel: null, register: 'lueftung', gruppe: 'Leitungen',   // AUL, FOL, ZUL, ABL (06.11.2026)
+  id: 'lu.steigleitung', titel: 'Steigleitung', symbol: 'steigleitungLueftung', kuerzel: null, register: 'lueftung', gruppe: 'Leitungen',   // AUL, FOL, ZUL, ABL (06.11.2026)
   aktiv: imGrundriss, hinweis: nurGrundriss,
   gedrueckt: () => werkzeugAktiv() === 'steigleitungLueftung',
   ausfuehren() { werkzeugStarten(steigleitungWerkzeug('steigleitungLueftung')); },
@@ -82,7 +82,7 @@ registrieren({
 // ---------------------------------------------------------------------------------------------- Parallele Leitungen (Bearbeitungswerkzeuge B2)
 
 registrieren({
-  id: 'gt.parallel', titel: 'Parallele Leitungen', symbol: 'parallel', kuerzel: null, register: ['heizung', 'lueftung', 'sanitaer'], gruppe: 'Leitungen',
+  id: 'gt.parallel', titel: 'Parallele Leitungen', symbol: 'trasse', kuerzel: null, register: ['heizung', 'lueftung', 'sanitaer'], gruppe: 'Leitungen',
   aktiv: imGrundriss, hinweis: nurGrundriss,
   gedrueckt: () => werkzeugAktiv() === 'parallel',
   ausfuehren() { werkzeugStarten(parallelWerkzeug()); },

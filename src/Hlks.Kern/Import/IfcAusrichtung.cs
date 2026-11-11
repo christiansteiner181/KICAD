@@ -349,7 +349,7 @@ public static class IfcAusrichtung
             return e.IstEindeutig ? e : e with { Text = e.Text + " " + r.Text };
         }
         double? u = bestehend is null ? null : Json.Zahl(Inhalt(d, r.Bezug, bestehend)?["ueberdeckung"]);
-        var text = $"Eingepasst über Referenzpunkte: {r.Text} Bezug {Text(r.Bezug)}." + (u is double uu ? $" {uu * 100:0} % der Bauteile im bestehenden Modell." : "");
+        var text = $"Eingepasst über {r.Text} Bezug {Text(r.Bezug)}." + (u is double uu ? $" {uu * 100:0} % der Bauteile im bestehenden Modell." : "");
         var b = e.Bericht;
         b["verfahren"] = "referenzpunkte"; b["ergebnis"] = IfcEinpassen.Eindeutig; b["bezug"] = r.Bezug.AlsJson(); b["text"] = text;
         b["ueberdeckung"] = u is double v ? Math.Round(v, 2) : null;
