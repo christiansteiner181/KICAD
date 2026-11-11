@@ -198,6 +198,12 @@ Die Oberfläche zeigt Dateinamen ohne die vorangestellte Prüfsumme (`ohnePruefs
   Im roten Kasten steht bei Empfehlung (Feld `empfehlung` oder der Satz «Empfehlung: ausrichtung = einpassen» im Kerntext) darunter der Hinweis «Empfehlung: Ausrichtung «Einpassen (automatisch)» wählen – damit liegen 97 % …», dazu die Zeile «Eingepasst: 97 % …»; ist das Einpassen nicht eindeutig, der Hinweis auf den Abschnitt.
   Die *Vorschau* (Trockenlauf) zeigt den Abschnitt aus dem Ergebnis (`lage.einpassen` oder `einpassen`; fehlt er dort, stehen die Zahlen in der Hinweis-Zeile des Kerns «Eingepasst über … : Drehung …°, Verschiebung … m; …»), der Ergebnisdialog nach der Übernahme ebenso (sonst aus der gespeicherten Lage der Unterlage).
   Ist die Lage nicht eindeutig, lehnt der Kern ab (auch im Trockenlauf): sein Text (der Lagebericht, mit Zeilenumbrüchen) und der Vorschlag (Koordinationskörper, `bezug`) stehen im roten Fehlerkasten des Dialogs; nichts wird übernommen. Die Oberfläche rechnet nichts, sie rundet nur.
+- *Referenzpunkte (Kegel)* (Christian 11.11.2026: «bei den meisten modellen gibt es referenz punkte zum ausrichten. Bsp Kegel … Siehe BKWHS letzte gescheiterte
+  einpassung», «die kegel liegen meist abseits des gebäudes»): Bauteile mit Kegel/cone/Vermessungspunkt/Referenzpunkt im Namen, ObjectType oder Typnamen
+  gelten als Referenzkegel (Weltlage). Die Prüfung (`lage.referenzpunkte`) zählt je Lage (projekt, gebaeude, aus zwei Kegelpaaren), wie viele Referenzpunkte
+  der Datei auf einem Kegel des Projekts liegen (≤ 50 mm, ANNAHME); ohne Kegel zählen Gelände- und Gebäudeursprung. Eindeutig → Empfehlung; beim Einpassen
+  gilt diese Lage, wenn Wände und Räume fehlen oder nicht eindeutig sind (BKW HS: Gebäudetechnik-IFC von Trimble Nova ohne Wände, Ursprung auf dem Kegel →
+  «projekt»). Der Projektbezug speichert die Kegel der ersten Datei (`referenzkegel`); ältere Projekte lesen sie aus der Bezugsdatei.
 - *Weitere Optionen:* Hintergrund (`grundlage`), Konflikte (`konflikte` kicad | ifc), Name des Koordinationskörpers.
 - *Vorschau* = `ifc_uebernehmen` als Trockenlauf (auch ohne Wahl: der Kern rechnet dann mit dem Projektbezug und sagt es in den Hinweisen): Tabelle je Klasse mit neu / geändert / gelöscht
   (Verbindungen: neu = verbunden, gelöscht = getrennt), Summe, Hinweise des Kerns. *Übernehmen* = echter Lauf, danach ein Ergebnisdialog mit denselben Tabellen und allen Hinweisen.

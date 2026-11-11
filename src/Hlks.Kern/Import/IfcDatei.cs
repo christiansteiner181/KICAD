@@ -193,6 +193,25 @@ public sealed class IfcDatei : IDisposable
     /// <summary>Namen, an denen ein Koordinationskörper erkannt wird (Name oder ObjectType enthält einen davon).</summary>
     public static readonly string[] KoordinationskoerperNamen = ["koordinationsk", "nullpunktk", "coordination body", "koordinationswuerfel", "koordinationswürfel"];
 
+    /// <summary>Referenzkegel (Christian 11.11.2026: «bei den meisten modellen gibt es referenz punkte zum ausrichten. Bsp Kegel», «die kegel liegen
+    /// meist abseits des gebäudes»): Bauteile, deren Name, ObjectType oder Typname das Wort Kegel bzw. cone, Vermessungspunkt oder Referenzpunkt
+    /// enthält (Archicad BKW HS: Typ «Kegel 27», Name eines Türrahmens), ohne Leitungs- und Anlagenteile. Weltlage ihrer Platzierung in mm.</summary>
+    public List<double[]> Referenzkegel()
+    {
+        var typen = new Dictionary<int, string>();
+        foreach (var r in Modell.Instances.OfType<IIfcRelDefinesByType>())
+            if (IfcLauf.Text(r.RelatingType?.Name) is { } n) foreach (var o in r.RelatedObjects) typen[o.EntityLabel] = n;
+        static bool Ist(string? s) => s is { Length: > 0 } && ReferenzkegelMuster.IsMatch(s);
+        return Modell.Instances.OfType<IIfcProduct>()
+            .Where(p => p is not IIfcDistributionElement and not IIfcSpatialElement
+                        && (Ist(IfcLauf.Text(p.Name)) || Ist(IfcLauf.Text(p.ObjectType)) || typen.TryGetValue(p.EntityLabel, out var t) && Ist(t)))
+            .Select(p => Welt(p.ObjectPlacement).Ursprung).ToList();
+    }
+
+    /// <summary>Wörter, an denen ein Referenzkegel erkannt wird (ganzes Wort, gross/klein egal).</summary>
+    public static readonly System.Text.RegularExpressions.Regex ReferenzkegelMuster =
+        new(@"(^|[^\p{L}])(kegel|cone|vermessungspunkt|referenzpunkt|survey ?point)([^\p{L}]|$)", System.Text.RegularExpressions.RegexOptions.IgnoreCase | System.Text.RegularExpressions.RegexOptions.Compiled);
+
     /// <summary>Lagebericht der Datei (siehe IfcLage).</summary>
     public IfcLage Lage(string? koordinationskoerper = null)
     {

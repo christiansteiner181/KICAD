@@ -49,8 +49,8 @@ public static class IfcAusrichtung
         double[]? bestehend = null, IfcEinpassQuelle? einpassen = null)
     {
         IfcEinpassAusgang? gerechnet = null;
-        IfcEinpassAusgang Einpassen() => gerechnet ??= IfcEinpassen.Ausfuehren(d, einpassen ?? throw new HlksFehler(
-            "Einpassen braucht das Projekt (Wände und Räume).", "ifc_uebernehmen bzw. ifc_pruefen verwenden."), bestehend);
+        IfcEinpassAusgang Einpassen() => gerechnet ??= MitReferenzpunkten(d, IfcEinpassen.Ausfuehren(d, einpassen ?? throw new HlksFehler(
+            "Einpassen braucht das Projekt (Wände und Räume).", "ifc_uebernehmen bzw. ifc_pruefen verwenden."), bestehend), projektBezug, einpassen, bestehend);
         var aus = BestimmenOhneAnhang(d, projektBezug, unterlageLage, wahl, vorgabe, kkName, bestehend, einpassen, Einpassen);
         // ifc_pruefen mit einpassen = true: Lagebericht des Einpassens immer dabei
         if (einpassen?.Modus == IfcEinpassQuelle.Immer && aus.Bericht["einpassen"] is null)
@@ -178,6 +178,20 @@ public static class IfcAusrichtung
                     ((JsonObject)bericht["inhaltJeWahl"]!)["einpassen"] = e.Ueberdeckung is double u ? Math.Round(u, 2) : null;
                     inhalt += EinpassEmpfehlung(e, bericht);
                 }
+            }
+            // Referenzpunkte (Kegel, Christian 11.11.2026): beim Prüfen immer, als Empfehlung, wenn sonst keine
+            if (pruefen && einpassen is not null && IfcReferenzpunkte.Pruefen(d, proj, eigener, IfcReferenzpunkte.ProjektKegel(einpassen.Projekt, projektBezug)) is { } rp)
+            {
+                bericht["referenzpunkte"] = rp.Bericht;
+                inhalt += " " + rp.Text;
+                if (rp.Lage is { } rl && bericht["empfehlung"] is null)
+                {
+                    var wahlRp = rl == "referenzkegel" ? "einpassen" : rl;
+                    bericht["empfehlung"] = wahlRp;
+                    inhalt += $" Empfehlung: ausrichtung = {wahlRp} (Referenzpunkte).";
+                }
+                else if (rp.Lage is { } rl2 && bericht["empfehlung"]?.GetValue<string>() is { } emp && emp != (rl2 == "referenzkegel" ? "einpassen" : rl2))
+                    inhalt += $" ACHTUNG: Die Referenzpunkte sprechen für «{rl2}», die Überdeckung für «{emp}» – bitte prüfen.";
             }
             var t = (passt && daneben
                         ? "ACHTUNG Inhalt: Der Gebäudeursprung passt, der Inhalt liegt aber neben dem bestehenden Modell."
@@ -320,6 +334,28 @@ public static class IfcAusrichtung
 
     /// <summary>Gewähltes Einpassen ohne eindeutige Lage: Bewertung «nicht eindeutig», Bezug zum Vergleich (Projektbezug bzw. Gebäudeursprung),
     /// Text = Lagebericht des Einpassens. ifc_uebernehmen bricht damit ab (auch im Trockenlauf).</summary>
+    /// <summary>Referenzpunkte (Kegel) beim automatischen Ausrichten (Christian 11.11.2026, IfcReferenzpunkte): ist das Einpassen über Wände und
+    /// Raumkanten nicht eindeutig oder ohne Merkmale (Gebäudetechnik-IFC ohne Wände), gilt eine eindeutige Lage aus den Referenzpunkten. Der Bericht
+    /// des Einpassens enthält die Prüfung immer (referenzpunkte).</summary>
+    static IfcEinpassAusgang MitReferenzpunkten(IfcDatei d, IfcEinpassAusgang e, JsonObject? projektBezug, IfcEinpassQuelle? q, double[]? bestehend)
+    {
+        if (q is null || IfcBezug.Aus(projektBezug) is not { } proj) return e;
+        var r = IfcReferenzpunkte.Pruefen(d, proj, d.BezugVorschlag(), IfcReferenzpunkte.ProjektKegel(q.Projekt, projektBezug));
+        if (r is null) return e;
+        e.Bericht["referenzpunkte"] = r.Bericht;
+        if (e.IstEindeutig || r.Bezug is null)
+        {
+            if (!e.IstEindeutig) e.Bericht["text"] = e.Text + " " + r.Text;
+            return e.IstEindeutig ? e : e with { Text = e.Text + " " + r.Text };
+        }
+        double? u = bestehend is null ? null : Json.Zahl(Inhalt(d, r.Bezug, bestehend)?["ueberdeckung"]);
+        var text = $"Eingepasst über Referenzpunkte: {r.Text} Bezug {Text(r.Bezug)}." + (u is double uu ? $" {uu * 100:0} % der Bauteile im bestehenden Modell." : "");
+        var b = e.Bericht;
+        b["verfahren"] = "referenzpunkte"; b["ergebnis"] = IfcEinpassen.Eindeutig; b["bezug"] = r.Bezug.AlsJson(); b["text"] = text;
+        b["ueberdeckung"] = u is double v ? Math.Round(v, 2) : null;
+        return new IfcEinpassAusgang(new EinpassErgebnis { Ergebnis = IfcEinpassen.Eindeutig }, b, r.Bezug, u, text);
+    }
+
     static IfcAusrichtungsErgebnis NichtEindeutigEnde(IfcDatei d, IfcBezug vergleich, IfcEinpassAusgang e, JsonObject bericht) =>
         Ende(d, vergleich, NichtEindeutig, e.Text + " Ohne eindeutige Lage wird nichts übernommen.", bericht, false);
 
@@ -327,7 +363,7 @@ public static class IfcAusrichtung
     /// lage.empfehlung und gibt den Satz für den Text zurück, sonst einen Satz mit dem Grund.</summary>
     static string EinpassEmpfehlung(IfcEinpassAusgang e, JsonObject bericht)
     {
-        string anteil = $"{e.Ergebnis.Anteil150 * 100:0} % der Kanten innert {IfcEinpassen.Grenze:0} mm";
+        string anteil = e.Bericht["verfahren"]?.GetValue<string>() == "referenzpunkte" ? "über Referenzpunkte" : $"{e.Ergebnis.Anteil150 * 100:0} % der Kanten innert {IfcEinpassen.Grenze:0} mm";
         if (e.IstEindeutig && e.Ueberdeckung is double u && u >= EmpfehlungAb)
         {
             bericht["empfehlung"] = "einpassen";
@@ -426,6 +462,8 @@ public static class IfcAusrichtung
     {
         var o = bezug.AlsJson();
         o["quelle"] = $"{Path.GetFileName(d.Pfad)} ({d.Schema}, {d.Programm})";
+        // Referenzkegel in Weltkoordinaten dieser Datei (mm) für spätere Dateien (IfcReferenzpunkte, 11.11.2026)
+        if (d.Referenzkegel() is { Count: > 0 } kegel) o["referenzkegel"] = new JsonArray(kegel.Select(k => (JsonNode)new JsonArray(Math.Round(k[0], 1), Math.Round(k[1], 1), Math.Round(k[2], 1))).ToArray());
         var lage = d.Lage(kkName);   // Befund B4-2: anderer Name des Koordinationskörpers auch beim ersten Bezug
         var alt = d.Bezug; d.Bezug = bezug;
         try
