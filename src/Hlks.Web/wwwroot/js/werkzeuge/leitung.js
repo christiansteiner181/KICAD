@@ -233,11 +233,20 @@ function abzweigStarten(z, hit, maus, ctx, id) {
   // Freie Grösse (Nachtrag): Breite × Höhe bzw. Durchmesser der Leitung (aus ihren Eigenschaften) in die Zahlenfelder; sie gelten nur bei einer freien Serie
   F.abzweigGroesse(el.werte).forEach(([feld, w]) => setze(id, feld, w));
   setze(id, 'hoehe', L.hoeheRelativ(kote(ctx), q[2]));
+  if (el.klasse === 'Rohr') lageUebernehmen(id, ctx, q[2]);   // Lage der Leitung (11.11.2026)
   const u = L.vomPunkt({ medium: null }, el, []);   // System bzw. Medium der Leitung, an der abgezweigt wird
   if (u.system) { setze(id, 'system', u.system); setze(id, 'medium', ''); }
   else if (u.medium) { setze(id, 'medium', u.medium); setze(id, 'system', ''); setze(id, 'strang', ''); }
   ctx.optionenNeu();
   return true;
+}
+
+/** Lage der bestehenden Leitung übernehmen (Christian 11.11.2026: «wird an einer leitung weitergezeichnet, wird immer die Lage der bestehenden leitung
+ *  übernommen»): die Lage des Geschosses, deren Höhe die Achse trifft (±5 mm wie Lagen.Toleranz im Kern); sonst kein Lage-Wert, es gilt die Höhe. */
+function lageUebernehmen(id, ctx, zAchse) {
+  const h = L.hoeheRelativ(kote(ctx), zAchse);
+  const l = lagenFuer(ctx.geschoss).find((x) => Math.abs(x.hoehe - h) <= 5);
+  setze(id, 'lage', l ? String(l.nr) : '');
 }
 
 /** Dimension und System bzw. Medium des Punktes, ab dem weitergezeichnet wird, in die Optionsleiste (L.vomPunkt). */
@@ -270,6 +279,7 @@ async function klick(z, fang, ctx, id, kategorie) {
       z.von = a;
       z.punkte.push([a.lage[0], a.lage[1], a.lage[2]]);
       setze(id, 'hoehe', L.hoeheRelativ(kote(ctx), a.lage[2]));        // die Höhe des Anschlusses gilt
+      if (kategorie === 'Rohr') lageUebernehmen(id, ctx, a.lage[2]);    // und die Lage der bestehenden Leitung (11.11.2026)
       punktUebernehmen(a, ctx, id);                                     // Dimension und Medium des Punktes
       ctx.optionenNeu();
       return;
@@ -421,9 +431,9 @@ export function leitungWerkzeug(kategorie = 'Rohr', variante = null) {
         if (def) freiVorbelegen(id, def, true);                                // freie Serie: leere Zahlenfelder mit der Vorlage füllen
         // gemerkte Lage (Christian 09.11.2026: «Ja, Lage merken»): die Höhe gilt im aktuellen Geschoss neu (UK roh Decke je Geschoss); hat es die
         // Lage hier nicht, bleibt die Höhe und das Feld Lage wird leer
+        if (kategorie === 'Rohr') await lagenLaden();   // auch fürs Weiterzeichnen an einer Leitung (Lage übernehmen)
+        if (ctx.lauf.fertig) return;
         if (kategorie === 'Rohr' && ctx.opt.lage) {
-          await lagenLaden();
-          if (ctx.lauf.fertig) return;
           const l = lagenFuer(ctx.geschoss).find((x) => String(x.nr) === String(ctx.opt.lage));
           if (l) setze(id, 'hoehe', Math.round(l.hoehe)); else setze(id, 'lage', '');
         }
