@@ -24,13 +24,17 @@ public static partial class IfcDarstellung
     [GeneratedRegex("^#[0-9a-fA-F]{6}$")]
     private static partial Regex Hex();
 
-    /// <summary>Darstellungsart der Ansicht: nachbau | original | beide. Unbekannte Werte und andere Darstellungen als «standard» gelten als nachbau.</summary>
-    public static string Modus(Element? ansicht)
+    /// <summary>Darstellungsart für eine Unterlage in der Ansicht: nachbau | original | beide. Die Einstellung der Unterlage (Unterlagen verwalten) geht
+    /// der Ansicht vor (Christian 11.11.2026: «wie ein IFC angezeigt wird (original, nachbau) sollte bei "unterlagen verwalten eingestellt werden können»). Unbekannte Werte und andere Darstellungen als «standard» gelten als nachbau.</summary>
+    public static string Modus(Element? ansicht, Element? unterlage = null)
     {
         if (ansicht is null) return Nachbau;
         if (ansicht.Text("darstellung") is { Length: > 0 } d && !d.Equals("standard", StringComparison.OrdinalIgnoreCase)) return Nachbau;
-        return ansicht.Text("ifcDarstellung")?.Trim().ToLowerInvariant() switch { Original => Original, Beide => Beide, _ => Nachbau };
+        if (Wert(unterlage?.Text("ifcDarstellung")) is { } eigen) return eigen;
+        return Wert(ansicht.Text("ifcDarstellung")) ?? Nachbau;
     }
+
+    static string? Wert(string? s) => s?.Trim().ToLowerInvariant() switch { Original => Original, Beide => Beide, Nachbau => Nachbau, _ => null };
 
     /// <summary>Soll das Netz aller Produkte (statt nur des Hintergrunds) gezeichnet werden?</summary>
     public static bool ZeigtOriginal(string modus) => modus is Original or Beide;
@@ -53,7 +57,7 @@ public static partial class IfcDarstellung
 
     /// <summary>Entfällt das Element in dieser Ansicht, weil sie nur das Original zeigt?</summary>
     public static bool Ausgeblendet(GrafikKontext ctx, Element e) =>
-        Modus(ctx.Ansicht) == Original && UnterlageVon(ctx.Modell, e) is not null;
+        UnterlageVon(ctx.Modell, e) is { } u && Modus(ctx.Ansicht, u) == Original;
 
     /// <summary>Übersteuerung der Nachbau-Darstellung dieses Elements (Farbe und/oder Deckkraft aus der Unterlage) oder null.</summary>
     public static (string? Farbe, double? Deckkraft)? NachbauStil(GrafikKontext ctx, Element e)

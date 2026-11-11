@@ -25,7 +25,7 @@ public sealed class GrundlagenIfc : IGrundlagenArt
     public IEnumerable<Grafikteil> Plan(GrafikKontext ctx, Element unterlage)
     {
         if (Pfad(ctx.Projekt, unterlage) is not { } pfad) return [];
-        var linien = Schnitt(pfad, ctx.Schnitthoehe, !IfcDarstellung.ZeigtOriginal(IfcDarstellung.Modus(ctx.Ansicht)));
+        var linien = Schnitt(pfad, ctx.Schnitthoehe, !IfcDarstellung.ZeigtOriginal(IfcDarstellung.Modus(ctx.Ansicht, unterlage)));
         if (linien.Count == 0) return [];
         var stil = OriginalStil(unterlage);
         return
@@ -59,11 +59,12 @@ public sealed class GrundlagenIfc : IGrundlagenArt
     /// Schnittflächen) zeigt dieselben Schnittlinien in der Ebene der Ansichtslinie; eine Projektion der Fassade ist offen.</summary>
     internal static IEnumerable<Grafikteil> Ansicht(GrafikKontext ctx, Schnittraum raum)
     {
-        if (!IfcDarstellung.ZeigtOriginal(IfcDarstellung.Modus(ctx.Ansicht)) || ctx.KlassenAus.Contains("Unterlage")) return [];
+        if (ctx.KlassenAus.Contains("Unterlage")) return [];
         var teile = new List<Grafikteil>();
         foreach (var u in ctx.Modell.Elemente)
         {
-            if (u.Klasse != "Unterlage" || u.Text("art") != "ifc" || !Grafik.Bool(u, "anzeigen", true) || Pfad(ctx.Projekt, u) is not { } pfad) continue;
+            if (u.Klasse != "Unterlage" || u.Text("art") != "ifc" || !Grafik.Bool(u, "anzeigen", true) || !IfcDarstellung.ZeigtOriginal(IfcDarstellung.Modus(ctx.Ansicht, u))
+                || Pfad(ctx.Projekt, u) is not { } pfad) continue;
             var linien = SchnittSenkrecht(pfad, raum);
             if (linien.Count == 0) continue;
             var stil = OriginalStil(u);

@@ -454,12 +454,13 @@ async function unterlagenVerwalten() {
     const liste = T.unterlagenSortiert(derKlasse('Unterlage'));
     w.innerHTML = liste.length === 0
       ? '<p class="leise">Noch keine Unterlagen. Im Register Einfügen: IFC übernehmen, CAD, PDF oder Bild einfügen.</p>'
-      : `<table class="tab"><thead><tr><th>Unterlage</th><th>Art</th><th>Geschoss</th><th>Datei</th><th>Anzeigen</th><th>Deckkraft</th><th></th></tr></thead><tbody>${liste.map((u) => {
+      : `<table class="tab"><thead><tr><th>Unterlage</th><th>Art</th><th>Geschoss</th><th>Datei</th><th>Anzeigen</th><th>Deckkraft</th><th title="IFC: Original, Nachbau oder beide; leer = wie die Ansicht">Darstellung</th><th></th></tr></thead><tbody>${liste.map((u) => {
         const art = u.werte?.art;
         return `<tr data-kz="${esc(u.kennzeichen)}"><td>${esc(unterlagenText(u))}</td><td>${esc(T.ART_NAMEN[art] ?? art ?? '')}</td><td>${esc(u.geschoss ?? '–')}</td>`
           + `<td class="leise" title="${esc(u.werte?.datei ?? '')}">${esc(ohnePruefsumme(u.werte?.datei ?? u.werte?.original ?? ''))}</td>`
           + `<td><input type="checkbox" class="u-an" ${u.werte?.anzeigen === false ? '' : 'checked'} aria-label="anzeigen"></td>`
           + `<td><input type="text" class="u-deck" size="3" inputmode="numeric" value="${Math.round(Number(u.werte?.deckkraft ?? 0.5) * 100)}"> %</td>`
+          + `<td>${art === 'ifc' ? `<select class="u-ifc" aria-label="Darstellung der IFC-Unterlage">${[['', 'wie Ansicht'], ['nachbau', 'Nachbau'], ['original', 'Original'], ['beide', 'Beide']].map(([v, t]) => `<option value="${v}"${(u.werte?.ifcDarstellung ?? '') === v ? ' selected' : ''}>${t}</option>`).join('')}</select>` : ''}</td>`
           + `<td class="u-knoepfe"><button type="button" class="dlg-knopf u-lage">Lage</button>${art === 'ifc' ? '<button type="button" class="dlg-knopf u-farben">Farben …</button>' : ''}${art === 'dwg' || art === 'dxf' ? '<button type="button" class="dlg-knopf u-auto" title="Drehung und Verschiebung an den Wänden des Geschosses suchen">An Wänden ausrichten</button>' : ''}${KALIB(art) ? '<button type="button" class="dlg-knopf u-kal">Kalibrieren</button>' : ''}<button type="button" class="dlg-knopf u-weg">Entfernen</button></td></tr>`;
       }).join('')}</tbody></table>`;
   };
@@ -472,6 +473,7 @@ async function unterlagenVerwalten() {
     const u = zeile(e);
     if (!u) return;
     if (e.target.classList.contains('u-an')) await sende('element_aendern', { element: u.kennzeichen, eigenschaften: { anzeigen: e.target.checked } });
+    else if (e.target.classList.contains('u-ifc')) await sende('element_aendern', { element: u.kennzeichen, eigenschaften: { ifcDarstellung: e.target.value || null } });   // (Christian 11.11.2026: «wie ein IFC angezeigt wird (original, nachbau) sollte bei "unterlagen verwalten eingestellt werden können»)
     else if (e.target.classList.contains('u-deck')) {
       const n = Number(e.target.value.replace(',', '.'));
       if (!Number.isFinite(n) || n < 0 || n > 100) { meldung('Die Deckkraft muss zwischen 0 und 100 % liegen.', 'warnung'); zeichnen(); return; }

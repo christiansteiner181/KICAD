@@ -370,7 +370,7 @@ function erstellen(behaelter, ansichtElement) {
     o.traverse((h) => { if (h.userData.netz && h.userData.netz !== true) halter.push(h); });
     for (const h of halter) {
       const n = h.userData.netz;
-      (n.produkte ? elementNetz(n.quelle, n.produkte) : netzHolen(n.quelle, netzAuswahl(ansicht))).then((g) => {
+      (n.produkte ? elementNetz(n.quelle, n.produkte) : netzHolen(n.quelle, netzAuswahl(ansicht, element(n.quelle)))).then((g) => {
         if (zerstoert || !g || objekte.get(o.userData.id) !== o) return;   // Körper inzwischen ersetzt oder entfernt
         h.add(netzMesh(g, n.farbe, n.deckkraft, n.ifcFarben));
         schnitt?.neueObjekte();

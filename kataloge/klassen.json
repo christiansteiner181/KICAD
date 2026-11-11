@@ -757,6 +757,7 @@
       { "name": "zweck", "typ": "auswahl", "auswahl": [ "plan", "familie" ], "beschreibung": "plan (Vorgabe: Unterlage im Plan mit Geschoss und Lage) | familie (Herstellerunterlage einer Familie, Modul 2: ohne Geschoss und Lage, nie gezeichnet)" },
       { "name": "abgerufen", "typ": "text", "beschreibung": "Zeitpunkt des Abrufs aus dem Internet (ISO 8601, UTC) bei Unterlagen aus unterlage_aus_url; original ist dann die URL (bei Einträgen eines ZIP: URL#Pfad im Archiv)" },
       { "name": "anzeigen", "typ": "bool", "beschreibung": "Unterlage zeigen (Vorgabe true)" },
+      { "name": "ifcDarstellung", "typ": "auswahl", "auswahl": [ "nachbau", "original", "beide" ], "beschreibung": "IFC (N12): wie diese Unterlage gezeigt wird – nachbau, original oder beide; geht der Ansichtseigenschaft ifcDarstellung vor, leer = wie die Ansicht (Christian 11.11.2026, Unterlagen verwalten)" },
       { "name": "ifcSchema", "typ": "text", "beschreibung": "IFC: Fassung der Datei (IFC4, IFC2X3)" },
       { "name": "ifcProgramm", "typ": "text", "beschreibung": "IFC: erzeugendes Programm" },
       { "name": "stand", "typ": "text", "beschreibung": "Prüfsumme der Datei (SHA-256, gekürzt); neue Fassung = neue Prüfsumme" },

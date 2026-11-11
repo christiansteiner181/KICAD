@@ -130,3 +130,14 @@ test('N12 3D: der Halter des Netzes trägt Farbe und Deckkraft des Originals aus
   assert.equal(String(halter[0].userData.netz.farbe).toLowerCase(), '#0066ff');
   assert.equal(halter[0].userData.netz.deckkraft, 0.35);
 });
+
+test('N12 je Unterlage: die Einstellung der Unterlage geht der Ansicht vor, leer = wie Ansicht (Christian 11.11.2026)', () => {
+  assert.equal(d.ifcModus(ansicht({ ifcDarstellung: 'original' }), ul({ ifcDarstellung: 'nachbau' })), 'nachbau');
+  assert.equal(d.ifcModus(ansicht(), ul({ ifcDarstellung: 'beide' })), 'beide');
+  assert.equal(d.ifcModus(ansicht({ ifcDarstellung: 'original' }), ul()), 'original');
+  assert.equal(d.ifcModus(ansicht({ darstellung: 'huelle' }), ul({ ifcDarstellung: 'original' })), 'nachbau');
+  // Nachbau entfällt nur, wenn die Unterlage auf «original» steht
+  assert.equal(d.nachbauEntfaellt(wand(), ansicht(), modell(ul({ ifcDarstellung: 'original' }))), true);
+  assert.equal(d.nachbauEntfaellt(wand(), ansicht({ ifcDarstellung: 'original' }), modell(ul({ ifcDarstellung: 'nachbau' }))), false);
+  assert.equal(d.netzAuswahl(ansicht(), ul({ ifcDarstellung: 'original' })), 'alle');
+});

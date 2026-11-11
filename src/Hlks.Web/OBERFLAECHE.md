@@ -209,6 +209,9 @@ Die Oberfläche zeigt Dateinamen ohne die vorangestellte Prüfsumme (`ohnePruefs
   KICAD-Bauteile; Nein = nur als Unterlage einlesen (`bereiche = ["keine"]`, Hintergrund mit Lage und Ausrichtung, keine Bauteile, nichts gelöscht).
   Vorgabe: Ja, wenn die Datei mehr Architektur-Bauteile und Räume als übrige Bauteile hat (`istArchitektur`), sonst Nein. Bei Nein sind Bereiche und
   Geschosse gesperrt.
+- *Darstellung je IFC-Unterlage* (Christian 11.11.2026: «wie ein IFC angezeigt wird (original, nachbau) sollte bei "unterlagen verwalten eingestellt
+  werden können»): Spalte «Darstellung» im Dialog Unterlagen verwalten (wie Ansicht | Nachbau | Original | Beide), Eigenschaft `ifcDarstellung` der
+  Unterlage; sie geht der Ansichtseigenschaft vor, leer = wie die Ansicht. Gilt in Grundriss, Schnitt, Ansicht und 3D (nur Darstellung «standard»).
 - *Weitere Optionen:* Hintergrund (`grundlage`), Konflikte (`konflikte` kicad | ifc), Name des Koordinationskörpers.
 - *Vorschau* = `ifc_uebernehmen` als Trockenlauf (auch ohne Wahl: der Kern rechnet dann mit dem Projektbezug und sagt es in den Hinweisen): Tabelle je Klasse mit neu / geändert / gelöscht
   (Verbindungen: neu = verbunden, gelöscht = getrennt), Summe, Hinweise des Kerns. *Übernehmen* = echter Lauf, danach ein Ergebnisdialog mit denselben Tabellen und allen Hinweisen.

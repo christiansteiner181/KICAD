@@ -76,6 +76,18 @@ public class IfcDarstellungTests
     }
 
     [Fact]
+    public void Modus_JeUnterlage_GehtDerAnsichtVor()
+    {
+        // Christian 11.11.2026: «wie ein IFC angezeigt wird (original, nachbau) sollte bei "unterlagen verwalten eingestellt werden können»
+        var p = P();
+        Element Mit(string? wert) { var u = Unterlage(p).Kopie(); u.Eigenschaften.Remove("ifcDarstellung"); if (wert is not null) u.Eigenschaften["ifcDarstellung"] = new Wert { Inhalt = System.Text.Json.Nodes.JsonValue.Create(wert) }; return u; }
+        Assert.Equal("original", IfcDarstellung.Modus(p.Modell.Finde(Grundriss(p, null)), Mit("original")));
+        Assert.Equal("nachbau", IfcDarstellung.Modus(p.Modell.Finde(Grundriss(p, "original")), Mit("nachbau")));
+        Assert.Equal("original", IfcDarstellung.Modus(p.Modell.Finde(Grundriss(p, "original")), Mit(null)));   // leer = wie die Ansicht
+        Assert.Equal("nachbau", IfcDarstellung.Modus(p.Modell.Finde(Grundriss(p, null, "huelle")), Mit("original")));   // Hülle: eigene Farben
+    }
+
+    [Fact]
     public void Katalog_NenntDieNeuenEigenschaften()
     {
         var p = P();

@@ -34,18 +34,21 @@ export function gueltigeDeckkraft(wert) {
   return Number.isFinite(n) ? Math.min(Math.max(n, 0), 1) : null;
 }
 
-/** Darstellungsart der Ansicht; andere Darstellungen als «standard» (Hülle, Aussparungen …) und unbekannte Werte gelten als nachbau. */
-export function ifcModus(ansicht) {
+/** Darstellungsart für eine Unterlage in der Ansicht: die Einstellung der Unterlage (Unterlagen verwalten) geht der Ansicht vor (Christian 11.11.2026: «wie ein IFC angezeigt wird (original, nachbau) sollte bei "unterlagen verwalten eingestellt werden können»);
+ *  andere Darstellungen als «standard» (Hülle, Aussparungen …) und unbekannte Werte gelten als nachbau. */
+export function ifcModus(ansicht, unterlage = null) {
   const w = ansicht?.werte ?? {};
   if (w.darstellung && w.darstellung !== 'standard') return 'nachbau';
+  const eigen = unterlage?.werte?.ifcDarstellung;
+  if (MODI.includes(eigen)) return eigen;
   return MODI.includes(w.ifcDarstellung) ? w.ifcDarstellung : 'nachbau';
 }
 
 /** Welche Produkte der Netzdatei zeigt das 3D? (leseNetz, Option nur): nachbau → nur den Hintergrund, sonst alle Produkte. */
-export const netzAuswahl = (ansicht) => (ifcModus(ansicht) === 'nachbau' ? 'hintergrund' : 'alle');
+export const netzAuswahl = (ansicht, unterlage = null) => (ifcModus(ansicht, unterlage) === 'nachbau' ? 'hintergrund' : 'alle');
 
 /** Zeigt die Ansicht das Original (Netz aller Produkte)? */
-export const zeigtOriginal = (ansicht) => ifcModus(ansicht) !== 'nachbau';
+export const zeigtOriginal = (ansicht, unterlage = null) => ifcModus(ansicht, unterlage) !== 'nachbau';
 
 /** Die angezeigte IFC-Unterlage, aus der ein Element übernommen wurde (kennungen.quelle), sonst null. nachId(id) → Element oder undefined. */
 export function ifcUnterlageVon(el, nachId) {
@@ -56,7 +59,7 @@ export function ifcUnterlageVon(el, nachId) {
 }
 
 /** Entfällt das Element in dieser Ansicht, weil sie nur das Original zeigt? */
-export const nachbauEntfaellt = (el, ansicht, nachId) => ifcModus(ansicht) === 'original' && ifcUnterlageVon(el, nachId) !== null;
+export const nachbauEntfaellt = (el, ansicht, nachId) => { const u = ifcUnterlageVon(el, nachId); return u !== null && ifcModus(ansicht, u) === 'original'; };
 
 /** Übersteuerung des Nachbaus für ein Element: { farbe, deckkraft } (je null, wo nichts gesetzt ist) oder null. */
 export function nachbauStil(el, ansicht, nachId) {
