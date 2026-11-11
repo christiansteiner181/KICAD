@@ -232,8 +232,11 @@ function abzweigStarten(z, hit, maus, ctx, id) {
   if (el.werte?.familientyp) setze(id, 'groesse', el.werte.familientyp);
   // Freie Grösse (Nachtrag): Breite × Höhe bzw. Durchmesser der Leitung (aus ihren Eigenschaften) in die Zahlenfelder; sie gelten nur bei einer freien Serie
   F.abzweigGroesse(el.werte).forEach(([feld, w]) => setze(id, feld, w));
-  setze(id, 'hoehe', L.hoeheRelativ(kote(ctx), q[2]));
-  if (el.klasse === 'Rohr') lageUebernehmen(id, ctx, q[2]);   // Lage der Leitung (11.11.2026)
+  if (laufend?.manuell) z.punkte = L.hoehenWechsel(z.punkte, zH).punkte;   // von Hand gewählte Lage bzw. Höhe bleibt: senkrecht dorthin
+  else {
+    setze(id, 'hoehe', L.hoeheRelativ(kote(ctx), q[2]));
+    if (el.klasse === 'Rohr') lageUebernehmen(id, ctx, q[2]);   // Lage der Leitung (11.11.2026)
+  }
   const u = L.vomPunkt({ medium: null }, el, []);   // System bzw. Medium der Leitung, an der abgezweigt wird
   if (u.system) { setze(id, 'system', u.system); setze(id, 'medium', ''); }
   else if (u.medium) { setze(id, 'medium', u.medium); setze(id, 'system', ''); setze(id, 'strang', ''); }
@@ -278,8 +281,16 @@ async function klick(z, fang, ctx, id, kategorie) {
       if (!L.anschlussFrei(a)) { anschlussBelegt(a); return; }
       z.von = a;
       z.punkte.push([a.lage[0], a.lage[1], a.lage[2]]);
-      setze(id, 'hoehe', L.hoeheRelativ(kote(ctx), a.lage[2]));        // die Höhe des Anschlusses gilt
-      if (kategorie === 'Rohr') lageUebernehmen(id, ctx, a.lage[2]);    // und die Lage der bestehenden Leitung (11.11.2026)
+      // Lage der bestehenden Leitung übernehmen; wurde die Lage bzw. Höhe von Hand anders gewählt, bleibt sie (Christian 11.11.2026: «wird eine lage
+      // manuell anders eingestellt wird manuell übernommen») – dann senkrecht vom Anschluss auf diese Höhe
+      if (laufend?.manuell) {
+        const w = L.hoehenWechsel(z.punkte, zH);
+        z.punkte = w.punkte;
+        if (w.angehaengt) hinweisSetzen(`Von Hand gewählte Höhe ${Math.round(ctx.opt.hoehe)} mm über OK Geschoss: senkrecht vom Anschluss – nächsten Punkt anklicken.`, 4000);
+      } else {
+        setze(id, 'hoehe', L.hoeheRelativ(kote(ctx), a.lage[2]));        // die Höhe des Anschlusses gilt
+        if (kategorie === 'Rohr') lageUebernehmen(id, ctx, a.lage[2]);    // und die Lage der bestehenden Leitung (11.11.2026)
+      }
       punktUebernehmen(a, ctx, id);                                     // Dimension und Medium des Punktes
       ctx.optionenNeu();
       return;
@@ -320,6 +331,7 @@ async function klick(z, fang, ctx, id, kategorie) {
 function hoeheGeaendert() {
   const t = laufend;
   if (!t || t.ctx.lauf.fertig) return;
+  t.manuell = true;   // Lage bzw. Höhe von Hand gewählt: gilt auch beim Weiterzeichnen an einer Leitung (Christian 11.11.2026)
   const { z, ctx } = t;
   const zNeu = hoeheZ(ctx);
   if (zNeu === null || !z.punkte.length) return;
@@ -412,7 +424,7 @@ export function leitungWerkzeug(kategorie = 'Rohr', variante = null) {
         const g = (merken.lesen(ZULETZT, {}) ?? {})[gedaechtnis];
         if (g) { if (g.system) setze(id, 'system', g.system); if (g.serie) setze(id, 'serie', g.serie); if (g.groesse) setze(id, 'groesse', g.groesse); }
       }
-      laufend = { z, ctx, id, kategorie, leiste: leisteErstellen(ctx), gedaechtnis };
+      laufend = { z, ctx, id, kategorie, leiste: leisteErstellen(ctx), gedaechtnis, manuell: false };
       D.haken.hoeheGeaendert = hoeheGeaendert;
       D.haken.optionenNeu = () => ctx.optionenNeu();
       D.haken.systemFilter = systemFilter(variante);

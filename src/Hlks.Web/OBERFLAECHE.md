@@ -4304,7 +4304,8 @@ jedes neue Projekt erhält alle Mustersysteme.
   einer Fläche je Zusammenhang (Teil «daemmung», unter den Leitungen), gelb transparent, nur der Aussenrand schwarz dünn; aussen gerundet, innen scharf.
 - **Lage beim Weiterzeichnen** (Christian 11.11.2026: «wird an einer leitung weitergezeichnet, wird immer die Lage der bestehenden leitung übernommen»):
   beginnt ein Rohr an einem Anschluss bzw. als Abzweig, gilt die Lage, deren Höhe die Achse dort trifft (±5 mm); trifft keine, ist das Feld Lage leer und
-  es gilt die Höhe des Punktes.
+  es gilt die Höhe des Punktes. Wurde die Lage bzw. Höhe im laufenden Werkzeug von Hand gewählt, bleibt sie (Christian 11.11.2026: «wird eine lage
+  manuell anders eingestellt wird manuell übernommen»): KICAD zeichnet vom Anschluss bzw. Abzweig senkrecht auf diese Höhe.
 - **Lagewechsel beim Zeichnen** (Christian 09.11.2026: «wird beim zeichnen ein lagewechsel vorgenommen, gilt dies nur für die kommenden leitungen»): Lage
   bzw. Höhe in der Optionsleiste setzt am letzten Punkt eine Steigleitung, die folgenden Strecken liegen auf der neuen Lage; schon gezeichnete Strecken
   bleiben. Die Palette zeigt die Höhe des zuletzt gezeichneten Teils während des Zeichnens nur zum Lesen.
