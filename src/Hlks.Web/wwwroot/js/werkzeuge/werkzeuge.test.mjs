@@ -642,6 +642,18 @@ test('Dämmdicke nach MuKEn 2014 Anhang 4 aus der DN (Christian 09.11.2026: «d�
   assert.equal(O.daemmDicke(r, 250), null);
 });
 
+test('Dämmart im Dialog: ohne bisherige Art bleibt sie leer, wenn nur die Dicke geändert wird', async () => {
+  const O = await import('./optionen.js');
+  const arten = [{ name: 'PIR-Schale' }, { name: 'Mineralwolle' }];
+  assert.equal(O.daemmartVorwahl(arten, ''), O.DAEMMART_KEINE);                      // vorher: erste Katalogart vorgewählt und gespeichert
+  assert.equal(O.daemmartAusWahl(O.daemmartVorwahl(arten, undefined), ''), null);
+  assert.equal(O.daemmartVorwahl(arten, 'Mineralwolle'), 'Mineralwolle');
+  assert.equal(O.daemmartVorwahl(arten, 'Sonderprodukt X'), '');                     // «andere …» mit freiem Text
+  assert.equal(O.daemmartAusWahl('', ' Sonderprodukt X '), 'Sonderprodukt X');
+  assert.equal(O.daemmartAusWahl('PIR-Schale', 'egal'), 'PIR-Schale');
+  assert.equal(O.daemmartAusWahl(O.DAEMMART_KEINE, 'egal'), null);
+});
+
 // ============================================================================================== Arbeitsreihe (Klick während laufender Abfrage)
 
 test('Arbeitsreihe: Schritte während eines laufenden Schritts gehen nicht verloren und laufen in der Reihenfolge der Eingabe', async () => {
@@ -679,4 +691,12 @@ test('Arbeitsreihe: Schritte während eines laufenden Schritts gehen nicht verlo
   r.ausfuehren(() => { punkte.push('nach Ende'); });
   await l3;
   assert.equal(punkte.includes('nach Ende'), false);
+});
+
+test('Arbeitsreihe: ein Klick während eines laufenden Schritts wird nur bei Mehrpunkt-Werkzeugen eingereiht', async () => {
+  const { klickEinreihen } = await import('./reihe.js');
+  assert.equal(klickEinreihen({ id: 'wand', mehrpunkt: true }), true);
+  assert.equal(klickEinreihen({ id: 'familie' }), false);                     // Einzelklick: der ungeduldige zweite Klick setzt kein zweites Bauteil
+  assert.equal(klickEinreihen({ id: 'achse', mehrpunkt: false }), false);
+  assert.equal(klickEinreihen({ id: 'wand', mehrpunkt: true }, true), false); // Textfeld offen
 });
