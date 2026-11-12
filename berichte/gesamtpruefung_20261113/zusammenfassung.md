@@ -42,6 +42,7 @@ Tests nach dem Zusammenführen (gefiltert): Kern 169 + 86 grün, Web 5 grün, No
 | Bereich | Korrekturen | Bericht |
 |---|---|---|
 | Ausgabe | 2 (IFC-Export: senkrechte Rechteckkanäle mit querDrehung wie 3D und Kollision; Materialliste und Leitungslängen zählen eine Leitung nur in ihrem eigenen System – vorher KW 5 m statt 2 m) | ausgabe.md |
+| Fachwerkzeuge | 3 (sehr kurze Vorwand brach Grundriss/3D/Stückliste ab; Spiegeln stellt die Rückseite der Vorwand um; Kanalrahmen: Stoss- und Endrahmen überlappen nicht; Montageelement-Vorschau in Elementbreite) | fachwerkzeuge.md |
 
 Browser (Hauptlauf 18:13): Rohr am freien Leitungsende mit leerer Höhe begonnen – Höhe und Grösse des Anschlusses übernommen, Zug angelegt.
 
@@ -89,6 +90,12 @@ Browser (Hauptlauf 18:13): Rohr am freien Leitungsende mit leerer Höhe begonnen
     bzw. Planwinkel ≠ 0 überdeckt der Text die eigene Leitung, Führungslinien liegen bis ~7 mm daneben. Platzierung in Ansichtsachsen
     umbauen (mittel)? Dazu Masszahl unter statt über der Linie, wenn sie wegen der Ansichtsdrehung umklappt.
 28. **IFC-Export an Knicken**: eckige Kanäle als stumpfe Extrusionen (3D schliesst sie) – im IFC schliessen?
+29. **Familie platzieren ohne Wand- und Höhenbezug** (hoch): z ist immer die Geschosskote, kein Ausrichten an Wand/Vorwand, keine Höhe
+    über OKFB bzw. unter UKD. Option «an Wand» und Höhenfeld mit Bezug einbauen?
+30. **Montageelemente ohne räumliche Anschlusslage** (hoch): Leitungen lassen sich nur logisch anschliessen. Wo und in welcher Richtung
+    sollen die Anschlüsse liegen (aus dem Katalog, z. B. WC-Abwasser 230 mm über OKFF)?
+31. **Vorwand verschieben/drehen**: Montageelemente bleiben liegen. Mitgehen lassen oder hinter dem Apparat bleiben?
+    (Weitere 7 Fragen in fachwerkzeuge.md Abschnitt 5: Montagewinkel-Abstand, GIS-Segmentstoss, Vorwand über Eck u. a.)
 7. **λ-Werte der Dämmarten**: welche Produkte verwendet ihr (dann λ mit Quelle eintragen)?
 
 **Prüfung Hauptlauf im Browser (18:00):** Rohr mit drei raschen Klicks und Esc wird vollständig angelegt (Klick-Reihe), Weiterzeichnen mit Bogen am Leitungsende kürzt die bestehende Leitung. Nebenbefund: Start an einem Anschluss verlangt zuerst Produktlinie und Höhe, obwohl der Anschluss beides vorgibt (pflichtPruefen vor dem Anschluss) – kleine Korrektur für Runde 3.
