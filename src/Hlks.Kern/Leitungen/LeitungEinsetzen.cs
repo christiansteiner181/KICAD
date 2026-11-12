@@ -56,6 +56,7 @@ public static class LeitungTeilung
         zweites.Id = Guid.NewGuid().ToString();
         zweites.Kennzeichen = Routing.Teilstueck(k, l.Kennzeichen);
         zweites.Version = 0; zweites.Paket = null; zweites.Angelegt = null; zweites.Geaendert = null;
+        zweites.Kennungen = null;   // wie leitung_abzweigen: die fremde Kennung (IFC-GlobalId, Quelle) bleibt beim ersten Stück, nie doppelt im Modell
         zweites.Geometrie = l.Geometrie!.Kopie();
         zweites.Geometrie.Punkte[0] = (a + d * tB).Feld();
         k.Setzen(zweites);

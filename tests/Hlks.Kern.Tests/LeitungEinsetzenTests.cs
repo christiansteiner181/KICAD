@@ -21,7 +21,10 @@ public class LeitungEinsetzenTests
     public void Teilen_ZweiGeraden_VerbindungAmEndeWandert_EinRueckgaengig()
     {
         var p = Zug();
+        Hole(p, "RO-1").Kennungen = new() { ["ifc"] = "GID-FIKTIV" };   // fremde Kennung (IFC): bleibt beim ersten Stück, nie doppelt
         var e = Ok(p.Ausfuehren("leitung_teilen", new JsonObject { ["leitung"] = "RO-1", ["punkt"] = new JsonArray(400, 30) }));
+        Assert.Equal("GID-FIKTIV", Hole(p, "RO-1").Kennungen?["ifc"]);
+        Assert.Null(Hole(p, "RO-1-2").Kennungen);
         Gerade(p, "RO-1", [0, 0, 0], [400, 0, 0]);
         Gerade(p, "RO-1-2", [400, 0, 0], [950, 0, 0]);
         IstVerbunden(p, "RO-1", "ende", "RO-1-2", "anfang");

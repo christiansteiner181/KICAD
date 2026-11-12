@@ -51,13 +51,14 @@ export function erlaubteWinkel(serie) {
  *   drehung   N9: Drehung der Ansicht (Grad, Gegenuhrzeigersinn) – die Achsrichtungen gelten in den Achsen der Ansicht (waagrecht
  *             gezeichnet = parallel zur Gebäudekante); Richtungen bleiben im Modell
  */
-export function richtungsKandidaten({ vorher = null, winkel = null, erster = null, nur = null, drehung = 0 } = {}) {
+export function richtungsKandidaten({ vorher = null, winkel = null, erster = null, nur = null, drehung = 0, geradeaus = false } = {}) {
   if (nur) return [...new Set(nur.map((w) => rund(normWinkel(w), 6)))];
   const s = new Set();
   const add = (w) => s.add(rund(normWinkel(w), 6));
   if (erster !== null) { add(erster); return [...s]; }          // am Anschluss gilt nur seine Achse
   for (const a of [0, 90, 180, 270]) add(a - (Number(drehung) || 0));
   if (vorher !== null) {
+    if (geradeaus) add(vorher);                                    // am freien Ende einer Geraden: in ihrer Achse weiter (auch schräg zur Ansicht)
     for (const w of winkel ?? STANDARD_WINKEL_FREI) { add(vorher + w); add(vorher - w); }
     s.delete(rund(normWinkel(vorher + 180), 6));                 // Kehrtwende gibt es nicht
   }
@@ -324,7 +325,7 @@ export function optionenZustand({ serien, serie = '', serieDef = null, groesse =
 /** Fehlende Pflichtangaben vor dem ersten Klick: { feld, text, vorschlag } oder null. */
 export function pflichtFehlt(opt, { kategorie = 'Rohr', serien = [], serie = null } = {}) {
   if (!serien.length) return { feld: 'serie', text: `Keine Leitungsserie der Kategorie ${kategorie} im Projekt.`, vorschlag: 'Eine Leitungsserie als Familie laden (Projektbrowser › Familien › Familie laden).' };
-  if (!opt.serie) return { feld: 'serie', text: 'Die Produktlinie fehlt.', vorschlag: 'In der Optionsleiste eine Produktlinie wählen.' };
+  if (!opt.serie) return { feld: 'serie', text: 'Die Produktlinie fehlt.', vorschlag: 'Im Eigenschaftsfenster oben (Typenwahl) eine Produktlinie wählen.' };
   // Freie Grösse (Nachtrag): Breite × Höhe bzw. Durchmesser statt der Typwahl; Grenzen und Schritt prüft der Kern
   if (istFrei(serie)) { const f = freiPflichtFehlt(serie, opt); if (f) return f; }
   else if (!opt.groesse) return { feld: 'groesse', text: 'Die Grösse fehlt.', vorschlag: 'In der Optionsleiste eine Grösse der Produktlinie wählen.' };
@@ -346,7 +347,7 @@ export function eigenschaftenAus(opt) {
  */
 export function leitungParameter({ opt, punkte, von = null, nach = null, geschoss = null, serie = null }) {
   if (punkte.length < 2) throw new WerkzeugFehler('Eine Leitung braucht mindestens zwei Punkte.', 'Weitere Punkte anklicken.');
-  if (!opt.serie) throw new WerkzeugFehler('Die Produktlinie fehlt.', 'In der Optionsleiste eine Produktlinie wählen.');
+  if (!opt.serie) throw new WerkzeugFehler('Die Produktlinie fehlt.', 'Im Eigenschaftsfenster oben (Typenwahl) eine Produktlinie wählen.');
   // Freie Grösse (Nachtrag): groesse = { b, h } bzw. { d } aus den Zahlenfeldern; sonst der Typ der Produktlinie
   const groesse = groesseAusOptionen(serie, opt);
   if (groesse === null) {

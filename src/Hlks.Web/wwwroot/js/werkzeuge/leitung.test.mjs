@@ -61,6 +61,8 @@ test('Winkelfang: Kandidaten ohne Vorgänger sind die Achsen, mit Vorgänger des
 
 test('Winkelfang: am Anschluss und beim Abzweig gelten nur die vorgegebenen Richtungen', () => {
   assert.deepEqual(L.richtungsKandidaten({ erster: 270 }), [270]);
+  // am freien Ende einer schrägen Geraden (30°): geradeaus bleibt ein Fangwinkel, dazu die Bogenwinkel
+  assert.deepEqual(L.richtungsKandidaten({ vorher: 30, winkel: [90], geradeaus: true }), [0, 30, 90, 120, 180, 270, 300]);
   assert.deepEqual(L.richtungsKandidaten({ nur: [90, 270] }), [90, 270]);
   assert.deepEqual(L.abzweigRichtungen(0), [90, 270]);
   assert.deepEqual(L.abzweigRichtungen(null), []);

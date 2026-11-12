@@ -93,7 +93,7 @@ function kandidaten(z, ctx) {
   // Am freien Ende einer Geraden auch die Bogenwinkel: der Kern kürzt die Gerade um den Bogen (Christian 12.11.2026: «wird an einer leitung
   // weitergezeichnet, und es wird bsp. direkt ein 90° bogen gezeichnet, so muss sich die besetehnde leitung anpassen»)
   if (erster !== null && ['anfang', 'ende'].includes(z.von.name) && ['Rohr', 'Kanal'].includes(element(z.von.element)?.klasse))
-    return L.richtungsKandidaten({ vorher: erster, winkel, drehung: ctx.ansicht.drehung ?? 0 });
+    return L.richtungsKandidaten({ vorher: erster, winkel, drehung: ctx.ansicht.drehung ?? 0, geradeaus: true });
   return L.richtungsKandidaten({ vorher: L.letzteRichtung(z.punkte), winkel, erster, drehung: ctx.ansicht.drehung ?? 0 });   // N9: Achsen der Ansicht
 }
 
@@ -438,8 +438,11 @@ export function leitungWerkzeug(kategorie = 'Rohr', variante = null) {
         // Abwasser immer Silent mit 2 % Gefälle (Christian 12.11.2026: «Abwasser leitungen sind immer Silent mit 2% Gefälle»); die Optionen teilen
         // Rohr und Abwasser, darum gilt das Gefälle bei den anderen Rohren nicht weiter
         if (variante === 'abwasser') {
-          const silent = D.serienListe(kategorie).find((s) => /silent/i.test(s.name ?? ''));
-          if (silent && ctx.opt.serie !== silent.kz) setze(id, 'serie', silent.kz);
+          // eine schon gewählte bzw. gemerkte Silent-Produktlinie bleibt (mehrere Silent-Linien im Projekt), sonst die erste
+          const istSilent = (s) => /silent/i.test(s?.name ?? '');
+          const linien = D.serienListe(kategorie);
+          const silent = istSilent(linien.find((s) => s.kz === ctx.opt.serie)) ? null : linien.find(istSilent);
+          if (silent) setze(id, 'serie', silent.kz);
           setze(id, 'gefaelle', 2);
         } else if (kategorie === 'Rohr') {
           setze(id, 'gefaelle', '');
