@@ -35,7 +35,7 @@ public static class Ableitungen
     /// zuletzt), dann Grösse nach Mass. Nur Leitungen (Klasse Rohr, Kanal und was von Leitung erbt) zählen.</summary>
     public static List<Leitungslaenge> Leitungslaengen(Projekt p, string? strangId = null, string? systemId = null, string? geschossId = null)
     {
-        var f = Filter(p.Modell, systemId, strangId, geschossId);
+        var f = Filter(p.Modell, p.Katalog, systemId, strangId, geschossId);
         return Laengen(p, p.Modell.Elemente.Where(e => p.Katalog.IstArt(e, "Leitung") && f(e)));
     }
 
@@ -49,13 +49,16 @@ public static class Ableitungen
     static JsonArray LaengenJson(IEnumerable<Leitungslaenge> l) =>
         new(l.Select(x => (JsonNode)new JsonObject { ["serie"] = x.Serie, ["groesse"] = x.Groesse, ["laenge_m"] = x.LaengeM }).ToArray());
 
-    /// <summary>Filter system / strang / geschoss (Kennzeichen oder Id; null = alle).</summary>
-    static Func<Element, bool> Filter(Modell m, string? system, string? strang, string? geschoss)
+    /// <summary>Filter system / strang / geschoss (Kennzeichen oder Id; null = alle). System wie bei den Mengen: eine Leitung mit eigenem System
+    /// gehört genau zu diesem (der Bypass vom Rücklauf ans Mischventil im Vorlauf zählte sonst in beiden Systemen); ohne eigenes System und bei
+    /// Formteilen gelten die Systeme der Anschlüsse.</summary>
+    static Func<Element, bool> Filter(Modell m, Katalog k, string? system, string? strang, string? geschoss)
     {
         var sFilter = system is null ? null : m.HoleDerKlasse(system, "System").Id;
         var stFilter = strang is null ? null : m.HoleDerKlasse(strang, "Strang").Id;
         var gFilter = geschoss is null ? null : m.HoleDerKlasse(geschoss, "Geschoss").Id;
-        return e => (sFilter is null || e.System == sFilter || Netz.SystemeVon(m, e).Any(s => s.Id == sFilter))
+        return e => (sFilter is null || e.System == sFilter
+                     || ((!k.IstArt(e, "Leitung") || e.System is null) && Netz.SystemeVon(m, e).Any(s => s.Id == sFilter)))
                     && (stFilter is null || e.TeilVon == stFilter)
                     && (gFilter is null || e.Geschoss == gFilter);
     }
@@ -111,7 +114,7 @@ public static class Ableitungen
     public static JsonObject Materialliste(Projekt p, string? system = null, string? strang = null, string? geschoss = null)
     {
         var m = p.Modell; var k = p.Katalog;
-        var passt = Filter(m, system, strang, geschoss);
+        var passt = Filter(m, k, system, strang, geschoss);
         var leitungen = m.Elemente.Where(e => k.IstArt(e, "Leitung") && passt(e)).ToList();
         var laengen = Laengen(p, leitungen);
         var stueckJe = leitungen.GroupBy(l => { var b = HlksMasse.Bezeichnung(p, l); return (b.Serie, b.Groesse); }).ToDictionary(g => g.Key, g => g.Count());
