@@ -574,11 +574,19 @@ public sealed class Abfragen(Projekt p)
         if (d.Klasse != "Datenpunkt") throw new HlksFehler($"{d.Kennzeichen} ist kein Datenpunkt.");
         if (!DateTimeOffset.TryParse(von, out var v) || !DateTimeOffset.TryParse(bis, out var b)) throw new HlksFehler("von/bis als ISO-Zeit angeben, z. B. 2026-10-19T00:00");
         if (b <= v) throw new HlksFehler("bis muss nach von liegen.");
+        if (!double.IsFinite(aufloesungMinuten)) throw new HlksFehler("Die Auflösung muss eine Zahl sein.", "Raster in Minuten angeben, z. B. 60.");
         var werte = p.Datenquelle.Zeitreihe(d, v, b, TimeSpan.FromMinutes(Math.Max(1, aufloesungMinuten)));
-        return new JsonObject
+        var o = new JsonObject
         {
             ["datenpunkt"] = d.Kennzeichen, ["quelle"] = p.Datenquelle.Name, ["einheit"] = d.Text("einheit"), ["anzahl"] = werte.Count,
-            ["werte"] = new JsonArray(werte.Take(2000).Select(w => (JsonNode)new JsonArray(JsonValue.Create(w.Zeit.ToString("yyyy-MM-ddTHH:mm")), JsonValue.Create(Math.Round(w.Wert, 3)), JsonValue.Create(w.Qualitaet))).ToArray()),
+            ["werte"] = new JsonArray(werte.Take(ZeitreiheMax).Select(w => (JsonNode)new JsonArray(JsonValue.Create(w.Zeit.ToString("yyyy-MM-ddTHH:mm")), JsonValue.Create(Math.Round(w.Wert, 3)), JsonValue.Create(w.Qualitaet))).ToArray()),
         };
+        // nicht still kürzen: wer nur «werte» liest, hielte den Zeitraum sonst für vollständig
+        if (werte.Count > ZeitreiheMax)
+            o["hinweis"] = $"Nur die ersten {ZeitreiheMax} von {werte.Count} Werten (bis {werte[ZeitreiheMax - 1].Zeit:yyyy-MM-ddTHH:mm}). Gröberes Raster wählen oder den Zeitraum teilen.";
+        return o;
     }
+
+    /// <summary>Höchstzahl der Werte je Antwort der Abfrage zeitreihe.</summary>
+    public const int ZeitreiheMax = 2000;
 }

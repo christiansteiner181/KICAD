@@ -26,14 +26,24 @@ public static class Datenpunktliste
         return File.Exists(pfad) ? JsonNode.Parse(File.ReadAllText(pfad)) as JsonObject : null;
     }
 
-    /// <summary>Anlage eines Bauteils: über sein System (teilVon), sonst null.</summary>
-    public static Element? AnlageVon(Modell m, Element? e) => e?.System is { } s && m.Finde(s) is { } sys && sys.TeilVon is { } a ? m.Finde(a) : null;
+    /// <summary>Anlage eines Bauteils: über sein System (teilVon); ohne eigenes System (das System ist freiwillig, Christian 02.11.2026) über das
+    /// erste System der direkt verbundenen Elemente, das zu einer Anlage gehört (nach Kennzeichen, wie Ableitungen.Gewerk); sonst null.</summary>
+    public static Element? AnlageVon(Modell m, Element? e)
+    {
+        if (e is null) return null;
+        if (e.System is not null) return m.Finde(m.Finde(e.System)?.TeilVon);
+        return Netz.SystemeVon(m, e).Select(s => m.Finde(s.TeilVon)).FirstOrDefault(a => a is not null);
+    }
+
+    /// <summary>Parameter «anlage»: leer = alle, sonst eine Anlage (ein anderes Element, z. B. ein System, ergäbe still eine leere Liste).</summary>
+    public static Element? AnlageParameter(Modell m, JsonObject par) =>
+        Param.Text(par, "anlage") is { Length: > 0 } a ? m.HoleDerKlasse(a, "Anlage") : null;
 
     public static JsonObject Abfrage(Projekt p, JsonObject? par)
     {
         par ??= [];
         var m = p.Modell;
-        Element? nur = Param.Text(par, "anlage") is { Length: > 0 } a ? m.Finde(a) ?? throw new HlksFehler($"Anlage «{a}» gibt es nicht.") : null;
+        var nur = AnlageParameter(m, par);
         var gruppen = m.DerKlasse("Datenpunkt")
             .Select(d => (Dp: d, An: d.Bezuege.TryGetValue("an", out var an) ? m.Finde(an) : null))
             .Select(x => (x.Dp, x.An, Anlage: AnlageVon(m, x.An)))
@@ -72,7 +82,7 @@ public sealed class DatenpunkteVorschlagen : IBefehl
     {
         var kat = Datenpunktliste.Katalog(k.Katalog) ?? throw new HlksFehler($"kataloge/{Datenpunktliste.Datei} fehlt.", "Datei aus dem Repository wiederherstellen.");
         var m = k.Arbeit;
-        Element? nur = Param.Text(p, "anlage") is { Length: > 0 } a ? m.Finde(a) ?? throw new HlksFehler($"Anlage «{a}» gibt es nicht.") : null;
+        var nur = Datenpunktliste.AnlageParameter(m, p);
         var quelle = (kat["quelle"] as JsonValue)?.GetValue<string>() ?? "kataloge/datenpunkte.json";
         int neu = 0, vorhanden = 0;
         foreach (var (klasse, regeln) in (kat["klassen"] as JsonObject ?? []))

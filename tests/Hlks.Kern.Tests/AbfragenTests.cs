@@ -550,6 +550,13 @@ public class AbfragenTests
         Assert.All(Liste(o["werte"]), w => Assert.InRange(Zahl(w![1]), 0, 800));
         // ohne Rasterangabe: 60 Minuten
         Assert.Equal(12, (int)Zahl(A.Zeitreihe("DP-WZ1-DF", "2026-10-19T00:00", "2026-10-19T12:00")["anzahl"]));
+        Assert.Null(o["hinweis"]);
+        // mehr Werte als die Antwort trägt: gekürzt wird mit Hinweis, nicht still (3 Tage im Minutenraster = 4320 Werte)
+        var lang = A.Zeitreihe("DP-WZ1-DF", "2026-10-19T00:00", "2026-10-22T00:00", 1);
+        Assert.Equal(4320, (int)Zahl(lang["anzahl"]));
+        Assert.Equal(Abfragen.ZeitreiheMax, Liste(lang["werte"]).Count);
+        Assert.Contains("2000 von 4320", lang["hinweis"]!.GetValue<string>());
+        Assert.Contains("2026-10-20T09:19", lang["hinweis"]!.GetValue<string>());   // Wert Nr. 2000 beginnt 1999 Minuten nach 00:00
     }
 
     [Fact]
