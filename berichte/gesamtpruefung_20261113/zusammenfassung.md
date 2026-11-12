@@ -34,6 +34,8 @@ Tests nach dem Zusammenführen (gefiltert): Kern 169 + 86 grün, Web 5 grün, No
 
 | Schema, Kern-API | 4 (Nachführung läuft bis keine Regel mehr greift statt fest 5 Runden, mit Hinweis an der Grenze; Wiederholen überschreibt keine spätere fremde Änderung; Kennzeichen mit Punkt, Punkt mit einer Koordinate, leeres Kennzeichen; Schema: «Element einfügen» im Bündel trifft den richtigen Strang) | schema_api.md |
 
+| Familiengeometrie | 4 (Übergang-Körper nach aussen orientiert – vorher negatives Volumen/verkehrte Normalen in 3D/XR; Achse des schrägen Abzweigs endet im Achsschnittpunkt – einlinige Darstellung und Dämmung liefen quer; sin/cos bei Vielfachen von 90° genau; Umriss übernommener Netze vollständig). Rechtssystem, Drehsinn, Einbaulängen mit Handbeispielen bestätigt | familiengeometrie.md |
+
 Browser (Hauptlauf 18:13): Rohr am freien Leitungsende mit leerer Höhe begonnen – Höhe und Grösse des Anschlusses übernommen, Zug angelegt.
 
 ## Fragen an Christian (gesammelt)
@@ -72,6 +74,10 @@ Browser (Hauptlauf 18:13): Rohr am freien Leitungsende mit leerer Höhe begonnen
 23. **Strangschema eng**: ab 9 Steigknoten in einer Zelle 2 mm Abstand bei 4 × 3 mm Symbolen, ohne Hinweis; Geräte an Strängen
     verschiedener Gruppen führen Linien quer durch fremde Gruppen. Zeile wachsen lassen oder Hinweis?
 24. **Nachführung an der Grenze**: Befehl ablehnen statt nur Hinweis?
+25. **Biegeradius der Ersatzbögen in Familien**: gilt heute der erste Parameter `biegeradius`, `radius`, `r` oder `R` – `r` kann der
+    Rohrradius sein; ohne Untergrenze faltet sich der Bogen innen. Regel schärfen (nur `biegeradius`, R ≥ Profilradius)? Betrifft bestehende
+    Familien der Bibliothek.
+26. **Anschlussrichtung «nach aussen»** auch bei Apparaten und Armaturen in der Freigabeprüfung prüfen (heute nur Formteile)?
 7. **λ-Werte der Dämmarten**: welche Produkte verwendet ihr (dann λ mit Quelle eintragen)?
 
 **Prüfung Hauptlauf im Browser (18:00):** Rohr mit drei raschen Klicks und Esc wird vollständig angelegt (Klick-Reihe), Weiterzeichnen mit Bogen am Leitungsende kürzt die bestehende Leitung. Nebenbefund: Start an einem Anschluss verlangt zuerst Produktlinie und Höhe, obwohl der Anschluss beides vorgibt (pflichtPruefen vor dem Anschluss) – kleine Korrektur für Runde 3.
