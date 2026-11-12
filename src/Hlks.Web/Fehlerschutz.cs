@@ -9,6 +9,8 @@ public static class Fehlerschutz
 {
     public const string Vorschlag = "Den Vorgang wiederholen. Bleibt es so: KICAD neu starten und den Fehler mit dem letzten Arbeitsschritt melden.";
 
+    public const string AnfrageVorschlag = "Parameter und JSON der Anfrage prüfen (Wahrheitswerte true/false, Zahlen ohne Text).";
+
     public static string Meldung(Exception ex) => $"Unerwarteter Fehler im KICAD-Server: {ex.Message} ({ex.GetType().Name})";
 
     public static WebApplication UseFehlerschutz(this WebApplication app)
@@ -19,6 +21,15 @@ public static class Fehlerschutz
             if (!ctx.Request.Path.StartsWithSegments("/api")) { await weiter(); return; }
             try { await weiter(); }
             catch (OperationCanceledException) when (ctx.RequestAborted.IsCancellationRequested) { }
+            // Nicht lesbare Anfrage (Parameter oder JSON, z. B. ?trockenlauf=vielleicht): das meldet ASP.NET als BadHttpRequestException mit 400 –
+            // das bleibt 400 und wird nicht zum Serverfehler (Befund Gesamtprüfung: seit dem Fehlerschutz kam 500).
+            catch (BadHttpRequestException ex) when (!ctx.Response.HasStarted)
+            {
+                ctx.Response.Clear();
+                ctx.Response.StatusCode = ex.StatusCode is >= 400 and < 500 ? ex.StatusCode : 400;
+                ctx.Response.ContentType = "application/json; charset=utf-8";
+                await ctx.Response.WriteAsync(Hlks.Kern.Json.Text(new { fehler = "Die Anfrage ist nicht lesbar: " + ex.Message, vorschlag = AnfrageVorschlag }));
+            }
             catch (Exception ex) when (ex is not OperationCanceledException && !ctx.Response.HasStarted)
             {
                 log.LogError(ex, "Unerwarteter Fehler bei {methode} {pfad}", ctx.Request.Method, ctx.Request.Path);
