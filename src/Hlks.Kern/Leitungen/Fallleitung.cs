@@ -188,6 +188,17 @@ public sealed class SteigleitungPlatzieren : IBefehl
             double[] q = [pt[0] + ux * lage[i] - uy * quer, pt[1] + uy * lage[i] + ux * quer];   // quer: links in Richtung der Reihe
             bool faellt = Param.Text(l, "richtung") is { Length: > 0 } ri ? ArchParam.Auswahl(ri, ["auf", "ab"], "richtung") == "ab" : Faellt(medium);
             var rohre = Senkrechte.Zeichnen(k, q, l["serie"], l["groesse"], systemKz, null, alle, iu, io, faellt);
+            // Eckige Kanäle stehen mit der Breite entlang der Reihe (wie Breite() und der Entwurf der Oberfläche): ohne querDrehung läge b immer in x,
+            // bei einer Reihe in anderer Richtung also quer zur Steigzone (Gesamtprüfung 13.11.2026)
+            double dreh = Math.Atan2(uy, ux) * 180 / Math.PI;
+            if (Math.Abs(dreh) >= 0.5)
+                foreach (var kz in rohre)
+                    if (k.Arbeit.Finde(kz) is { } ka && k.Katalog.IstArt(ka, "Kanal") && Anschlusslagen.LeitungGroesse(k.Arbeit, k.Katalog, ka).B is not null)
+                    {
+                        var neu = ka.Kopie();
+                        neu.Eigenschaften["querDrehung"] = new Wert { Inhalt = JsonValue.Create(Math.Round(dreh, 3)), Herkunft = k.Herkunft };
+                        k.Setzen(neu);
+                    }
             berichte.Add($"{medium} ({systemKz}) bei [{q[0]:0}, {q[1]:0}]: {string.Join(", ", rohre)}");
         }
         k.Hinweise.Add($"Steigleitung {alle[iu].Kennzeichen}–{alle[io].Kennzeichen}: {string.Join("; ", berichte)}.");

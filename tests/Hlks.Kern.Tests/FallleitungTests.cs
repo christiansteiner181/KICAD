@@ -107,12 +107,15 @@ public class FallleitungTests
         // Zentrale oben: ZUL fällt
         Ok(p.Ausfuehren("steigleitung_platzieren", new JsonObject
         {
-            ["punkt"] = new JsonArray(7500, 1500), ["abstand"] = 600, ["leitungen"] = new JsonArray(
+            ["punkt"] = new JsonArray(7500, 1500), ["abstand"] = 600, ["richtung"] = new JsonArray(0, 1), ["leitungen"] = new JsonArray(
                 new JsonObject { ["medium"] = "ZUL", ["serie"] = "fam-test-kanalserie", ["groesse"] = "400x200", ["richtung"] = "ab" }),
         }));
         var oben = p.Modell.Elemente.Where(x => x.Klasse == "Kanal" && x.Geometrie!.Punkte[0][0] > 7000).ToList();
         Assert.Equal(3, oben.Count);
         Assert.All(oben, x => Assert.True(x.Geometrie!.Punkte[0][2] > x.Geometrie.Punkte[^1][2]));
+        // Reihe in y: die Breite des eckigen Kanals liegt entlang der Reihe (querDrehung 90), bei der Reihe in x bleibt sie ohne Drehung
+        Assert.All(oben, x => Assert.Equal(90, x.Zahl("querDrehung") ?? 0, 3));
+        Assert.All(zul, x => Assert.Null(x.Zahl("querDrehung")));
     }
 
     /// <summary>Christian 06.11.2026: «bei allen seteigleitungen soll eine Steigzonen Grösse angegeben werden können. die Rohrabstände sollen daraus
