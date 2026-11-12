@@ -4324,6 +4324,15 @@ jedes neue Projekt erhält alle Mustersysteme.
 - **Dämmung in der Rohrfarbe** (Christian 12.11.2026: «wird die Dämmung gezeigt, so soll sie die Rohrfarbe mit transparenz erhalten»): die Dämmfläche im
   Grundriss (mittel, fein) ist transparent in der Farbe des Mediums der Leitung (bisher gelb); Formteile in der Farbe der angeschlossenen Leitung. Die
   Aussenkontur ebenfalls in der Rohrfarbe, wesentlich feiner (Stift «fein» 0.10 mm, Christian 12.11.2026), verdeckte gestrichelt. Im Detailgrad grob bleibt der gelbe Punkt.
+- **Kreuzende Leitungen verdeckt** (Christian 12.11.2026: «leitungen die in einem Grundriss unter einer anderen Leitung durchlaufen (inkl. Dämmung)
+  müssen verdeckt dargestellt werden», «bei grob wird die verdeckte leitung unterbrochen»): unter einer höheren Leitung (Band bzw. Dämmung) ist die
+  tiefere in mittel und fein ausgespart mit gestrichelten Rändern und Achse, in grob unterbrochen (Lücke je Seite 0.5 mm). Gleich hohe Leitungen
+  (auch mit Gefälle) verdecken einander nicht; Steigleitungen und Formteile verdecken hier noch nicht.
+- **Grob: Kreise im effektiven Durchmesser** (Christian 12.11.2026): Steig- und Fallleitungen im Detailgrad grob als Kreis mit dem
+  Aussendurchmesser (Kanal: grössere Seite, ohne Serie DN), mindestens 0.5 mm Papier; das Kreuz n.o. passt sich an.
+- **Teilen mit Vorschau** (Christian 12.11.2026): Ändern › Teilen trifft die Leitung auf ihrer ganzen Breite samt Dämmung; die Vorschau zeigt den
+  Schnitt quer über Leitung und Dämmung und die Längen der beiden Teile. Beide Teile behalten Dämmung und Eigenschaften.
+- **Dämmung einzeln wählbar** (Christian 12.11.2026): ein Klick auf die Dämmung wählt nur die eigene Leitung bzw. das eigene Formteil.
 - **Dämmung an Bögen im 3D** (Christian 12.11.2026: «dämmungen an Bogen fehlen im 3d»): Formteile bekommen im 3D (fein) die Dämmung der angeschlossenen
   Leitung entlang ihrer Achse, wie im Grundriss.
 - **Achslinien fein** (Christian 12.11.2026: «alle achslinien feiner machen. eher wie dämmungskannte»): alle Achslinien (Leitungen, Formteile, Familien,

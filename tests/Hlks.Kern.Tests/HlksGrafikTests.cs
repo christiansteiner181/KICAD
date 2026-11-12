@@ -119,7 +119,7 @@ public class HlksGrafikTests
         // SW DN100: breiter als 0.35 mm Papier → Band mit Füllung in Medienfarbe
         var sw = TeileVon(p, ctx, "SW-1.02-WC").Single();
         Assert.Contains(Kat.Medien["SW"].FarbeHex, Farben(sw));
-        Assert.All(sw.Primitive, x => Assert.True(x.Art is "polygon" or "kreis"));
+        Assert.All(sw.Primitive, x => Assert.True(x.Art is "polygon" or "kreis" || x.Art == "polylinie" && x.Stil.Linie == "strich"));   // gestrichelt: unter den KW-Leitungen verdeckt (12.11.2026)
         // KW DN15: schmal → Polylinie mit Stift «mittel» in Medienfarbe
         var kw = TeileVon(p, ctx, "KW-1.02-WT").Single();
         var linie = Assert.Single(kw.Primitive);
@@ -165,7 +165,7 @@ public class HlksGrafikTests
         Assert.Equal("bogen", ring.Art);
         Assert.Equal(300, ring.Bis!.Value - ring.Von!.Value, 6);
         Assert.Equal([9000.0, 9800.0], ring.Punkte[0]);
-        Assert.Equal(1.2 * ctx.Massstab, ring.Radius!.Value, 6);   // einlinig: Plansymbol Ø 2.4 mm Papier (Revisionsplan Zuchwil, Christian 05.11.2026)
+        Assert.Equal(50, ring.Radius!.Value, 6);   // einlinig: effektiver Durchmesser, hier ohne Serie DN 100 (Christian 12.11.2026; vorher Plansymbol Ø 2.4 mm)
         Assert.Equal(Kat.Medien["SW"].FarbeHex, ring.Stil.Farbe);
     }
 
@@ -175,15 +175,16 @@ public class HlksGrafikTests
         var p = Beispiel();
         var ctx = Ctx(p, "AN-GR-1.OG", massstab: 50);
         var t = TeileVon(p, ctx, "SW-1.02-WC").Single();   // (7500,9500) → (8800,9700), DN100: w = 60 mm
-        var band = t.Primitive.First(x => x.Art == "polygon");
+        // Band 60 mm breit (quer zur Achse gemessen); die höheren KW-Leitungen kreuzen es (LeitungVerdeckung, 12.11.2026), das Band ist dort ausgespart
         var l = Math.Sqrt(1300 * 1300 + 200 * 200);
-        // Breite = Abstand der beiden Längsseiten
-        var a = band.Punkte[0]; var b = band.Punkte[3];
-        Assert.Equal(60, Math.Sqrt(Math.Pow(a[0] - b[0], 2) + Math.Pow(a[1] - b[1], 2)), 6);
-        Assert.Equal(l, Math.Sqrt(Math.Pow(band.Punkte[1][0] - a[0], 2) + Math.Pow(band.Punkte[1][1] - a[1], 2)), 6);
+        double[] u = [1300 / l, 200 / l], n = [-u[1], u[0]];
+        var baender = t.Primitive.Where(x => x.Art == "polygon").ToList();
+        Assert.NotEmpty(baender);
+        Assert.Equal(60, baender.Max(x => x.Punkte.Max(q => q[0] * n[0] + q[1] * n[1]) - x.Punkte.Min(q => q[0] * n[0] + q[1] * n[1])), 1);   // grösstes Stück; Clipper rundet auf 0.01 mm
+        Assert.True(baender.Max(x => x.Punkte.Max(q => q[0] * u[0] + q[1] * u[1])) - baender.Min(x => x.Punkte.Min(q => q[0] * u[0] + q[1] * u[1])) <= l + 0.1);   // innerhalb der Leitung
         // gleicher Strang im Massstab 1:200 → schmaler als 0.35 mm Papier → Polylinie
         var klein = TeileVon(p, Ctx(p, "AN-GR-1.OG", massstab: 200), "SW-1.02-WC").Single();
-        Assert.Equal("polylinie", Assert.Single(klein.Primitive).Art);
+        Assert.All(klein.Primitive, x => Assert.Equal("polylinie", x.Art));   // an den Kreuzungen in Stücke geteilt, verdeckt gestrichelt (12.11.2026)
     }
 
     [Fact]
@@ -191,9 +192,9 @@ public class HlksGrafikTests
     {
         var p = Beispiel();
         var t = TeileVon(p, Ctx(p, "AN-GR-1.OG", "grob"), "SW-1.02-WC").Single();
-        var l = Assert.Single(t.Primitive);
-        Assert.Equal("polylinie", l.Art);
-        Assert.Equal(Stifte.Mittel, l.Stil.Stift);
+        // an den Kreuzungen mit den höheren KW-Leitungen unterbrochen (12.11.2026) – alle Stücke Polylinien mit Stift mittel
+        Assert.NotEmpty(t.Primitive);
+        Assert.All(t.Primitive, l => { Assert.Equal("polylinie", l.Art); Assert.Equal(Stifte.Mittel, l.Stil.Stift); });
     }
 
     [Fact]
@@ -242,13 +243,10 @@ public class HlksGrafikTests
         var schmal = TeileVon(p, ctx, "RW-T2").Single();
         Assert.Equal("strich", Assert.Single(schmal.Primitive).Stil.Linie);
         Assert.Equal(Kat.Medien["RW"].FarbeHex, schmal.Primitive[0].Stil.Farbe);
-        // breit: Band in Stücken. Strich 3 w = 180 mm, Lücke 90 mm → 3000 / 270 ≈ 11.1 Striche
+        // breit: im Detailgrad mittel als ausgezogenes Band (Christian 09.11.2026: «Band in mittel und fein ausgezogen»), in der Farbe des Mediums
         var breit = TeileVon(p, ctx, "RW-T1").Single();
-        var striche = breit.Primitive.Count(x => x.Art == "polygon");
-        Assert.InRange(striche, 11, 12);
-        Assert.All(breit.Primitive, x => Assert.Equal(Kat.Medien["RW"].FarbeHex, x.Stil.Fuellung));
-        // Lücken: kein Polygon deckt den Punkt (180 + 45, 0) ab
-        Assert.DoesNotContain(breit.Primitive.Where(x => x.Art == "polygon"), x => x.Punkte.Min(q => q[0]) < 225 && x.Punkte.Max(q => q[0]) > 225);
+        Assert.Contains(breit.Primitive, x => x.Art == "polygon");
+        Assert.All(breit.Primitive.Where(x => x.Art == "polygon"), x => Assert.Equal(Kat.Medien["RW"].FarbeHex, x.Stil.Fuellung));
     }
 
     [Fact]

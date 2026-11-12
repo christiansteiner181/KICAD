@@ -78,9 +78,24 @@ public sealed class HlksGrafik : IGrafikquelle
         var pts = HlksEinordnung.Punkte(e);
         if (pts.Count == 0) return [];
         var md = HlksEinordnung.Medium(ctx.Projekt, e);
-        Grafikteil? teil = HlksEinordnung.Art(ctx.Katalog, e) switch
+        var art = HlksEinordnung.Art(ctx.Katalog, e);
+        if (art == HlksArt.Leitung)
         {
-            HlksArt.Leitung => Leitung(ctx, e, HlksKoerper.Gebogen(pts, HlksMasse.Von(ctx.Projekt, e)), md),
+            // Kreuzungen: unter einer höheren Leitung verdeckt (LeitungVerdeckung, Christian 12.11.2026)
+            var mass = HlksMasse.Von(ctx.Projekt, e);
+            var gebogen = HlksKoerper.Gebogen(pts, mass);
+            var lt = Leitung(ctx, e, gebogen, md);
+            bool abwasser = mass is { Rohrband: true } && (mass.Serie?.Abwasser == true || Rohrgroessen.IstAbwasser(ctx.Projekt, e));
+            // Breite der gestrichelten Ränder im verdeckten Teil: Band mit Serie bzw. Band ohne Serie (breiter als 0.35 mm Papier); Abwasser hat Randlinien
+            double wb = HlksEinordnung.Strichbreite(ctx.Detailgrad, HlksEinordnung.Dn(e), ctx.Massstab);
+            double? rand = ctx.Detailgrad == "grob" || abwasser ? null
+                : mass is not null ? Math.Max(mass.Breite, 0.18 * ctx.Massstab)
+                : wb / ctx.Massstab > 0.35 + 1e-9 ? wb : null;
+            LeitungVerdeckung.Anwenden(ctx, e, lt, gebogen, rand, HlksEinordnung.Farbe(md));
+            return [lt];
+        }
+        Grafikteil? teil = art switch
+        {
             HlksArt.Formteil => Formteil(ctx, e, pts, md),
             HlksArt.Armatur => Armatur(ctx, e, pts, md),
             HlksArt.Apparat or HlksArt.Geraet => Apparat(ctx, e, pts, md),
@@ -156,7 +171,7 @@ public sealed class HlksGrafik : IGrafikquelle
                 // Skizze Christian 05.11.2026: die höhere Leitung läuft in die Mitte (Ausschnitt je höhere Leitung, beim T zwei); n.o. ohne höhere Leitung: Punkt
                 var richtungen = pts.Max(q => q[2]) <= deckeS + Eps ? HoehereRichtungen(ctx, e, pts) : [];
                 if (richtungen.Count > 0) kreisS = kreisS.SelectMany(x => x.Art == "kreis" ? Ausschnitte(x, richtungen) : [x]).ToList();
-                else if (pts.Max(q => q[2]) > deckeS + Eps) kreisS.AddRange(Kreuz(pts[0][0], pts[0][1], M, farbe));
+                else if (pts.Max(q => q[2]) > deckeS + Eps) kreisS.AddRange(Kreuz(pts[0][0], pts[0][1], EinlinigRadius(mass, dn, M), farbe));
             }
             teil.Primitive.AddRange(kreisS);
             // keine Beschriftung n.o./n.u. – das Symbol sagt es (Christian 05.11.2026: «Es braucht keine no. nu beschriftungen»)
@@ -188,7 +203,7 @@ public sealed class HlksGrafik : IGrafikquelle
                         else if (b[2] > a[2] && Waagrecht(i + 1)) nach = pts[i + 1];
                         var richt = nach is not null ? [Math.Atan2(nach[1] - a[1], nach[0] - a[0]) * 180 / Math.PI] : RichtungenBei(ctx, e, a[0], a[1], Math.Max(a[2], b[2]));
                         if (richt.Count > 0) kreis = kreis.SelectMany(x => x.Art == "kreis" ? Ausschnitte(x, richt) : [x]).ToList();
-                        else kreis.AddRange(Kreuz(a[0], a[1], M, farbe));   // geht oben aus dem Bild: n.o. mit Kreuz
+                        else kreis.AddRange(Kreuz(a[0], a[1], EinlinigRadius(mass, dn, M), farbe));   // geht oben aus dem Bild: n.o. mit Kreuz
                     }
                     teil.Primitive.AddRange(kreis);
                 }
@@ -404,6 +419,12 @@ public sealed class HlksGrafik : IGrafikquelle
     /// ANNAHME (Gestaltung): Ø 2.4 mm Papier.</summary>
     internal static double SymbolRadius(double M) => 1.2 * M;
 
+    /// <summary>Radius des Kreises einer Steigleitung im einlinigen Plan (grob): der effektive Rohrdurchmesser (Christian 12.11.2026: «die kreise bei den
+    /// groben darstellungen sollten den effektiven rohrdurchmesser entsprechen»; vorher Plansymbol Ø 2.4 mm) – Aussendurchmesser der Grösse bzw. bei
+    /// Kanälen die grössere Seite, ohne Serie DN-gerecht. ANNAHME Hauptlauf: nie kleiner als 0.5 mm Papier, damit der Kreis sichtbar bleibt.</summary>
+    internal static double EinlinigRadius(LeitungsMass? mass, double? dn, double M) =>
+        Math.Max(mass is not null ? Math.Max(mass.Breite, mass.Hoehe) / 2 : dn is double d && d > 0 ? d / 2 : SymbolRadius(M), 0.5 * M);
+
     static IEnumerable<Primitiv> Steigleitung(double x, double y, LeitungsMass? mass, Hoehe lage, bool verdeckt, string? farbe, double w, double? dn, double M, bool einlinig = false, bool abwasser = false, bool daemmung = true)
     {
         var fuellung = lage switch { Hoehe.Geschnitten => "schnitt", Hoehe.Unten => "papier", _ => null };
@@ -411,7 +432,7 @@ public sealed class HlksGrafik : IGrafikquelle
         if (einlinig)
         {
             // einlinig: leerer Kreis als Symbol (die höhere Leitung läuft hinein)
-            yield return new Primitiv { Art = "kreis", Punkte = [[x, y]], Radius = SymbolRadius(M), Stil = new Stil { Stift = HlksEinordnung.Stift(w / M), Linie = linienart, Farbe = farbe } };
+            yield return new Primitiv { Art = "kreis", Punkte = [[x, y]], Radius = EinlinigRadius(mass, dn, M), Stil = new Stil { Stift = HlksEinordnung.Stift(w / M), Linie = linienart, Farbe = farbe } };
             yield break;
         }
         if (mass is { MitSerie: true })
@@ -532,9 +553,9 @@ public sealed class HlksGrafik : IGrafikquelle
 
     /// <summary>Kreuz im Kreis bei n.o. (Christian 05.11.2026: «bei nach oben ein kreuz nicht ein punkt»; Revisionsplan Zuchwil: Kreuz über den Kreis hinaus).
     /// Kreuzarme 1.8 × Kreisradius (Christian 05.11.2026: «das kreuz etwas vergrössern», vorher 1.3).</summary>
-    static IEnumerable<Primitiv> Kreuz(double x, double y, double M, string? farbe)
+    static IEnumerable<Primitiv> Kreuz(double x, double y, double r, string? farbe)
     {
-        double h = 1.8 * SymbolRadius(M);
+        double h = 1.8 * r;   // r = Radius des Kreises (EinlinigRadius)
         var stil = new Stil { Stift = Stifte.Hilf, Farbe = farbe };
         yield return new Primitiv { Art = "linie", Punkte = [[x - h, y], [x + h, y]], Stil = stil };
         yield return new Primitiv { Art = "linie", Punkte = [[x, y - h], [x, y + h]], Stil = stil };
@@ -553,7 +574,7 @@ public sealed class HlksGrafik : IGrafikquelle
             if ((c.Geschoss is not null && e.Geschoss != c.Geschoss.Id) || e.Geometrie is not { Art: "polylinie", Punkte: { Count: >= 2 } pts }) continue;
             if (!c.Projekt.Katalog.Klassen.TryGetValue(e.Klasse, out var kd) || kd.Rolle != "leitung") continue;
             var dn = HlksEinordnung.Dn(e); var w = HlksEinordnung.Strichbreite(c.Detailgrad, dn, M); var mass = HlksMasse.Von(c.Projekt, e);
-            double r = SymbolRadius(M);
+            double r = EinlinigRadius(mass, dn, M);
             for (int i = 1; i < pts.Count; i++)
                 if (Math.Abs(pts[i][0] - pts[i - 1][0]) <= Eps && Math.Abs(pts[i][1] - pts[i - 1][1]) <= Eps && pts[i].Length > 2 && Math.Abs(pts[i][2] - pts[i - 1][2]) > Eps)
                     aus.Add(new(pts[i][0], pts[i][1], r, Math.Min(pts[i][2], pts[i - 1][2]), Math.Max(pts[i][2], pts[i - 1][2])));

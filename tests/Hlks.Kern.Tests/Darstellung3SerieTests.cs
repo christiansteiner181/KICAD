@@ -204,15 +204,15 @@ public class Darstellung3SerieTests
             ["klasse"] = "Ansicht", ["kennzeichen"] = "AN-1OG", ["geschoss"] = "1.OG",
             ["eigenschaften"] = new JsonObject { ["art"] = "grundriss", ["massstab"] = 50, ["schnitthoehe"] = 1000 },
         }));
-        BefehlsErgebnis Rohr1OG(string kz, double z) => p.Ausfuehren("element_anlegen", new JsonObject
+        BefehlsErgebnis Rohr1OG(string kz, double z, double y) => p.Ausfuehren("element_anlegen", new JsonObject
         {
             ["klasse"] = "Rohr", ["kennzeichen"] = kz, ["system"] = "KW", ["geschoss"] = "1.OG",
             ["eigenschaften"] = new JsonObject { ["familientyp"] = "DN 20" }, ["bezuege"] = new JsonObject { ["familie"] = "FAM-1" },
-            ["geometrie"] = new JsonObject { ["art"] = "polylinie", ["punkte"] = Pts([0, 0, z], [3000, 0, z]) },
+            ["geometrie"] = new JsonObject { ["art"] = "polylinie", ["punkte"] = Pts([0, y, z], [3000, y, z]) },
         });
-        Ok(Rohr1OG("RO-2", 2800));
-        Ok(Rohr1OG("RO-3", 3500));
-        Ok(Rohr1OG("RO-4", 4500));
+        Ok(Rohr1OG("RO-2", 2800, 0));      // nebeneinander, damit keine die andere verdeckt (LeitungVerdeckung)
+        Ok(Rohr1OG("RO-3", 3500, 1000));
+        Ok(Rohr1OG("RO-4", 4500, 2000));
         Assert.Equal(2, Strichlinien(Teil(p, "RO-2", "AN-1OG")).Count());       // 2800 < 3000
         Assert.Empty(Strichlinien(Teil(p, "RO-3", "AN-1OG")));
         Assert.Empty(Strichlinien(Teil(p, "RO-4", "AN-1OG")));                 // über der Schnitthöhe 4000: ausgezogen
@@ -384,6 +384,27 @@ public class Darstellung3SerieTests
         Assert.Equal([2000.0, 400.0, 200.0], teile[0].Masse!);
         Assert.Equal([2000.0, 460.0, 260.0], teile[1].Masse!);
         Assert.True(teile[1].NichtSchneiden);
+    }
+
+    [Fact]
+    public void Kreuzung_TiefereLeitungVerdeckt_GrobUnterbrochen()
+    {
+        // Christian 12.11.2026: «leitungen die in einem Grundriss unter einer anderen Leitung durchlaufen (inkl. Dämmung) müssen verdeckt dargestellt
+        // werden», «bei grob wird die verdeckte leitung unterbrochen»
+        var p = MitSerie(false);
+        Ok(Rohr(p, "RO-1", "DN 20", [0, 0, 500], [3000, 0, 500]));          // tiefer
+        Ok(Rohr(p, "RO-2", "DN 20", [1500, -1000, 1500], [1500, 1000, 1500]));   // höher, kreuzt bei x = 1500
+        Aendern(p, "RO-2", new JsonObject { ["daemmdicke"] = 20 });          // Deckfläche 65 mm breit
+        static bool Bei(Primitiv x, double xx) => x.Punkte.Any(q => Math.Abs(q[0] - xx) < 40) || (x.Punkte.Count >= 2 && x.Punkte.Min(q => q[0]) < xx && x.Punkte.Max(q => q[0]) > xx);
+        var t = Teil(p, "RO-1");
+        Assert.Contains(t.Primitive, x => x.Art == "polylinie" && x.Stil.Linie == "strich" && Bei(x, 1500));    // verdeckte Ränder gestrichelt
+        Assert.DoesNotContain(t.Primitive, x => x.Art == "polygon" && Polygone.Innen(x.Punkte, 1500, 0));    // keine Füllung unter RO-2
+        Assert.DoesNotContain(Teil(p, "RO-2").Primitive, x => x.Stil.Linie == "strich");                       // die höhere bleibt ausgezogen
+        // grob: unterbrochen – keine Linie von RO-1 über x = 1500
+        Aendern(p, "AN-EG", new JsonObject { ["detailgrad"] = "grob" });
+        var g = Teil(p, "RO-1");
+        Assert.DoesNotContain(g.Primitive, x => x.Art == "polylinie" && x.Punkte.Min(q => q[0]) < 1500 && x.Punkte.Max(q => q[0]) > 1500);
+        Assert.True(g.Primitive.Count(x => x.Art == "polylinie") >= 2);
     }
 
     // ------------------------------------------------------------------ 3D
