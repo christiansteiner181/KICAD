@@ -24,6 +24,19 @@ public class ParalleleLeitungenTests
         Sauber(p);
     }
 
+    /// <summary>Gesamtprüfung 13.11.2026: die Seite gilt gegenüber der angeklickten Geraden. Klick aussen neben RO-2 (x = 1300) – gegenüber dem ersten
+    /// Stück des Zugs (RO-1) läge der Punkt auf der Innenseite (y > 0), die Parallele entstand dort.</summary>
+    [Fact]
+    public void Waagrecht_LZug_KlickAmZweitenStueck_SeiteGegenueberDerAngeklicktenGeraden()
+    {
+        var p = MitSerie();
+        Ok(Zeichnen(p, "DN 20", [[0, 0, 0], [1000, 0, 0], [1000, 1000, 0]]));   // RO-1, BO-1, RO-2
+        var e = Ok(p.Ausfuehren("parallele_leitungen", new JsonObject { ["leitung"] = "RO-2", ["abstand"] = 200, ["seite"] = new JsonArray(1300, 500) }));
+        var neu = Angelegt(e, "Rohr");
+        Gerade(p, neu[0], [0, -200, 0], [1150, -200, 0]);
+        Gerade(p, neu[1], [1200, -150, 0], [1200, 1000, 0]);
+    }
+
     [Fact]
     public void Oben_ZweiZuege_UebereinanderImAbstand()
     {
