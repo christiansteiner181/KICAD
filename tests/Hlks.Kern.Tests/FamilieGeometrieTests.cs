@@ -40,6 +40,20 @@ public class FamilieGeometrieTests
         Nahe([100, 50, 100], max);
     }
 
+    /// <summary>Gesamtprüfung 13.11.2026: das Netz des Übergangs war nach innen orientiert (Volumen negativ – Normalen in 3D und XR verkehrt);
+    /// oben in der Achse ergab still einen Körper ohne Volumen.</summary>
+    [Fact]
+    public void Uebergang_ist_aussen_orientiert_und_lehnt_oben_in_der_Achse_ab()
+    {
+        var n = NetzBau.Uebergang([0, 0, 0], [60, 80, 20], 50, null, null, (200, 60));
+        Assert.Null(n.GeschlossenFehler());
+        Assert.True(n.Volumen() > 0, $"Volumen {n.Volumen()}");
+        // Handrechnung Zylinder r 50, Länge 100 als Übergang Kreis → Kreis: π·50²·100 = 785 398 mm³ (48-Eck: −0.3 %)
+        Assert.InRange(NetzBau.Uebergang([0, 0, 0], [0, 0, 100], 50, null, 50, null).Volumen(), 785398 * 0.995, 785398);
+        Assert.Contains("oben", Assert.Throws<HlksFehler>(() => NetzBau.Uebergang([0, 0, 0], [0, 0, 100], null, (100, 50), null, (100, 50), [0, 0, 1])).Message);
+        Assert.Contains("kreis", Assert.Throws<HlksFehler>(() => NetzBau.Uebergang([0, 0, 0], [0, 0, 100], -50, null, 50, null)).Message);
+    }
+
     [Fact]
     public void Netz_wird_gedreht_und_verschoben()
     {
@@ -51,6 +65,18 @@ public class FamilieGeometrieTests
         var (min, max) = Huelle(t.Ecken!);
         Nahe([950, 0, 5], min);   // x 0..100 → y 0..100, y 0..50 → x −50..0, dann + 1000 / + 5
         Nahe([1000, 100, 25], max);
+    }
+
+    /// <summary>Gesamtprüfung 13.11.2026: ein übernommenes Netz mit einem verkehrt orientierten Dreieck hatte keinen Umriss von oben (nur «nach oben»
+    /// laufende Dreiecke zählten). Handrechnung: Tetraeder mit Grundfläche 100 × 50 / 2 = 2500 mm².</summary>
+    [Fact]
+    public void Umriss_eines_uneinheitlich_orientierten_Netzes_ist_vollstaendig()
+    {
+        var a = Aufloesen("""
+            { "id": "n", "art": "netz", "ecken": [[0,0,0],[100,0,0],[0,50,0],[0,0,20]], "dreiecke": [[0,2,1],[0,1,3],[0,3,2],[1,3,2]], "herkunft": "fiktiv" }
+            """);
+        var u = Assert.Single(a.Umriss("mittel"));
+        Assert.Equal(2500, Math.Abs(NetzBau.Flaeche(u.Aussen.Select(p => (p[0], p[1])).ToList())), 1);
     }
 
     [Fact]

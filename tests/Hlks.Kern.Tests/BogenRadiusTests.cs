@@ -77,4 +77,27 @@ public class BogenRadiusTests
         Assert.DoesNotContain(a.Teile("grob"), t => t.Art == "quader");
         Assert.Equal(a.Teile("mittel").Count, a.Teile("grob").Count);
     }
+
+    /// <summary>Gesamtprüfung 13.11.2026: die Achse des schrägen Abzweigs (45°) endet im Achsschnittpunkt – vorher im Lot vom Anschluss auf den
+    /// Durchgang (hier an dessen Ende), die einlinige Darstellung und die Dämmung liefen damit quer statt schräg.</summary>
+    [Fact]
+    public void Achse_des_schraegen_Abzweigs_endet_im_Achsschnittpunkt()
+    {
+        var f = FamilieTestHilfe.Def(FamilieTestHilfe.JsonAus("""
+            { "format": 1, "name": "Abzweig 45 (fiktiv)", "kategorie": "TStueck", "parameter": [ { "name": "winkel", "art": "typ", "datentyp": "winkel", "wert": 45 } ],
+              "typen": [{ "name": "A", "werte": {} }],
+              "koerper": [ { "id": "d", "art": "zylinder", "von": [-100, 0, 0], "nach": [100, 0, 0], "r": 55 },
+                           { "id": "c", "art": "zylinder", "von": [0, 0, 0], "nach": ["-200 * cos(winkel)", "200 * sin(winkel)", 0], "r": 55 } ],
+              "anschluesse": [
+                { "name": "a", "medium": "*", "fluss": "beide", "art": "rohr", "form": "rund", "dn": 100, "lage": [-100, 0, 0], "richtung": [-1, 0, 0] },
+                { "name": "b", "medium": "*", "fluss": "beide", "art": "rohr", "form": "rund", "dn": 100, "lage": [100, 0, 0], "richtung": [1, 0, 0] },
+                { "name": "c", "medium": "*", "fluss": "beide", "art": "rohr", "form": "rund", "dn": 100, "lage": ["-200 * cos(winkel)", "200 * sin(winkel)", 0], "richtung": ["-cos(winkel)", "sin(winkel)", 0] } ] }
+            """));
+        Assert.True(f.Gueltig, string.Join("; ", f.Fehler.Select(x => x.Meldung)));
+        var a = FamilienAuswertung.Aufloesen(f, "A", null);
+        Assert.Equal(2, a.Achsen.Count);
+        var abzweig = a.Achsen[1];
+        Assert.Equal(0, abzweig[0][0], 6); Assert.Equal(0, abzweig[0][1], 6);                      // Fuss im Achsschnittpunkt
+        Assert.Equal(-141.421356, abzweig[1][0], 4); Assert.Equal(141.421356, abzweig[1][1], 4);   // Anschluss c: 200·(−cos 45°, sin 45°)
+    }
 }

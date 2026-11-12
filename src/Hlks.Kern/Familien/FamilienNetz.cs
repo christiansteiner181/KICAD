@@ -243,8 +243,18 @@ public static class NetzBau
     {
         const int N = 48;
         var p0 = V3.Aus(von); var p1 = V3.Aus(nach);
+        if ((p1 - p0).Laenge < Eps) throw new HlksFehler("Übergang: von und nach liegen aufeinander.", "Zwei verschiedene Punkte angeben.");
+        foreach (var (r, q, wo) in new[] { (r1, q1, "profil"), (r2, q2, "profil_nach") })
+        {
+            if (r is null && q is null) throw new HlksFehler($"Übergang: {wo} fehlt.", "kreis (Radius) oder rechteck [b, h] angeben.");
+            if (r is double rr && !(rr > 0)) throw new HlksFehler($"Übergang: {wo}.kreis = {rr} ist ungültig.", "Radius > 0 angeben.");
+            if (r is null && q is { } qq && !(qq.B > 0 && qq.H > 0)) throw new HlksFehler($"Übergang: {wo}.rechteck {qq.B} × {qq.H} ist ungültig.", "b und h > 0 angeben.");
+        }
         var w = (p1 - p0).Einheit();
         var o = oben is null ? (Math.Abs(w.Z) > 0.9 ? new V3(0, 1, 0) : new V3(0, 0, 1)) : V3.Aus(oben);
+        // oben in der Achse (oder [0, 0, 0]) gibt keine Richtung für die Höhe: die Ringe fielen auf die Achse zusammen (Körper ohne Volumen)
+        if ((o - w * o.Mal(w)).Laenge < 1e-6 * Math.Max(1, o.Laenge))
+            throw new HlksFehler("Übergang: oben liegt in der Achse von → nach und gibt keine Richtung für die Höhe h.", "oben quer zur Achse angeben, z. B. [0, 0, 1], oder weglassen.");
         var u = (o - w * o.Mal(w)).Einheit();   // Richtung der Höhe h
         var v = w.Kreuz(u).Einheit();             // Richtung der Breite b
         List<V3> Ring(V3 m, double? r, (double B, double H)? q)
@@ -270,6 +280,7 @@ public static class NetzBau
         for (int i = 0; i < N; i++) { int j = (i + 1) % N; n.Viereck(a0[i], a0[j], a1[j], a1[i]); }
         int c0 = n.Ecke(p0), c1 = n.Ecke(p1);
         for (int i = 0; i < N; i++) { int j = (i + 1) % N; n.Dreieck(c0, a0[j], a0[i]); n.Dreieck(c1, a1[i], a1[j]); }
+        n.Orientieren();   // die Ringe laufen um −w: ohne das zeigten alle Normalen nach innen (Volumen negativ)
         return n;
     }
 

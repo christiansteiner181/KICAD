@@ -304,4 +304,13 @@ public class FamilieFormelTests
         Assert.Equal(750, a1.Wert("oberkante")!.Value.Zahl);
         Assert.Equal(900, e1.Wert("oberkante")!.Value.Zahl);
     }
+
+    /// <summary>Gesamtprüfung 13.11.2026: sin und cos sind bei Vielfachen von 90° genau – cos(90) war 6e-17, l / cos(90) damit 1.6e16 statt ein Fehler.</summary>
+    [Fact]
+    public void SinCos_bei_Vielfachen_von_90_Grad_genau()
+    {
+        Assert.Equal(0, Z("cos(90)")); Assert.Equal(0, Z("sin(180)")); Assert.Equal(-1, Z("cos(180)")); Assert.Equal(-1, Z("sin(-90)")); Assert.Equal(1, Z("cos(-360)"));
+        Assert.Equal(0.5, Z("cos(60)"), 12); Assert.Equal(Math.Sqrt(2) / 2, Z("sin(45)"), 12);
+        Assert.Contains("Division durch 0", Fehler("100 / cos(90)").Message);
+    }
 }

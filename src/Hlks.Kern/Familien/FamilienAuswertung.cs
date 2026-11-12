@@ -547,7 +547,8 @@ public static class FamilienKoerper
     /// <summary>Achse eines Formteils für die einlinige Darstellung (Detailgrad grob, Befund Christian 02.11.2026: «Ansichten der Familien, fehlende Radien»;
     /// «muss auch beim Konstruieren korrekt aussehen»): Bogen von Anschluss a über den Kreisbogen (Radius wie BogenMitRadius: Parameter biegeradius/
     /// radius/r/R, sonst bis zum kürzeren Rohrende) zu Anschluss b; Geberit PE und Silent-db20 ohne segmente mit Gehrung, mit segmente als Segmentbogen;
-    /// zwei Anschlüsse sonst gerade; drei und mehr: die durchgehende Achse (zwei gegenläufige Anschlüsse) und je Abgang ein Stück bis auf diese Achse.</summary>
+    /// zwei Anschlüsse sonst gerade; drei und mehr: die durchgehende Achse (zwei gegenläufige Anschlüsse) und je Abgang ein Stück in seiner Richtung
+    /// bis auf diese Achse (schräger Abzweig: bis zum Achsschnittpunkt).</summary>
     public static List<List<double[]>> Achsen(FamAufloesung a, bool eckig = false)
     {
         var f = a.Familie;
@@ -567,7 +568,17 @@ public static class FamilienKoerper
         for (int i = 0; i < an.Count; i++)
         {
             if (i == ia || i == ib) continue;
-            var fuss = l2 < 1e-9 ? p[ia] : p[ia] + dir * Math.Clamp((p[i] - p[ia]).Mal(dir) / l2, 0, 1);
+            // Fuss des Abgangs: wo seine Achse (Anschluss rückwärts entlang der Richtung) die durchgehende Achse trifft – beim schrägen
+            // Abzweig (45°, 88.5°) der Achsschnittpunkt, nicht das Lot vom Anschluss; läuft der Abgang parallel zur Achse, das Lot
+            var fuss = p[ia];
+            if (l2 >= 1e-9)
+            {
+                var u = dir.Einheit(); var v = -r[i].Einheit();
+                double b = u.Mal(v), nenner = 1 - b * b, laenge = Math.Sqrt(l2);
+                var w = p[ia] - p[i];
+                double s = nenner < 1e-6 ? (p[i] - p[ia]).Mal(u) : (b * v.Mal(w) - u.Mal(w)) / nenner;
+                fuss = p[ia] + u * Math.Clamp(s, 0, laenge);
+            }
             achsen.Add([fuss.Feld(), p[i].Feld()]);
         }
         return achsen;
@@ -739,12 +750,19 @@ public static class FamilienUmriss
                 case "koerper":
                 {
                     var e = t.Ecken!;
+                    static double Doppelt(double[] p0, double[] p1, double[] p2) => (p1[0] - p0[0]) * (p2[1] - p0[1]) - (p1[1] - p0[1]) * (p2[0] - p0[0]);
+                    // Geschlossenes, einheitlich orientiertes Netz: die projizierten Flächen heben sich auf, die Hälfte der Dreiecke deckt die Projektion
+                    // ganz. Ein übernommenes Netz (Körper «netz» aus IFC/STL) kann offen oder uneinheitlich orientiert sein – dann zählen alle Dreiecke,
+                    // sonst fehlten Stücke des Umrisses (oder er blieb leer).
+                    double plus = 0, minus = 0;
+                    foreach (var d in t.Dreiecke!) { var f = Doppelt(e[d[0]], e[d[1]], e[d[2]]); if (f > 0) plus += f; else minus -= f; }
+                    bool alle = Math.Abs(plus - minus) > 1e-3 * Math.Max(plus, minus);
                     foreach (var d in t.Dreiecke!)
                     {
                         var p0 = e[d[0]]; var p1 = e[d[1]]; var p2 = e[d[2]];
-                        double flaeche = (p1[0] - p0[0]) * (p2[1] - p0[1]) - (p1[1] - p0[1]) * (p2[0] - p0[0]);
-                        if (flaeche <= 1e-6) continue;   // nur nach oben zeigende Dreiecke (geschlossenes Netz: decken die Projektion ganz)
-                        pfade.Add([new PointD(p0[0], p0[1]), new PointD(p1[0], p1[1]), new PointD(p2[0], p2[1])]);
+                        double flaeche = Doppelt(p0, p1, p2);
+                        if (flaeche > 1e-6) pfade.Add([new PointD(p0[0], p0[1]), new PointD(p1[0], p1[1]), new PointD(p2[0], p2[1])]);
+                        else if (alle && flaeche < -1e-6) pfade.Add([new PointD(p0[0], p0[1]), new PointD(p2[0], p2[1]), new PointD(p1[0], p1[1])]);
                     }
                     break;
                 }
