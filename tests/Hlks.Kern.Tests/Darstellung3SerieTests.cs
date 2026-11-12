@@ -118,9 +118,10 @@ public class Darstellung3SerieTests
         var plan = Grafik.Plan(p, "AN-EG");
         var dm = plan.Teile.Single(x => x.Id == "daemmung");
         var b = Flaeche(dm);
+        var rohrFarbe = HlksEinordnung.Farbe(HlksEinordnung.Medium(p, Hole(p, "RO-1")));
         Assert.Equal(HlksGrafik.DaemmDeckkraft, b.Stil.Deckkraft);
         Assert.Null(b.Stil.Stift);   // Fläche ohne Rand; die Ränder sind dünne schwarze Linien
-        Assert.All(dm.Primitive.Where(x => x.Art == "polylinie"), x => { Assert.Equal(HlksGrafik.DaemmLinie, x.Stil.Farbe); Assert.Equal(Stifte.Hilf, x.Stil.Stift); Assert.Equal("voll", x.Stil.Linie); });
+        Assert.All(dm.Primitive.Where(x => x.Art == "polylinie"), x => { Assert.Equal(rohrFarbe, x.Stil.Farbe); Assert.Equal(Stifte.Fein, x.Stil.Stift); Assert.Equal("voll", x.Stil.Linie); });   // Rand in Rohrfarbe, fein (12.11.2026)
         Assert.Equal((3000.0, 65.0), Ausdehnung(b));
         Assert.True(plan.Teile.IndexOf(dm) < plan.Teile.FindIndex(x => x.Id == Hole(p, "RO-1").Id));   // hinter dem Rohr
         var t = Teil(p, "RO-1");

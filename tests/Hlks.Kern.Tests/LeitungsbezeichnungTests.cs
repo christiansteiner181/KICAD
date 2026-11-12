@@ -80,7 +80,7 @@ public class LeitungsbezeichnungTests
         var fl = Assert.Single(dm.Primitive, x => x.Art == "polygon");   // Fläche ohne Rand, Ränder als dünne schwarze Linien
         Assert.Equal(HlksGrafik.DaemmFuellung(HlksEinordnung.Farbe(HlksEinordnung.Medium(p, k))), fl.Stil.Fuellung);   // Rohrfarbe (12.11.2026)
         Assert.NotEqual(HlksGrafik.DaemmGelb, fl.Stil.Fuellung); Assert.Equal(HlksGrafik.DaemmDeckkraft, fl.Stil.Deckkraft);
-        Assert.All(dm.Primitive.Where(x => x.Art == "polylinie"), x => Assert.Equal(HlksGrafik.DaemmLinie, x.Stil.Farbe));
+        Assert.All(dm.Primitive.Where(x => x.Art == "polylinie"), x => { Assert.Equal(HlksEinordnung.Farbe(HlksEinordnung.Medium(p, k)), x.Stil.Farbe); Assert.Equal(Stifte.Fein, x.Stil.Stift); });   // Rand in Rohrfarbe, fein
         Assert.True(p.Ausfuehren("element_aendern", new JsonObject { ["element"] = "AN-L", ["eigenschaften"] = new JsonObject { ["detailgrad"] = "grob" } }).Angenommen);
         var grob = Prims();
         Assert.Single(grob, x => x.Art == "kreis" && x.Stil.Fuellung == HlksGrafik.DaemmGelb);

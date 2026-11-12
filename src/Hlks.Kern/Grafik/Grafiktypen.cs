@@ -20,9 +20,11 @@ public static class Stifte
     // Haustechnik (Christian 09.11.2026: «linien stärken müssen noch angepasst werden. konturen 0.5mm, Achsen und hilfslinien 0.2mm»; gilt nur für
     // die Haustechnik, die Architektur behält die drei Stifte nach SIA 400)
     public const string Kontur = "kontur";  // 0.50 mm: Konturen von Leitungen, Kanälen, Formteilen, Steigleitungen und Familien der Haustechnik
-    public const string Hilf = "hilf";      // 0.20 mm: Achsen, Dämmkanten und Hilfslinien der Haustechnik
+    public const string Hilf = "hilf";      // 0.20 mm: Achsen und Hilfslinien der Haustechnik
+    // Dämmkanten in der Rohrfarbe (Christian 12.11.2026: «die aussenkontur in Rohrfarbe jedoch wesentlich feiner»; ANNAHME Hauptlauf: 0.10 mm = halbe Hilfslinie)
+    public const string Fein = "fein";      // 0.10 mm
 
-    public static double Mm(string? stift) => stift switch { Dick => 0.70, Kontur => 0.50, Mittel => 0.35, Hilf => 0.20, _ => 0.18 };
+    public static double Mm(string? stift) => stift switch { Dick => 0.70, Kontur => 0.50, Mittel => 0.35, Hilf => 0.20, Fein => 0.10, _ => 0.18 };
 }
 
 /// <summary>Wie ein Primitiv gezeichnet wird.</summary>

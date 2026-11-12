@@ -4,7 +4,8 @@
 // Rohrfarbe (Christian 12.11.2026: «wird die Dämmung gezeigt, so soll sie die Rohrfarbe mit transparenz erhalten»; bis dahin gelb).
 // Die Ränder kommen je Teil dazu, nach Höhe geschichtet (Christian 09.11.2026: «bei dämmungen passt die darstellung bei bogen nach oben/bogen nach unten.
 // hier die unsichtbaren dämmkanten gestrichelt darstellen»): ein Rand unter einem höher liegenden Teil ist verdeckt und gestrichelt, ein Rand im Inneren
-// eines gleich hohen Teils entfällt (keine Schleifen am Innenradius), sonst ist er schwarz dünn ausgezogen.
+// eines gleich hohen Teils entfällt (keine Schleifen am Innenradius), sonst ist er ausgezogen – in der Rohrfarbe, Stift fein 0.10 mm (Christian 12.11.2026:
+// «die aussenkontur in Rohrfarbe jedoch wesentlich feiner»; bis dahin schwarz 0.2 mm).
 // Höher liegt: bei waagrechten Teilen das Teil, dessen tiefste Achshöhe über der höchsten des anderen liegt (gleiche oder überlappende Höhen = gleiche Lage,
 // auch Leitungen mit Gefälle und ihre Formteile); mit einer Steig- bzw. Fallleitung das Teil, dessen mittlere Achshöhe über ihrer Mitte liegt.
 // Detailgrad fein und mittel; grob: Punkt (HlksGrafik). Ganz unter dem Geschossboden (verdeckt) zeichnet HlksGrafik gestrichelt.
@@ -144,7 +145,7 @@ public static class DaemmGrafik
                     teil.Primitive.Add(new Primitiv
                     {
                         Art = "polylinie", Punkte = r.Select(q => new[] { q.x, q.y }).ToList(),
-                        Stil = new Stil { Stift = Stifte.Hilf, Linie = linie, Farbe = HlksGrafik.DaemmLinie },
+                        Stil = new Stil { Stift = Stifte.Fein, Linie = linie, Farbe = HlksGrafik.DaemmRand(p.Farbe) },
                     });
         }
         yield return teil;

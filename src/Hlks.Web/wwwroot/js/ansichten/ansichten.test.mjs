@@ -77,8 +77,8 @@ test('Stiftbreiten: duenn 0.18, mittel 0.35, dick 0.70 mm Papier × Massstab in 
   assert.equal(pg.strichbreite(undefined, 50), 9);           // wie Kern: unbekannt = dünn
   const cs = kernQuelle('Grafik/Grafiktypen.cs');
   if (cs) {
-    assert.match(cs, /Dick => 0\.70, Kontur => 0\.50, Mittel => 0\.35, Hilf => 0\.20, _ => 0\.18/);
-    assert.deepEqual([pg.STIFT_MM.dick, pg.STIFT_MM.kontur, pg.STIFT_MM.mittel, pg.STIFT_MM.hilf, pg.STIFT_MM.duenn], [0.70, 0.50, 0.35, 0.20, 0.18]);
+    assert.match(cs, /Dick => 0\.70, Kontur => 0\.50, Mittel => 0\.35, Hilf => 0\.20, Fein => 0\.10, _ => 0\.18/);
+    assert.deepEqual([pg.STIFT_MM.dick, pg.STIFT_MM.kontur, pg.STIFT_MM.mittel, pg.STIFT_MM.hilf, pg.STIFT_MM.fein, pg.STIFT_MM.duenn], [0.70, 0.50, 0.35, 0.20, 0.10, 0.18]);
   }
   const m = (stift) => pg.primitivSvg(prim('linie', { punkte: [[0, 0], [1000, 0]] }, { stift }), ctx(50));
   assert.match(m('duenn'), /class="sd pl"[^>]*stroke-width="9"/);
@@ -89,10 +89,16 @@ test('Stiftbreiten: duenn 0.18, mittel 0.35, dick 0.70 mm Papier × Massstab in 
 
 test('Mindestbreite ein Bildschirmpixel: CSS setzt stroke-width: max(Stift × --m, --minpx); grundriss.js stellt --minpx beim Zoomen', () => {
   const css = lies('css/ansichten.css');
-  for (const [klasse, mm] of [['sd', '0.18'], ['sm', '0.35'], ['sk', '0.70'], ['skt', '0.50'], ['sh', '0.20']])
+  for (const [klasse, mm] of [['sd', '0.18'], ['sm', '0.35'], ['sk', '0.70'], ['skt', '0.50'], ['sh', '0.20'], ['sf', '0.10']])
     assert.match(css, new RegExp(`\\.gr-svg \\.${klasse} \\{ stroke-width: max\\(calc\\(var\\(--m\\) \\* ${mm.replace('.', '\\.')}px\\), var\\(--minpx\\)\\); \\}`), klasse);
   assert.match(lies('js/ansichten/grundriss.js'), /setProperty\('--minpx'/);
   assert.match(lies('js/ansichten/grundriss.js'), /setProperty\('--m'/);
+});
+
+test('Dunkles Design: Farbanteil ab Deckkraft 0.2 mindestens 60 %, darunter anteilig (Dämmung 0.15, 12.11.2026)', () => {
+  assert.equal(pg.dunkelAnteil(0.2), 0.6);
+  assert.equal(pg.dunkelAnteil(0.35), 0.6);
+  assert.ok(Math.abs(pg.dunkelAnteil(0.15) - 0.45) < 1e-9);
 });
 
 test('Linienarten als dasharray in Modell-mm – Längen wie im PDF (PdfZeichner.cs)', () => {

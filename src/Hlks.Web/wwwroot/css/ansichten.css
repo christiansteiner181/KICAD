@@ -23,6 +23,8 @@
 /* Haustechnik (Christian 09.11.2026): Konturen 0.5 mm, Achsen und Hilfslinien 0.2 mm */
 .gr-svg .skt { stroke-width: max(calc(var(--m) * 0.50px), var(--minpx)); }
 .gr-svg .sh { stroke-width: max(calc(var(--m) * 0.20px), var(--minpx)); }
+/* Dämmkanten in der Rohrfarbe (Christian 12.11.2026: «wesentlich feiner»): 0.10 mm */
+.gr-svg .sf { stroke-width: max(calc(var(--m) * 0.10px), var(--minpx)); }
 .gr-svg .pk circle { r: max(calc(var(--m) * 0.1px), calc(var(--minpx) / 2)); }
 .gr-svg .pt { font-family: Arial, Helvetica, sans-serif; stroke: var(--papier); stroke-opacity: .7; stroke-width: 2px; vector-effect: non-scaling-stroke;
   paint-order: stroke; stroke-linejoin: round; pointer-events: none; }

@@ -25,11 +25,11 @@ export function nachEbenen(teile) {
 }
 
 /** Stiftbreiten in Papier-mm (Spiegel von Stifte.Mm, SIA 400:2000 B.3.1). */
-export const STIFT_MM = Object.freeze({ duenn: 0.18, mittel: 0.35, dick: 0.70, kontur: 0.50, hilf: 0.20 });   // kontur/hilf: Haustechnik (09.11.2026)
+export const STIFT_MM = Object.freeze({ duenn: 0.18, mittel: 0.35, dick: 0.70, kontur: 0.50, hilf: 0.20, fein: 0.10 });   // kontur/hilf: Haustechnik (09.11.2026), fein: Dämmkanten (12.11.2026)
 export const stiftMm = (stift) => STIFT_MM[stift] ?? STIFT_MM.duenn;
 /** Strichbreite in Modell-mm bei Massstab 1:massstab. */
 export const strichbreite = (stift, massstab) => stiftMm(stift) * massstab;
-const STIFT_KLASSE = { duenn: 'sd', mittel: 'sm', dick: 'sk', kontur: 'skt', hilf: 'sh' };
+const STIFT_KLASSE = { duenn: 'sd', mittel: 'sm', dick: 'sk', kontur: 'skt', hilf: 'sh', fein: 'sf' };
 
 /** Strichmuster der Linienarten in Papier-mm (Strich, Lücke, …) – wie PdfZeichner.cs. */
 export const LINIENMUSTER = Object.freeze({ strich: [3.0, 1.0], strichpunkt: [6.0, 1.0, 0.5, 1.0], punkt: [0.5, 1.0], achse: [3.0, 0.6, 0.3, 0.6], strichfein: [0.8, 0.5] });
@@ -102,7 +102,7 @@ function fuellung(stil) {
   // Dunkles Design (Christian 09.11.2026: «die darstellung der transparenten flächen wird im dunklen modeu abgedunkelt. das ist nicht gewollt»): eine
   // transparente Farbfläche wird mit Weiss vorgemischt (wie auf weissem Papier) und fast deckend gezeichnet, statt mit dem dunklen Grund zu mischen
   // mindestens 60 % der Farbe, damit sie erkennbar bleibt (Christian 09.11.2026: «ablaufrohre werden grau hinterlegt. dies muss braun sein»)
-  const hell = (f) => (dunkel() && deck ? { klasse: '', attr: ` fill="${mitWeiss(f, Math.max(DUNKEL_FARBANTEIL, d))}" fill-opacity="${zahl(DUNKEL_DECKKRAFT)}"` } : { klasse: '', attr: ` fill="${f}"${deck}` });
+  const hell = (f) => (dunkel() && deck ? { klasse: '', attr: ` fill="${mitWeiss(f, dunkelAnteil(d))}" fill-opacity="${zahl(DUNKEL_DECKKRAFT)}"` } : { klasse: '', attr: ` fill="${f}"${deck}` });
   switch (stil?.fuellung) {
     case undefined: case null: case '': return { klasse: '', attr: ' fill="none"' };
     case 'schnitt': { const f = hex(stil.farbe); return f ? hell(f) : { klasse: 'pf', attr: deck }; }
@@ -115,6 +115,9 @@ function fuellung(stil) {
 const DUNKEL_DECKKRAFT = 0.85;
 /** ANNAHME Gestaltung: Mindestanteil der Farbe beim Vormischen mit Weiss im dunklen Design. */
 const DUNKEL_FARBANTEIL = 0.6;
+/** Farbanteil im dunklen Design: ab Deckkraft 0.2 (Abwasser, Kanäle) mindestens DUNKEL_FARBANTEIL; darunter anteilig, damit sehr transparente Flächen
+ *  (Dämmung 0.15, Christian 12.11.2026: «dämmung noch etwas mehr transparenz») auch im dunklen Design heller bleiben. */
+export const dunkelAnteil = (d) => (d >= 0.2 ? Math.max(DUNKEL_FARBANTEIL, d) : DUNKEL_FARBANTEIL * Math.max(0, d) / 0.2);
 const dunkel = () => typeof document !== 'undefined' && document.documentElement?.dataset?.design === 'dunkel';
 /** #rrggbb mit Deckkraft d auf Weiss gemischt. */
 export function mitWeiss(f, d) {

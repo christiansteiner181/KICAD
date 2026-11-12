@@ -334,16 +334,20 @@ public sealed class HlksGrafik : IGrafikquelle
     /// Punkt im Detailgrad grob Radius 0.8 mm Papier.</summary>
     internal const string DaemmGelb = "#ffd400";
     internal const string DaemmLinie = "#000000";
-    internal const double DaemmDeckkraft = 0.35;
+    internal const double DaemmDeckkraft = 0.15;   // bis 12.11.2026 0.35 (Christian 12.11.2026: «dämmung noch etwas mehr transparenz»)
     internal const double DaemmPunktRadius = 0.8;
 
     /// <summary>Füllung der Dämmung: die Rohrfarbe (Medienfarbe) mit Transparenz (Christian 12.11.2026: «wird die Dämmung gezeigt, so soll sie die
     /// Rohrfarbe mit transparenz erhalten»); ohne Medienfarbe die Planfarbe. Der Punkt im Detailgrad grob bleibt gelb.</summary>
     internal static string DaemmFuellung(string? farbe) => farbe ?? "schnitt";
 
+    /// <summary>Aussenkontur der Dämmung in der Rohrfarbe, Stift fein (Christian 12.11.2026: «die aussenkontur in Rohrfarbe jedoch wesentlich feiner»);
+    /// ohne Medienfarbe die Planfarbe (null).</summary>
+    internal static string? DaemmRand(string? farbe) => farbe;
+
     static Stil DaemmStil(bool verdeckt, string? farbe) => verdeckt
-        ? new Stil { Stift = Stifte.Hilf, Linie = "strich", Farbe = DaemmLinie }
-        : new Stil { Stift = Stifte.Hilf, Linie = "voll", Farbe = DaemmLinie, Fuellung = DaemmFuellung(farbe), Deckkraft = DaemmDeckkraft };
+        ? new Stil { Stift = Stifte.Fein, Linie = "strich", Farbe = DaemmRand(farbe) }
+        : new Stil { Stift = Stifte.Fein, Linie = "voll", Farbe = DaemmRand(farbe), Fuellung = DaemmFuellung(farbe), Deckkraft = DaemmDeckkraft };
 
     /// <summary>Dämmung als Band der Dämmbreite: dünne schwarze Ränder, gelbe transparente Füllung, ohne eigene Achse.</summary>
     internal static IEnumerable<Primitiv> DaemmBand(List<double[]> xy, double breite, string? farbe = null)
@@ -354,7 +358,7 @@ public sealed class HlksGrafik : IGrafikquelle
         var links = HlksLinien.Versatz(xy, breite / 2); var rechts = HlksLinien.Versatz(xy, -breite / 2);
         if (links.Count < 2 || rechts.Count < 2) yield break;
         yield return new Primitiv { Art = "polygon", Punkte = links.Concat(Enumerable.Reverse(rechts)).ToList(), Stil = new Stil { Stift = null, Fuellung = DaemmFuellung(farbe), Deckkraft = DaemmDeckkraft } };
-        foreach (var r in Raender(xy, breite, DaemmLinie, "voll")) yield return r;
+        foreach (var r in Raender(xy, breite, DaemmRand(farbe), "voll", Stifte.Fein)) yield return r;
     }
 
     /// <summary>Rahmen eckiger Kanäle im Grundriss: je Rahmen ein Rechteck quer zur Achse (Kanalbreite + 2 × Überstand, Profiltiefe entlang der Achse).</summary>
