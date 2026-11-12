@@ -751,6 +751,14 @@ public sealed class SpeicherTests : IDisposable
         var spaeter = c.Synchronisieren();
         Assert.Equal(0, spaeter.NeuePakete);
         Assert.Empty(spaeter.Konflikte);
+
+        // Gegenprüfung B6: Kopie, die VOR dem Original sortiert («(1) …»), im selben Lauf – das Original kam danach ein zweites Mal
+        File.Copy(datei, Path.Combine(Unterordner("aenderungen"), "(1) " + id + ".json"));
+        File.Delete(Path.Combine(Unterordner("aenderungen"), id + "-PC2.json"));
+        var d = Oeffnen("D", "pc-d");
+        Assert.Single(d.Verlauf, p => p.Id == id);
+        Assert.Equal("von A", d.Modell.Finde("GEB-X")!.Name);
+        Assert.Equal(a.Modell.Pruefsumme(), d.Modell.Pruefsumme());
     }
 
     [Fact]

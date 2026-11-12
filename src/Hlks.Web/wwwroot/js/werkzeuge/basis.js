@@ -29,7 +29,7 @@ import { werte, rasterWert, katalogLaden } from './optionen.js';
 import { WerkzeugFehler } from './parameter.js';
 import * as S from './schicht.js';
 import { fangArten, einmalVerbraucht, polarFuer } from './fangwahl.js';   // B5: Fangeinstellungen und Fang-Kürzel; Polarfang
-import { Arbeitsreihe } from './reihe.js';
+import { Arbeitsreihe, klickEinreihen } from './reihe.js';
 
 const PLANARTEN = ['grundriss', 'schnitt', 'ansicht'];
 const DOPPELKLICK_MS = 400;
@@ -347,7 +347,7 @@ class Lauf {
       this.run(() => this.def.klick?.(this.z, fang, this.ctx));
       return true;
     }
-    if (this.wartetAufBenutzer) return true;
+    if (!klickEinreihen(this.def, this.wartetAufBenutzer)) return true;
     // Ein Schritt läuft noch: der Klick wird eingereiht. Sein Fang wird erst dann bestimmt, weil Orthogonal, Polar, Lot und die eigenen
     // Fangziele vom Punkt abhängen, den der laufende Schritt gerade setzt.
     const maus = this.maus ? [...this.maus] : null, shift = this.shift;
@@ -415,8 +415,12 @@ class Lauf {
     const zahl = zahlAusText(this.tipp);
     this.tipp = '';
     if (zahl === null) { this.zeichnen(); return; }
-    const fang = this.fang;
+    // Läuft noch ein Schritt, wird die Eingabe eingereiht – ihr Fang (Richtung der Länge) wird wie beim eingereihten Klick erst dann bestimmt:
+    // Orthogonal, Polar und Lot hängen am Punkt, den der laufende Schritt gerade setzt (Gegenprüfung B3).
+    const eingereiht = this.beschaeftigt, maus = this.maus ? [...this.maus] : null, shift = this.shift;
+    const beimTippen = this.fang;
     this.run(async () => {
+      const fang = eingereiht && maus ? this.fangFuer(maus, shift) : beimTippen;
       if (this.def.eingabe) { await this.def.eingabe(this.z, zahl, fang, this.ctx); return; }
       const letzter = this.def.letzterPunkt?.(this.z);
       if (!letzter || !fang) return;

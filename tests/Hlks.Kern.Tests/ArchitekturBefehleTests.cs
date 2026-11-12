@@ -547,4 +547,28 @@ public class ArchitekturBefehleTests
         // rechtwinklig bleibt die halbe Dicke der anderen Wand (Spezifikation Modul 1a)
         Assert.Equal(100, Wandgeometrie.Eckverlaengerung(150, 200, 1, 0));
     }
+
+    [Fact]
+    public void SchraegerAnschluss_EndeAufDerFlaeche_WandumrissGeschlossen()
+    {
+        // Gegenprüfung B1. Wand o: Achse y = 0, 200 mm. Wand w: 200 mm, Richtung (0.707, −0.707), Achsende auf der Fläche von o bei
+        // (2000, 100). Handrechnung: bis zur Achse fehlen quer 100 mm → e = (100 + 100 − 100 · cos 45°) / sin 45° = 182.84 mm; die Ecken
+        // des Wandendes liegen dann bei (2058.6, −100) (abgewandte Fläche) und (2200, 41.4) (in der Wand). Fläche des Umrisses:
+        // 5000 · 200 + 3000 · 200 = 1.6 m² (der schräge Schnitt bei y = 100 lässt die mittlere Länge 3000). Ohne den Abstand (41.4 mm)
+        // blieb am Anschluss eine Kerbe offen.
+        var p = Neu();
+        double c = Math.Sqrt(0.5);
+        Ok(p.Ausfuehren("wand_zeichnen", new JsonObject { ["geschoss"] = "EG", ["punkte"] = Pts([0, 0], [5000, 0]), ["dicke"] = 200 }));
+        Ok(p.Ausfuehren("wand_zeichnen", new JsonObject { ["geschoss"] = "EG", ["punkte"] = Pts([2000 - 3000 * c, 100 + 3000 * c], [2000, 100]), ["dicke"] = 200 }));
+        var l = Wandgeometrie.DesGeschosses(p.Modell, Kat, Hole(p, "EG").Id);
+        var w = l.Single(x => Math.Abs(x.Uy) > 0.1);
+        Assert.Equal(182.843, w.VerlEnde, 3);
+        Assert.Equal(0, w.VerlAnfang, 9);
+        var umriss = Polygone.Vereinigen(new Clipper2Lib.PathsD(l.Select(x => x.Band())));
+        Assert.Single(umriss);
+        Assert.InRange(Math.Abs(Clipper2Lib.Clipper.Area(umriss)), 1.6e6 - 10, 1.6e6 + 10);
+        Assert.All(umriss[0], q => Assert.True(q.y >= -100.01, $"Punkt ({q.x}, {q.y}) steht über die abgewandte Fläche vor"));
+        // Ende schon auf der abgewandten Fläche: nichts mehr zu verlängern
+        Assert.Equal(0, Wandgeometrie.Eckverlaengerung(200, 200, c, c, -100));
+    }
 }

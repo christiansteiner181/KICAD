@@ -266,6 +266,9 @@ public class KiSicherheitTests
                      ("bcf_export", new JsonObject { ["datei"] = @"\\203.0.113.5\x\k.bcf" }),
                      ("aussparungen_ifc", new JsonObject { ["datei"] = Path.Combine(t.Aussen, "a.ifc") }),
                      ("plan_pdf", new JsonObject { ["planblatt"] = "PB-1", ["datei"] = Path.Combine(t.Aussen, "p.pdf") }),
+                     // Gegenprüfung B4: diese zwei schrieben für die KI an jeden Ort
+                     ("baustelle_export", new JsonObject { ["rolle"] = "bauleitung", ["stand"] = "arbeitsstand", ["datei"] = Path.Combine(t.Aussen, "b.html") }),
+                     ("ifc_export", new JsonObject { ["datei"] = Path.Combine(t.Aussen, "m.ifc") }),
                  })
         {
             var f = Assert.Throws<HlksFehler>(() => Tuer.Abfrage(t.Ki, abfrage, par));

@@ -8,6 +8,12 @@
 
 export const REIHE_MAX = 16;   // Annahme: mehr Eingaben staut niemand an, während ein Schritt rechnet; weitere entfallen
 
+/** Wird ein Klick eingereiht, der kommt, während ein Schritt noch läuft? Nur bei Mehrpunkt-Werkzeugen (Wand, Leitung, Vorwand, Bemassung,
+ *  Linien): dort ist er der nächste Punkt der Kette. Bei Einzelklick-Werkzeugen (Familie platzieren, Steig-/Fallleitung, Montageelement) ist
+ *  ein zweiter Klick während der laufenden Abfrage Ungeduld – eingereiht setzte er ein zweites Bauteil an denselben Ort (Gegenprüfung B2);
+ *  er entfällt wie früher. Ebenso, solange das Werkzeug auf den Benutzer wartet (offenes Textfeld). */
+export function klickEinreihen(def, wartetAufBenutzer = false) { return !wartetAufBenutzer && !!def?.mehrpunkt; }
+
 export class Arbeitsreihe {
   constructor({ fehler = () => {}, danach = () => {}, fertig = () => false } = {}) {
     this.fehler = fehler; this.danach = danach; this.fertig = fertig;

@@ -271,9 +271,9 @@ public sealed class ElementeSpiegeln : IBefehl
                 eig = new JsonObject { ["winkel"] = w };
             }
             // Vorwand: «rueckseite» zählt links/rechts in Zeichenrichtung – beim Spiegeln kehrt der Drehsinn um, die Rohbauwand läge sonst
-            // auf der Raumseite (Gesamtprüfung 13.11.2026)
-            if (k.Katalog.IstArt(e, "Vorwand") && e.Text("rueckseite") is "links" or "rechts")
-                eig = new JsonObject { ["rueckseite"] = e.Text("rueckseite") == "links" ? "rechts" : "links" };
+            // auf der Raumseite (Gesamtprüfung 13.11.2026). Ohne Angabe gilt «links» wie in VorwandGestell (Gegenprüfung B7), «keine» bleibt.
+            if (k.Katalog.IstArt(e, "Vorwand") && (e.Text("rueckseite") ?? "links") is "links" or "rechts")
+                eig = new JsonObject { ["rueckseite"] = e.Text("rueckseite") == "rechts" ? "links" : "rechts" };
             Bearbeitung.Setzen(k, e, Bearbeitung.Abbilden(e.Geometrie!, Punkt), Bearbeitung.Mitgefuehrt(e, Punkt, true, eig));
         }
 

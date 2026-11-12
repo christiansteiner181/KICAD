@@ -42,6 +42,11 @@ public class GesamtpruefungOberflaecheTests
         var f = Assert.Throws<HlksFehler>(() => BaustelleZugaenge.AusText("{ \"zugaenge\": [ "));
         Assert.Contains("zugaenge.json", f.Message);
         Assert.False(string.IsNullOrWhiteSpace(f.Vorschlag));
+        // Gegenprüfung B10: Besucher von /baustelle/ erfahren weder Dateinamen noch die Fehlerstelle im JSON
+        var b = Assert.Throws<HlksFehler>(() => BaustelleZugaenge.AusText("{ \"zugaenge\": [ ", besucher: true));
+        Assert.Contains("nicht lesbar", b.Message);
+        Assert.DoesNotContain("zugaenge.json", b.Message + b.Vorschlag);
+        Assert.DoesNotMatch("(?i)line|position|byte", b.Message + b.Vorschlag);
         // leer bzw. ohne gültigen Eintrag: gesperrt (leere Liste), nicht offen (null gibt es nur ohne Datei)
         Assert.Empty(BaustelleZugaenge.AusText("{}"));
         var l = BaustelleZugaenge.AusText("""

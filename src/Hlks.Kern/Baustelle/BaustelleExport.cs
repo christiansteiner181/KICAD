@@ -51,6 +51,7 @@ public static class BaustelleExport
         {
             if (!string.Equals(Path.GetExtension(datei), ".html", StringComparison.OrdinalIgnoreCase))
                 throw new HlksFehler($"Die Zieldatei «{datei}» braucht die Endung .html.", "datei z. B. «…\\Baustelle.html» angeben oder leer lassen.");
+            datei = KiPfade.Pruefen(p, datei, "baustelle_export");   // Gegenprüfung B4: KI nur unter den Wurzeln aus kataloge/buero.json (Menschen unverändert)
             pfad = Path.GetFullPath(datei);
         }
         else if (p.Speicher is not null)

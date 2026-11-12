@@ -100,6 +100,7 @@ public static class IfcExport
         {
             if (!string.Equals(Path.GetExtension(datei), ".ifc", StringComparison.OrdinalIgnoreCase))
                 throw new HlksFehler($"Die Zieldatei «{datei}» braucht die Endung .ifc.", "datei z. B. «…\\HLKS_IFC4.ifc» angeben oder leer lassen (Projektordner ausgabe\\ifc).");
+            datei = KiPfade.Pruefen(p, datei, "ifc_export");   // Gegenprüfung B4: KI nur unter den Wurzeln aus kataloge/buero.json (Menschen unverändert)
             try { pfad = Path.GetFullPath(datei); }
             catch (Exception ex) when (ex is ArgumentException or NotSupportedException or PathTooLongException)
             { throw new HlksFehler($"Der Pfad «{datei}» ist ungültig: {ex.Message}", "Vollständigen Pfad mit Endung .ifc angeben."); }

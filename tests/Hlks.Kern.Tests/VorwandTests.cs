@@ -305,5 +305,19 @@ public class VorwandTests
         Assert.Equal(-100, auf.Punkt(0, 0)[0], 6);
         Assert.Equal(100, auf.Punkt(0, 0)[1], 6);            // Rückseite weiter an der Wandfläche
         Assert.Equal(300, auf.Punkt(0, auf.Tiefe)[1], 6);    // Vorderseite zum Raum
+
+        // Gegenprüfung B7: ohne Angabe gilt «links» (VorwandGestell) – auch die kehrt beim Spiegeln um, sonst wechselte die Rohbauwand still die Seite
+        Ok(p.Ausfuehren("element_aendern", new JsonObject { ["element"] = "VW-1", ["eigenschaften"] = new JsonObject { ["rueckseite"] = null } }));
+        Assert.Null(Hole(p, "VW-1").Text("rueckseite"));
+        var vorher = VorwandGestell.Ableiten(p.Modell, p.Katalog, Hole(p, "VW-1"))!.Punkt(0, 0);
+        Ok(p.Ausfuehren("elemente_spiegeln", new JsonObject { ["elemente"] = new JsonArray("VW-1"), ["achse"] = Pts([0, 0], [0, 1000]) }));
+        Assert.Equal("rechts", Hole(p, "VW-1").Text("rueckseite"));
+        var nachher = VorwandGestell.Ableiten(p.Modell, p.Katalog, Hole(p, "VW-1"))!.Punkt(0, 0);
+        Assert.Equal(-vorher[0], nachher[0], 6);             // Rückseite gespiegelt an x = 0, gleiche Höhe y
+        Assert.Equal(vorher[1], nachher[1], 6);
+        // «keine» (frei stehend) bleibt
+        Ok(p.Ausfuehren("element_aendern", new JsonObject { ["element"] = "VW-1", ["eigenschaften"] = new JsonObject { ["rueckseite"] = "keine" } }));
+        Ok(p.Ausfuehren("elemente_spiegeln", new JsonObject { ["elemente"] = new JsonArray("VW-1"), ["achse"] = Pts([0, 0], [0, 1000]) }));
+        Assert.Equal("keine", Hole(p, "VW-1").Text("rueckseite"));
     }
 }

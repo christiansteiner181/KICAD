@@ -364,10 +364,13 @@ public sealed class Abfragen(Projekt p)
         var start = M.Hole(von);
         // Die Ausgabe bleibt begrenzt (Antwortgrösse) – wird sie gekürzt, sagt es die Antwort (vorher still)
         const int Grenze = 2000;
-        var schritte = Netz.Folgen(M, K, start, richtung, medium, bisKlasse, Grenze);
+        // ein Schritt mehr abgefragt: nur dann geht das Netz wirklich weiter (bei genau 2000 Schritten stand der Hinweis zu Unrecht, Gegenprüfung B10)
+        var schritte = Netz.Folgen(M, K, start, richtung, medium, bisKlasse, Grenze + 1);
+        bool gekuerzt = schritte.Count > Grenze;
+        if (gekuerzt) schritte.RemoveRange(Grenze, schritte.Count - Grenze);
         string? StrangVon(Element e) => e.TeilVon is not null && M.Finde(e.TeilVon)?.Klasse == "Strang" ? Kz(e.TeilVon) : null;
         var antwort = Antwort();
-        if (schritte.Count >= Grenze)
+        if (gekuerzt)
             antwort["hinweis"] = $"Ausgabe nach {schritte.Count} Schritten gekürzt – das Netz geht weiter. Mit bisKlasse oder einem späteren Startelement eingrenzen.";
         return antwort;
 

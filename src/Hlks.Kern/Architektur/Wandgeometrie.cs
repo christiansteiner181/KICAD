@@ -176,8 +176,8 @@ public static class Wandgeometrie
         foreach (var w in waende)
         {
             // aus dem IFC festgehaltene Enden (verlAnfang/verlEnde, 02.11.2026: deckungsgleich mit dem IFC) gelten vor der Regel
-            w.VerlAnfang = w.Wand.Zahl("verlAnfang") ?? Verlaengerung(w, w.Ax, w.Ay, zellen is null ? waende : zellen.GetValueOrDefault((Zelle(w.Ax), Zelle(w.Ay))) ?? []);
-            w.VerlEnde = w.Wand.Zahl("verlEnde") ?? Verlaengerung(w, w.Bx, w.By, zellen is null ? waende : zellen.GetValueOrDefault((Zelle(w.Bx), Zelle(w.By))) ?? []);
+            w.VerlAnfang = w.Wand.Zahl("verlAnfang") ?? Verlaengerung(w, w.Ax, w.Ay, -1, zellen is null ? waende : zellen.GetValueOrDefault((Zelle(w.Ax), Zelle(w.Ay))) ?? []);
+            w.VerlEnde = w.Wand.Zahl("verlEnde") ?? Verlaengerung(w, w.Bx, w.By, 1, zellen is null ? waende : zellen.GetValueOrDefault((Zelle(w.Bx), Zelle(w.By))) ?? []);
         }
     }
 
@@ -201,7 +201,8 @@ public static class Wandgeometrie
         return zellen;
     }
 
-    static double Verlaengerung(Wandlage w, double px, double py, List<Wandlage> waende)
+    /// <summary>richtung: +1 am Wandende, −1 am Wandanfang (Richtung, in die das Ende verlängert wird).</summary>
+    static double Verlaengerung(Wandlage w, double px, double py, double richtung, List<Wandlage> waende)
     {
         double e = 0;
         foreach (var o in waende)
@@ -210,18 +211,25 @@ public static class Wandgeometrie
             double sin = Math.Abs(w.Ux * o.Uy - w.Uy * o.Ux);
             if (sin < Parallel) continue;
             double d = Polygone.AbstandZurStrecke(px, py, o.Ax, o.Ay, o.Bx, o.By);
-            if (d <= o.Dicke / 2 + 1) e = Math.Max(e, Eckverlaengerung(w.Dicke, o.Dicke, sin, Math.Abs(w.Ux * o.Ux + w.Uy * o.Uy)));
+            if (d > o.Dicke / 2 + 1) continue;
+            // Weg quer zur anderen Wand, der dem Wandende bis zu deren Achse noch fehlt (negativ: das Ende liegt schon dahinter)
+            double quer = (px - o.Ax) * o.Nx + (py - o.Ay) * o.Ny;
+            double fehlt = richtung * (w.Ux * o.Nx + w.Uy * o.Ny) >= 0 ? -quer : quer;
+            e = Math.Max(e, Eckverlaengerung(w.Dicke, o.Dicke, sin, Math.Abs(w.Ux * o.Ux + w.Uy * o.Uy), fehlt));
         }
         return e;
     }
 
-    /// <summary>Verlängerung eines Wandendes, das auf der Achse einer anderen Wand liegt: so weit, dass die vordere Ecke des Wandendes
-    /// genau auf der abgewandten Fläche der anderen Wand liegt – (Dicke der anderen / 2 − eigene Dicke / 2 · |cos|) / |sin|, nie negativ.
-    /// Rechtwinklig (cos = 0) ist das die halbe Dicke der anderen Wand (Spezifikation Modul 1a). Bei schrägen Ecken stand die Wand mit der
-    /// festen halben Dicke über die Fläche der anderen vor (Gesamtprüfung 13.11.2026: 135°-Ecke zweier 200-mm-Wände → Zacken von 59 und
-    /// 41 mm im Wandumriss; nötig sind 41.4 mm je Wand, die Ecke wird dann sauber auf Gehrung geschlossen).</summary>
-    internal static double Eckverlaengerung(double eigeneDicke, double andereDicke, double sin, double cos) =>
-        cos < 1e-9 ? andereDicke / 2 : Math.Max(0, (andereDicke / 2 - eigeneDicke / 2 * cos) / sin);
+    /// <summary>Verlängerung eines Wandendes an einer anderen Wand: so weit, dass die vordere Ecke des Wandendes genau auf der
+    /// abgewandten Fläche der anderen Wand liegt – (Dicke der anderen / 2 + abstand − eigene Dicke / 2 · |cos|) / |sin|, nie negativ.
+    /// abstand = Weg quer zur anderen Wand, der dem Wandende bis zu deren Achse fehlt (0 = Ende auf der Achse, negativ = dahinter).
+    /// Rechtwinklig (cos = 0) bleibt es bei der halben Dicke der anderen Wand (Spezifikation Modul 1a); das Wandende liegt dort in
+    /// jedem Fall ganz in der anderen Wand. Bei schrägen Ecken stand die Wand mit der festen halben Dicke über die Fläche der anderen
+    /// vor (Gesamtprüfung 13.11.2026: 135°-Ecke zweier 200-mm-Wände → Zacken von 59 und 41 mm im Wandumriss; nötig sind 41.4 mm je
+    /// Wand, die Ecke wird dann sauber auf Gehrung geschlossen). Ohne den Abstand blieb ein schräges Wandende, das auf der Fläche statt
+    /// auf der Achse der anderen Wand endet, offen (Gegenprüfung B1: 45°, Ende auf der Fläche → 41.4 statt 182.8 mm, Kerbe im Umriss).</summary>
+    internal static double Eckverlaengerung(double eigeneDicke, double andereDicke, double sin, double cos, double abstand = 0) =>
+        cos < 1e-9 ? andereDicke / 2 : Math.Max(0, (andereDicke / 2 + abstand - eigeneDicke / 2 * cos) / sin);
 
     public static bool IstOeffnung(Katalog k, Element e) => k.IstArt(e, "Tuer") || k.IstArt(e, "Fenster");
 

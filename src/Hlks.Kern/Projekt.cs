@@ -597,6 +597,9 @@ public sealed class Projekt
         int angewandt = 0;
         foreach (var id in neu)
         {
+            // Eine Kopie, die vor ihrem Original sortiert (z. B. «(1) …»), hat das Paket in diesem Lauf schon gebracht – das Original
+            // nicht noch einmal anwenden (Gegenprüfung B6)
+            if (bekannt.Contains(id)) continue;
             Paket p;
             try { p = Speicher.PaketLesen(id); }
             // ArgumentException: fremde Datei, deren Name keine zulässige Paket-Id ist – überspringen statt abbrechen

@@ -4340,6 +4340,8 @@ jedes neue Projekt erhält alle Mustersysteme.
   Aussenkontur ebenfalls in der Rohrfarbe, wesentlich feiner (Stift «fein» 0.10 mm, Christian 12.11.2026), verdeckte gestrichelt. Im Detailgrad grob bleibt der gelbe Punkt.
 - **Dämmarten zur Auswahl** (Christian 12.11.2026: «Dämmingsarten sollten auswählbar sein», «Ja, Katalog»): Dämmung hinzufügen/bearbeiten bietet
   die Dämmarten aus `kataloge/daemmung.json` (arten) zur Auswahl, «andere …» für eine freie Angabe; in der Eigenschaftspalette als Vorschlagsliste.
+  Ohne bisherige Art ist «– keine Angabe –» vorgewählt (Gegenprüfung 13.11.2026: vorher die erste Katalogart, die mitgespeichert wurde, auch wenn nur
+  die Dicke geändert wurde).
   Jede Art kann eine λ-Klasse (MuKEn-Spalte) tragen – nur mit λ und Quelle aus der Herstellerunterlage; dann schlägt der Dialog die Dicke nach DN
   vor, sonst gilt die Dämmregel des Systems. Heute sind alle λ-Klassen offen (keine Werte aus dem Gedächtnis).
 - **Kreuzende Leitungen verdeckt** (Christian 12.11.2026: «leitungen die in einem Grundriss unter einer anderen Leitung durchlaufen (inkl. Dämmung)
@@ -4398,7 +4400,9 @@ jedes neue Projekt erhält alle Mustersysteme.
   kommen, während ein Schritt noch auf den Kern wartet, werden in der Reihenfolge der Eingabe eingereiht und danach abgearbeitet (vorher ging ein Klick
   stumm verloren). Der Fang eines eingereihten Klicks wird erst beim Abarbeiten bestimmt (Orthogonal, Polar und Lot hängen am Punkt, den der laufende
   Schritt setzt). Scheitert ein Schritt mit Fehler, entfallen die wartenden. Solange das Textfeld des Textwerkzeugs offen ist, schliesst ein Klick in den
-  Plan nur das Feld. Höchstens 16 wartende Schritte (Annahme).
+  Plan nur das Feld. Höchstens 16 wartende Schritte (Annahme). Klicks werden nur bei Mehrpunkt-Werkzeugen (Wand, Leitung, Vorwand, Bemassung, Linien)
+  eingereiht; bei Einzelklick-Werkzeugen (Familie platzieren, Steig-/Fallleitung, Montageelement) entfällt ein Klick während der laufenden Abfrage, sonst
+  sässen zwei Bauteile am selben Ort (Gegenprüfung 13.11.2026). Auch eine eingereihte Längeneingabe bestimmt ihren Fang erst beim Abarbeiten.
 - **Server antwortet nicht:** Wartet schon ein Esc und ist eine Anfrage seit über 5 s offen (Annahme), beendet ein weiteres Esc das Werkzeug sofort mit der
   Meldung «… beendet, ohne die Antwort des Servers abzuwarten»; der Server rechnet allenfalls zu Ende. Eine allgemeine Zeitgrenze in `api.js` gibt es
   bewusst nicht (IFC-Import, Serien-PDF und Projekt anlegen dauern lang; ein abgebrochener Befehl liefe im Kern trotzdem weiter).
