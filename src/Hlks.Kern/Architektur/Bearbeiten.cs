@@ -182,7 +182,7 @@ public sealed class ElementeKopieren : IBefehl
 public sealed class ElementeDrehen : IBefehl
 {
     public string Name => "elemente_drehen";
-    public string Beschreibung => "Dreht Elemente mit Geometrie um einen Punkt (winkel in Grad, Gegenuhrzeigersinn). Türen und Fenster folgen ihrer Wand; Texte und Symbole drehen ihren Winkel mit.";
+    public string Beschreibung => "Dreht Elemente mit Geometrie um einen Punkt (winkel in Grad, Gegenuhrzeigersinn). Türen und Fenster folgen ihrer Wand; Texte und Symbole drehen ihren Winkel mit; platzierte Familien drehen ihre Lage (drehung bzw. ausrichtung) mit.";
     public IReadOnlyList<ParameterDef> Parameter { get; } =
     [
         new("elemente", "liste", true, "Kennzeichen oder Ids, z. B. [\"W-1\", \"T-1\"]"),

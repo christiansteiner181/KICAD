@@ -23,6 +23,7 @@ Tests nach dem Zusammenführen (gefiltert): Kern 169 + 86 grün, Web 5 grün, No
 | Leitungen 2 | 4 (Parallele Leitung auf der Seite des angeklickten Stücks statt des ersten, eckige Lüftungs-Steigleitungen mit querDrehung, Dämmdicke < 0.5 mm nicht als «entfernt», Meldung Bogenwinkel) | leitungen2.md |
 | Verdeckung | gebaut: Höhe an der Kreuzung statt Höhenspanne der ganzen Leitung (Gefälle, Etagen; neu Kreuzungshoehe.cs, auch für Dämmkanten), Index Element → Verbindungen im Modell (Leistung) | verdeckung.md |
 | Oberfläche 2 | 4 (Klick während laufender Abfrage wird eingereiht statt verworfen, weiteres Esc beendet bei hängendem Server nach 5 s, Raster rundet nicht auf Länge 0, Mehrfachauswahl «verschieden» auch bei Auswahl/Häkchen, Kennzeichen bleibt bei «System weitergeben», Serien-PDF «Fertig», Lesbarkeit gelbe Leiste) | oberflaeche2.md |
+| Architektur, Aussparungen | 4 (schräge Wandecken ohne Zacken, elemente_drehen dreht platzierte Familien mit, Türvorschau mit Drehpunkt auf der Wandfläche, Meldung statt Absturz beim Drehen/Spiegeln ohne Elemente) | architektur_aussparungen.md |
 
 ## Fragen an Christian (gesammelt)
 
@@ -46,6 +47,10 @@ Tests nach dem Zusammenführen (gefiltert): Kern 169 + 86 grün, Web 5 grün, No
 14. **Shift + Anschluss**: Shift zieht einen Anschluss bis 10 px auf die Flucht und übernimmt trotzdem die Anschlussdaten. Anschluss immer in echter Lage, Fluchtpunkt mit eigenem Namen?
 15. **Esc im Textfeld des Textwerkzeugs** übernimmt den Text statt abzubrechen – abbrechen?
 16. **Esc bei hängendem Server**: zweites Esc beendet das Werkzeug nach 5 s offener Anfrage – passt 5 s auch über VPN?
+17. **elemente_spiegeln an Familien**: nur die Richtung spiegeln oder gespiegelte Ausführung (links/rechts)?
+18. **Aussparungsvorschlag am Formteil im Bauteil**: endet die Leitung im Bauteil an einem Bogen, wird über die ganze Bauteildicke
+    ausgespart (gemeint war das T-Stück im Deckenbereich). Nur T-Stücke so behandeln?
+19. **raum_erkennen** zieht freistehende Wände im Raum nicht ab (der IFC-Weg kann es) – angleichen?
 7. **λ-Werte der Dämmarten**: welche Produkte verwendet ihr (dann λ mit Quelle eintragen)?
 
 **Prüfung Hauptlauf im Browser (18:00):** Rohr mit drei raschen Klicks und Esc wird vollständig angelegt (Klick-Reihe), Weiterzeichnen mit Bogen am Leitungsende kürzt die bestehende Leitung. Nebenbefund: Start an einem Anschluss verlangt zuerst Produktlinie und Höhe, obwohl der Anschluss beides vorgibt (pflichtPruefen vor dem Anschluss) – kleine Korrektur für Runde 3.

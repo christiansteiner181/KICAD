@@ -142,7 +142,7 @@ public sealed partial class Werkzeuge
         [Description("Nur prüfen, nichts ändern")] bool trockenlauf = false) =>
         Befehl("elemente_kopieren", Parameter(("elemente", elemente), ("dx", dx), ("dy", dy), ("anzahl", anzahl), ("dz", dz), ("geschoss", geschoss)), trockenlauf);
 
-    [McpServerTool(Name = "elemente_drehen"), Description("Dreht Elemente mit Geometrie um einen Punkt (winkel in Grad, Gegenuhrzeigersinn). Türen und Fenster folgen ihrer Wand; Texte und Symbole drehen ihren Winkel mit.")]
+    [McpServerTool(Name = "elemente_drehen"), Description("Dreht Elemente mit Geometrie um einen Punkt (winkel in Grad, Gegenuhrzeigersinn). Türen und Fenster folgen ihrer Wand; Texte und Symbole drehen ihren Winkel mit; platzierte Familien drehen ihre Lage (drehung bzw. ausrichtung) mit.")]
     public string ElementeDrehen(
         [Description("Kennzeichen oder Ids, z. B. [\"W-1\", \"T-1\"]")] JsonElement elemente,
         [Description("Drehpunkt [x, y] in mm")] JsonElement mitte,
