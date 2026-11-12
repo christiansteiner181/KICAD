@@ -5,6 +5,26 @@ sollte möglichst wie vorgesehen funktionieren. kleine fehler und optimierungen 
 hinterfragen, besonders in bezug geometrie». Prüfagenten: Claude Fable 5.2, je Bereich eine eigene Arbeitskopie; der Hauptlauf prüft,
 führt zusammen und testet gefiltert. Einzelberichte in diesem Ordner.
 
+## Kurzfassung für Christian (Stand 13.11.2026 früh)
+
+- **Geprüft:** 20 Bereiche in 6 Runden (Leitungen ×2, Grafik, Verdeckung, Oberfläche ×2, Import/Familien/Baustelle, Architektur/
+  Aussparungen, Restliste, Rechenkerne, Schema/API, Familiengeometrie, Ausgabe, Fachwerkzeuge, Kollision/Prüfregeln, 3D/Schnitte/XR,
+  KI-Schnittstelle, Unterlagen/2D-Zeichnung, Datenhaltung, Leistung, HKAP/Hülle, MSRL/Ansichten), dazu eine unabhängige Gegenprüfung
+  aller Änderungen und eine Korrekturrunde daraus.
+- **Korrigiert:** rund 100 Fehler direkt, je mit gefiltertem Test; Geometrie mit Handbeispielen nachgerechnet. Norm-, Tabellen- und
+  Stoffwerte wurden nicht verändert.
+- **Wichtigste echte Fehler:** Kanal-Druckverlust lief durchs Lüftungsgerät ins andere Netz; Referenzkegel konnten eine um 180° gedrehte
+  Lage als eindeutig melden; Monteur sah bei «_Monteur_» im Projektnamen Bauleitungsseiten; zwei Sicherheitslücken der KI-Schnittstelle
+  (fremde Netzpfade, Rückmeldung übernehmen); Gewerkefilter liess alle Leitungen in jedem Gewerkeplan stehen; Netzsuche brach still nach
+  2000 Schritten ab; defekte Änderungspakete blockierten Öffnen und Abgleich; Klicks während laufender Abfrage gingen verloren;
+  Kalibrieren mit 20 mm Versatz bei Landeskoordinaten; schräge Wandecken mit Zacken; Übergangsstück mit verkehrten Flächen im 3D.
+- **Leistung:** Verbraucher eines Strangs (6000 Bauteile) 41 s → 17 ms, neue Kennzeichen bei Massenbefehlen 428 → 0.6 ms.
+- **Tests:** volle Reihe auf dem Endstand: Kern 5297 grün; die 14 roten in Mcp/Web/Node geklärt – 3 durch die Nacht verursacht
+  (korrigiert), 11 schon vorher rot (9 veraltete Tests nachgeführt, 2 echte Produktfehler korrigiert: Grundausstattung nach «Projekt
+  anlegen» liess sich rückgängig machen; 2D-CAD-Werkzeuge ohne KI-Einordnung). Danach alle betroffenen Klassen grün.
+- **Freigegeben:** `geprueft` mit Marke, Desktop und Baustellen-Testserver auf dem Endstand.
+- **Deine Entscheide:** 52 Fragen unten; die mit Priorität «hoch» zuerst ansehen: 1, 20, 21, 22, 27, 29, 30, 37, 41, 43, 48.
+
 ## Runde 1 (Start 17:40)
 
 | Bereich | Korrekturen | Bericht |
@@ -74,7 +94,9 @@ Gefiltert: Kern 230, Web 3, Node 54 grün.
 ## Volle Testreihe auf dem Endstand (stand_pruefen 032efb7, 19:13–20:26)
 
 Kern 5297 Tests grün (8 Zeitüberschreitungen im ersten Lauf, in der Wiederholung grün). Rot: Mcp 4 von 82, Web 7 von 789, Node 3 von
-1447 – Klärung, ob vor der Nacht schon rot oder durch eine Korrektur verursacht, läuft (rote_tests.md).
+1447 – alle 14 geklärt und grün (rote_tests.md): 3 durch die Nacht (Fehlerschutz machte 400 zu 500 – korrigiert; Kürzeltest an die
+neue Reihenfolge), 11 schon vorher rot (9 veraltete Tests nachgeführt; Grundausstattung nach «Projekt anlegen» war rückgängig machbar –
+korrigiert; 19 Werkzeuge der 2D-Zeichnung ohne KI-Einordnung – vorsorglich für die KI-Palette verboten).
 
 ## Fragen an Christian (gesammelt)
 
@@ -160,6 +182,9 @@ Kern 5297 Tests grün (8 Zeitüberschreitungen im ersten Lauf, in der Wiederholu
 49. **Ansichtsvorlagen** wirken nur beim Anlegen (Kopie, 7 Einstellungen); spätere Änderungen erreichen die Ansichten nicht – verknüpfen
     wie Revit?
 50. **MSRL in der Oberfläche**: Datenpunkte vorschlagen und Datenpunktliste nur über KI – eigene Bedienung (Liste «Datenpunkte»)?
+51. **2D-CAD in der KI-Palette**: die 19 Werkzeuge `zeichnung_*` sind vorsorglich verboten – lesende freigeben?
+52. **Rückgängig nach «Projekt anlegen»**: die Grundausstattung (Hauptanlagen, Mustersysteme, Familien) ist jetzt nicht mehr
+    rückgängig machbar – so recht?
 7. **λ-Werte der Dämmarten**: welche Produkte verwendet ihr (dann λ mit Quelle eintragen)?
 
 **Prüfung Hauptlauf im Browser (18:00):** Rohr mit drei raschen Klicks und Esc wird vollständig angelegt (Klick-Reihe), Weiterzeichnen mit Bogen am Leitungsende kürzt die bestehende Leitung. Nebenbefund: Start an einem Anschluss verlangt zuerst Produktlinie und Höhe, obwohl der Anschluss beides vorgibt (pflichtPruefen vor dem Anschluss) – kleine Korrektur für Runde 3.
