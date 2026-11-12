@@ -115,7 +115,7 @@ async function daemmungDialog(bearbeiten) {
   const ok = await zeigen({
     titel: bearbeiten ? 'Dämmung bearbeiten' : 'Dämmung hinzufügen', inhalt: w, breite: 440,
     knoepfe: [{ text: 'Abbrechen', wert: false }, { text: 'Übernehmen', wert: true, primaer: true,
-      pruefen: () => { const n = Number(w.querySelector('.d-dicke').value.replace(',', '.')); return Number.isFinite(n) && n > 0 && n <= 500 ? true : 'Dämmdicke in mm eingeben (grösser als 0).'; } }],
+      pruefen: () => { const n = Number(w.querySelector('.d-dicke').value.replace(',', '.')); return Number.isFinite(n) && Math.round(n) >= 1 && n <= 500 ? true : 'Dämmdicke in ganzen mm eingeben (1 bis 500).'; } }],   // gespeichert wird gerundet: 0.4 ergäbe 0 = «entfernt»
   });
   if (ok !== true) return;
   const art = wahl.value || w.querySelector('.d-art').value.trim();
