@@ -31,6 +31,11 @@ public class BaustelleExportTests
         Assert.Contains(daten["elemente"]!.AsArray(), e => e!["mat"]?["art"]?.GetValue<string>() == "leitung" && Json.Zahl(e["mat"]!["laengeM"]) > 0);
         Assert.DoesNotContain(daten["elemente"]!.AsArray(), e => e!["klasse"]!.GetValue<string>() is "Ansicht" or "Planblatt");
         Assert.Contains("<svg", daten["ansichten"]![0]!["svg"]!.GetValue<string>());
+        // Reiter der Webseite (Christian 12.11.2026: Monteur arbeitet mit Grundriss, Strang- und Prinzipschema): jede Ansicht mit Gruppe
+        var gruppen = daten["ansichten"]!.AsArray().Select(x => x!["gruppe"]!.GetValue<string>()).ToHashSet();
+        Assert.Contains("grundriss", gruppen);
+        Assert.Contains("strangschema", gruppen);
+        Assert.Subset(new HashSet<string> { "grundriss", "strangschema", "prinzipschema", "schnitt" }, gruppen);
         // three.js im selben Modul, ohne Import-Zeilen (läuft von file://)
         Assert.DoesNotContain("from 'three'", html);
         Assert.Contains("class OrbitControls", html);

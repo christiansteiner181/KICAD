@@ -37,11 +37,16 @@
 
   // ------------------------------------------------------------ Reiter
   for (const b of document.querySelectorAll('#reiter button')) b.addEventListener('click', () => reiter(b.dataset.reiter));
+  // Pläne als eigene Reiter (Christian 12.11.2026: «der monteur braucht unterschiedliche werkzeuge. primär arbeitet er mit einem grundrissplan, strang und prinzipschema.»): Grundriss (mit Schnitten und Ansichten), Strangschema, Prinzipschema; «plaene» = Grundriss
+  const PLANREITER = { grundriss: ['grundriss', 'schnitt'], strang: ['strangschema'], prinzip: ['prinzipschema'] };
+  let planReiter = 'grundriss', d3Gezeigt = false;
   function reiter(name) {
+    if (name === 'plaene') name = 'grundriss';
     for (const b of document.querySelectorAll('#reiter button')) b.classList.toggle('aktiv', b.dataset.reiter === name);
-    for (const r of document.querySelectorAll('.reiterinhalt')) r.classList.toggle('aktiv', r.id === 'r-' + name);
-    if (name === 'd3') d3Groesse();
-    if (name === 'plaene' && !planGezeigt) { planZeigen(); planMitElement(); }
+    const plan = name in PLANREITER;
+    for (const r of document.querySelectorAll('.reiterinhalt')) r.classList.toggle('aktiv', r.id === 'r-' + (plan ? 'plaene' : name));
+    if (name === 'd3') { d3Groesse(); if (!d3Gezeigt && renderer) { d3Gezeigt = true; d3Einpassen(); } }
+    if (plan) { planReiter = name; planListe(); planZeigen(); planMitElement(); }
   }
 
   // ------------------------------------------------------------ Zahlen
@@ -269,13 +274,21 @@
 
   // ------------------------------------------------------------ Pläne (SVG)
   let planGezeigt = false, plan = { s: 1, x: 0, y: 0 };
-  for (const a of D.ansichten) $('plan-wahl').append(el('option', { value: a.kz, textContent: a.name }));
+  const gruppeVon = (a) => a.gruppe || (a.art === 'grundriss' ? 'grundriss' : a.art === 'schema' ? 'strangschema' : 'schnitt');
+  const imReiter = (a, r = planReiter) => PLANREITER[r].includes(gruppeVon(a));
+  function planListe() {
+    const w = $('plan-wahl'), alt = w.value; w.innerHTML = '';
+    for (const a of D.ansichten.filter((x) => imReiter(x))) w.append(el('option', { value: a.kz, textContent: a.name }));
+    if ([...w.options].some((o) => o.value === alt)) w.value = alt;
+  }
   $('plan-wahl').addEventListener('change', planZeigen);
   $('plan-passend').addEventListener('click', planEinpassen);
   function planZeigen() {
     planGezeigt = true;
-    const a = D.ansichten.find((x) => x.kz === $('plan-wahl').value) || D.ansichten[0];
-    const f = $('plan-flaeche'); f.innerHTML = a ? a.svg : '<p style="padding:12px">Keine Ansichten im Modell.</p>';
+    const liste = D.ansichten.filter((x) => imReiter(x));
+    const a = liste.find((x) => x.kz === $('plan-wahl').value) || liste[0];
+    const leer = { grundriss: 'Kein Grundriss im Projekt.', strang: 'Kein Strangschema im Projekt.', prinzip: 'Kein Prinzipschema im Projekt.' }[planReiter];
+    const f = $('plan-flaeche'); f.innerHTML = a ? a.svg : `<p style="padding:12px">${leer}</p>`;
     const svg = f.querySelector('svg'); if (!svg) return;
     const vb = svg.viewBox.baseVal; svg.setAttribute('width', vb.width); svg.setAttribute('height', vb.height);
     for (const g of svg.querySelectorAll('g[data-id]')) g.addEventListener('click', (ev) => { if (!planGezogen && nachId.has(g.dataset.id)) { ev.stopPropagation(); waehlen(nachId.get(g.dataset.id), 'plan'); } });
@@ -286,7 +299,10 @@
     if (gewaehlt) {
       const hat = (a) => a.svg.includes(`data-id="${gewaehlt.id}"`);
       const jetzt = D.ansichten.find((x) => x.kz === $("plan-wahl").value);
-      if (!(jetzt && hat(jetzt))) { const a = D.ansichten.find((x) => x.art === "grundriss" && hat(x)) || D.ansichten.find(hat); if (a) { $("plan-wahl").value = a.kz; planZeigen(); return; } }
+      if (!(jetzt && hat(jetzt))) {
+        const a = D.ansichten.find((x) => imReiter(x) && hat(x));
+        if (a) { $("plan-wahl").value = a.kz; planZeigen(); return; }
+      }
     }
     planMarkieren();
   }
@@ -428,10 +444,11 @@
   function zeichnen() { if (renderer) { steuerung.update(); renderer.render(szene, kamera); } requestAnimationFrame(zeichnen); }
 
   // ------------------------------------------------------------ Start
-  rmZeigen(); arbeitsplan(); liste(); material(); d3Filter(); d3Groesse(); if (renderer) { d3Einpassen(); zeichnen(); }
+  rmZeigen(); arbeitsplan(); liste(); material(); d3Filter(); if (renderer) zeichnen();
+  reiter('grundriss');   // Start im Grundriss (Christian 12.11.2026: «der monteur braucht unterschiedliche werkzeuge. primär arbeitet er mit einem grundrissplan, strang und prinzipschema.»)
   // Adresse: #d3 | #plaene | #elemente | #material, dazu ein Kennzeichen (#plaene/E.01 oder #E.01) – für Links auf ein Element
   for (const teil of decodeURIComponent(location.hash.slice(1)).split("/").filter((x) => x)) {
-    if (["d3", "plaene", "elemente", "material", "abschnitte", "meldungen"].includes(teil)) reiter(teil); else if (nachKz.has(teil)) waehlen(nachKz.get(teil));
+    if (["d3", "plaene", "grundriss", "strang", "prinzip", "elemente", "material", "abschnitte", "meldungen"].includes(teil)) reiter(teil); else if (nachKz.has(teil)) waehlen(nachKz.get(teil));
   }
   window.kicad = { daten: D, waehlen: (kz) => waehlen(nachKz.get(kz) || null), reiter };
 })();

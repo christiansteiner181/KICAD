@@ -18,8 +18,10 @@
   <div class="klein" id="k-info"></div>
 </header>
 <nav id="reiter">
-  <button data-reiter="d3" class="aktiv">3D</button>
-  <button data-reiter="plaene">Pläne</button>
+  <button data-reiter="grundriss" class="aktiv">Grundriss</button>
+  <button data-reiter="strang">Strangschema</button>
+  <button data-reiter="prinzip">Prinzipschema</button>
+  <button data-reiter="d3">3D</button>
   <button data-reiter="elemente">Elemente</button>
   <button data-reiter="material">Material</button>
   <button data-reiter="abschnitte">Arbeitsplan</button>
@@ -36,12 +38,12 @@
 </section>
 <main>
   <div id="ansicht">
-    <div id="r-d3" class="reiterinhalt aktiv">
+    <div id="r-d3" class="reiterinhalt">
       <div id="d3-leiste"><span id="d3-geschosse"></span><label><input type="checkbox" id="d3-ifc" checked> Architekten-IFC</label>
         <button id="d3-alles">Alles zeigen</button></div>
       <div id="d3-flaeche"></div>
     </div>
-    <div id="r-plaene" class="reiterinhalt">
+    <div id="r-plaene" class="reiterinhalt aktiv">
       <div id="plan-leiste"><select id="plan-wahl"></select> <button id="plan-passend">Einpassen</button></div>
       <div id="plan-flaeche"></div>
     </div>

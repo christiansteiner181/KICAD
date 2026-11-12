@@ -126,7 +126,14 @@ public static class BaustelleExport
             {
                 var g = Grafik.Plan(p, a.Kennzeichen);
                 if (g.Teile.Count == 0) continue;
-                ansichten.Add(new JsonObject { ["kz"] = a.Kennzeichen, ["name"] = a.Name ?? a.Kennzeichen, ["art"] = g.Art, ["svg"] = PlanSvg.Svg(g) });
+                // Gruppe für die Reiter der Webseite (Christian 12.11.2026: «der monteur braucht unterschiedliche werkzeuge. primär arbeitet er mit einem grundrissplan, strang und prinzipschema.»): grundriss | strangschema | prinzipschema | schnitt (Schnitt und Ansicht)
+                var gruppe = g.Art switch
+                {
+                    "grundriss" => "grundriss",
+                    "schema" => a.Text("schemaart") == "prinzipschema" ? "prinzipschema" : "strangschema",
+                    _ => "schnitt",
+                };
+                ansichten.Add(new JsonObject { ["kz"] = a.Kennzeichen, ["name"] = a.Name ?? a.Kennzeichen, ["art"] = g.Art, ["gruppe"] = gruppe, ["svg"] = PlanSvg.Svg(g) });
             }
             catch (Exception ex) when (ex is HlksFehler or InvalidOperationException) { hinweise.Add($"Ansicht {a.Kennzeichen} nicht exportiert: {ex.Message}"); }
         }
