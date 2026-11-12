@@ -104,5 +104,21 @@ public class LagenTests
         var eg = Geschoss(p, "EG");
         Assert.Equal([120.0, 240.0, 360.0, 480.0], ((JsonArray)eg["lagen"]!).Select(l => (double)l!["abstand"]!));
         Assert.Equal(2580, (double)eg["lagen"]![0]!["hoehe"]!);   // 2700 − 120
+        Assert.Null(eg["hinweis"]);
+
+        // Gegenprüfung B8: Bezeichnungen vor dem Wert zählen nicht als Lagen (vorher [1, 120, 2, 240] bzw. [1, 120, 2, 240] mit «1. Lage»)
+        foreach (var text in new[] { "Lage 1: 120, Lage 2: 240", "1. Lage UKD −12cm; 2. Lage UKD −24cm", "0.12 m, 0.24m" })
+        {
+            Ok(p.Ausfuehren("element_aendern", new JsonObject { ["element"] = "EG", ["eigenschaften"] = new JsonObject { ["lagen"] = text } }));
+            eg = Geschoss(p, "EG");
+            Assert.Equal([120.0, 240.0], ((JsonArray)eg["lagen"]!).Select(l => (double)l!["abstand"]!));
+            Assert.Null(eg["hinweis"]);
+        }
+        // Unlesbares wird gemeldet statt als Ziffern mitgezählt
+        Ok(p.Ausfuehren("element_aendern", new JsonObject { ["element"] = "EG", ["eigenschaften"] = new JsonObject { ["lagen"] = "120, Lage 2 240, zirka 3x, 360" } }));
+        eg = Geschoss(p, "EG");
+        Assert.Equal([120.0, 360.0], ((JsonArray)eg["lagen"]!).Select(l => (double)l!["abstand"]!));
+        Assert.Contains("«Lage 2 240»", (string)eg["hinweis"]!);
+        Assert.Contains("«zirka 3x»", (string)eg["hinweis"]!);
     }
 }

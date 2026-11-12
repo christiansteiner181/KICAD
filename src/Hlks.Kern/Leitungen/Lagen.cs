@@ -67,22 +67,41 @@ public static class Lagen
 
     static Element? Gebaeude(Projekt p, Element g) => g.TeilVon is { } t ? p.Modell.Finde(t) : null;
 
-    static readonly System.Text.RegularExpressions.Regex Abstand = new(@"[-−–]?\s*(\d+(?:\.\d+)?)\s*(cm|mm)?",
+    /// <summary>Ein Wert als Ganzes: wahlweise eine Bezeichnung davor («Lage 1:», «1. Lage UKD »), Vorzeichen, Zahl, Einheit mm/cm/m.</summary>
+    static readonly System.Text.RegularExpressions.Regex Abstand = new(@"^(?:.*[:=]|.*[A-Za-zÄÖÜäöü](?=[\s+\-−–]))?\s*[-−–+]?\s*(\d+(?:\.\d+)?)\s*(mm|cm|m)?$",
         System.Text.RegularExpressions.RegexOptions.IgnoreCase | System.Text.RegularExpressions.RegexOptions.Compiled);
 
-    /// <summary>Liest die Abstände «120, 240, 360». Einheit je Wert: ohne Angabe und «mm» = mm, «cm» wird umgerechnet (Christian 05.11.2026 schreibt
-    /// selbst «UKD −12cm»; vorher galt «12cm» als 12 mm). Ein Minus davor meint dasselbe («unter UK roh Decke») und zählt als Abstand – vorher fiel
-    /// der Wert still weg und die Lagen dahinter rückten um eine Nummer vor.</summary>
-    static double[]? Lesen(string? t)
+    /// <summary>Liest die Abstände «120, 240, 360». Einheit je Wert: ohne Angabe und «mm» = mm, «cm» und «m» werden umgerechnet (Christian 05.11.2026
+    /// schreibt selbst «UKD −12cm»; vorher galt «12cm» als 12 mm). Ein Minus davor meint dasselbe («unter UK roh Decke») und zählt als Abstand – vorher
+    /// fiel der Wert still weg und die Lagen dahinter rückten um eine Nummer vor. Getrennt wird an Komma, Strichpunkt und Zeilenwechsel; jeder Wert
+    /// muss als Ganzes lesbar sein (Gegenprüfung B8: «Lage 1: 120, Lage 2: 240» ergab [1, 120, 2, 240], weil jede Ziffernfolge zählte). Was nicht
+    /// lesbar ist, kommt nach <paramref name="unlesbar"/> und in die Abfrage, statt still zu fehlen oder falsch zu zählen.</summary>
+    static double[]? Lesen(string? t, List<string>? unlesbar = null)
     {
         if (string.IsNullOrWhiteSpace(t)) return null;
         var w = new List<double>();
-        foreach (System.Text.RegularExpressions.Match x in Abstand.Matches(t))
+        foreach (var teil in t.Split([',', ';', '\n'], StringSplitOptions.TrimEntries | StringSplitOptions.RemoveEmptyEntries))
         {
-            if (!double.TryParse(x.Groups[1].Value, NumberStyles.Float, CultureInfo.InvariantCulture, out var v) || v <= 0) continue;
-            w.Add(x.Groups[2].Value.Equals("cm", StringComparison.OrdinalIgnoreCase) ? v * 10 : v);
+            var x = Abstand.Match(teil);
+            if (!x.Success || !double.TryParse(x.Groups[1].Value, NumberStyles.Float, CultureInfo.InvariantCulture, out var v) || v <= 0) { unlesbar?.Add(teil); continue; }
+            w.Add(x.Groups[2].Value.ToLowerInvariant() switch { "cm" => v * 10, "m" => Math.Round(v * 1000, 6), _ => v });
         }
         return w.Count > 0 ? [.. w] : null;
+    }
+
+    /// <summary>Hinweis zu Werten in «lagen» (Geschoss bzw. Gebäude), die nicht lesbar sind; null, wenn alles lesbar ist.</summary>
+    static string? UnlesbarHinweis(Element g, Element? geb)
+    {
+        var teile = new List<string>();
+        foreach (var e in new[] { g, geb })
+        {
+            if (e is null) continue;
+            var u = new List<string>();
+            Lesen(e.Text("lagen"), u);
+            if (u.Count > 0) teile.Add($"{e.Kennzeichen}: {string.Join(", ", u.Select(x => $"«{x}»"))}");
+        }
+        return teile.Count == 0 ? null
+            : $"Lagen nicht lesbar ({string.Join("; ", teile)}) – diese Werte zählen nicht. Abstände UK roh Decke bis Rohrachse mit Komma getrennt angeben, z. B. «120, 240, 360» (mm) oder «12cm, 24cm».";
     }
 
     /// <summary>Lage eines Rohrs (1 …) aus der Höhe seiner Achse; null, wenn es kein Rohr ist, senkrecht oder keiner Lage entspricht.</summary>
@@ -117,6 +136,7 @@ public static class Lagen
                     ["geschoss"] = g.Kennzeichen, ["name"] = g.Name, ["kote"] = g.Zahl("kote") ?? 0, ["ukRohdecke"] = ukd, ["quelle"] = quelle, ["decke"] = decke,
                     ["vorgabe"] = lq != "geschoss", ["lagenQuelle"] = lq,
                     ["gebaeude"] = geb?.Kennzeichen, ["lagenGebaeude"] = geb?.Text("lagen") is { Length: > 0 } lg ? lg : null,
+                    ["hinweis"] = UnlesbarHinweis(g, geb),
                     ["lagen"] = new JsonArray(abst.Select((a, i) => (JsonNode)new JsonObject
                     {
                         ["nr"] = i + 1, ["abstand"] = a, ["hoehe"] = ukd is double u ? u - a : null,
