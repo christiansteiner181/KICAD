@@ -4321,6 +4321,9 @@ jedes neue Projekt erhält alle Mustersysteme.
   muss sich die besetehnde leitung anpassen, dass dies nicht geblockt wird»): am freien Ende eines Rohrs bzw. Kanals rastet der Winkelfang auch auf die
   Bogenwinkel der Produktlinie; knickt der Zug dort ab, kürzt der Kern die bestehende Gerade um die Einbaulänge des Bogens (auch 2 × 45°), der Knick
   bleibt am bisherigen Ende. Gilt auch, wenn der Zug an einem Leitungsanfang endet. Ist die Gerade zu kurz für den Bogen, wird abgelehnt.
+- **Abwasserleitung: Silent mit 2 % Gefälle** (Christian 12.11.2026: «Abwasser leitungen sind immer Silent mit 2% Gefälle», «Gefälle im gelben bereich
+  einstellbar»): Sanitär › Abwasserleitung startet mit der Produktlinie Silent und 2 % Gefälle; bei Abwasser-Produktlinien steht das Gefälle in der gelben
+  Optionsleiste. Rohr und Versorgungsleitung starten ohne Gefälle und ohne Abwasser-Produktlinie.
 - **Neue Projekte mit allen freigegebenen Familien** (Christian 12.11.2026): Projekt anlegen (leer) lädt jede Familie der Bibliothek, deren aktuelle
   Version freigegeben ist, mit Herstellerunterlagen; Entwürfe nicht. Was nicht geladen werden konnte, meldet KICAD.
 - **Lage beim Weiterzeichnen** (Christian 11.11.2026: «wird an einer leitung weitergezeichnet, wird immer die Lage der bestehenden leitung übernommen»):
