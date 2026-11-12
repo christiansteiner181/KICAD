@@ -52,12 +52,36 @@ public static class KanalDruckverlust
         return x;
     }
 
+    /// <summary>Kunststoff am Seriennamen: «Kunststoff» bzw. die Werkstoffkürzel PE, PP, PVC als eigenes Wort (auch «PE-HD», «PP-Rohr») –
+    /// nicht als Wortteil («Spezial», «Doppelwandig», «Klappe» sind kein Kunststoff).</summary>
+    internal static bool IstKunststoff(string serie) =>
+        System.Text.RegularExpressions.Regex.IsMatch(serie, @"kunststoff|(?<![\p{L}\d])(pe|pp|pvc)(?![\p{L}\d])", System.Text.RegularExpressions.RegexOptions.IgnoreCase);
+
+    /// <summary>Durchströmter Querschnitt: Fläche in m² und hydraulischer Durchmesser in m (rund d, rechteckig 2ab/(a+b)); null ohne gültige Masse.
+    /// Rohr einer Produktlinie (Kategorie Rohr): das Mass der Darstellung ist der Aussendurchmesser – gerechnet wird mit dem Innendurchmesser
+    /// der Produktlinie; fehlt er, mit dem Aussendurchmesser und Hinweis (Querschnitt zu gross, Druckverlust zu klein).</summary>
+    internal static (double Flaeche, double Dh, string? Hinweis)? Querschnitt(LeitungsMass mass)
+    {
+        if (mass.Rechteck)
+        {
+            double a = mass.Breite / 1000, b = mass.Hoehe / 1000;
+            return a > 0 && b > 0 ? (a * b, 2 * a * b / (a + b), null) : null;
+        }
+        double d = mass.Breite / 1000; string? hinweis = null;
+        if (mass.Serie is { Kategorie: "Rohr" } s)
+        {
+            if (s.Werte.Innen is double di && di > 0) d = di / 1000;
+            else hinweis = "Rohr ohne Innendurchmesser in der Produktlinie: mit dem Aussendurchmesser gerechnet – Druckverlust zu klein.";
+        }
+        return d > 0 ? (Math.PI * d * d / 4, d, hinweis) : null;
+    }
+
     /// <summary>Rauheit k in mm aus der Serie (Stichwort im Namen), sonst Blechkanal gefalzt; oberer Wert der Tabelle.</summary>
     static (double K, string Text) Rauheit(JsonObject kat, string? serie)
     {
         var w = (kat["rauheit"]?["werte"] as JsonArray ?? []).OfType<JsonObject>().ToList();
         string key = serie is null ? "blechkanal"
-            : System.Text.RegularExpressions.Regex.IsMatch(serie, "pe|pvc|pp|kunststoff", System.Text.RegularExpressions.RegexOptions.IgnoreCase) ? "kunststoff"
+            : IstKunststoff(serie) ? "kunststoff"
             : "blechkanal";
         var z = w.FirstOrDefault(x => T(x["key"]) == key) ?? w.FirstOrDefault();
         return z is null ? (0.15, "k fehlt") : (D(z["kBis"]), $"k = {D(z["kBis"])} mm ({T(z["oberflaeche"])}, {T(z["zustand"])}; Tab. 3 S. {kat["rauheit"]?["seite"]}, oberer Wert)" +
@@ -88,9 +112,10 @@ public static class KanalDruckverlust
             var mass = HlksMasse.Von(p, e);
             double l = (e.Geometrie?.Laenge() ?? 0) / 1000;
             z["laenge_m"] = R(l, 2);
-            if (mass is null) { z["hinweis"] = "Querschnitt unbekannt (Produktlinie bzw. Eigenschaften) – kein Druckverlust."; zeilen.Add(z); continue; }
-            double a = mass.Breite / 1000, b = mass.Hoehe / 1000;
-            double flaeche = mass.Rechteck ? a * b : Math.PI * a * a / 4, dh = mass.Rechteck ? 2 * a * b / (a + b) : a;
+            if (mass is null || Querschnitt(mass) is not { } qs) { z["hinweis"] = "Querschnitt unbekannt (Produktlinie bzw. Eigenschaften) – kein Druckverlust."; zeilen.Add(z); continue; }
+            // ohne Volumenstrom (alle Durchlässe dahinter ohne Angabe) keine Strömung: Re = 0, λ unbestimmt – kein Druckverlust statt NaN in der Antwort
+            if (!(q.M3h > 0)) { z["hinweis"] = q.OhneAngabe.Count > 0 ? $"{q.OhneAngabe.Count} Durchlass/Durchlässe ohne Volumenstrom – kein Druckverlust." : "Kein Volumenstrom – kein Druckverlust."; zeilen.Add(z); continue; }
+            double flaeche = qs.Flaeche, dh = qs.Dh;
             double w = q.M3h / 3600 / flaeche, re = w * dh / luft.Nu;
             var (kmm, kText) = Rauheit(kat, mass.Serie?.SerieName);
             double lam = Lambda(re, kmm / 1000 / dh, double.IsNaN(reKrit) ? 2320 : reKrit);
@@ -100,7 +125,10 @@ public static class KanalDruckverlust
             z["dh_mm"] = R(dh * 1000, 1); z["w_ms"] = R(w, 2); z["re"] = R(re, 0); z["lambda"] = R(lam, 4); z["rauheit"] = kText;
             z["r_Pam"] = R(rpm, 3); z["dp_Pa"] = R(dp, 2);
             z["formel"] = $"Δp = λ·(l/d_h)·ρ·w²/2 = {R(lam, 4)}·({R(l, 2)}/{R(dh, 3)})·{R(luft.Rho, 3)}·{R(w, 2)}²/2 = {R(dp, 2)} Pa (1-12); Re = w·d_h/ν = {R(re, 0)} (1-13)";
-            if (q.OhneAngabe.Count > 0) z["hinweis"] = $"{q.OhneAngabe.Count} Durchlass/Durchlässe ohne Volumenstrom – Summe zu klein.";
+            var hw = new List<string>();
+            if (q.OhneAngabe.Count > 0) hw.Add($"{q.OhneAngabe.Count} Durchlass/Durchlässe ohne Volumenstrom – Summe zu klein.");
+            if (qs.Hinweis is not null) hw.Add(qs.Hinweis);
+            if (hw.Count > 0) z["hinweis"] = string.Join(" ", hw);
             zeilen.Add(z);
         }
         aus["kanaele"] = zeilen;
@@ -110,9 +138,18 @@ public static class KanalDruckverlust
         {
             if (m.Finde(did) is not { } d) continue;
             bool zu = k.IstArt(d, "Zuluftdurchlass");
-            var weg = Netz.Folgen(m, k, d, zu ? "stromauf" : "stromab").Where(x => dpJeKanal.ContainsKey(x.Element.Id)).ToList();
+            // wie LueftungMengen: am Gerät endet der Weg – sonst liefe er durch das Lüftungsgerät ins andere Netz (Zuluft stromauf über den
+            // Abluftanschluss in alle Abluftkanäle, Abluft stromab in alle Zuluftkanäle) und zählte dessen Druckverlust mit
+            var alle = Netz.Folgen(m, k, d, zu ? "stromauf" : "stromab", stopp: e => !Netz.IstLeitungsbauteil(k, e)).Where(x => netz.JeKanal.ContainsKey(x.Element.Id)).ToList();
+            var weg = alle.Where(x => dpJeKanal.ContainsKey(x.Element.Id)).ToList();
             double s = weg.Sum(x => dpJeKanal[x.Element.Id]);
-            wege.Add(new JsonObject { ["durchlass"] = d.Kennzeichen, ["dpReibung_Pa"] = R(s, 1), ["kanaele"] = weg.Count });
+            var wz = new JsonObject { ["durchlass"] = d.Kennzeichen, ["dpReibung_Pa"] = R(s, 1), ["kanaele"] = weg.Count };
+            if (alle.Count > weg.Count)
+            {
+                wz["kanaeleOhneDp"] = alle.Count - weg.Count;
+                wz["hinweis"] = $"{alle.Count - weg.Count} Kanal/Kanäle auf dem Weg ohne Druckverlust (Querschnitt bzw. Volumenstrom fehlt) – Summe zu klein.";
+            }
+            wege.Add(wz);
             if (max is null || s > max.Value.Dp) max = (d.Kennzeichen, s);
         }
         aus["durchlaesse"] = wege;

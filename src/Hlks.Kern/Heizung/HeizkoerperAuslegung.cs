@@ -72,7 +72,10 @@ public static class HeizkoerperAuslegung
             if (fehlt.Count > 0) ann.Add($"Herstellerangaben fehlen: {string.Join(", ", fehlt)} (Datenblatt mit Quelle; SN EN 442 liegt nicht vor).");
             double? dtLog = vl is double v1 && rl is double r1 && ti is double t1 ? DeltaTLog(v1, r1, t1) : null;
             if (vl is not null && rl is not null && ti is not null && dtLog is null) ann.Add($"Betrieb {vl}/{rl} °C bei θi {ti} °C: keine Übertemperatur (VL > RL > θi verlangt).");
-            if (dtLog is double dt && nVl is double a && nRl is double bb && nRaum is double c && n is double ex && phiN is double pn)
+            // Herstellerangabe ohne Übertemperatur (ΔTn ≤ 0, z. B. normRaum über der mittleren Normtemperatur): nicht umrechnen statt durch 0 teilen
+            bool normOk = nVl is not double nv || nRl is not double nr || nRaum is not double nm || (nv + nr) / 2 - nm > 1e-9;
+            if (!normOk) ann.Add($"Herstellerangabe {nVl}/{nRl}/{nRaum} °C ohne Übertemperatur (ΔTn ≤ 0) – keine Umrechnung; normVl, normRl und normRaum prüfen.");
+            if (normOk && dtLog is double dt && nVl is double a && nRl is double bb && nRaum is double c && n is double ex && phiN is double pn)
             {
                 double dtN = (a + bb) / 2 - c;
                 double f = Math.Pow(dt / dtN, ex);

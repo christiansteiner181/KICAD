@@ -81,4 +81,48 @@ public class LueftungMengenTests
         // zweiter Lauf ändert nichts mehr
         Assert.Contains(Gut(p, "fliessrichtung_aus_quelle", """{"quelle":"LG-1"}""").Hinweise, h => h.Contains("0 umgekehrt"));
     }
+
+    [Fact]
+    public void Druckverlust_Weg_endet_am_Geraet_und_Kanal_ohne_Volumenstrom_bleibt_ohne_NaN()
+    {
+        // Gesamtprüfung 13.11.2026: Zu- und Abluft am selben Gerät. Der Weg des Zuluftdurchlasses darf nicht durch das Gerät in die Abluftkanäle laufen.
+        var p = Netz(k1Verkehrt: false);
+        Punkt(p, "Abluftdurchlass", "AD-1", null, 0, 3000, 2500, O("""{"volumenstrom":100}"""), "R-1");
+        Gut(p, "leitung_ziehen", new JsonObject
+        {
+            ["klasse"] = "Kanal", ["kennzeichen"] = "K-4", ["eigenschaften"] = new JsonObject { ["durchmesser"] = 200 },
+            ["punkte"] = new JsonArray(new JsonArray(0, 3000, 2500), new JsonArray(0, 0, 2500)), ["von"] = "AD-1.abl", ["nach"] = "LG-1.abl",
+        });
+        // ZD-1 trägt den ganzen Raum (300 m³/h): für ZD-2 bleibt 0 – K-3 ohne Strömung
+        Gut(p, "element_aendern", """{"element":"ZD-1","eigenschaften":{"volumenstrom":300}}""");
+        var r = (JsonObject)Tuer.Abfrage(p, "kanal_druckverlust", new JsonObject());
+        r.ToJsonString();   // keine NaN-Werte (warf vorher bei Re = 0)
+        JsonObject Kanal(string kz) => r["kanaele"]!.AsArray().OfType<JsonObject>().Single(x => (string?)x["kanal"] == kz);
+        JsonObject Durchlass(string kz) => r["durchlaesse"]!.AsArray().OfType<JsonObject>().Single(x => (string?)x["durchlass"] == kz);
+        double Dp(string kz) => Kanal(kz)["dp_Pa"]!.GetValue<double>();
+        Assert.Null(Kanal("K-3")["dp_Pa"]);
+        Assert.Contains("kein Druckverlust", (string?)Kanal("K-3")["hinweis"]);
+        Assert.Equal(Dp("K-0") + Dp("K-1") + Dp("K-2"), Durchlass("ZD-1")["dpReibung_Pa"]!.GetValue<double>(), 1);
+        Assert.Equal(3, Durchlass("ZD-1")["kanaele"]!.GetValue<int>());
+        Assert.Equal(Dp("K-4"), Durchlass("AD-1")["dpReibung_Pa"]!.GetValue<double>(), 1);
+        Assert.Equal(1, Durchlass("ZD-2")["kanaeleOhneDp"]!.GetValue<int>());   // K-3 fehlt in der Summe und wird genannt
+    }
+
+    [Fact]
+    public void Druckverlust_Querschnitt_Rohr_mit_Innendurchmesser_und_Kunststoff_nur_als_Wort()
+    {
+        // Rohr einer Produktlinie: Mass der Darstellung ist aussen (75), durchströmt ist innen (63) – FIKTIVE Masse
+        LeitungsMass Rohr(double? innen) => new(new LeitungsSerieInfo(null!, "PE-Rohr", "Rohr", "rund", "75",
+            new FamLeitungWerte(new Dictionary<string, double>(), 75, innen, null, null)), false, 75, 75, 0);
+        var q = KanalDruckverlust.Querschnitt(Rohr(63))!.Value;
+        Assert.Equal(0.063, q.Dh, 9);
+        Assert.Equal(Math.PI * 0.063 * 0.063 / 4, q.Flaeche, 9);
+        Assert.NotNull(KanalDruckverlust.Querschnitt(Rohr(null))!.Value.Hinweis);
+        Assert.Equal(2 * 0.4 * 0.2 / 0.6, KanalDruckverlust.Querschnitt(new LeitungsMass(null, true, 400, 200, 0))!.Value.Dh, 9);
+        Assert.Null(KanalDruckverlust.Querschnitt(new LeitungsMass(null, true, 400, 0, 0)));
+        Assert.True(KanalDruckverlust.IstKunststoff("PE-HD Lüftungsrohr"));
+        Assert.True(KanalDruckverlust.IstKunststoff("Kunststoffkanal PP"));
+        Assert.False(KanalDruckverlust.IstKunststoff("Spezialkanal doppelwandig"));
+        Assert.False(KanalDruckverlust.IstKunststoff("Spiralrohr verzinkt"));
+    }
 }

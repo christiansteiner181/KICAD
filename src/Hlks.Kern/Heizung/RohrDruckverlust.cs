@@ -83,11 +83,28 @@ public static class RohrDruckverlust
         }
         aus["leitungen"] = zeilen;
         // je Verbraucher: Summe aller Leitungen, die ihn führen (Vor- und Rücklauf)
+        // Leitungen ohne Druckverlust (Temperatur, Innendurchmesser bzw. Massenstrom fehlt) und Maschen werden je Verbraucher genannt – die Summe
+        // ist dann zu klein bzw. nicht eindeutig (in einer Masche trägt jeder der parallelen Wege den vollen Strom und zählt mit).
         var jeVerbraucher = new Dictionary<string, double>(StringComparer.Ordinal);
+        var ohneDp = new Dictionary<string, int>(StringComparer.Ordinal);
+        var inMasche = new HashSet<string>(StringComparer.Ordinal);
         foreach (var (id, beitraege) in netz.JeLeitung)
-            if (dpJeLeitung.TryGetValue(id, out var dp))
-                foreach (var v in beitraege.Select(b => b.Verbraucher.Id).Distinct()) jeVerbraucher[v] = jeVerbraucher.GetValueOrDefault(v) + dp;
-        aus["verbraucher"] = new JsonArray(jeVerbraucher.OrderByDescending(x => x.Value).Select(x => (JsonNode)new JsonObject { ["verbraucher"] = m.Finde(x.Key)?.Kennzeichen, ["dpReibung_Pa"] = R(x.Value, 0) }).ToArray());
+            foreach (var v in beitraege.Select(b => b.Verbraucher.Id).Distinct())
+            {
+                if (dpJeLeitung.TryGetValue(id, out var dp)) jeVerbraucher[v] = jeVerbraucher.GetValueOrDefault(v) + dp;
+                else ohneDp[v] = ohneDp.GetValueOrDefault(v) + 1;
+                if (netz.MaschenLeitungen.Contains(id)) inMasche.Add(v);
+            }
+        JsonObject Zeile(string v, double dp)
+        {
+            var o = new JsonObject { ["verbraucher"] = m.Finde(v)?.Kennzeichen, ["dpReibung_Pa"] = R(dp, 0) };
+            var hw = new List<string>();
+            if (ohneDp.TryGetValue(v, out var n)) { o["leitungenOhneDp"] = n; hw.Add($"{n} Leitung(en) auf dem Weg ohne Druckverlust – Summe zu klein."); }
+            if (inMasche.Contains(v)) hw.Add("Weg mit Masche (Ring, Tichelmann): parallele Leitungen mit vollem Massenstrom mitgezählt – Summe nicht eindeutig (Befund P39).");
+            if (hw.Count > 0) o["hinweis"] = string.Join(" ", hw);
+            return o;
+        }
+        aus["verbraucher"] = new JsonArray(jeVerbraucher.OrderByDescending(x => x.Value).Select(x => (JsonNode)Zeile(x.Key, x.Value)).ToArray());
         if (jeVerbraucher.Count > 0) { var mx = jeVerbraucher.MaxBy(x => x.Value); aus["massgebend"] = new JsonObject { ["verbraucher"] = m.Finde(mx.Key)?.Kennzeichen, ["dpReibung_Pa"] = R(mx.Value, 0) }; }
         return aus;
     }

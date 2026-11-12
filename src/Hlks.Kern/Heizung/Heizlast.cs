@@ -73,6 +73,7 @@ public static class Heizlast
         foreach (var r in alle) theta[r.Id] = Innentemperatur(r, hl, nutz2021, nutz, zuordnung);
         double bStrich = BStrich(rg, hl, out var bText);
         var wb = Waermebruecken(m, rg);
+        var jeRaum = rg.Grenzen.ToLookup(x => x.Raum.Id, StringComparer.Ordinal);
         var zeilen = new JsonArray();
         double sT = 0, sV = 0, sTij = 0; bool mech = false; var ohneTheta = new List<string>();
         foreach (var rm in rg.Raeume.OrderBy(x => x.Raum.Kennzeichen, StringComparer.OrdinalIgnoreCase))
@@ -80,7 +81,7 @@ public static class Heizlast
             var r = rm.Raum;
             if (!Raumgrenzen.Beheizt(r)) continue;
             if (nur is not null && nur.Id != r.Id) continue;
-            var (z, rohT, rohV, rohTij) = Raum(r, rm, rg.Grenzen.Where(x => x.Raum.Id == r.Id).ToList(), theta, a, hl, geb, terrain, bStrich, bText, wb.GetValueOrDefault(r.Id) ?? []);
+            var (z, rohT, rohV, rohTij) = Raum(r, rm, jeRaum[r.Id].ToList(), theta, a, hl, geb, terrain, bStrich, bText, wb.GetValueOrDefault(r.Id) ?? []);
             zeilen.Add(z);
             if (z["phiT"] is JsonValue) { sT += rohT; sV += rohV; sTij += rohTij; mech |= z["lueftungsanlage"]?.GetValue<bool>() == true; }
             else ohneTheta.Add(r.Kennzeichen);
@@ -101,7 +102,7 @@ public static class Heizlast
                 ["annahmen"] = new JsonArray(new[]
                 {
                     "ΣΦV als Summe der Räume; die Gebäude-Luftmenge nach 8.2 (max(0,5·ΣV̇inf, ΣV̇min)) ist nicht umgesetzt – ohne n50 ohne Wirkung, bei Altbau (n50 > 0) zu prüfen.",
-                }.Concat(ohneTheta.Count > 0 ? [$"{ohneTheta.Count} beheizte(r) Raum/Räume ohne Innentemperatur nicht in der Summe: {string.Join(", ", ohneTheta.Take(10))}{(ohneTheta.Count > 10 ? " …" : "")}."] : [])
+                }.Concat(ohneTheta.Count > 0 ? [$"{ohneTheta.Count} beheizte(r) Raum/Räume ohne Heizlast (Innentemperatur fehlt bzw. nicht über θe) nicht in der Summe: {string.Join(", ", ohneTheta.Take(10))}{(ohneTheta.Count > 10 ? " …" : "")}."] : [])
                  .Select(x => (JsonNode)x).ToArray()),
             };
         }
@@ -272,6 +273,8 @@ public static class Heizlast
         var aus = new JsonObject { ["raum"] = r.Kennzeichen, ["nummer"] = r.Text("nummer"), ["name"] = r.Name, ["thetaInt"] = ti, ["thetaIntQuelle"] = tiQ, ["thetaE"] = a.ThetaE };
         if (ti is not double tint) { ann.Add($"Innentemperatur fehlt ({tiQ}) – keine Heizlast."); aus["annahmen"] = ann; return (aus, 0, 0, 0); }
         double dt = tint - a.ThetaE;
+        // θint ≤ θe: keine Heizlast – bu (6), fij (10), fg2 und fV teilen durch (θint − θe)
+        if (dt <= 1e-9) { ann.Add($"Innentemperatur {tint} °C nicht über der Aussentemperatur {a.ThetaE} °C – keine Heizlast (tempWinter bzw. θe prüfen)."); aus["annahmen"] = ann; return (aus, 0, 0, 0); }
         double vol = rm.FlaecheM2 * rm.HoeheMm / 1000;
         aus["flaeche_m2"] = R(rm.FlaecheM2); aus["volumen_m3"] = R(vol);
         var beitraege = new JsonArray();
