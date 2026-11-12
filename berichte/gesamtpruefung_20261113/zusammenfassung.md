@@ -25,6 +25,12 @@ Tests nach dem Zusammenführen (gefiltert): Kern 169 + 86 grün, Web 5 grün, No
 | Oberfläche 2 | 4 (Klick während laufender Abfrage wird eingereiht statt verworfen, weiteres Esc beendet bei hängendem Server nach 5 s, Raster rundet nicht auf Länge 0, Mehrfachauswahl «verschieden» auch bei Auswahl/Häkchen, Kennzeichen bleibt bei «System weitergeben», Serien-PDF «Fertig», Lesbarkeit gelbe Leiste) | oberflaeche2.md |
 | Architektur, Aussparungen | 4 (schräge Wandecken ohne Zacken, elemente_drehen dreht platzierte Familien mit, Türvorschau mit Drehpunkt auf der Wandfläche, Meldung statt Absturz beim Drehen/Spiegeln ohne Elemente) | architektur_aussparungen.md |
 
+## Runde 3 (Start 18:05)
+
+| Bereich | Korrekturen | Bericht |
+|---|---|---|
+| Restliste | 7 (Start an Anschluss übernimmt zuerst Dimension/Höhe/Medium, dann Pflichtfelder; Kanalumriss und Fliesspfeil an Kreuzungen; Lücke grob ab Strichrand; Gewinde 5/4" = 1 1/4"; IFC-Achsensystem x ∥ z; Meldung ohne Familienbibliothek; Hinweis Dämmdialog bei gemischten DN; Baustellen-Webseite startet trotz kaputter Adresse) | restliste.md |
+
 ## Fragen an Christian (gesammelt)
 
 1. **Gefälle 2 % gegen Toleranz 1°** (Leitungen): 2 % = 1.146° – jede Verbindung einer waagrechten Achse mit einem Stück mit 2 % wird
