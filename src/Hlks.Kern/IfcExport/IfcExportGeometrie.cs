@@ -68,9 +68,12 @@ public static class IfcExportGeometrie
         return new Querschnitt(false, d, d, daemm, HlksEinordnung.Dn(e) is null ? "ohne Grösse: Darstellung Ø 30 mm wie das 3D" : "DN als Durchmesser wie das 3D (kein Aussendurchmesser)", true);
     }
 
-    /// <summary>Teilstücke einer Leitung (Punkte relativ zum Ursprung = erster Punkt): Leitung und – mit Dämmung – das Hohlprofil darum.</summary>
-    public static (List<IfcExKoerper> Leitung, List<IfcExKoerper> Daemmung) LeitungsKoerper(List<double[]> punkte, Querschnitt q)
+    /// <summary>Teilstücke einer Leitung (Punkte relativ zum Ursprung = erster Punkt): Leitung und – mit Dämmung – das Hohlprofil darum.
+    /// <paramref name="querDrehung"/> (Grad, Eigenschaft «querDrehung» eckiger Kanäle): Richtung der Breite senkrechter Teilstücke im Grundriss –
+    /// wie das 3D (HlksKoerper.Kanal) und die Kollisionsprüfung (Achskoerper.KanalLage); waagrechte und geneigte Stücke betrifft sie nicht.</summary>
+    public static (List<IfcExKoerper> Leitung, List<IfcExKoerper> Daemmung) LeitungsKoerper(List<double[]> punkte, Querschnitt q, double querDrehung = 0)
     {
+        double wq = querDrehung * Math.PI / 180;
         var leitung = new List<IfcExKoerper>();
         var daemmung = new List<IfcExKoerper>();
         var o = punkte[0];
@@ -83,7 +86,8 @@ public static class IfcExportGeometrie
             var lage = Minus(punkte[i - 1], o);
             if (q.Rechteck)
             {
-                var refx = Quer(achse);
+                // senkrecht (Grundrisslänge < 0.001 mm, dieselbe Grenze wie das 3D): b in x, um querDrehung gedreht
+                double[] refx = Math.Sqrt(d[0] * d[0] + d[1] * d[1]) < 1e-3 ? [Math.Cos(wq), Math.Sin(wq), 0] : Quer(achse);
                 leitung.Add(new IfcExQuader(lage, achse, refx, q.B, q.H, l));
                 if (q.Daemmdicke > 0) daemmung.Add(new IfcExQuader(lage, achse, refx, q.B + 2 * q.Daemmdicke, q.H + 2 * q.Daemmdicke, l, q.Daemmdicke));
             }
