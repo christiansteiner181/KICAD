@@ -51,13 +51,14 @@ export function erlaubteWinkel(serie) {
  *   drehung   N9: Drehung der Ansicht (Grad, Gegenuhrzeigersinn) – die Achsrichtungen gelten in den Achsen der Ansicht (waagrecht
  *             gezeichnet = parallel zur Gebäudekante); Richtungen bleiben im Modell
  */
-export function richtungsKandidaten({ vorher = null, winkel = null, erster = null, nur = null, drehung = 0 } = {}) {
+export function richtungsKandidaten({ vorher = null, winkel = null, erster = null, nur = null, drehung = 0, geradeaus = false } = {}) {
   if (nur) return [...new Set(nur.map((w) => rund(normWinkel(w), 6)))];
   const s = new Set();
   const add = (w) => s.add(rund(normWinkel(w), 6));
   if (erster !== null) { add(erster); return [...s]; }          // am Anschluss gilt nur seine Achse
   for (const a of [0, 90, 180, 270]) add(a - (Number(drehung) || 0));
   if (vorher !== null) {
+    if (geradeaus) add(vorher);                                    // am freien Ende einer Geraden: in ihrer Achse weiter (auch schräg zur Ansicht)
     for (const w of winkel ?? STANDARD_WINKEL_FREI) { add(vorher + w); add(vorher - w); }
     s.delete(rund(normWinkel(vorher + 180), 6));                 // Kehrtwende gibt es nicht
   }

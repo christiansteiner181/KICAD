@@ -93,7 +93,7 @@ function kandidaten(z, ctx) {
   // Am freien Ende einer Geraden auch die Bogenwinkel: der Kern kürzt die Gerade um den Bogen (Christian 12.11.2026: «wird an einer leitung
   // weitergezeichnet, und es wird bsp. direkt ein 90° bogen gezeichnet, so muss sich die besetehnde leitung anpassen»)
   if (erster !== null && ['anfang', 'ende'].includes(z.von.name) && ['Rohr', 'Kanal'].includes(element(z.von.element)?.klasse))
-    return L.richtungsKandidaten({ vorher: erster, winkel, drehung: ctx.ansicht.drehung ?? 0 });
+    return L.richtungsKandidaten({ vorher: erster, winkel, drehung: ctx.ansicht.drehung ?? 0, geradeaus: true });
   return L.richtungsKandidaten({ vorher: L.letzteRichtung(z.punkte), winkel, erster, drehung: ctx.ansicht.drehung ?? 0 });   // N9: Achsen der Ansicht
 }
 
