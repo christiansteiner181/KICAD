@@ -105,11 +105,40 @@ if (-not (Get-ChildItem -Path $ausgabe -Filter *.html -ErrorAction SilentlyConti
   } catch { Log "Webseite nicht erzeugt: $($_.Exception.Message)" }
 }
 
+# Zugaenge fuer den Unternehmer (Christian 12.11.2026: "richte mir im test bitte einen monteur und einen projektleiter nutzer ein"; Entscheide: persoenlicher
+# Link, Projektleiter auch Arbeitsstand, je Projekt): <Projekt>\baustelle\zugaenge.json (src\Hlks.Web\BaustelleZugaenge.cs). Einmal angelegt, bleiben sie.
+$zdatei = Join-Path $Projekt 'baustelle\zugaenge.json'
+if (-not (Test-Path $zdatei)) {
+  $zeichen = 'abcdefghjkmnpqrstuvwxyz23456789'.ToCharArray()
+  $rng = [System.Security.Cryptography.RandomNumberGenerator]::Create()
+  function Schluessel { $b = New-Object byte[] 12; $rng.GetBytes($b); -join ($b | ForEach-Object { $zeichen[$_ % $zeichen.Length] }) }
+  $z = [ordered]@{ zugaenge = @(
+    [ordered]@{ name = 'Monteur Test'; rolle = 'monteur'; schluessel = (Schluessel) },
+    [ordered]@{ name = 'Projektleiter Test'; rolle = 'projektleiter'; schluessel = (Schluessel) }) }
+  New-Item -ItemType Directory -Force (Split-Path $zdatei) | Out-Null
+  [System.IO.File]::WriteAllText($zdatei, ($z | ConvertTo-Json -Depth 4), (New-Object System.Text.UTF8Encoding($false)))
+  Log 'Zugaenge Monteur Test und Projektleiter Test angelegt'
+}
+# Monteur sieht nur freigegebene Monteur-Webseiten: eine erzeugen, falls keine da ist
+if (-not (Get-ChildItem -Path $ausgabe -Filter '*_monteur_*.html' -ErrorAction SilentlyContinue)) {
+  try {
+    $antwort = Invoke-WebRequest "$url/api/abfrage/baustelle_export" -Method Post -ContentType 'application/json' -Body '{"rolle":"monteur","stand":"freigegeben"}' -UseBasicParsing -TimeoutSec 300
+    Log ("Monteur-Webseite: " + $antwort.Content.Substring(0, [Math]::Min(300, $antwort.Content.Length)))
+  } catch { Log "Monteur-Webseite nicht erzeugt: $($_.Exception.Message)" }
+}
+$zugaenge = @((Get-Content $zdatei -Raw -Encoding UTF8 | ConvertFrom-Json).zugaenge)
+
 $liste = @(Adressen)
 Log ("Adressen: " + ($liste -join ', '))
 if (-not $OhneFenster) {
-  Start-Process "http://localhost:$BaustellePort/baustelle/"
-  $text = "Testserver laeuft.`n`nAm Tablet (gleiches Netz wie dieser PC) im Browser oeffnen:`n" + ($liste -join "`n") +
+  $basis = if ($liste.Count -gt 0) { $liste[0] } else { "http://localhost:$BaustellePort/baustelle/" }
+  $links = ($zugaenge | ForEach-Object { "$($_.name) ($($_.rolle)):`n  $($basis)z/$($_.schluessel)" }) -join "`n"
+  Set-Clipboard -Value $links -ErrorAction SilentlyContinue
+  # am PC als Projektleiter angemeldet oeffnen (sieht alles)
+  $pl = $zugaenge | Where-Object { $_.rolle -eq 'projektleiter' } | Select-Object -First 1
+  Start-Process ("http://localhost:$BaustellePort/baustelle/" + $(if ($pl) { "z/$($pl.schluessel)" } else { '' }))
+  $text = "Testserver laeuft.`n`nPersoenliche Links (einmal am Handy/Tablet oeffnen, das Geraet bleibt angemeldet; in der Zwischenablage):`n$links" +
+    "`n`nAndere Adressen dieses PCs: " + ($liste -join ', ') +
     "`n`nDann im Browsermenue 'Zum Startbildschirm hinzufuegen'.`nKICAD des Testservers (Testprojekt): http://localhost:$Port - dort Datei > Ausgabe > 'Baustelle (Webseite)' fuer neue Webseiten`n" +
     "und 'Rueckmeldung Baustelle' fuer die Meldungen vom Tablet.`n`nKeine Verbindung? Windows-Firewall: dotnet.exe fuer private Netzwerke zulassen."
   Hinweis $text

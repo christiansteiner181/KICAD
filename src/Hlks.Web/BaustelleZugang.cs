@@ -82,29 +82,52 @@ public static class BaustelleZugang
 
     public static WebApplication MapBaustelleZugang(this WebApplication app, ProjektDienst dienst, int? port)
     {
-        app.MapGet("/baustelle/", async () =>
+        // Persönlicher Link (12.11.2026): setzt das Cookie für ein Jahr und leitet auf die Übersicht; abmelden löscht es
+        app.MapGet("/baustelle/z/{schluessel}", (string schluessel, HttpRequest anfrage) => Gesichert(async () =>
         {
-            string titel, inhalt;
+            var z = await dienst.Mit(p => BaustelleZugaenge.Lesen(p)?.FirstOrDefault(x => x.Schluessel == schluessel.Trim()));
+            if (z is null) return Html("<!doctype html><meta charset=utf-8><p>Dieser Link gilt nicht (mehr). Bitte beim Projektleiter einen neuen verlangen.</p>", 403);
+            anfrage.HttpContext.Response.Cookies.Append(BaustelleZugaenge.Keks, z.Schluessel, new CookieOptions
+            {
+                HttpOnly = true, SameSite = SameSiteMode.Lax, Path = "/baustelle", MaxAge = TimeSpan.FromDays(365), IsEssential = true,
+            });
+            return Results.Redirect("/baustelle/");
+        }));
+        app.MapGet("/baustelle/abmelden", (HttpRequest anfrage) =>
+        {
+            anfrage.HttpContext.Response.Cookies.Delete(BaustelleZugaenge.Keks, new CookieOptions { Path = "/baustelle" });
+            return Results.Redirect("/baustelle/");
+        });
+        app.MapGet("/baustelle/", async (HttpRequest anfrage) =>
+        {
+            string titel, inhalt, wer;
             try
             {
-                (titel, inhalt) = await dienst.Mit(p =>
+                (titel, inhalt, wer) = await dienst.Mit(p =>
                 {
-                    var liste = Webseiten(p);
+                    // Zugänge (12.11.2026, BaustelleZugaenge.cs): mit zugaenge.json nur angemeldet, Monteur nur Monteur-Seiten
+                    var zugaenge = BaustelleZugaenge.Lesen(p);
+                    var zugang = zugaenge is null ? null : BaustelleZugaenge.Angemeldet(anfrage, zugaenge);
+                    if (zugaenge is not null && zugang is null)
+                        return (p.Kopf.Name, "<p>Nicht angemeldet. Bitte den persönlichen Link öffnen, den der Projektleiter bzw. das Planungsbüro geschickt hat.</p>", "");
+                    var liste = Webseiten(p).Where(f => zugang is null || BaustelleZugaenge.DarfSehen(zugang, f.Name)).ToList();
                     var zeilen = liste.Select(f => $"<li><a href=\"/baustelle/seite/{Uri.EscapeDataString(f.Name)}\">{WebUtility.HtmlEncode(Path.GetFileNameWithoutExtension(f.Name))}</a>" +
                         $"<span>{f.LastWriteTime:dd.MM.yyyy HH:mm} · {f.Length / 1024.0 / 1024.0:0.0} MB</span></li>");
                     return (p.Kopf.Name, liste.Count == 0
-                        ? "<p>Noch keine Webseite erzeugt. In KICAD: Datei › Ausgabe › «Baustelle (Webseite)».</p>"
-                        : $"<ul>{string.Concat(zeilen)}</ul>");
+                        ? (zugang?.Rolle == BaustelleZugaenge.Monteur ? "<p>Noch keine freigegebene Webseite für die Montage.</p>" : "<p>Noch keine Webseite erzeugt. In KICAD: Datei › Ausgabe › «Baustelle (Webseite)».</p>")
+                        : $"<ul>{string.Concat(zeilen)}</ul>",
+                        zugang is null ? "" : $"<div class=\"wer\">{WebUtility.HtmlEncode(zugang.Name)} · {BaustelleZugaenge.RollenText(zugang.Rolle)} · <a href=\"/baustelle/abmelden\">abmelden</a></div>");
                 });
             }
-            catch (HlksFehler f) { (titel, inhalt) = ("KICAD", $"<p>{WebUtility.HtmlEncode(f.Message)}</p>"); }
+            catch (HlksFehler f) { (titel, inhalt, wer) = ("KICAD", $"<p>{WebUtility.HtmlEncode(f.Message)}</p>", ""); }
             return Html($$"""
                 <!doctype html><html lang="de-CH"><head>{{Kopf("KICAD Baustelle")}}
                 <style>body{font:16px system-ui,sans-serif;margin:0;background:#f4f5f7;color:#16202e}header{background:#16202e;color:#fff;padding:14px 18px;display:flex;gap:12px;align-items:center}
                 header img{width:40px;height:40px}h1{font-size:19px;margin:0}main{padding:14px 18px;max-width:760px}ul{list-style:none;padding:0;margin:0}
                 li{background:#fff;border:1px solid #d9dde3;border-radius:6px;margin:0 0 8px;padding:12px 14px;display:flex;flex-wrap:wrap;justify-content:space-between;gap:6px}
-                a{color:#1d5fa8;font-weight:600;text-decoration:none;word-break:break-all}span,.leise{color:#667;font-size:14px}</style></head>
-                <body><header><img src="/baustelle/icon.svg" alt=""><h1>KICAD Baustelle · {{WebUtility.HtmlEncode(titel)}}</h1></header><main>
+                a{color:#1d5fa8;font-weight:600;text-decoration:none;word-break:break-all}span,.leise{color:#667;font-size:14px}
+                .wer{margin-left:auto;font-size:14px;color:#cfd6e0}.wer a{color:#9cc4ff;font-weight:400}</style></head>
+                <body><header><img src="/baustelle/icon.svg" alt=""><h1>KICAD Baustelle · {{WebUtility.HtmlEncode(titel)}}</h1>{{wer}}</header><main>
                 <p class="leise">Webseiten für die Baustelle (neueste zuerst). Zum Startbildschirm: im Browsermenü «Zum Startbildschirm hinzufügen» bzw. «Teilen › Zum Home-Bildschirm».</p>
                 {{inhalt}}</main></body></html>
                 """);
@@ -112,7 +135,17 @@ public static class BaustelleZugang
         // Die Webseite (mehrere MB, GLB als base64) gzip-komprimiert, wenn der Browser es annimmt – nur hier, nicht global (JSON und Oberfläche bleiben roh)
         app.MapGet("/baustelle/seite/{datei}", (string datei, HttpRequest anfrage) => Gesichert(async () =>
         {
-            var (pfad, fehler, code) = await dienst.Mit(p => BaustelleEndpunkte.Erlaubt(p, Path.GetFileName(datei)));
+            var (pfad, fehler, code) = await dienst.Mit(p =>
+            {
+                // Zugänge (12.11.2026): angemeldet und für diese Rolle freigegeben
+                if (BaustelleZugaenge.Lesen(p) is { } zugaenge)
+                {
+                    var z = BaustelleZugaenge.Angemeldet(anfrage, zugaenge);
+                    if (z is null) return ((string?)null, (string?)"Nicht angemeldet. Bitte den persönlichen Link öffnen.", 403);
+                    if (!BaustelleZugaenge.DarfSehen(z, datei)) return (null, "Diese Webseite ist nicht für die Montage freigegeben.", 403);
+                }
+                return BaustelleEndpunkte.Erlaubt(p, Path.GetFileName(datei));
+            });
             if (pfad is null) return Html($"<!doctype html><meta charset=utf-8><p>{WebUtility.HtmlEncode(fehler)}</p><p><a href=\"/baustelle/\">Zur Übersicht</a></p>", code);
             var html = await File.ReadAllTextAsync(pfad);
             int k = html.IndexOf("</head>", StringComparison.OrdinalIgnoreCase);
@@ -148,6 +181,10 @@ public static class BaustelleZugang
             catch (System.Text.Json.JsonException) { return Antwort(new { fehler = "Die Rückmeldung ist kein gültiges JSON." }, 400); }
             if ((string?)r["format"] != BaustelleRueckmeldung.Format || r["meldungen"] is not JsonArray m)
                 return Antwort(new { fehler = "Das ist keine Rückmeldung der Baustellen-Webseite." }, 400);
+            // Zugänge (12.11.2026): die Rückmeldung trägt den Namen des angemeldeten Zugangs
+            var (mitZugaengen, zugang) = await dienst.Mit(p => BaustelleZugaenge.Lesen(p) is { } l ? (true, BaustelleZugaenge.Angemeldet(anfrage, l)) : (false, null));
+            if (mitZugaengen && zugang is null) return Antwort(new { fehler = "Nicht angemeldet.", vorschlag = "Den persönlichen Link öffnen und die Meldung noch einmal senden." }, 403);
+            if (zugang is not null) r["person"] = zugang.Name;
             var person = ((string?)r["person"] ?? "").Trim();
             if (person.Length == 0) return Antwort(new { fehler = "Name fehlt.", vorschlag = "Im Reiter Meldungen den Namen eintragen." }, 400);
             var datei = await dienst.Mit(p =>
