@@ -313,4 +313,27 @@ public sealed class PaketZuruecknehmenTests : IDisposable
         Assert.DoesNotContain("ablehnung", json);
         Assert.DoesNotContain("spaeterePakete", json);
     }
+
+    /// <summary>Gesamtprüfung 12.11.2026: Wiederholen setzte den eigenen alten Stand ohne Meldung über eine Änderung, die inzwischen ein
+    /// anderer gemacht hatte. Jetzt gilt dieselbe Regel wie beim Rückgängig.</summary>
+    [Fact]
+    public void Wiederholen_NachFremderAenderung_Abgelehnt_FremdesBleibt()
+    {
+        var mensch = Mensch();
+        Umbenennen(mensch, "WC-1", "Vom Menschen");
+        Umbenennen(mensch, "WC-2", "Auch vom Menschen");
+        Ok(mensch.Rueckgaengig());
+        Ok(mensch.Rueckgaengig());
+        mensch.Freigeben();
+        Umbenennen(Ki(), "WC-1", "Von der KI");
+        mensch.Synchronisieren();
+
+        var e = mensch.Wiederholen();
+
+        Assert.False(e.Angenommen);
+        Assert.Contains("WC-1 wurde inzwischen geändert", e.Fehler);
+        Assert.False(string.IsNullOrWhiteSpace(e.Vorschlag));
+        Assert.Equal("Von der KI", Name(mensch, "WC-1"));
+        Assert.Equal("Original 2", Name(mensch, "WC-2"));
+    }
 }
