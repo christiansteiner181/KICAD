@@ -217,7 +217,7 @@ public sealed class HlksGrafik : IGrafikquelle
                     // Abwasser (Christian 06.11.2026: «die leitungen sollten transparent sein, die achse ein dunkles antrazith, aussenlinien bleiben
                     // untransparent»): Füllung leicht (Deckkraft wie Kanäle), Ränder deckend in der Leitungsfarbe
                     foreach (var pr in HlksLinien.Band(lauf.Xy, breite, farbe ?? "schnitt")) { pr.Stil.Deckkraft = LeitungDeckkraft; teil.Primitive.Add(pr); }
-                    teil.Primitive.AddRange(Raender(lauf.Xy, breite, farbe, linie == "voll" ? "voll" : "strich"));
+                    teil.Primitive.AddRange(Raender(lauf.Xy, breite, farbe, linie == "voll" ? "voll" : "strich", AbwasserKontur));
                 }
                 else if (mass.Rohrband)   // mittel und fein immer ausgezogen, auch der Rücklauf (Christian 09.11.2026: «rohrdarstellung des Rücklaufes bei mittel und fein nicht gestrichelt»); gestrichelt nur grob bzw. einlinig
                     teil.Primitive.AddRange(HlksLinien.Band(lauf.Xy, breite, farbe ?? "schnitt"));
@@ -294,6 +294,10 @@ public sealed class HlksGrafik : IGrafikquelle
     /// <summary>Die beiden Ränder eines Bandes der Breite b als dünne Linien in der Linienart (gestrichelt), ohne Füllung.</summary>
     /// <summary>Achslinie der Abwasserleitungen (Christian 06.11.2026 «ein dunkles antrazith»; ANNAHME Gestaltung: RAL 7016 Anthrazitgrau).</summary>
     internal const string AchseAnthrazit = "#383e42";
+
+    /// <summary>Konturen der Abwasserleitungen, ihrer Formteile und Fallleitungen (Christian 12.11.2026: «die Konturen von Abwasser sind ebenfalls zu stark»;
+    /// ANNAHME Hauptlauf: 0.20 mm statt 0.50 mm – feiner, aber kräftiger als Achsen und Dämmkanten mit 0.10 mm).</summary>
+    internal const string AbwasserKontur = Stifte.Hilf;
 
     /// <summary>Deckkraft der leichten Füllung (Kanäle, Abwasser und ihre Formteile).</summary>
     internal const double LeitungDeckkraft = 0.2;
@@ -423,7 +427,7 @@ public sealed class HlksGrafik : IGrafikquelle
             bool wieLeitung = (kanal || !mass.Rechteck) && fuellung is not null && !verdeckt;   // verdeckt (unter dem Geschossboden) bleibt gestrichelt
             // Konturen 0.5 mm (Christian 09.11.2026); deckend gefüllte Rohre ohne Rand wie das Rohrband
             var stil = !wieLeitung ? new Stil { Stift = Stifte.Kontur, Linie = linienart, Farbe = farbe, Fuellung = fuellung }
-                : abwasser || kanal ? new Stil { Stift = Stifte.Kontur, Linie = linienart, Farbe = farbe, Fuellung = farbe ?? "schnitt", Deckkraft = LeitungDeckkraft }
+                : abwasser || kanal ? new Stil { Stift = abwasser ? AbwasserKontur : Stifte.Kontur, Linie = linienart, Farbe = farbe, Fuellung = farbe ?? "schnitt", Deckkraft = LeitungDeckkraft }
                 : new Stil { Stift = null, Linie = linienart, Farbe = farbe, Fuellung = farbe ?? "schnitt" };
             if (mass.Rechteck)
             {

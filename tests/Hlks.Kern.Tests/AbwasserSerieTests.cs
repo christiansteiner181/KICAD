@@ -362,6 +362,10 @@ public class AbwasserSerieTests
         Assert.True(Z(rohre[0], 0) > Z(rohre[0], 1));   // fällt in Fliessrichtung
         var pfeil = Grafik.Plan(p, "AN-EG").Teile.Single(x => x.Id == rohre[0].Id).Primitive.Where(x => x.Art == "polygon" && x.Punkte.Count == 3 && x.Stil.Fuellung == HlksGrafik.AchseAnthrazit);
         Assert.Single(pfeil);   // Pfeil in Fliessrichtung
+        // Konturen feiner (Christian 12.11.2026: «die Konturen von Abwasser sind ebenfalls zu stark»): Ränder 0.2 mm, keine 0.5-mm-Kontur
+        var prim = Grafik.Plan(p, "AN-EG").Teile.Single(x => x.Id == rohre[0].Id).Primitive;
+        Assert.Contains(prim, x => x.Art == "polylinie" && x.Stil.Stift == Stifte.Hilf);
+        Assert.DoesNotContain(prim, x => x.Stil.Stift == Stifte.Kontur);
         Ok(p.Ausfuehren("fliessrichtung_umkehren", new JsonObject { ["leitung"] = rohre[0].Kennzeichen }));
         var a = p.Modell.Finde(rohre[0].Id)!.Geometrie!.Punkte;
         Assert.Equal(3000, a[0][0], 1);   // Anfang jetzt am anderen Ende

@@ -4328,6 +4328,8 @@ jedes neue Projekt erhält alle Mustersysteme.
   Leitung entlang ihrer Achse, wie im Grundriss.
 - **Achslinien fein** (Christian 12.11.2026: «alle achslinien feiner machen. eher wie dämmungskannte»): alle Achslinien (Leitungen, Formteile, Familien,
   Achsenkreuze, Schnitte) mit dem Stift «fein» 0.10 mm statt 0.20 mm.
+- **Abwasser-Konturen feiner** (Christian 12.11.2026: «die Konturen von Abwasser sind ebenfalls zu stark»): Abwasserleitungen, ihre Formteile und
+  Fallleitungen mit 0.20 mm statt 0.50 mm (Achsen und Dämmkanten 0.10 mm).
 - **Abwasserleitung: Silent mit 2 % Gefälle** (Christian 12.11.2026: «Abwasser leitungen sind immer Silent mit 2% Gefälle», «Gefälle im gelben bereich
   einstellbar»): Sanitär › Abwasserleitung startet mit der Produktlinie Silent und 2 % Gefälle; bei Abwasser-Produktlinien steht das Gefälle in der gelben
   Optionsleiste. Rohr und Versorgungsleitung starten ohne Gefälle und ohne Abwasser-Produktlinie.

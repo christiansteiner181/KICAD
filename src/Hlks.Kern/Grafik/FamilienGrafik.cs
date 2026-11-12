@@ -189,6 +189,7 @@ public sealed class FamilienGrafik : IGrafikquelle
                 p.Stil = new Stil { Stift = leicht ? p.Stil.Stift : null, Linie = p.Stil.Linie, Farbe = p.Stil.Farbe, Fuellung = farbe ?? "schnitt", Deckkraft = leicht ? HlksGrafik.LeitungDeckkraft : null };   // deckend ohne Rand wie das Rohrband
             else if (p.Art == "polylinie" && p.Stil.Linie is "strichpunkt" or Achslinien.Linie)   // Achsen anthrazit, fein (Christian 09.11.2026)
                 p.Stil = new Stil { Stift = p.Stil.Stift, Linie = Achslinien.Linie, Farbe = HlksGrafik.AchseAnthrazit };
+            if (abwasser && p.Stil.Stift == Stifte.Kontur) p.Stil.Stift = HlksGrafik.AbwasserKontur;   // Konturen feiner wie an der Leitung (12.11.2026)
         }
     }
 
