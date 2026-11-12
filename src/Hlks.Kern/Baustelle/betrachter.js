@@ -79,8 +79,10 @@
     const doks = e.eig && e.eig.dokumente && Array.isArray(e.eig.dokumente.wert) ? e.eig.dokumente.wert : [];
     if (doks.length) {
       a.append(el('h4', { textContent: 'Dokumente' }));
-      // Verweise aus dem Modell: nur Adressen und Dateien, kein Skript (javascript:, data:)
-      for (const d of doks) { const roh = String(d.url || d.datei || '').trim(); const ziel = /^(javascript|data|vbscript):/i.test(roh) ? '' : roh; a.append(el('div', {}, ziel ? el('a', { href: ziel, target: '_blank', textContent: d.titel || ziel }) : (d.titel || ''), d.rolle ? ` (${d.rolle})` : '')); }
+      // Verweise aus dem Modell: nur Adressen und Dateien (Positivliste http, https, file – so wie der Browser den Verweis auflöst), alles andere
+      // (javascript:, data:, blob:, fremde Schemata, auch mit Steuerzeichen getarnt) wird Text ohne Link
+      const linkZiel = (roh) => { try { return roh && ['http:', 'https:', 'file:'].includes(new URL(roh, location.href).protocol) ? roh : ''; } catch { return ''; } };
+      for (const d of doks) { const roh = String(d.url || d.datei || '').trim(); const ziel = linkZiel(roh); a.append(el('div', {}, ziel ? el('a', { href: ziel, target: '_blank', textContent: d.titel || ziel }) : (d.titel || ''), d.rolle ? ` (${d.rolle})` : '')); }
     }
     const eig = Object.entries(e.eig || {}).filter(([n]) => !['dokumente', 'montagestatus'].includes(n));
     if (eig.length) {
