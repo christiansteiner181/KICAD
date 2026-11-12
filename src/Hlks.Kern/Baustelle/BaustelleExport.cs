@@ -145,7 +145,11 @@ public static class BaustelleExport
         foreach (var o in elemente.OfType<JsonObject>().Where(o => (string?)o["klasse"] == "Raum"))
         {
             if (m.Finde((string)o["id"]!) is not { Geometrie.Punkte: { Count: >= 3 } pts } r) continue;
-            double kote = m.Finde(r.Geschoss)?.Zahl("kote") ?? 0, h = Raumgrenzen.Raumhoehe(m, r);
+            // Höhe des Kastens: bis zur Oberkante des Geschosses, nicht nur die lichte Höhe – sonst schneidet «Raum in 3D» genau das weg, was der
+            // Monteur sucht: Leitungen über der abgehängten Decke bzw. an der Rohdecke (Gesamtprüfung 13.11.2026). Der Rand im Betrachter (0.3 m)
+            // deckt den Bodenaufbau darunter.
+            var gs = m.Finde(r.Geschoss);
+            double kote = gs?.Zahl("kote") ?? 0, h = Math.Max(Raumgrenzen.Raumhoehe(m, r), gs?.Zahl("hoehe") ?? 0);
             if (h <= 0) h = 3000;   // ANNAHME: ohne Höhe 3 m
             var a0 = XrKoordinaten.Punkt(pts.Min(q => q[0]), pts.Max(q => q[1]), kote, xr.Bezugspunkt);
             var a1 = XrKoordinaten.Punkt(pts.Max(q => q[0]), pts.Min(q => q[1]), kote + h, xr.Bezugspunkt);
