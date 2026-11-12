@@ -50,8 +50,19 @@ Tests nach dem Zusammenführen (gefiltert): Kern 169 + 86 grün, Web 5 grün, No
 | Datenhaltung, Abgleich | 5 (Paket mit unbrauchbarem Inhalt wurde halb angewandt und blockierte Öffnen/Abgleich; OneDrive-Konfliktkopie eines Pakets wurde doppelt angewandt; Ablage fällt beim Öffnen weg → Meldung statt still Teilstand; atomares Schreiben wiederholt; kein Modellkopieren je Takt während ein Standabbild geschrieben wird) | datenhaltung.md |
 | HKAP, Hülle, Lagen | 4 (λ-Quelle in der Herkunft von R nur einmal; Lagemanager liest «12cm» als 120 mm, ein Minus lässt keine Lage wegfallen; Nordwinkel der Raumgrenzen aus derselben Projektinformation wie HKAP; Lagen der Optionsleiste folgen dem Modell). HKAP-Drei-Wege-Abgleich ohne Fehlerbefund | hkap_huelle.md |
 | Leistung | 3 Optimierungen mit Vergleichstest alt = neu: Netz.Verbraucher 6000 Bauteile 41 s → 17 ms; NaechstesKennzeichen 2000 neue Rohre 428 → 0.6 ms; Sanitär-Dimensionierung 2880 Leitungen 987 → 631 ms. Je Befehl tiefe Kopie + alle Prüfungen: 5769 Elemente 338 ms (nur gemessen) | leistung.md |
+| MSRL, Ansichten | 10 (Gewerkefilter gilt auch für Leitungen, Formteile, Armaturen – 18 Klassen ohne Gewerk erschienen in jedem Gewerkeplan, z. B. Kaltwasser im Lüftungsplan; 3D filtert gleich; Montageabschnitt nach Gewerk enthält Leitungen; Schnitt/Ansicht duplizieren behält die Schnittlinie; Vorlage ohne Gewerkefilter; Ansichtsvorlage nicht als Ziel; Datenpunkt-Anlage über Nachbarsysteme; Zeitreihe kürzt nicht still; Ansichtsleiste 1:50). GA-Schnittstelle nur lesend, kein Befund | msrl_ansichten.md |
 
 Browser (Hauptlauf 18:13): Rohr am freien Leitungsende mit leerer Höhe begonnen – Höhe und Grösse des Anschlusses übernommen, Zug angelegt.
+
+## Gegenprüfung (hlks-pruefer, 18:50)
+
+Unabhängige Prüfung aller Änderungen 3aed5cb..91deac6: **beim Zusammenführen nichts verloren oder doppelt**. In den Korrekturen
+selbst 10 Befunde (4 mittel, 6 tief, keiner hoch): schräge Wand mit Ende auf der Wandfläche bekommt einen neuen Zacken (B1); Klick-Reihe
+führt einen ungeduldigen zweiten Klick bei Einzelklick-Werkzeugen aus – zwei Bauteile am selben Ort (B2); eingereihte Längeneingabe
+nimmt den alten Fang (B3); baustelle_export/ifc_export ohne KI-Pfadprüfung (B4); Link-Filter der Baustellen-Webseite umgehbar (B5);
+Paketkopie vor dem Original doppelt (B6); Vorwand spiegeln ohne gesetzte Rückseite (B7); Lagen nehmen jede Ziffernfolge (B8); pendelnde
+Nachführung bis zur Grenze (B9); Kleinigkeiten (B10). Dazu Verhaltensänderungen: Dämmdialog wählt ohne bisherige Art die erste
+Katalogart vor und speichert sie. → Korrekturrunde.
 
 ## Fragen an Christian (gesammelt)
 
@@ -131,6 +142,12 @@ Browser (Hauptlauf 18:13): Rohr am freien Leitungsende mit leerer Höhe begonnen
 45. **Lagemanager**: «−12cm» gilt jetzt als 120 mm unter UK roh Decke – oder nur Zahlen in mm?
 46. **Leistung je Befehl** (Architektur): jeder Befehl kopiert das Modell und rechnet alle Prüfungen – bei ~6000 Elementen 0.34 s je
     Befehl. Prüfungen nur für Geändertes und Nachbarn umbauen?
+47. **Gewerkefilter jetzt auch für Leitungen**: Pläne mit Gewerkefilter zeigen fremde Leitungen nicht mehr (vorher erschienen alle
+    Rohre/Formteile in jedem Gewerkeplan). So gewollt?
+48. **Ansicht löschen mit Beschriftungen** (hoch): abgelehnt, solange Bemassungen/Texte/Koten daran hängen – mitlöschen mit Hinweis?
+49. **Ansichtsvorlagen** wirken nur beim Anlegen (Kopie, 7 Einstellungen); spätere Änderungen erreichen die Ansichten nicht – verknüpfen
+    wie Revit?
+50. **MSRL in der Oberfläche**: Datenpunkte vorschlagen und Datenpunktliste nur über KI – eigene Bedienung (Liste «Datenpunkte»)?
 7. **λ-Werte der Dämmarten**: welche Produkte verwendet ihr (dann λ mit Quelle eintragen)?
 
 **Prüfung Hauptlauf im Browser (18:00):** Rohr mit drei raschen Klicks und Esc wird vollständig angelegt (Klick-Reihe), Weiterzeichnen mit Bogen am Leitungsende kürzt die bestehende Leitung. Nebenbefund: Start an einem Anschluss verlangt zuerst Produktlinie und Höhe, obwohl der Anschluss beides vorgibt (pflichtPruefen vor dem Anschluss) – kleine Korrektur für Runde 3.
