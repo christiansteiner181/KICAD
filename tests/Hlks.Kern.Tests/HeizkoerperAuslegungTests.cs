@@ -31,6 +31,13 @@ public class HeizkoerperAuslegungTests
         Assert.Equal(1000 * f >= 400, z["ok"]!.GetValue<bool>());
         Assert.True(z["massenstrom_kgh"]!.GetValue<double>() is > 30 and < 40);   // 400 W / (≈4.18 kJ/(kg·K) · 10 K) ≈ 34 kg/h
         Assert.Null(HeizkoerperAuslegung.DeltaTLog(35, 30, 32));   // RL unter θi: keine Übertemperatur
+        // Herstellerangabe ohne Übertemperatur (ΔTn = 70 − 70 = 0): keine Umrechnung statt Division durch 0 (unendlich in der Antwort)
+        Ok(p.Ausfuehren("element_aendern", new JsonObject { ["element"] = "HK-E.02", ["eigenschaften"] = new JsonObject { ["normRaum"] = new JsonObject { ["wert"] = 70, ["quelle"] = "fiktiv" } } }));
+        var r0 = (JsonObject)Tuer.Abfrage(p, "heizkoerper_auslegung", new JsonObject { ["raum"] = "E.02" });
+        r0.ToJsonString();
+        var z0 = r0["heizkoerper"]!.AsArray().OfType<JsonObject>().Single();
+        Assert.Null(z0["leistungBetrieb_W"]);
+        Assert.Contains(z0["annahmen"]!.AsArray(), x => x!.ToString().Contains("ohne Übertemperatur"));
     }
 }
 

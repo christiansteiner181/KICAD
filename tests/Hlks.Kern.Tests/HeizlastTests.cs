@@ -144,4 +144,18 @@ public class HeizlastTests
         var ohne = Mit(() => SanitaerHilfe.Abfrage(p, "heizlast"), tabellen: false);
         Assert.Contains(ohne["hinweise"]!.AsArray(), h => h!.GetValue<string>().Contains("Normtabellen Heizlast fehlen"));
     }
+
+    [Fact]
+    public void Heizlast_Innentemperatur_nicht_ueber_Aussentemperatur_keine_Heizlast_statt_Division_durch_null()
+    {
+        // θe = −10 °C (wie oben); Raum mit −10 °C und Lüftungsanlage mit Zulufttemperatur: fV = (θint − θsu)/(θint − θe) teilte durch 0
+        var p = Raum(out var raum, new JsonObject { ["tempWinter"] = new JsonObject { ["wert"] = -10, ["quelle"] = "Testwert" }, ["zuluft"] = 30,
+            ["zulufttemperatur"] = new JsonObject { ["wert"] = -20, ["quelle"] = "Testwert" } });
+        var r = Mit(() => SanitaerHilfe.Abfrage(p, "heizlast"));
+        r.ToJsonString();   // keine unendlichen Werte
+        var z = r["raeume"]!.AsArray().OfType<JsonObject>().Single(x => (string?)x["raum"] == raum);
+        Assert.Null(z["phiHL"]);
+        Assert.Contains(z["annahmen"]!.AsArray(), x => x!.ToString().Contains("nicht über der Aussentemperatur"));
+        Assert.Equal(0, Z(r["gebaeude"]!["phiHL"]));
+    }
 }

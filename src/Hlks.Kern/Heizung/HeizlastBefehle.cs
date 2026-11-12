@@ -45,6 +45,6 @@ public sealed class HeizlastUebernehmen : IBefehl
         }
         k.Hinweise.Add($"Heizleistung aus der Heizlast gesetzt: {gesetzt} Raum/Räume.");
         if (behalten.Count > 0) k.Hinweise.Add($"{behalten.Count} Raum/Räume mit Heizleistung von Hand, HKAP oder IFC nicht ersetzt (ueberschreiben): {string.Join(", ", behalten.Take(10))}{(behalten.Count > 10 ? " …" : "")}.");
-        if (ohne.Count > 0) k.Hinweise.Add($"{ohne.Count} Raum/Räume ohne Heizlast (Innentemperatur fehlt): {string.Join(", ", ohne.Take(10))}{(ohne.Count > 10 ? " …" : "")}.");
+        if (ohne.Count > 0) k.Hinweise.Add($"{ohne.Count} Raum/Räume ohne Heizlast (Innentemperatur fehlt bzw. nicht über θe): {string.Join(", ", ohne.Take(10))}{(ohne.Count > 10 ? " …" : "")}.");
     }
 }
