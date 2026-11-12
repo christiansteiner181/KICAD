@@ -178,7 +178,8 @@ public sealed class AnsichtRaumZeigen : IBefehl
                 throw new HlksFehler($"Ansicht {ansicht.Kennzeichen} ist keine 3D-Ansicht (art {ansicht.Text("art") ?? "grundriss"}).",
                     "Eine 3D-Ansicht angeben oder ansicht weglassen (dann wird die erste 3D-Ansicht genommen bzw. eine angelegt).");
         }
-        else if (k.Arbeit.DerKlasse("Ansicht").Where(a => a.Text("art") == "3d").OrderBy(a => a.Kennzeichen, StringComparer.Ordinal).FirstOrDefault() is { } vorhanden)
+        // Ansichtsvorlagen sind keine Ansichten zum Zeigen (wie in der Oberfläche: Koordination, Problemmarker, VR)
+        else if (k.Arbeit.DerKlasse("Ansicht").Where(a => a.Text("art") == "3d" && !Grafik.Bool(a, "vorlage")).OrderBy(a => a.Kennzeichen, StringComparer.Ordinal).FirstOrDefault() is { } vorhanden)
             ansicht = vorhanden;
         else
         {

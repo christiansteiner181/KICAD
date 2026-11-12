@@ -41,7 +41,8 @@ public static class BaustelleDaten
                 || mitKriterien && IstBauteil(k, e)
                    && In(systeme, Kz(e.System)) && In(straenge, Kz(e.TeilVon)) && In(geschosse, Kz(e.Geschoss)) && In(raeume, Kz(e.Raum))
                    && (klassen.Count == 0 || klassen.Any(c => k.IstArt(e, c)))
-                   && In(gewerke, k.Klassen.TryGetValue(e.Klasse, out var d) ? d.Gewerk : null))
+                   // Gewerk der Klasse und des Systems bzw. Mediums: Leitungsklassen haben kein eigenes Gewerk (Ableitungen.Gewerke)
+                   && (gewerke.Count == 0 || Ableitungen.Gewerke(m, k, e).Any(g => gewerke.Contains(g, StringComparer.OrdinalIgnoreCase))))
             .OrderBy(e => e.Kennzeichen, StringComparer.Ordinal).ToList();
     }
 

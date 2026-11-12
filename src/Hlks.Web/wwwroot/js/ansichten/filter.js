@@ -16,6 +16,14 @@ export function ausgeblendeteKlassen(ansicht) {
   return new Set(Array.isArray(k) ? k : []);
 }
 
+/** Zeigt der Gewerkefilter das Element? Wie Ableitungen.GewerkGewaehlt im Kern (Grundriss, Schnitt, PDF): el.gewerke sind alle Gewerke
+ *  des Elements (Klasse, System bzw. Medium; ein Gerät zwischen zwei Gewerken gehört zu beiden). Sichtbar, wenn keines bekannt ist,
+ *  eines «allgemein» ist oder eines gewählt ist. Ohne el.gewerke (ältere Daten) gilt das eine abgeleitete el.gewerk. */
+export function gewerkGewaehlt(el, gewerke) {
+  const liste = Array.isArray(el.gewerke) ? el.gewerke : el.gewerk ? [el.gewerk] : [];
+  return liste.length === 0 || liste.some((g) => g === 'allgemein' || gewerke.has(g));
+}
+
 /** Soll das Element in einer grafischen Ansicht (Grundriss, 3D) erscheinen? nachId(id) → Element: mit ihr entfällt der Nachbau einer
  *  IFC-Unterlage, wenn die Ansicht nur das Original zeigt (N12, ifcDarstellung = original). */
 export function sichtbar(el, ansicht, nachId) {
@@ -24,7 +32,7 @@ export function sichtbar(el, ansicht, nachId) {
   const aus = ausgeblendeteKlassen(ansicht);
   if (aus.has(el.klasse) || (el.basis && aus.has(el.basis))) return false;
   const gewerke = gewerkeVon(ansicht);
-  if (gewerke && el.gewerk && el.gewerk !== 'allgemein' && !gewerke.has(el.gewerk)) return false;
+  if (gewerke && !gewerkGewaehlt(el, gewerke)) return false;
   const art = ansicht?.werte?.art;
   if (art === 'grundriss' && ansicht.geschoss && el.geschoss !== ansicht.geschoss) return false;
   return true;
