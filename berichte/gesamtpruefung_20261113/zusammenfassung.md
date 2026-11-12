@@ -16,6 +16,12 @@ führt zusammen und testet gefiltert. Einzelberichte in diesem Ordner.
 
 Tests nach dem Zusammenführen (gefiltert): Kern 169 + 86 grün, Web 5 grün, Node 46 + 2 + 32 + 49 + 23 grün. Nach Import/Familien/Baustelle: Kern 56, Web 6 grün (Konflikt in den Baustellen-Zugängen mit der Fassung der Oberfläche gelöst).
 
+## Runde 2 (Start 17:50)
+
+| Bereich | Korrekturen | Bericht |
+|---|---|---|
+| Leitungen 2 | 4 (Parallele Leitung auf der Seite des angeklickten Stücks statt des ersten, eckige Lüftungs-Steigleitungen mit querDrehung, Dämmdicke < 0.5 mm nicht als «entfernt», Meldung Bogenwinkel) | leitungen2.md |
+
 ## Fragen an Christian (gesammelt)
 
 1. **Gefälle 2 % gegen Toleranz 1°** (Leitungen): 2 % = 1.146° – jede Verbindung einer waagrechten Achse mit einem Stück mit 2 % wird
@@ -32,4 +38,6 @@ Tests nach dem Zusammenführen (gefiltert): Kern 169 + 86 grün, Web 5 grün, No
 8. **«Nachzeichnen? Nein» beim IFC-Import** (hoch): der Kern behandelt das wie «Einlesen für Familie aus IFC» – keine Prüfung der Lage, kein Abbruch bei Abweichung, die erste Datei setzt keinen Projektbezug. Widerspricht «kein Modell wird stillschweigend verschoben». Vorschlag: zwei Fälle trennen. Freigabe?
 9. **Raum in 3D**: der Schnitt reicht jetzt bis Oberkante Geschoss (vorher lichte Höhe) – so gewollt?
 10. **Landeskoordinaten in mm-Dateien**: MapUnit wird nicht gelesen (Faktor 1000 möglich, bricht dann ab statt still zu verschieben); braucht Quelle IFC4 und eine echte Prüfdatei.
+11. **Parallele «oben/unten» an Zügen mit Steigstück**: heute nur in z versetzt – senkrechtes Stück deckungsgleich, 45°-Stück nur 0.71 · Abstand. Gehrung in 3D oder solche Züge ablehnen?
+12. **Nachführen beim Verschieben**: «gedreht» wird gegen die bisherige Richtung gemessen, nicht gegen die Anschlussachse – viele kleine Schritte (je < 1°) summieren sich zu einer Schieflage (hängt mit Frage 1 zusammen).
 7. **λ-Werte der Dämmarten**: welche Produkte verwendet ihr (dann λ mit Quelle eintragen)?
