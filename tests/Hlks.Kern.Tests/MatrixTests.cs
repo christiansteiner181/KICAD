@@ -57,6 +57,14 @@ public class MatrixTests
     }
 
     [Fact]
+    public void Achsen_XParallelZuZ_WieOhneXRichtung()
+    {
+        // ungültiges IFC (RefDirection = Axis): vorher x = (0,0,1) = z und y = Nullvektor; jetzt die Vorgabe wie ohne RefDirection
+        var m = Matrix4.Achsen([0, 0, 0], [0, 0, 5], [0, 0, 1]);
+        Gleich([1, 0, 0], m.AchseX); Gleich([0, 1, 0], m.AchseY); Gleich([0, 0, 1], m.AchseZ);
+    }
+
+    [Fact]
     public void Achsen_OhneRichtungen_IstEineReineVerschiebung()
     {
         var m = Matrix4.Achsen([7, 8, 9], null, null);

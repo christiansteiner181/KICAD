@@ -10,9 +10,14 @@ public static class FamilienGrundbestand
 {
     public sealed record Ergebnis(int Freigegeben, int Geladen, IReadOnlyList<string> Fehler)
     {
-        /// <summary>Meldung für die Oberfläche; null, wenn alles geladen wurde.</summary>
+        const int Hoechstens = 5;
+
+        /// <summary>Meldung für die Oberfläche; null, wenn alles geladen wurde. Ohne lesbare Bibliothek (nichts freigegeben gefunden) ein eigener
+        /// Satz statt «0 von 0 …»; viele Fehler werden auf die ersten fünf gekürzt (die Einblendung ist kurz).</summary>
         public string? Hinweis => Fehler.Count == 0 ? null
-            : $"{Geladen} von {Freigegeben} freigegebenen Familien geladen. Nicht geladen: {string.Join("; ", Fehler)}";
+            : Freigegeben == 0 ? $"Das Projekt ist ohne Familien angelegt: {string.Join("; ", Fehler).TrimEnd('.')}. Familien lassen sich später laden (Projektbrowser › Familien › Familie laden)."
+            : $"{Geladen} von {Freigegeben} freigegebenen Familien geladen. Nicht geladen: {string.Join("; ", Fehler.Take(Hoechstens))}"
+              + (Fehler.Count > Hoechstens ? $" und {Fehler.Count - Hoechstens} weitere." : "");
     }
 
     public static Ergebnis Laden(Projekt p, bool ohneUnterlagen = false)

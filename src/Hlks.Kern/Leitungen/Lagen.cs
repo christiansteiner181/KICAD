@@ -82,7 +82,7 @@ public static class Lagen
         if (!p.Katalog.IstArt(e, "Rohr") || e.Geometrie?.Punkte is not { Count: >= 2 } pts || e.Geschoss is null || p.Modell.Finde(e.Geschoss) is not { } g) return null;
         double? z = null;
         for (int i = 1; i < pts.Count && z is null; i++)
-            if (Math.Abs(pts[i][0] - pts[i - 1][0]) + Math.Abs(pts[i][1] - pts[i - 1][1]) > 1 && pts[i].Length > 2) z = pts[i - 1][2];
+            if (Math.Abs(pts[i][0] - pts[i - 1][0]) + Math.Abs(pts[i][1] - pts[i - 1][1]) > 1 && pts[i - 1].Length > 2) z = pts[i - 1][2];
         if (z is null || UkRohdecke(p, g).Wert is not double ukd) return null;
         double ab = (g.Zahl("kote") ?? 0) + ukd - z.Value;
         var a = Abstaende(p, g);

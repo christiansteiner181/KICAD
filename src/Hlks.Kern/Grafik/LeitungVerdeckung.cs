@@ -6,7 +6,9 @@
 // Höher = an der Kreuzung höher (Kreuzungshoehe, Gesamtprüfung 13.11.2026): je waagrechtes Teilstück wird die Achshöhe dort verglichen, wo die
 // Bänder im Grundriss überlappen (+1 mm); gleich hohe bzw. sich dort schneidende Höhen verdecken einander nicht. Eine Abwasserleitung mit Gefälle
 // verdeckt also am hohen Ende und ist am tiefen Ende verdeckt. Senkrechte Stücke (Steigleitungen) und Formteile verdecken hier nicht.
-// ANNAHME Hauptlauf (Gestaltung): Lücke in grob je Seite 0.5 mm Papier.
+// ANNAHME Hauptlauf (Gestaltung): Lücke in grob je Seite 0.5 mm Papier, gemessen ab dem Rand des gezeichneten Strichs (Stift der Linie).
+// Polygone mit Kontur (Kanalband, Kanalrahmen, Fliesspfeil): die Füllung wird ausgespart, der Umriss bleibt ausserhalb der Deckfläche mit dem
+// eigenen Stift stehen (Gesamtprüfung 13.11.2026, Restliste) – je Polygon, nicht mehr als Ersatzränder über den ganzen Zug.
 
 using System.Runtime.CompilerServices;
 using Clipper2Lib;
@@ -48,8 +50,11 @@ public static class LeitungVerdeckung
             var pts = HlksEinordnung.Punkte(e);
             if (pts.Count < 2 || Waagrecht(pts) is not { } w) continue;
             var mass = HlksMasse.Von(c.Projekt, e);
-            double breite = grob || mass is null
-                ? HlksEinordnung.Strichbreite(c.Detailgrad, HlksEinordnung.Dn(e), c.Massstab) + (grob ? 2 * LueckeGrob * c.Massstab : 0)
+            // grob: gezeichnet wird die Linie mit dem Stift der Strichbreite (0.25 mm → «mittel» 0.35 mm), die Lücke zählt ab dessen Rand
+            double strich = HlksEinordnung.Strichbreite(c.Detailgrad, HlksEinordnung.Dn(e), c.Massstab);
+            double breite = grob
+                ? Stifte.Mm(HlksEinordnung.Stift(strich / c.Massstab)) * c.Massstab + 2 * LueckeGrob * c.Massstab
+                : mass is null ? strich
                 : Math.Max(Math.Max(mass.Breite, 0.18 * c.Massstab), mass.Daemmdicke > 0 ? mass.DaemmBreite : 0);
             var flaeche = new PathsD();
             foreach (var zug in w.Zuege)
@@ -87,7 +92,6 @@ public static class LeitungVerdeckung
         bool grob = ctx.Detailgrad == "grob";
 
         var neu = new List<Primitiv>();
-        string? umrissStift = null;
         foreach (var p in teil.Primitive)
         {
             if (p.Stil.NurBildschirm || p.Art is "text") { neu.Add(p); continue; }
@@ -105,12 +109,21 @@ public static class LeitungVerdeckung
                 var rest = Clipper.Difference(subj, deck, FillRule.EvenOdd);
                 bool geaendert = Math.Abs(Clipper.Area(rest) - Clipper.Area(subj)) > 1e-3;
                 if (!geaendert) { neu.Add(p); continue; }
-                if (p.Stil.Stift is not null) umrissStift ??= p.Stil.Stift;   // Umriss übernehmen die Ränder
                 foreach (var f in Polygone.Flaechen(rest))
                 {
                     var s = p.Stil.Kopie();
                     if (s.Stift is not null) s.Stift = null;
                     neu.Add(new Primitiv { Art = "polygon", Punkte = f.Aussen, Loecher = f.Loecher.Count > 0 ? f.Loecher : null, Stil = s });
+                }
+                if (p.Stil.Stift is not null)
+                {
+                    // Umriss dieses Polygons (geschlossene Ringe) ausserhalb der Deckfläche, mit seinem Stift und ohne Füllung
+                    var ringe = new PathsD(subj.Where(r => r.Count >= 2).Select(r => new PathD(r) { r[0] }));
+                    foreach (var r in Offen(ringe, deck, ClipType.Difference).Where(r => r.Count >= 2))
+                    {
+                        var s = p.Stil.Kopie(); s.Fuellung = null; s.Muster = null;
+                        neu.Add(new Primitiv { Art = "polylinie", Punkte = r.Select(q => new[] { q.x, q.y }).ToList(), Stil = s });
+                    }
                 }
                 continue;
             }
@@ -130,14 +143,11 @@ public static class LeitungVerdeckung
             neu.Add(p);
         }
 
-        // mittel, fein: Ränder des Bandes – sichtbar dort, wo vorher der Umriss des Polygons war; verdeckt gestrichelt dünn
+        // mittel, fein: Ränder des Bandes unter der Deckfläche gestrichelt dünn (der sichtbare Umriss bleibt am Polygon, siehe oben)
         if (!grob && randBreite is double rb)
             foreach (var zug in w.Zuege)
             {
                 var raender = new PathsD(HlksGrafik.Raender(zug, rb, farbe, "voll").Select(r => new PathD(r.Punkte.Select(q => new PointD(q[0], q[1])))));
-                if (umrissStift is not null)
-                    foreach (var r in Offen(raender, deck, ClipType.Difference).Where(r => r.Count >= 2))
-                        neu.Add(new Primitiv { Art = "polylinie", Punkte = r.Select(q => new[] { q.x, q.y }).ToList(), Stil = new Stil { Stift = umrissStift, Linie = "voll", Farbe = farbe } });
                 foreach (var r in Offen(raender, deck, ClipType.Intersection).Where(r => r.Count >= 2))
                     neu.Add(new Primitiv { Art = "polylinie", Punkte = r.Select(q => new[] { q.x, q.y }).ToList(), Stil = new Stil { Stift = Stifte.Hilf, Linie = "strich", Farbe = farbe } });
             }

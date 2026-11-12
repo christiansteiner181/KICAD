@@ -98,7 +98,13 @@ async function daemmungDialog(bearbeiten) {
     <p class="leise">${l.length} Leitung(en) gewählt. Die Dicke nach Energiegesetz (MuKEn 2014) gibt die λ-Klasse der Dämmart vor, sonst die Dämmregel des Systems (Koordination › Anlagen und Systeme).</p></div>`);
   const wahl = w.querySelector('.d-wahl');
   // Dicke vorschlagen: Regel der Dämmart (λ-Klasse), sonst die des Systems, mit der DN der ersten Leitung
-  const dn = Number(muster.werte?.dn) || Number(/DN\s*(\d+)/i.exec(String(muster.werte?.familientyp ?? ''))?.[1]) || 0;
+  const dnVon = (e) => Number(e.werte?.dn) || Number(/DN\s*(\d+)/i.exec(String(e.werte?.familientyp ?? ''))?.[1]) || 0;
+  const dn = dnVon(muster);
+  // Mehrfachauswahl mit verschiedenen Grössen: die eine Dicke gilt für alle, der Vorschlag nur für die erste – das sagen (Gesamtprüfung 13.11.2026)
+  const dns = [...new Set(l.map(dnVon))].sort((a, b) => a - b);
+  const gemischt = dns.length > 1
+    ? ` Achtung: Die gewählten Leitungen haben verschiedene Grössen (${dns.map((x) => (x ? `DN ${x}` : 'ohne DN')).join(', ')}) – die eingetragene Dicke gilt für alle${dn ? `, der Vorschlag ist für DN ${dn} gerechnet` : ''}.` : '';
+  const ohneDn = dn ? '' : ' Kein Vorschlag: die Grösse dieser Leitung nennt keine DN (z. B. Abwasser, Pressrohr, Kanal) – Dicke von Hand eintragen.';
   // beim Hinzufügen gleich die Dicke vorschlagen, beim Bearbeiten erst, wenn die Art gewechselt wird (die bisherige Dicke bleibt sonst)
   const vorschlag = (gewechselt = false) => {
     w.querySelector('.d-frei-zeile').style.display = wahl.value !== '' ? 'none' : '';   // .fz setzt display, «hidden» griffe nicht
@@ -106,8 +112,8 @@ async function daemmungDialog(bearbeiten) {
     const regeln = zustand.katalog?.daemmregeln ?? [];
     const regel = regeln.find((r) => r.name === art?.regel) ?? regeln.find((r) => r.name === sys?.werte?.daemmregel);
     const d = regel ? daemmDicke(regel, dn) : null;
-    w.querySelector('.d-regel').textContent = art && !art.regel ? `λ-Klasse der Dämmart offen (Herstellerangabe fehlt)${regel ? ' – es gilt die Regel des Systems.' : '.'}`
-      : regel ? `Regel: ${regel.name}${d ? `, DN ${dn} → ${d} mm` : ''}.` : '';
+    w.querySelector('.d-regel').textContent = (art && !art.regel ? `λ-Klasse der Dämmart offen (Herstellerangabe fehlt)${regel ? ' – es gilt die Regel des Systems.' : '.'}`
+      : regel ? `Regel: ${regel.name}${d ? `, DN ${dn} → ${d} mm` : ''}.` : '') + (regel ? ohneDn : '') + gemischt;
     if (d && (!bearbeiten || gewechselt)) w.querySelector('.d-dicke').value = String(d);
   };
   wahl.addEventListener('change', () => vorschlag(true));

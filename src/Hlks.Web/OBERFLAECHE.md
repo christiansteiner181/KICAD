@@ -4338,7 +4338,15 @@ jedes neue Projekt erhält alle Mustersysteme.
   tiefere in mittel und fein ausgespart mit gestrichelten Rändern und Achse, in grob unterbrochen (Lücke je Seite 0.5 mm). Höher heisst: an der
   Kreuzung höher (seit 13.11.2026 je Teilstück dort verglichen, wo die Bänder im Grundriss überlappen, mehr als 1 mm) – eine Leitung mit Gefälle
   oder Etage verdeckt am hohen Teil und ist am tiefen verdeckt; dieselbe Regel gilt für die gestrichelten Dämmkanten. An der Kreuzung gleich hohe
-  Leitungen verdecken einander nicht; Steigleitungen und Formteile verdecken hier noch nicht.
+  Leitungen verdecken einander nicht; Steigleitungen und Formteile verdecken hier noch nicht. Seit 13.11.2026 (Restliste): die Lücke in grob
+  zählt ab dem Rand des gezeichneten Strichs (0.35 mm, Unterbruch 1.35 mm Papier); Kanäle, Kanalrahmen und Fliesspfeil behalten ausserhalb der
+  Deckfläche ihren Umriss samt Stirnkanten.
+- **Leitung an Anschluss bzw. Leitung beginnen** (Christian 02.11.2026: «wird ab einem Punkt weiter konstruiert, wird die Dimension und höhe sowie
+  medium des Punktes übernommen»; Korrektur 13.11.2026): der erste Klick auf einen Anschluss oder eine Leitung übernimmt zuerst Grösse, Höhe und
+  Medium, erst danach werden die Pflichtfelder geprüft. Fehlt dann noch etwas (z. B. die Produktlinie am Gerät), kommt die Meldung und der Start wird
+  verworfen; die übernommenen Werte bleiben in der Optionsleiste.
+- **Dämmung bei Mehrfachauswahl** (13.11.2026): der Dialog sagt, wenn die gewählten Leitungen verschiedene Grössen haben (die Dicke gilt für alle,
+  der Vorschlag für die erste) oder die Grösse keine DN nennt (kein Vorschlag).
 - **Grob: Kreise im effektiven Durchmesser** (Christian 12.11.2026): Steig- und Fallleitungen im Detailgrad grob als Kreis mit dem
   Aussendurchmesser (Kanal: grössere Seite, ohne Serie DN), mindestens 0.5 mm Papier; das Kreuz n.o. passt sich an.
 - **Teilen mit Vorschau** (Christian 12.11.2026): Ändern › Teilen trifft die Leitung auf ihrer ganzen Breite samt Dämmung; die Vorschau zeigt den

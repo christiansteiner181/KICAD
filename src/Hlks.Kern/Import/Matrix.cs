@@ -20,7 +20,16 @@ public readonly struct Matrix4
         var xx = x is null ? (Math.Abs(zz[0]) < 0.9 ? new double[] { 1, 0, 0 } : [0, 1, 0]) : x;
         // x rechtwinklig zu z machen
         double d = xx[0] * zz[0] + xx[1] * zz[1] + xx[2] * zz[2];
-        xx = Norm([xx[0] - d * zz[0], xx[1] - d * zz[1], xx[2] - d * zz[2]]);
+        double[] quer = [xx[0] - d * zz[0], xx[1] - d * zz[1], xx[2] - d * zz[2]];
+        // x parallel zu z (ungültiges IFC) bzw. Länge 0: wie ohne x-Richtung, sonst entartet die Lage (y = Nullvektor)
+        double lx2 = xx[0] * xx[0] + xx[1] * xx[1] + xx[2] * xx[2];
+        if (quer[0] * quer[0] + quer[1] * quer[1] + quer[2] * quer[2] <= 1e-18 * lx2)
+        {
+            double[] ersatz = Math.Abs(zz[0]) < 0.9 ? [1, 0, 0] : [0, 1, 0];
+            d = ersatz[0] * zz[0] + ersatz[1] * zz[1] + ersatz[2] * zz[2];
+            quer = [ersatz[0] - d * zz[0], ersatz[1] - d * zz[1], ersatz[2] - d * zz[2]];
+        }
+        xx = Norm(quer);
         var yy = Kreuz(zz, xx);
         return new([xx[0], yy[0], zz[0], o[0], xx[1], yy[1], zz[1], o[1], xx[2], yy[2], zz[2], o[2], 0, 0, 0, 1]);
     }

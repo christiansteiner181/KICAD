@@ -558,4 +558,17 @@ public sealed class FamilienBibliothekTests : BibliothekTestBasis
         var fam = Assert.Single(b.Modell.DerKlasse("Familie"));
         Assert.Equal(HkId, Familien.DefinitionsId(fam));
     }
+
+    [Fact]
+    public void Grundbestand_Hinweis_OhneBibliothekEigenerSatz_VieleFehlerGekuerzt()
+    {
+        // Gesamtprüfung 13.11.2026: ohne Bibliothek nicht «0 von 0 freigegebenen Familien geladen»; lange Fehlerlisten auf fünf gekürzt
+        var ohne = new FamilienGrundbestand.Ergebnis(0, 0, ["Familienbibliothek nicht eingestellt"]).Hinweis!;
+        Assert.StartsWith("Das Projekt ist ohne Familien angelegt: Familienbibliothek nicht eingestellt.", ohne);
+        Assert.DoesNotContain("0 von 0", ohne);
+        var viele = new FamilienGrundbestand.Ergebnis(12, 4, Enumerable.Range(1, 8).Select(i => $"F{i}: Fehler").ToList()).Hinweis!;
+        Assert.StartsWith("4 von 12 freigegebenen Familien geladen.", viele);
+        Assert.Contains("F5: Fehler", viele); Assert.DoesNotContain("F6", viele);
+        Assert.EndsWith("und 3 weitere.", viele);
+    }
 }
