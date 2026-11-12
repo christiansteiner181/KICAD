@@ -39,14 +39,24 @@ public static class Verbindungen
 
     static readonly Regex ZollMuster = new(@"(\d+/\d+)|(\d+)(?:[ \-+]+(\d+/\d+))?", RegexOptions.CultureInvariant);
 
-    /// <summary>Zollangabe eines Gewindetexts normalisiert («Rp 1 1/4», «G1-1/4», «1 1/4"» → «1 1/4»; «Rp 3/4» → «3/4»), null ohne Zahl.</summary>
+    /// <summary>Zollangabe eines Gewindetexts normalisiert («Rp 1 1/4», «G1-1/4», «1 1/4"» → «1 1/4»; «Rp 3/4» → «3/4»), null ohne Zahl.
+    /// Brüche werden gekürzt und unechte Brüche umgeschrieben («5/4"» → «1 1/4», «6/4"» → «1 1/2», «2/4» → «1/2»), damit gleiche Grössen
+    /// in beiden Schreibweisen als gleich gelten.</summary>
     public static string? Zoll(string? text)
     {
         if (string.IsNullOrWhiteSpace(text)) return null;
         var m = ZollMuster.Match(text);
         if (!m.Success) return null;
-        if (m.Groups[1].Success) return m.Groups[1].Value;   // nur Bruch («3/4»)
-        return m.Groups[3].Success ? $"{m.Groups[2].Value} {m.Groups[3].Value}" : m.Groups[2].Value;
+        var bruch = m.Groups[1].Success ? m.Groups[1].Value : m.Groups[3].Success ? m.Groups[3].Value : null;
+        if (bruch is null) return m.Groups[2].Value;
+        var teile = bruch.Split('/');
+        if (!long.TryParse(m.Groups[2].Success ? m.Groups[2].Value : "0", out long ganz) || !long.TryParse(teile[0], out long z) || !long.TryParse(teile[1], out long n) || n == 0)
+            return m.Groups[2].Success ? $"{m.Groups[2].Value} {bruch}" : bruch;   // nicht rechenbar: Text wie geschrieben
+        z += ganz * n;
+        long a = z, b = n; while (b != 0) (a, b) = (b, a % b);   // grösster gemeinsamer Teiler
+        if (a > 1) { z /= a; n /= a; }
+        ganz = z / n; z %= n;
+        return z == 0 ? $"{ganz}" : ganz == 0 ? $"{z}/{n}" : $"{ganz} {z}/{n}";
     }
 
     /// <summary>Gleiche Grösse zweier Anschlüsse (Gewinde nach Zoll, sonst DN, sonst d).</summary>

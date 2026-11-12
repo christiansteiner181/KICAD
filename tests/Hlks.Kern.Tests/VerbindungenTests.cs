@@ -61,6 +61,11 @@ public class VerbindungenTests
     [InlineData("1 1/4\"", "1 1/4")]
     [InlineData("Rp 3/4", "3/4")]
     [InlineData("R 2", "2")]
+    [InlineData("5/4\"", "1 1/4")]   // unechter Bruch = gleiche Grösse wie «1 1/4» (Gesamtprüfung 13.11.2026)
+    [InlineData("G 6/4", "1 1/2")]
+    [InlineData("Rp 2/4", "1/2")]
+    [InlineData("1 2/4", "1 1/2")]
+    [InlineData("4/4", "1")]
     public void Zoll_Normalisiert(string text, string zoll) => Assert.Equal(zoll, Verbindungen.Zoll(text));
 
     [Fact]
