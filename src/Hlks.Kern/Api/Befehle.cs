@@ -39,9 +39,18 @@ public sealed class Kontext(Projekt projekt, Modell arbeit, Herkunft herkunft)
         neu.Geaendert = Herkunft;
         neu.Angelegt ??= alt?.Angelegt ?? Herkunft;
         var op = new Operation { Art = "element.setzen", Id = neu.Id, Basis = alt?.Version ?? 0, Element = neu.Kopie(), ElementVorher = alt?.Kopie() };
+        bool nummern = NummernGueltig;
         Arbeit.Anwenden([op]);
         Operationen.Add(op);
-        return Arbeit.Finde(neu.Id)!;
+        var gesetzt = Arbeit.Finde(neu.Id)!;
+        // Die gemerkten höchsten Nummern gelten weiter, wenn kein Kennzeichen weggefallen ist (neues Element oder gleiches Kennzeichen).
+        if (nummern && (alt is null || alt.Kennzeichen == gesetzt.Kennzeichen))
+        {
+            foreach (var kuerzel in hoechsteNummer.Keys.ToArray())
+                if (Nummer(gesetzt.Kennzeichen, kuerzel, out var n) && n > hoechsteNummer[kuerzel]) hoechsteNummer[kuerzel] = n;
+            hoechsteStand = Arbeit.Aenderungszaehler;
+        }
+        return gesetzt;
     }
 
     public void Loeschen(Element e)
@@ -57,7 +66,9 @@ public sealed class Kontext(Projekt projekt, Modell arbeit, Herkunft herkunft)
     {
         var v = new Verbindung { Id = Guid.NewGuid().ToString(), Von = von, Nach = nach, Angelegt = Herkunft };
         var op = new Operation { Art = "verbindung.setzen", Id = v.Id, Basis = 0, Verbindung = v.Kopie() };
+        bool nummern = NummernGueltig;
         Arbeit.Anwenden([op]);
+        if (nummern) hoechsteStand = Arbeit.Aenderungszaehler;   // Verbindungen ändern keine Kennzeichen
         Operationen.Add(op);
         return Arbeit.FindeVerbindung(v.Id)!;
     }
@@ -65,16 +76,35 @@ public sealed class Kontext(Projekt projekt, Modell arbeit, Herkunft herkunft)
     public void Trennen(Verbindung v)
     {
         var op = new Operation { Art = "verbindung.loeschen", Id = v.Id, Basis = v.Version, VerbindungVorher = v.Kopie() };
+        bool nummern = NummernGueltig;
         Arbeit.Anwenden([op]);
+        if (nummern) hoechsteStand = Arbeit.Aenderungszaehler;
         Operationen.Add(op);
+    }
+
+    // Höchste vergebene Nummer je Kürzel, gültig für genau den Stand «hoechsteStand» der Arbeitskopie. Setzen, Verbinden und Trennen führen
+    // sie nach; jede andere Änderung (Löschen, Umbenennen, Anwenden von aussen) lässt den Stand verfallen, dann wird neu gezählt. Vorher
+    // durchsuchte jeder Aufruf alle Elemente – beim Anlegen vieler Teile in einem Befehl quadratisch (Gesamtprüfung 13.11.2026, Leistung).
+    readonly Dictionary<string, int> hoechsteNummer = new(StringComparer.OrdinalIgnoreCase);
+    long hoechsteStand = -1;
+    bool NummernGueltig => hoechsteNummer.Count > 0 && hoechsteStand == Arbeit.Aenderungszaehler;
+
+    static bool Nummer(string kennzeichen, string kuerzel, out int n)
+    {
+        n = 0;
+        return kennzeichen.StartsWith(kuerzel + "-", StringComparison.OrdinalIgnoreCase) && int.TryParse(kennzeichen[(kuerzel.Length + 1)..], out n);
     }
 
     public string NaechstesKennzeichen(string kuerzel)
     {
-        int max = 0;
-        foreach (var e in Arbeit.Elemente)
-            if (e.Kennzeichen.StartsWith(kuerzel + "-", StringComparison.OrdinalIgnoreCase)
-                && int.TryParse(e.Kennzeichen[(kuerzel.Length + 1)..], out var n) && n > max) max = n;
+        if (hoechsteStand != Arbeit.Aenderungszaehler) { hoechsteNummer.Clear(); hoechsteStand = Arbeit.Aenderungszaehler; }
+        if (!hoechsteNummer.TryGetValue(kuerzel, out int max))
+        {
+            max = 0;
+            foreach (var e in Arbeit.Elemente)
+                if (Nummer(e.Kennzeichen, kuerzel, out var n) && n > max) max = n;
+            hoechsteNummer[kuerzel] = max;
+        }
         return $"{kuerzel}-{max + 1}";
     }
 }

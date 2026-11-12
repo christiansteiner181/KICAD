@@ -98,8 +98,91 @@ public static class Netz
         return typ is not null && k.Systemtypen.TryGetValue(typ, out var st) ? st.VerbraucherRichtung : "stromab";
     }
 
-    /// <summary>Endgeräte an einem Strang. direkt = ohne den Weg durch einen anderen Strang.</summary>
+    /// <summary>Endgeräte an einem Strang. direkt = ohne den Weg durch einen anderen Strang.
+    /// Seit 13.11.2026 (Gesamtprüfung, Leistung) zwei Suchen mit allen Strangbauteilen als Start statt zwei Suchen je Bauteil
+    /// (vorher quadratisch: 6000 Bauteile 12 s). Das Ergebnis ist dasselbe wie in <see cref="VerbraucherEinzeln"/>; wo das nicht
+    /// sicher ist (Anschluss mit zwei Verbindungen, gleiche Kennzeichen), rechnet weiterhin die Suche je Bauteil.</summary>
     public static (List<Element> Direkt, List<Element> Gesamt) Verbraucher(Modell m, Katalog k, Element strang)
+    {
+        var system = m.Finde(strang.TeilVon) ?? m.Finde(strang.System);
+        if (system is null) return ([], []);
+        var richtung = VerbraucherRichtung(m, k, system);
+        var medium = system.Text("medium");
+        var eigene = m.Elemente.Where(e => e.TeilVon == strang.Id).ToList();
+        bool Fremd(Element e) => e.TeilVon is not null && e.TeilVon != strang.Id && m.Finde(e.TeilVon)?.Klasse == "Strang";
+        var gesamt = EndgeraeteAb(m, k, eigene, richtung, medium, null);
+        var direkt = gesamt is null ? null : EndgeraeteAb(m, k, eigene, richtung, medium, Fremd);
+        if (gesamt is null || direkt is null) return VerbraucherEinzeln(m, k, strang);
+        direkt.RemoveAll(Fremd);
+        var d = direkt.OrderBy(e => e.Kennzeichen).ToList();
+        var g = gesamt.OrderBy(e => e.Kennzeichen).ToList();
+        // Bei gleichen Kennzeichen hinge die Reihenfolge von der Besuchsreihenfolge ab: dann die bisherige Suche.
+        if (GleicheNachbarn(d) || GleicheNachbarn(g)) return VerbraucherEinzeln(m, k, strang);
+        return (d, g);
+
+        static bool GleicheNachbarn(List<Element> l)
+        {
+            for (int i = 1; i < l.Count; i++)
+                if (Comparer<string>.Default.Compare(l[i - 1].Kennzeichen, l[i].Kennzeichen) == 0) return true;
+            return false;
+        }
+    }
+
+    /// <summary>Endgeräte, die von mindestens einem der Starts aus erreichbar sind – je Start ohne den Start selbst, also die Vereinigung von
+    /// <see cref="Folgen"/> je Start. fremd: Elemente, an denen der Weg endet (sie zählen, werden aber nicht weiterverfolgt; Starts sind nie
+    /// fremd). null, wenn ein Anschluss auf dem Weg zwei Verbindungen trägt (dann hängt <see cref="Folgen"/> von der Eintrittsseite ab).</summary>
+    static List<Element>? EndgeraeteAb(Modell m, Katalog k, List<Element> starts, string richtung, string? medium, Func<Element, bool>? fremd)
+    {
+        var startIds = new HashSet<string>(starts.Count);
+        foreach (var s in starts) startIds.Add(s.Id);
+        var startGeraete = starts.Where(s => IstEndgeraet(k, s)).ToList();
+        // Vorgänger nur, wenn ein Start selbst Endgerät ist: er zählt nur, wenn ihn ein ANDERER Start erreicht.
+        var vor = startGeraete.Count > 0 ? new Dictionary<string, List<string>>(StringComparer.Ordinal) : null;
+        var besucht = new HashSet<string>(startIds);
+        var schlange = new Queue<Element>(starts);
+        var ergebnis = new List<Element>();
+        while (schlange.Count > 0)
+        {
+            var e = schlange.Dequeue();
+            if (fremd is not null && !startIds.Contains(e.Id) && fremd(e)) continue;
+            foreach (var (n, nEin, aus) in Nachbarn(m, e, null, richtung, medium))
+            {
+                if (!ReferenceEquals(m.VerbindungAn(n.Id, nEin), m.VerbindungAn(e.Id, aus))) return null;
+                if (vor is not null)
+                {
+                    if (!vor.TryGetValue(n.Id, out var l)) vor[n.Id] = l = [];
+                    l.Add(e.Id);
+                }
+                if (!besucht.Add(n.Id)) continue;
+                if (IstEndgeraet(k, n)) ergebnis.Add(n);
+                schlange.Enqueue(n);
+            }
+        }
+        foreach (var s in startGeraete)
+        {
+            // rückwärts bis zu einem anderen Start (meist der direkte Vorgänger)
+            var gesehen = new HashSet<string> { s.Id };
+            var stapel = new Stack<string>();
+            stapel.Push(s.Id);
+            bool erreicht = false;
+            while (stapel.Count > 0 && !erreicht)
+            {
+                if (!vor!.TryGetValue(stapel.Pop(), out var l)) continue;
+                foreach (var p in l)
+                {
+                    if (p == s.Id) continue;
+                    if (startIds.Contains(p)) { erreicht = true; break; }
+                    if (gesehen.Add(p)) stapel.Push(p);
+                }
+            }
+            if (erreicht) ergebnis.Add(s);
+        }
+        return ergebnis;
+    }
+
+    /// <summary>Bisherige Rechnung von <see cref="Verbraucher"/>: je Bauteil des Strangs zwei Breitensuchen (quadratisch). Bleibt als Rückfall
+    /// und als Vergleich für den Test.</summary>
+    internal static (List<Element> Direkt, List<Element> Gesamt) VerbraucherEinzeln(Modell m, Katalog k, Element strang)
     {
         var system = m.Finde(strang.TeilVon) ?? m.Finde(strang.System);
         if (system is null) return ([], []);

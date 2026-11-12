@@ -43,7 +43,11 @@ public static class SanitaerDimensionierung
     public const string ParLeitung = "Nur diese Leitung (Kennzeichen oder Id)";
     public static IReadOnlyList<ParameterDef> Parameter { get; } = [new("anlage", "text", false, ParAnlage), new("leitung", "text", false, ParLeitung)];
 
-    public static JsonObject Abfrage(Projekt p, JsonObject? par)
+    public static JsonObject Abfrage(Projekt p, JsonObject? par) => Abfrage(p, par, merken: true);
+
+    /// <summary>merken: die Leitungsart je Leitung nur einmal bestimmen (Gesamtprüfung 13.11.2026, Leistung – vorher je Anschlussleitung für
+    /// jede Leitung stromab erneut, je mit eigenen Netzläufen). false = Rechnung wie vorher, für den Vergleichstest.</summary>
+    internal static JsonObject Abfrage(Projekt p, JsonObject? par, bool merken)
     {
         par ??= [];
         var m = p.Modell; var k = p.Katalog;
@@ -57,7 +61,9 @@ public static class SanitaerDimensionierung
         Element? nur = Param.Text(par, "leitung") is { Length: > 0 } l ? m.Finde(l) ?? throw new HlksFehler($"Leitung «{l}» gibt es nicht.") : null;
         // Abwasser je Leitung vor der Regel «nicht kleiner als zufliessend» (auch für die Leitungen stromauf einer gefragten Leitung)
         var roh = new Dictionary<string, JsonObject>(StringComparer.Ordinal);
-        JsonObject Roh(Element x) => roh.TryGetValue(x.Id, out var r) ? r : roh[x.Id] = Abwasser(p, x, netz.LeitungMedium[x.Id], netz.Leitung(x.Id)!, AnlageVon(m, x), abw!);
+        var arten = new Dictionary<string, (string Art, bool Geschaetzt)>(StringComparer.Ordinal);
+        (string Art, bool Geschaetzt) Art(Element x) => !merken ? Leitungsart(m, k, x) : arten.TryGetValue(x.Id, out var a) ? a : arten[x.Id] = Leitungsart(m, k, x);
+        JsonObject Roh(Element x) => roh.TryGetValue(x.Id, out var r) ? r : roh[x.Id] = Abwasser(p, x, netz.LeitungMedium[x.Id], netz.Leitung(x.Id)!, AnlageVon(m, x), abw!, Art);
         var zeilen = new JsonArray();
         foreach (var (id, medium) in netz.LeitungMedium.OrderBy(x => m.Finde(x.Key)?.Kennzeichen, StringComparer.OrdinalIgnoreCase))
         {
@@ -248,9 +254,9 @@ public static class SanitaerDimensionierung
 
     /// <summary>Abgewickelte Länge einer Anschlussleitung in m (Handbuch S. 7: inkl. Fall- und Sturzstrecken bis zur entferntesten
     /// Anschluss-Verbindung): stromauf bis zum entferntesten Apparat, stromab durch die Anschlussleitung bis zur Fall-, Sammel- bzw. Grundleitung.</summary>
-    public static double AnschlussLaenge(Modell m, Katalog k, Element e, string medium)
+    public static double AnschlussLaenge(Modell m, Katalog k, Element e, string medium, Func<Element, (string Art, bool Geschaetzt)>? leitungsart = null)
     {
-        bool Anschluss(Element x) => k.IstArt(x, "Leitung") && Leitungsart(m, k, x).Art == "anschluss";
+        bool Anschluss(Element x) => k.IstArt(x, "Leitung") && (leitungsart?.Invoke(x) ?? Leitungsart(m, k, x)).Art == "anschluss";
         double auf = Netz.Folgen(m, k, e, "stromauf", medium).Where(x => Netz.IstEndgeraet(k, x.Element)).Select(x => x.LaengeBisHier).DefaultIfEmpty(0).Max();
         double ab = Netz.Folgen(m, k, e, "stromab", medium, stopp: x => !Netz.IstLeitungsbauteil(k, x) || k.IstArt(x, "Leitung") && !Anschluss(x))
             .Where(x => Anschluss(x.Element)).Select(x => x.LaengeBisHier).DefaultIfEmpty(0).Max();
@@ -277,10 +283,11 @@ public static class SanitaerDimensionierung
         return -1;
     }
 
-    static JsonObject Abwasser(Projekt p, Element e, string medium, SanitaerSumme s, Element? anlage, JsonObject abw)
+    static JsonObject Abwasser(Projekt p, Element e, string medium, SanitaerSumme s, Element? anlage, JsonObject abw,
+        Func<Element, (string Art, bool Geschaetzt)> leitungsart)
     {
         var m = p.Modell; var k = p.Katalog;
-        var (art, geschaetzt) = Leitungsart(m, k, e);
+        var (art, geschaetzt) = leitungsart(e);
         bool einzel = geschaetzt && s.Apparate == 1 && art != "anschluss";
         if (einzel) art = "anschluss";   // ohne Strang: ein Apparat stromauf = Einzelanschlussleitung (mit Strang gilt der Strang, Prüfbericht L1)
         var beitraege = s.Beitraege.Where(b => b.Wert is double).ToList();
@@ -310,7 +317,7 @@ public static class SanitaerDimensionierung
             case "ohne": break;
             case "anschluss":
             {
-                double l = AnschlussLaenge(m, k, e, medium);
+                double l = AnschlussLaenge(m, k, e, medium, leitungsart);
                 aus["laenge_m"] = Math.Round(l, 2);
                 var t9 = abw["anschlussleitungen"]?["tabelle9_unbeluefteteAnschlussleitungen"];
                 var t10 = abw["anschlussleitungen"]?["tabelle10_beluefteteAnschlussleitungen"];
