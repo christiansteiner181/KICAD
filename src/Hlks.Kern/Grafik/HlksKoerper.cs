@@ -249,6 +249,8 @@ public static class HlksKoerper
         {
             t.Deckkraft = 0.35;
             t.NichtSchneiden = true;
+            // keine eigene Achse: sonst zeichnen Schnitt und Ansicht die Achslinie der Leitung bzw. des Formteils doppelt (Achslinien.Zeichnen je Teil mit Achse)
+            t.Achse = null; t.AchseRadius = 0;
             k.Teile.Add(t);
         }
     }

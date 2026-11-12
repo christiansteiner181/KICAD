@@ -17,9 +17,9 @@ namespace Hlks.Kern;
 public static class DaemmGrafik
 {
     const double Eps = 1.0;          // mm Achshöhe
-    const double Naht = 0.05;
+    const double Naht = 0.05;        // mm: Ränder genau auf der Naht zweier gleich hoher Teile gelten als innen
     /// <summary>Linienart verdeckter Dämmkanten: fein gestrichelt (die Stücke sind kurz, das Muster «strich» wäre länger; 09.11.2026).</summary>
-    public const string Verdeckt = "strichfein";        // mm: Ränder genau auf der Naht zweier gleich hoher Teile gelten als innen
+    public const string Verdeckt = "strichfein";
 
     sealed class Teil
     {
@@ -45,7 +45,23 @@ public static class DaemmGrafik
         var m = ctx.Modell; var kat = ctx.Katalog;
         double boden = ctx.Geschoss?.Zahl("kote") ?? double.NegativeInfinity;
         var teile = new List<Teil>();
-        var masse = new Dictionary<string, LeitungsMass?>(StringComparer.Ordinal);
+        // Verbindungen je Element, einmal je Plan: Modell.VerbindungenVon durchsucht alle Verbindungen (je Formteil wären das Formteile × Verbindungen)
+        Dictionary<string, List<Verbindung>>? verbunden = null;
+        List<Verbindung> VerbindungenVon(string id)
+        {
+            if (verbunden is null)
+            {
+                verbunden = new(StringComparer.Ordinal);
+                foreach (var v in m.Verbindungen)
+                    foreach (var el in v.Von.Element == v.Nach.Element ? new[] { v.Von.Element } : [v.Von.Element, v.Nach.Element])
+                    {
+                        if (!verbunden.TryGetValue(el, out var l)) verbunden[el] = l = [];
+                        l.Add(v);
+                    }
+            }
+            return verbunden.TryGetValue(id, out var liste) ? liste : [];
+        }
+        var masse =new Dictionary<string, LeitungsMass?>(StringComparer.Ordinal);
         LeitungsMass? Mass(Element e) => masse.TryGetValue(e.Id, out var x) ? x : masse[e.Id] = HlksMasse.Von(ctx.Projekt, e);
         string? Farbe(Element e) => HlksEinordnung.Farbe(HlksEinordnung.Medium(ctx.Projekt, e));
         static void Band(Teil t, List<double[]> xy, double breite)
@@ -104,7 +120,7 @@ public static class DaemmGrafik
                      && Familien.Aufloesung(m, kat, e, out _) is { } a)
             {
                 // Dämmung der angeschlossenen Leitung (die dickste), entlang der Achsen des Formteils
-                var nachbar = m.VerbindungenVon(e.Id).Select(v => m.Finde(v.Von.Element == e.Id ? v.Nach.Element : v.Von.Element)).OfType<Element>()
+                var nachbar = VerbindungenVon(e.Id).Select(v => m.Finde(v.Von.Element == e.Id ? v.Nach.Element : v.Von.Element)).OfType<Element>()
                     .Where(n => kat.IstArt(n, "Leitung")).Select(n => (El: n, Ms: Mass(n))).Where(x => x.Ms is { Daemmdicke: > 0 })
                     .OrderByDescending(x => x.Ms!.DaemmBreite).FirstOrDefault();
                 if (nachbar.Ms is null) continue;

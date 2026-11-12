@@ -407,6 +407,35 @@ public class Darstellung3SerieTests
         Assert.True(g.Primitive.Count(x => x.Art == "polylinie") >= 2);
     }
 
+    [Fact]
+    public void Kreuzung_PunktImLochDerDeckflaeche_BleibtSichtbar()
+    {
+        // Gesamtprüfung 13.11.2026: die höhere Leitung als geschlossener Ring – der Dämmpunkt (grob) der tieferen Leitung liegt im Loch der
+        // Deckfläche (Ring 1000…2000, Punkt bei x = 1500) und ist nicht verdeckt; die Linie ist nur unter dem Ring unterbrochen
+        var p = MitSerie(false);
+        Ok(Rohr(p, "RO-1", "DN 20", [0, 0, 500], [3000, 0, 500]));
+        Aendern(p, "RO-1", new JsonObject { ["daemmdicke"] = 20 });
+        Ok(Rohr(p, "RO-2", "DN 20", [1000, -500, 1500], [2000, -500, 1500], [2000, 500, 1500], [1000, 500, 1500], [1000, -500, 1500]));
+        Aendern(p, "AN-EG", new JsonObject { ["detailgrad"] = "grob" });
+        var t = Teil(p, "RO-1");
+        Assert.Contains(t.Primitive, x => x.Art == "kreis" && Abstand(x.Punkte[0], [1500, 0]) < 1e-6);
+        Assert.Equal(3, t.Primitive.Count(x => x.Art == "polylinie"));   // vor dem Ring, im Ring, nach dem Ring
+    }
+
+    [Fact]
+    public void Verdeckt_Daemmkanten_InRohrfarbeFein()
+    {
+        // Christian 12.11.2026: «die aussenkontur in Rohrfarbe jedoch wesentlich feiner» – auch die gestrichelten Kanten unter dem Geschossboden
+        var p = MitSerie(false);
+        Ok(Rohr(p, "RO-BODEN", "DN 20", [0, 2000, -300], [3000, 2000, -300]));
+        Aendern(p, "RO-BODEN", new JsonObject { ["verlegung"] = "frei", ["daemmdicke"] = 20 });
+        var raender = Strichlinien(Teil(p, "RO-BODEN")).ToList();
+        Assert.Equal(4, raender.Count);
+        var daemm = raender.Where(x => Math.Abs(Math.Abs(x.Punkte[0][1] - 2000) - 32.5) < 1e-6).ToList();   // 25 / 2 + 20
+        Assert.Equal(2, daemm.Count);
+        Assert.All(daemm, x => { Assert.Equal(Stifte.Fein, x.Stil.Stift); Assert.Equal(Kat.Medien["KW"].FarbeHex, x.Stil.Farbe); });
+    }
+
     // ------------------------------------------------------------------ 3D
 
     [Fact]
@@ -439,6 +468,7 @@ public class Darstellung3SerieTests
         Assert.Equal(32.5, d.Radius!.Value, 9);                              // 12.5 + 20
         Assert.Equal(0.35, d.Deckkraft);
         Assert.True(d.NichtSchneiden);                                       // nicht im Schnitt
+        Assert.NotNull(k.Teile[0].Achse); Assert.Null(d.Achse);              // eine Achslinie je Leitung, nicht noch eine für die Dämmung
         Assert.NotNull(d.Farbe);
         Assert.NotEqual(k.Teile[0].Farbe, d.Farbe);
         // mittel: nur das Rohr

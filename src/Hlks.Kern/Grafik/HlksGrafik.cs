@@ -224,7 +224,7 @@ public sealed class HlksGrafik : IGrafikquelle
                 // Dämmung hinter dem Rohr (Christian 09.11.2026: «darstellung dämmung … schwarze linien, gelb transparent hinterlegt», «auch auf mittel anwenden»)
                 // die Fläche zeichnet DaemmGrafik vereinigt für alle Leitungen und Formteile (09.11.2026); verdeckt nur die gestrichelten Ränder
                 if (mass.Daemmdicke > 0 && lauf.Verdeckt)
-                    teil.Primitive.AddRange(Raender(lauf.Xy, mass.DaemmBreite, DaemmLinie, "strich", Stifte.Hilf));
+                    teil.Primitive.AddRange(Raender(lauf.Xy, mass.DaemmBreite, DaemmRand(farbe), "strich", Stifte.Fein));   // Rohrfarbe, fein wie die sichtbaren Dämmkanten (Christian 12.11.2026)
                 if (lauf.Verdeckt)
                     teil.Primitive.AddRange(Raender(lauf.Xy, breite, farbe, "strich"));
                 else if (abwasser)
