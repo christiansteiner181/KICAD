@@ -204,6 +204,9 @@ Die Oberfläche zeigt Dateinamen ohne die vorangestellte Prüfsumme (`ohnePruefs
   der Datei auf einem Kegel des Projekts liegen (≤ 50 mm, ANNAHME); ohne Kegel zählen Gelände- und Gebäudeursprung. Eindeutig → Empfehlung; beim Einpassen
   gilt diese Lage, wenn Wände und Räume fehlen oder nicht eindeutig sind (BKW HS: Gebäudetechnik-IFC von Trimble Nova ohne Wände, Ursprung auf dem Kegel →
   «projekt»). Der Projektbezug speichert die Kegel der ersten Datei (`referenzkegel`); ältere Projekte lesen sie aus der Bezugsdatei.
+  Gesamtprüfung 13.11.2026: «projekt» und «gebaeude» gehen vor; die Lage aus Kegelpaaren wird nur gerechnet, wenn keine davon trifft, und zwar für
+  alle Zuordnungen. Zwei Kegel bestimmen die Lage nur bis auf eine halbe Drehung → «unsicher», keine Empfehlung, kein Einpassen; eindeutig ab drei
+  Kegeln (die Lage, die allein die meisten trifft). `trefferJeLage.referenzkegelLagen` = Anzahl gerechneter Lagen.
 - *Nachzeichnen?* (Christian 11.11.2026: «beim importieren eines ifc, muss prominent gewählt werden können ob es nachgezeichnet werden soll. dies ist
   für architektur default "ja" für alle anderen default "nein"»): zuoberst im Dialog «IFC übernehmen» (blau umrandet). Ja = die gewählten Bereiche werden
   KICAD-Bauteile; Nein = nur als Unterlage einlesen (`bereiche = ["keine"]`, Hintergrund mit Lage und Ausrichtung, keine Bauteile, nichts gelöscht).
