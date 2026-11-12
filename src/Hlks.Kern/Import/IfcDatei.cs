@@ -196,7 +196,11 @@ public sealed class IfcDatei : IDisposable
     /// <summary>Referenzkegel (Christian 11.11.2026: «bei den meisten modellen gibt es referenz punkte zum ausrichten. Bsp Kegel», «die kegel liegen
     /// meist abseits des gebäudes»): Bauteile, deren Name, ObjectType oder Typname das Wort Kegel bzw. cone, Vermessungspunkt oder Referenzpunkt
     /// enthält (Archicad BKW HS: Typ «Kegel 27», Name eines Türrahmens), ohne Leitungs- und Anlagenteile. Weltlage ihrer Platzierung in mm.</summary>
-    public List<double[]> Referenzkegel()
+    public List<double[]> Referenzkegel() => referenzkegel ??= ReferenzkegelSuchen();   // einmal je Datei: die Ausrichtung fragt mehrmals (alle Produkte)
+
+    List<double[]>? referenzkegel;
+
+    List<double[]> ReferenzkegelSuchen()
     {
         var typen = new Dictionary<int, string>();
         foreach (var r in Modell.Instances.OfType<IIfcRelDefinesByType>())
