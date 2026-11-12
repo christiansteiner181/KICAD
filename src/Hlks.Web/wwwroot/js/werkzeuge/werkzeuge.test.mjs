@@ -97,6 +97,16 @@ test('Fangen: Shift = orthogonal, Länge auf das Raster', () => {
   assert.deepEqual(v.punkt, [0, 2500]);
 });
 
+test('Fangen: Raster rundet die Länge bei Shift und Polar nie auf 0 (näher als ein halber Rasterschritt: ungerundet)', () => {
+  const leer = { punkte: [], kanten: [] };
+  const f = F.fangen({ punkt: [1030, 504], daten: leer, radius: 10, letzter: [1000, 500], ortho: true, raster: 100 });
+  assert.deepEqual(f.punkt, [1030, 500]);
+  assert.equal(f.art, 'frei');
+  const p = F.fangen({ punkt: [1040, 501], daten: leer, radius: 10, letzter: [1000, 500], raster: 100, polar: 15, arten: ['raster'] });
+  assert.equal(p.art, 'polar');
+  punktGleich(p.punkt, [1040, 500]);
+});
+
 test('Fangen: Shift fängt Endpunkte nur auf der waagrechten/senkrechten Linie', () => {
   const d = { punkte: [{ p: [3000, 4], id: 'a' }, { p: [3000, 900], id: 'b' }], kanten: [] };
   const f = F.fangen({ punkt: [3002, 150], daten: d, radius: 10, letzter: [0, 0], ortho: true, raster: 0 });
@@ -621,4 +631,43 @@ test('Dämmdicke nach MuKEn 2014 Anhang 4 aus der DN (Christian 09.11.2026: «d�
   assert.equal(O.daemmDicke(r, 25), 50);
   assert.equal(O.daemmDicke(r, 18), 50);
   assert.equal(O.daemmDicke(r, 250), null);
+});
+
+// ============================================================================================== Arbeitsreihe (Klick während laufender Abfrage)
+
+test('Arbeitsreihe: Schritte während eines laufenden Schritts gehen nicht verloren und laufen in der Reihenfolge der Eingabe', async () => {
+  const { Arbeitsreihe } = await import('./reihe.js');
+  const punkte = [], fehler = [];
+  let danach = 0, beendet = false;
+  const r = new Arbeitsreihe({ fehler: (e) => fehler.push(e.message), danach: () => { danach++; }, fertig: () => beendet });
+  let weiter;
+  const kern = new Promise((ok) => { weiter = ok; });
+  // erster Klick wartet auf den Kern; zweiter und dritter Klick sowie Esc kommen in dieser Zeit
+  const lauf = r.ausfuehren(async () => { await kern; punkte.push('A'); });
+  assert.equal(r.beschaeftigt, true);
+  r.ausfuehren(() => { punkte.push(`B nach ${punkte.at(-1)}`); });          // sieht den Stand nach dem ersten Schritt
+  r.ausfuehren(async () => { await null; punkte.push('C'); });
+  r.ausfuehren(() => { punkte.push('Esc'); }, 'esc');
+  assert.equal(r.wartet('esc'), true);                                       // daran erkennt das Werkzeug ein zweites Esc
+  assert.deepEqual(punkte, []);
+  weiter();
+  await lauf;
+  assert.deepEqual(punkte, ['A', 'B nach A', 'C', 'Esc']);
+  assert.equal(r.beschaeftigt, false);
+  assert.equal(danach, 1);
+
+  // Wirft ein Schritt, entfallen die wartenden (sie bauten auf seinem Ergebnis auf); danach ist die Reihe wieder frei
+  const l2 = r.ausfuehren(async () => { await null; throw new Error('abgelehnt'); });
+  r.ausfuehren(() => { punkte.push('darf nicht'); });
+  await l2;
+  assert.deepEqual(fehler, ['abgelehnt']);
+  assert.equal(punkte.includes('darf nicht'), false);
+  await r.ausfuehren(() => { punkte.push('D'); });
+  assert.equal(punkte.at(-1), 'D');
+
+  // Beendet ein Schritt das Werkzeug, laufen die wartenden nicht mehr
+  const l3 = r.ausfuehren(async () => { await null; beendet = true; });
+  r.ausfuehren(() => { punkte.push('nach Ende'); });
+  await l3;
+  assert.equal(punkte.includes('nach Ende'), false);
 });

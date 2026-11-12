@@ -4377,6 +4377,17 @@ jedes neue Projekt erhält alle Mustersysteme.
 - **Esc ein Weg für alle Werkzeuge** (Christian 09.11.2026: «esc funktioniert immer noch nicht zuverlässig»): Esc während einer laufenden Abfrage wird
   danach ausgeführt (vorher verworfen); Esc in einem Feld der Optionsleiste bzw. des Eigenschaftsfensters (auch Textfeld) verlässt das Feld und wirkt
   wie Esc in der Ansicht; das Leitungswerkzeug behandelt Esc über denselben Weg (def.esc).
+- **Eingaben während einer laufenden Abfrage** (Gesamtprüfung 13.11.2026, `js/werkzeuge/reihe.js`): Klick, Enter, Doppelklick, Zifferneingabe und Esc, die
+  kommen, während ein Schritt noch auf den Kern wartet, werden in der Reihenfolge der Eingabe eingereiht und danach abgearbeitet (vorher ging ein Klick
+  stumm verloren). Der Fang eines eingereihten Klicks wird erst beim Abarbeiten bestimmt (Orthogonal, Polar und Lot hängen am Punkt, den der laufende
+  Schritt setzt). Scheitert ein Schritt mit Fehler, entfallen die wartenden. Solange das Textfeld des Textwerkzeugs offen ist, schliesst ein Klick in den
+  Plan nur das Feld. Höchstens 16 wartende Schritte (Annahme).
+- **Server antwortet nicht:** Wartet schon ein Esc und ist eine Anfrage seit über 5 s offen (Annahme), beendet ein weiteres Esc das Werkzeug sofort mit der
+  Meldung «… beendet, ohne die Antwort des Servers abzuwarten»; der Server rechnet allenfalls zu Ende. Eine allgemeine Zeitgrenze in `api.js` gibt es
+  bewusst nicht (IFC-Import, Serien-PDF und Projekt anlegen dauern lang; ein abgebrochener Befehl liefe im Kern trotzdem weiter).
+- **Raster bei Shift und Polarfang:** Die Länge wird auf das Raster gerundet, aber nie auf 0 – näher als ein halber Rasterschritt am letzten Punkt gilt
+  die ungerundete Länge (vorher fiel der Punkt auf den letzten Punkt, der Klick blieb ohne Wirkung).
+- **Mehrfachauswahl, verschiedene Werte:** Auswahlfelder zeigen «verschieden», Häkchen stehen unbestimmt (vorher «–» bzw. aus/ein wie für alle).
 - **Linienstärken Haustechnik** (Christian 09.11.2026: «konturen 0.5mm, Achsen und hilfslinien 0.2mm»; Entscheid: nur Haustechnik, Dämmkanten = Hilfslinien):
   neue Stifte «kontur» 0.5 mm und «hilf» 0.2 mm (Bildschirm, PDF, SVG). Kontur: Ränder von Kanälen, Abwasser, verdeckten Leitungen, Steigleitungen und
   Umrisse der Familien und Formteile; Hilf: Achsen, Achsenkreuze, Dämmkanten, Kanalrahmen, Fliesspfeil, Sichtkanten. Deckend gefüllte Rohre und ihre

@@ -19,7 +19,7 @@
 //      pflicht(feld, text), beenden(), neuZeichnen(), optionenNeu(), texteingabe(punkt, opt), fehler(e).
 
 import { element, abonnieren, zustand } from '../zustand.js';
-import { abfrage } from '../api.js';
+import { abfrage, laengsteOffeneAnfrageMs } from '../api.js';
 import * as fensterModul from '../fenster.js';
 import { sende, ergebnisMelden } from '../oberflaeche/befehle.js';
 import { meldung } from '../oberflaeche/dialoge.js';
@@ -29,10 +29,12 @@ import { werte, rasterWert, katalogLaden } from './optionen.js';
 import { WerkzeugFehler } from './parameter.js';
 import * as S from './schicht.js';
 import { fangArten, einmalVerbraucht, polarFuer } from './fangwahl.js';   // B5: Fangeinstellungen und Fang-Kürzel; Polarfang
+import { Arbeitsreihe } from './reihe.js';
 
 const PLANARTEN = ['grundriss', 'schnitt', 'ansicht'];
 const DOPPELKLICK_MS = 400;
 const DOPPELKLICK_PX = 6;
+const HAENGT_MS = 5000;   // Annahme: antwortet der Server so lange nicht, beendet ein weiteres Esc das Werkzeug sofort
 
 // ------------------------------------------------------------------------------------------------ Ansicht
 
@@ -112,8 +114,13 @@ class Lauf {
     this.fang = null;
     this.tipp = '';
     this.shift = false;
-    this.beschaeftigt = false;
     this.fertig = false;
+    // Schritte (Klick, Enter, Eingabe, Esc) in der Reihenfolge der Eingabe; was während einer Abfrage des Kerns kommt, wird danach abgearbeitet
+    this.reihe = new Arbeitsreihe({
+      fehler: (e) => this.fehler(e),
+      fertig: () => this.fertig,
+      danach: () => { if (!this.fertig) { this.berechneFang(); this.hinweisAktualisieren(); this.zeichnen(); } },
+    });
     this.zuletztDown = { t: 0, x: -999, y: -999 };
     this.cache = { t: 0, daten: null };
     this.gesehen = new WeakSet();
@@ -121,6 +128,8 @@ class Lauf {
     this.objekt = { id: def.id, ereignis: (art, e, a) => this.ereignis(art, e, a), beenden: () => this.beenden() };
     this.abmelden = abonnieren('modell', () => { this.cache.daten = null; });
   }
+
+  get beschaeftigt() { return this.reihe.beschaeftigt; }
 
   schicht() { return this.ansicht.werkzeugSchicht ?? null; }
   s() { const p = this.ansicht.pxJeMm?.(); return p > 0 ? 1 / p : 1; }
@@ -142,7 +151,11 @@ class Lauf {
       beenden: () => lauf.beenden(),
       neuZeichnen: () => lauf.zeichnen(),
       optionenNeu: () => modusSetzen('werkzeug', { ...modus.daten }),
-      texteingabe: (punkt, opt) => texteingabe(lauf.ansicht, punkt, opt),
+      // Solange das Textfeld offen ist, wartet der Schritt auf den Benutzer, nicht auf den Kern: ein Klick in den Plan schliesst nur das Feld
+      texteingabe: async (punkt, opt) => {
+        lauf.wartetAufBenutzer = true;
+        try { return await texteingabe(lauf.ansicht, punkt, opt); } finally { lauf.wartetAufBenutzer = false; }
+      },
       fehler: (e) => lauf.fehler(e),
     };
   }
@@ -191,11 +204,16 @@ class Lauf {
 
   berechneFang() {
     if (!this.maus) return;
-    if (this.def.ohneFangen) { this.fang = { punkt: [...this.maus], art: 'frei', ortho: false }; return; }
+    this.fang = this.fangFuer(this.maus, this.shift);
+  }
+
+  /** Fang für einen Mauspunkt nach dem jetzigen Stand des Werkzeugs (letzter Punkt, eigene Fangziele). */
+  fangFuer(maus, shift) {
+    if (this.def.ohneFangen) return { punkt: [...maus], art: 'frei', ortho: false };
     const z = this.z, d = this.def;
-    this.fang = fangen({
-      punkt: this.maus, daten: this.fangdaten(), radius: FANGRADIUS_PX * this.s(),
-      letzter: d.letzterPunkt?.(z) ?? null, raster: rasterWert(), ortho: this.shift,
+    return fangen({
+      punkt: maus, daten: this.fangdaten(), radius: FANGRADIUS_PX * this.s(),
+      letzter: d.letzterPunkt?.(z) ?? null, raster: rasterWert(), ortho: shift,
       extraPunkte: d.extraPunkte?.(z) ?? [], extraKanten: d.extraKanten?.(z) ?? [], arten: fangArten(d.fangArten),
       drehung: this.ansicht.drehung ?? 0,   // N9: Orthogonal und Raster in den Achsen der (gedrehten) Ansicht
       polar: polarFuer(d.fangArten),        // Polarfang (04.11.2026), Winkel in den Achsen der Ansicht
@@ -250,23 +268,31 @@ class Lauf {
     else { console.error(e); meldung(String(e?.message ?? e), 'fehler'); }
   }
 
-  async run(fn) {
-    if (this.beschaeftigt || this.fertig) return;
-    this.beschaeftigt = true;
-    try { await fn(); } catch (e) { this.fehler(e); }
-    finally {
-      this.beschaeftigt = false;
-      if (!this.fertig) { this.berechneFang(); this.hinweisAktualisieren(); this.zeichnen(); }
-      if (this.escWartet && !this.fertig) { this.escWartet = false; this.esc(); }   // Esc während der Arbeit: jetzt nachholen
-    }
-  }
+  /** Führt einen Schritt aus. Läuft schon einer (Abfrage des Kerns), wird er eingereiht und danach ausgeführt statt verworfen (reihe.js;
+   *  Prüfbefund 13.11.2026: ein Klick während einer laufenden Abfrage ging verloren). */
+  run(fn) { return this.reihe.ausfuehren(fn); }
 
   /** Esc (Christian 09.11.2026: «esc funktioniert immer noch nicht zuverlässig»): ein Weg für alle Werkzeuge. Läuft gerade etwas (Abfrage des Kerns),
    *  wird Esc danach ausgeführt statt verworfen; das Werkzeug kann es selbst behandeln (def.esc, z. B. Leitung: Zug anlegen), sonst stufenweise
    *  abbrechen (Eingabe leeren, Zug verwerfen, Werkzeug beenden). */
   esc() {
     if (this.fertig) return;
-    if (this.beschaeftigt) { this.escWartet = true; return; }
+    if (this.beschaeftigt) {
+      // Der Server antwortet nicht: ein weiteres Esc wartet nicht länger und beendet das Werkzeug (der Server rechnet allenfalls weiter)
+      if (this.reihe.wartet('esc') && laengsteOffeneAnfrageMs() > HAENGT_MS) {
+        this.reihe.leeren();
+        this.beenden();
+        meldung(`«${this.def.titel}» beendet, ohne die Antwort des Servers abzuwarten.`, 'warnung', { vorschlag: 'Prüfen, ob der letzte Schritt angelegt wurde; sonst wiederholen.' });
+        return;
+      }
+      if (!this.reihe.wartet('esc')) this.reihe.ausfuehren(() => this.escJetzt(), 'esc');   // nach den schon eingereihten Klicks, nur einmal
+      return;
+    }
+    this.escJetzt();
+  }
+
+  escJetzt() {
+    if (this.fertig) return;
     if (this.def.esc?.(this.z, this.ctx)) { this.hinweisAktualisieren(); this.zeichnen(); return; }
     this.abbrechenStufe();
   }
@@ -316,8 +342,20 @@ class Lauf {
     if (!this.fang) return true;
     const fang = this.fang;
     this.tipp = '';
-    einmalVerbraucht();
-    this.run(() => this.def.klick?.(this.z, fang, this.ctx));
+    if (!this.beschaeftigt) {
+      einmalVerbraucht();
+      this.run(() => this.def.klick?.(this.z, fang, this.ctx));
+      return true;
+    }
+    if (this.wartetAufBenutzer) return true;
+    // Ein Schritt läuft noch: der Klick wird eingereiht. Sein Fang wird erst dann bestimmt, weil Orthogonal, Polar, Lot und die eigenen
+    // Fangziele vom Punkt abhängen, den der laufende Schritt gerade setzt.
+    const maus = this.maus ? [...this.maus] : null, shift = this.shift;
+    this.run(() => {
+      const f = maus ? this.fangFuer(maus, shift) : fang;
+      einmalVerbraucht();
+      return this.def.klick?.(this.z, f, this.ctx);
+    });
     return true;
   }
 
