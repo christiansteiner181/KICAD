@@ -69,7 +69,9 @@ public sealed class UnterlageKalibrieren : IBefehl
         }
         else
         {
-            neu = UnterlagenLage.ZweiPunkte(von[0], von[1], nach[0], nach[1]);
+            // gerundet wie gespeichert und danach an der Mitte der Passpunkte verankert (Landeskoordinaten: sonst bis 25 mm daneben)
+            neu = UnterlagenLage.ZweiPunkte(von[0], von[1], nach[0], nach[1])
+                .GerundetUm(((von[0].U + von[1].U) / 2, (von[0].V + von[1].V) / 2), ((nach[0].U + nach[1].U) / 2, (nach[0].V + nach[1].V) / 2));
             double laenge = Math.Sqrt(Math.Pow(nach[1].U - nach[0].U, 2) + Math.Pow(nach[1].V - nach[0].V, 2));
             hinweise.Add($"{ul.Kennzeichen} kalibriert: Faktor {Zahl(neu.Faktor)} ({(raster ? "mm je Bildpunkt" : "mm je Zeichnungseinheit")}), Drehung {Zahl(neu.Drehung)}°, " +
                          $"Verschiebung {Zahl(neu.Dx)} / {Zahl(neu.Dy)} mm; Abstand der Passpunkte {Zahl(laenge)} mm.");

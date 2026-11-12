@@ -53,6 +53,17 @@ public readonly record struct UnterlagenLage(double Faktor, double Drehung, doub
         return o;
     }
 
+    /// <summary>Faktor und Drehung auf die Stellen gerundet, mit denen <see cref="Zu"/> sie ablegt (9 bzw. 6), und die Verschiebung danach so
+    /// bestimmt, dass der Passpunkt <paramref name="u"/> der Unterlage genau auf <paramref name="n"/> im Modell fällt. Ohne das verschiebt das
+    /// Runden beim Speichern weit vom Nullpunkt liegende Zeichnungen: bei Landeskoordinaten (LV95, rund 2 860 km vom Ursprung) macht ein halbes
+    /// Millionstel Grad schon 25 mm aus.</summary>
+    public UnterlagenLage GerundetUm((double U, double V) u, (double X, double Y) n)
+    {
+        var l = new UnterlagenLage(Math.Round(Faktor, 9), Math.Round(Drehung, 6), 0, 0);
+        var (px, py) = l.Auf(u.U, u.V);
+        return l with { Dx = n.X - px, Dy = n.Y - py };
+    }
+
     /// <summary>Drehung in (−180, 180].</summary>
     public static double Normieren(double grad)
     {
