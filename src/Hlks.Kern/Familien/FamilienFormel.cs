@@ -189,8 +189,8 @@ sealed class Funktionsknoten(string name, List<Ausdruck> args) : Ausdruck
             case "round": return FWert.Z(Math.Round(Z(u, 0), MidpointRounding.AwayFromZero));
             case "roundup": return FWert.Z(Math.Ceiling(Z(u, 0)));
             case "rounddown": return FWert.Z(Math.Floor(Z(u, 0)));
-            case "sin": return FWert.Z(Math.Sin(Z(u, 0) * Grad));
-            case "cos": return FWert.Z(Math.Cos(Z(u, 0) * Grad));
+            case "sin": return FWert.Z(Viertel(Z(u, 0)) ?? Math.Sin(Z(u, 0) * Grad));
+            case "cos": return FWert.Z(Viertel(Z(u, 0) + 90) ?? Math.Cos(Z(u, 0) * Grad));
             case "tan":
             {
                 var w = Z(u, 0);
@@ -212,6 +212,16 @@ sealed class Funktionsknoten(string name, List<Ausdruck> args) : Ausdruck
     }
 
     static string Fmt(double x) => x.ToString("0.###", CultureInfo.InvariantCulture);
+
+    /// <summary>Sinus eines Vielfachen von 90° genau (0, 1, 0, −1), sonst null: cos(90) ist sonst 6e-17 statt 0 – ein Anschluss läge um
+    /// Rundungsreste neben der Achse, und l / cos(winkel) ergäbe bei 90° 1.6e16 statt «Division durch 0».</summary>
+    static double? Viertel(double grad)
+    {
+        double v = grad / 90, n = Math.Round(v);
+        if (!(Math.Abs(n) < 1e9) || Math.Abs(v - n) > 1e-12) return null;
+        long viertel = (((long)n % 4) + 4) % 4;
+        return viertel switch { 0 => 0, 1 => 1, 2 => 0, _ => -1 };
+    }
 
     public override void NamenSammeln(List<(string, int)> namen) { foreach (var a in args) a.NamenSammeln(namen); }
 }
