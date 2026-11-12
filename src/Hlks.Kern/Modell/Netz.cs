@@ -51,9 +51,12 @@ public static class Netz
         }
     }
 
-    /// <summary>Breitensuche ab einem Element. bisKlasse beendet den Weg an Elementen dieser Klasse (inklusive).</summary>
+    /// <summary>Breitensuche ab einem Element. bisKlasse beendet den Weg an Elementen dieser Klasse (inklusive).
+    /// maxSchritte: Obergrenze der Schritte, nur für Ausgaben (Abfrage netz_folgen). Ohne Angabe folgt die Suche dem ganzen Netz –
+    /// sie endet von selbst, weil jedes Element nur einmal besucht wird. (Bis 13.11.2026 galt still 2000: bei grösseren Netzen
+    /// fehlten den Rechnungen und Stranglisten die entferntesten Bauteile und Verbraucher, ohne Hinweis.)</summary>
     public static List<NetzSchritt> Folgen(Modell m, Katalog k, Element start, string richtung, string? medium = null,
-        string? bisKlasse = null, int maxSchritte = 2000, Func<Element, bool>? stopp = null)
+        string? bisKlasse = null, int maxSchritte = int.MaxValue, Func<Element, bool>? stopp = null)
     {
         var ergebnis = new List<NetzSchritt>();
         var besucht = new HashSet<string> { start.Id };
