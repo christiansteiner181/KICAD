@@ -48,6 +48,20 @@ public sealed class FamilieLadenKiTests : BibliothekTestBasis
     }
 
     [Fact]
+    public void KI_laedt_Datei_die_sich_freigegeben_nennt_als_Entwurf()
+    {
+        // Freigabe nur durch einen Menschen: eine Datei im Projektordner mit status = freigegeben umgeht familie_freigeben nicht (Gesamtprüfung 13.11.2026)
+        BibliothekFuellen();
+        var ki = NeuesProjekt("KI Datei freigegeben", "ki");
+        var datei = Path.Combine(ki.Speicher!.Ort, "heizkoerper.familie.json");
+        var def = VersionLesen(2); def["status"] = "freigegeben";
+        File.WriteAllText(datei, def.ToJsonString());
+        var e = Ok(ki.Ausfuehren("familie_laden", new JsonObject { ["datei"] = datei }));
+        Assert.Equal("entwurf", Hole(ki, "FAM-1").Text("status"));
+        Assert.Contains(e.Hinweise, h => h.Contains("freigeben darf nur ein Mensch"));
+    }
+
+    [Fact]
     public void KI_mit_vorhandener_Familie_wird_abgelehnt_Bibliothek()
     {
         BibliothekFuellen();
