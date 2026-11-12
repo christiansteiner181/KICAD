@@ -36,6 +36,13 @@ Tests nach dem Zusammenführen (gefiltert): Kern 169 + 86 grün, Web 5 grün, No
 
 | Familiengeometrie | 4 (Übergang-Körper nach aussen orientiert – vorher negatives Volumen/verkehrte Normalen in 3D/XR; Achse des schrägen Abzweigs endet im Achsschnittpunkt – einlinige Darstellung und Dämmung liefen quer; sin/cos bei Vielfachen von 90° genau; Umriss übernommener Netze vollständig). Rechtssystem, Drehsinn, Einbaulängen mit Handbeispielen bestätigt | familiengeometrie.md |
 
+
+## Runde 4 (Start 18:15)
+
+| Bereich | Korrekturen | Bericht |
+|---|---|---|
+| Ausgabe | 2 (IFC-Export: senkrechte Rechteckkanäle mit querDrehung wie 3D und Kollision; Materialliste und Leitungslängen zählen eine Leitung nur in ihrem eigenen System – vorher KW 5 m statt 2 m) | ausgabe.md |
+
 Browser (Hauptlauf 18:13): Rohr am freien Leitungsende mit leerer Höhe begonnen – Höhe und Grösse des Anschlusses übernommen, Zug angelegt.
 
 ## Fragen an Christian (gesammelt)
@@ -78,6 +85,10 @@ Browser (Hauptlauf 18:13): Rohr am freien Leitungsende mit leerer Höhe begonnen
     Rohrradius sein; ohne Untergrenze faltet sich der Bogen innen. Regel schärfen (nur `biegeradius`, R ≥ Profilradius)? Betrifft bestehende
     Familien der Bibliothek.
 26. **Anschlussrichtung «nach aussen»** auch bei Apparaten und Armaturen in der Freigabeprüfung prüfen (heute nur Formteile)?
+27. **Beschriftung im gedrehten Grundriss** (hoch): Freistellung rechnet in Modellachsen ohne Drehung der Ansicht – bei schrägen Leitungen
+    bzw. Planwinkel ≠ 0 überdeckt der Text die eigene Leitung, Führungslinien liegen bis ~7 mm daneben. Platzierung in Ansichtsachsen
+    umbauen (mittel)? Dazu Masszahl unter statt über der Linie, wenn sie wegen der Ansichtsdrehung umklappt.
+28. **IFC-Export an Knicken**: eckige Kanäle als stumpfe Extrusionen (3D schliesst sie) – im IFC schliessen?
 7. **λ-Werte der Dämmarten**: welche Produkte verwendet ihr (dann λ mit Quelle eintragen)?
 
 **Prüfung Hauptlauf im Browser (18:00):** Rohr mit drei raschen Klicks und Esc wird vollständig angelegt (Klick-Reihe), Weiterzeichnen mit Bogen am Leitungsende kürzt die bestehende Leitung. Nebenbefund: Start an einem Anschluss verlangt zuerst Produktlinie und Höhe, obwohl der Anschluss beides vorgibt (pflichtPruefen vor dem Anschluss) – kleine Korrektur für Runde 3.
