@@ -238,6 +238,24 @@ public class KiSicherheitTests
         Assert.Contains("gibt es nicht", Assert.Throws<HlksFehler>(() => Tuer.Abfrage(t.Mensch, "bcf_lesen", new JsonObject { ["datei"] = aussen })).Message);
     }
 
+    /// <summary>Gesamtprüfung 13.11.2026: rueckmeldung_lesen ist für die KI erlaubt und nahm jeden Pfad (auch \\fremder-server\…); die Übernahme
+    /// lehnt auch eine KI ab, die sich über HTTP je Aufruf meldet (Projekt des Servers hat die Art «mensch»).</summary>
+    [Fact]
+    public void Rueckmeldung_Ki_LesenNurUnterDenWurzeln_UebernehmenNieAuchJeAufruf()
+    {
+        using var t = new KiProjekt();
+        var inhalt = new JsonObject { ["format"] = BaustelleRueckmeldung.Format, ["person"] = "Monteur", ["meldungen"] = new JsonArray() }.ToJsonString();
+        var aussen = t.Datei(t.Aussen, "rueckmeldung.json", inhalt);
+        Assert.StartsWith(KiPfade.Meldung, Assert.Throws<HlksFehler>(() => Tuer.Abfrage(t.Ki, "rueckmeldung_lesen", new JsonObject { ["datei"] = aussen })).Message);
+        Assert.StartsWith(KiPfade.Meldung, Assert.Throws<HlksFehler>(() => Tuer.Abfrage(t.Ki, "rueckmeldung_lesen", new JsonObject { ["datei"] = @"\\203.0.113.5\daten\r.json" })).Message);
+        var innen = t.Datei(Path.Combine(t.Ablage, "baustelle", "eingang"), "rueckmeldung.json", inhalt);
+        Assert.Equal("Monteur", Abf(t.Ki, "rueckmeldung_lesen", new JsonObject { ["datei"] = innen })["person"]!.GetValue<string>());
+        Assert.Equal("Monteur", Abf(t.Mensch, "rueckmeldung_lesen", new JsonObject { ["datei"] = aussen })["person"]!.GetValue<string>());   // Mensch unverändert
+        var par = new JsonObject { ["datei"] = innen };
+        Assert.Contains("übernimmt der Mensch", Nein(t.Mensch.Ausfuehren("rueckmeldung_uebernehmen", par.DeepClone().AsObject(), true, "ki")).Fehler);
+        Assert.True(t.Mensch.Ausfuehren("rueckmeldung_uebernehmen", par.DeepClone().AsObject(), true).Angenommen);
+    }
+
     [Fact]
     public void Ausgaben_Ki_BcfExport_AussparungenIfc_PlanPdf_NurUnterDenWurzeln()
     {

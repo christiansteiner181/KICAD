@@ -23,7 +23,7 @@ public sealed partial class Werkzeuge
         {
             var par = Parameter(("datei", datei));
             if (Knoten(inhalt) is JsonObject o) par["inhalt"] = o;
-            return Antwort(BaustelleRueckmeldung.Lesen(projekt, BaustelleRueckmeldung.Laden(par)));
+            return Antwort(BaustelleRueckmeldung.Lesen(projekt, BaustelleRueckmeldung.Laden(projekt, par)));
         });
 
     [McpServerTool(Name = "montagestatus_setzen"), Description(BaustelleDaten.StatusText)]
@@ -53,7 +53,7 @@ public sealed partial class Werkzeuge
 
     [McpServerTool(Name = "raumbezeichnungen_dwg"), Description(RaumbezeichnungenDwg.AbfrageText)]   // 05.11.2026
     public string RaumbezeichnungenDwgWerkzeug([Description(RaumbezeichnungenDwg.ParUnterlageAbfrage)] string? unterlage = null, [Description(RaumbezeichnungenDwg.ParLayer)] string? layer = null) =>
-        Lauf(() => Antwort((JsonNode)Tuer.Abfrage(projekt, "raumbezeichnungen_dwg", Parameter(("unterlage", unterlage), ("layer", layer)))), synchronisieren: false);
+        Lauf(() => Antwort((JsonNode)Tuer.Abfrage(projekt, "raumbezeichnungen_dwg", Parameter(("unterlage", unterlage), ("layer", layer)))));
 
     [McpServerTool(Name = "raumbezeichnungen_uebernehmen"), Description(RaumbezeichnungenDwg.BefehlText)]   // 05.11.2026
     public string RaumbezeichnungenUebernehmenWerkzeug(
