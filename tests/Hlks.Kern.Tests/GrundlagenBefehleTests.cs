@@ -207,6 +207,25 @@ public class GrundlagenBefehleTests
         Nahe([0, 0, 10000, 6000], Box(Unterlage(p).Geometrie!.Punkte));
     }
 
+    /// <summary>Gesamtprüfung 13.11.2026: Zeichnung in Landeskoordinaten (LV95, Meter). Faktor und Drehung werden mit 9 bzw. 6 Stellen gespeichert;
+    /// die Verschiebung muss zu den gerundeten Werten passen, sonst liegen die Passpunkte nach dem Speichern daneben
+    /// (0.0000004° × 2 860 km = 20 mm).</summary>
+    [Fact]
+    public void Kalibrieren_Landeskoordinaten_PasspunkteLiegenNachDemSpeichernGenau()
+    {
+        using var o = new Ordner();
+        var p = Projekt();
+        Ok(Einfuegen(p, StandardDxf(o)));
+        double w = 17.1234564 * Math.PI / 180;
+        double[] v1 = [2_600_000, 1_200_000], v2 = [2_600_020, 1_200_005], n1 = [5000, 7000];
+        double[] n2 = [n1[0] + 1000 * (20 * Math.Cos(w) - 5 * Math.Sin(w)), n1[1] + 1000 * (20 * Math.Sin(w) + 5 * Math.Cos(w))];
+        Ok(Kalibrieren(p, "UL-1", [v1, v2], [n1, n2]));
+        var l = UnterlagenLage.Lesen(Unterlage(p));   // wie gespeichert (gerundet)
+        var (ax, ay) = l.Auf(v1[0], v1[1]); var (bx, by) = l.Auf(v2[0], v2[1]);
+        Assert.Equal(n1[0], ax, 0.01); Assert.Equal(n1[1], ay, 0.01);
+        Assert.Equal(n2[0], bx, 0.01); Assert.Equal(n2[1], by, 0.01);
+    }
+
     [Fact]
     public void Kalibrieren_WarntBeiFaktorAbweichungUeberEinProzent()
     {

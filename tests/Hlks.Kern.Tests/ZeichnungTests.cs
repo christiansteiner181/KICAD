@@ -98,6 +98,26 @@ public class ZeichnungTests : IDisposable
         Assert.Equal(2, ZeichnungGrafik.Erzeugen(z, null, 1).Teile.SelectMany(t => t.Primitive).Count(p => p.Art == "linie"));
     }
 
+    /// <summary>Gesamtprüfung 13.11.2026: verdrehtes Ansichtsfenster. Blatt = Mitte + k · (Drehung · (Modell − Ziel) − Ansichtsmitte); die
+    /// Ansichtsmitte steht im gedrehten System des Fensters. Handbeispiel: Verdrehung 90°, Ansichtsmitte (100, 50), Massstab 1, Fenstermitte
+    /// (200, 200): Modellpunkt (50, −100) → gedreht (100, 50) = Ansichtsmitte → Blatt (200, 200); (50, −90) → gedreht (90, 50) → Blatt (190, 200).</summary>
+    [Fact]
+    public void Darstellung_VerdrehtesAnsichtsfenster_LegtDenModellbereichRichtig()
+    {
+        var pfad = Schreiben("fenster.dxf", d =>
+        {
+            d.Entities.Add(new Line { StartPoint = new XYZ(50, -100, 0), EndPoint = new XYZ(50, -90, 0) });
+            var blatt = d.Layouts.First(l => l.IsPaperSpace).AssociatedBlock;
+            blatt.Entities.Add(new Viewport { Center = new XYZ(10, 10, 0), Width = 1, Height = 1, ViewHeight = 1 });   // erstes Fenster = das Blatt selbst; zeigt die Linie nicht
+            blatt.Entities.Add(new Viewport { Center = new XYZ(200, 200, 0), Width = 100, Height = 100, ViewHeight = 100, ViewCenter = new XY(100, 50), TwistAngle = Math.PI / 2 });
+        });
+        var z = Zeichnungsdatei.Oeffnen(pfad);
+        var layout = z.Dokument.Layouts.First(l => l.IsPaperSpace);
+        var linie = Assert.Single(ZeichnungGrafik.Erzeugen(z, layout, 1).Teile.SelectMany(t => t.Primitive), p => p.Art == "linie");
+        Assert.Equal(200, linie.Punkte[0][0], 6); Assert.Equal(200, linie.Punkte[0][1], 6);
+        Assert.Equal(190, linie.Punkte[1][0], 6); Assert.Equal(200, linie.Punkte[1][1], 6);
+    }
+
     [Fact]
     public void Schraffurlinien_SparenDieInselAus()
     {

@@ -111,18 +111,21 @@ public static class UnterlageAusrichten
     /// <summary>Hauptrichtung (Grad, modulo 90) nach Länge gewichtet.</summary>
     static double Hauptrichtung(IEnumerable<(double X1, double Y1, double X2, double Y2)> kanten, double faktor = 1)
     {
-        var h = new double[90];
+        // je Grad die Summe der Längen und die Summe Länge × Winkel: der Feinwert ist das nach Länge gewichtete Mittel der wirklichen Winkel,
+        // nicht die Mitte des Fachs (sonst bleibt die Drehung bis ±1° ungenau – auf 20 m Gebäudelänge 350 mm)
+        var h = new double[90]; var hw = new double[90];
         foreach (var (x1, y1, x2, y2) in kanten)
         {
             double dx = x2 - x1, dy = y2 - y1, l = Math.Sqrt(dx * dx + dy * dy) * faktor;
             if (l < 1) continue;
             double w = ((Math.Atan2(dy, dx) * 180 / Math.PI) % 90 + 90) % 90;
-            h[(int)Math.Floor(w) % 90] += l;
+            int fach = (int)Math.Floor(w) % 90;
+            h[fach] += l; hw[fach] += l * w;
         }
         int best = Array.IndexOf(h, h.Max());
-        // Feinwert: gewichtetes Mittel der Nachbarn
+        // Feinwert: Mittel über das beste Fach und seine Nachbarn (über 0°/90° hinweg zählt der Winkel des Nachbarn um 90° verschoben)
         double s = 0, sw = 0;
-        for (int d = -1; d <= 1; d++) { int i = (best + d + 90) % 90; s += (best + d + 0.5) * h[i]; sw += h[i]; }
+        for (int d = -1; d <= 1; d++) { int i = (best + d + 90) % 90; s += hw[i] + (best + d - i) * h[i]; sw += h[i]; }
         return sw > 0 ? s / sw : best + 0.5;
     }
 
@@ -173,7 +176,7 @@ public static class UnterlageAusrichten
         double vorher = Treffer(aktuell);
         double am = Hauptrichtung(mk), az = Hauptrichtung(zk, f);
         var winkel = new List<double> { aktuell.Drehung };
-        for (int k = 0; k < 4; k++) winkel.Add(UnterlagenLage.Normieren(am - az + 90 * k));
+        for (int k = 0; k < 4; k++) winkel.Add(Math.Round(UnterlagenLage.Normieren(am - az + 90 * k), 6));   // gerundet wie gespeichert (UnterlagenLage.Gerundet)
         var zufall = new Random(1);
         var mStich = mp.OrderBy(_ => zufall.Next()).Take(400).ToList();
         var zStich = zp.OrderBy(_ => zufall.Next()).Take(400).ToList();
