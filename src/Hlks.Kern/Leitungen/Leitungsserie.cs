@@ -548,11 +548,12 @@ public sealed partial class Leitungsserie
         switch (art)
         {
             case "bogen":
+                // zuerst der Bereich: bei «frei» lehnt WinkelErlaubt 0° bzw. > 180° auch ab – die Meldung «nicht erlaubt (erlaubt: frei)» führte in die Irre
+                if (winkel is double w0 && (w0 <= 0 || w0 > 180 + 1e-9))
+                    return Nein($"Bogenwinkel {Leitungsgroesse.Zahl(w0)}° liegt nicht in 0 < w ≤ 180.", "Umlenkwinkel in Grad angeben.");
                 if (winkel is double w && !WinkelErlaubt(w))
                     return Nein($"Ein Bogen mit {Leitungsgroesse.Zahl(w)}° ist in der Produktlinie {Bezeichnung} nicht erlaubt (erlaubt: {WinkelText}).",
                         "Den Verlauf so legen, dass die Umlenkung einem erlaubten Winkel entspricht (auch zwei Bögen nacheinander), oder eine Produktlinie mit diesem Winkel wählen.");
-                if (winkel is double w0 && (w0 <= 0 || w0 > 180))
-                    return Nein($"Bogenwinkel {Leitungsgroesse.Zahl(w0)}° liegt nicht in 0 < w ≤ 180.", "Umlenkwinkel in Grad angeben.");
                 break;
             case "tstueck":
             {

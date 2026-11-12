@@ -124,7 +124,19 @@ public sealed class ParalleleLeitungen : IBefehl
             u = u.Einheit();
             n.Add(new V3(-u.Y, u.X, 0));
         }
-        var s0 = (new V3(seite.X - pkt[0].X, seite.Y - pkt[0].Y, 0)).Mal(n[0]) >= 0 ? 1 : -1;
+        // Seite gegenüber der angeklickten Geraden l (nicht gegenüber dem ersten Stück des Zugs – an einem Zug mit Knick läge der Klickpunkt sonst
+        // je nach Stück auf der anderen Seite, Gesamtprüfung 13.11.2026): das Stück des Zugs, auf dem die Mitte von l liegt
+        var lp = l.Geometrie!.Punkte;
+        var mitte = (V3.Aus(lp[0]) + V3.Aus(lp[^1])) * 0.5;
+        int js = 0; double naechst = double.MaxValue;
+        for (int i = 0; i + 1 < pkt.Count; i++)
+        {
+            double ux = pkt[i + 1].X - pkt[i].X, uy = pkt[i + 1].Y - pkt[i].Y;
+            double t = Math.Clamp(((mitte.X - pkt[i].X) * ux + (mitte.Y - pkt[i].Y) * uy) / (ux * ux + uy * uy), 0, 1);
+            double a = Math.Sqrt(Math.Pow(mitte.X - pkt[i].X - t * ux, 2) + Math.Pow(mitte.Y - pkt[i].Y - t * uy, 2));
+            if (a < naechst - 1e-9) { naechst = a; js = i; }
+        }
+        var s0 = (new V3(seite.X - pkt[js].X, seite.Y - pkt[js].Y, 0)).Mal(n[js]) >= 0 ? 1 : -1;
         var aus = new List<V3> { pkt[0] + n[0] * (s0 * d) };
         for (int j = 1; j + 1 < pkt.Count; j++)
         {
