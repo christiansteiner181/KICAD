@@ -43,6 +43,7 @@ Tests nach dem Zusammenführen (gefiltert): Kern 169 + 86 grün, Web 5 grün, No
 |---|---|---|
 | Ausgabe | 2 (IFC-Export: senkrechte Rechteckkanäle mit querDrehung wie 3D und Kollision; Materialliste und Leitungslängen zählen eine Leitung nur in ihrem eigenen System – vorher KW 5 m statt 2 m) | ausgabe.md |
 | Fachwerkzeuge | 3 (sehr kurze Vorwand brach Grundriss/3D/Stückliste ab; Spiegeln stellt die Rückseite der Vorwand um; Kanalrahmen: Stoss- und Endrahmen überlappen nicht; Montageelement-Vorschau in Elementbreite) | fachwerkzeuge.md |
+| 3D, Schnitte, XR | 4 (Kante am Absatz eines Prismas – L-förmige Decke – fehlte in Schnitt/Ansicht; «alles zeigen» passt im schmalen Fenster ein; Schnittbereich ziehen baut nicht mehr alle Körper neu; Farbe #rrggbbaa im 3D wie im XR-Export). Koordinatenwechsel Modell → three.js/glTF nachgerechnet | dreid_schnitte_xr.md |
 
 Browser (Hauptlauf 18:13): Rohr am freien Leitungsende mit leerer Höhe begonnen – Höhe und Grösse des Anschlusses übernommen, Zug angelegt.
 
@@ -96,6 +97,11 @@ Browser (Hauptlauf 18:13): Rohr am freien Leitungsende mit leerer Höhe begonnen
     sollen die Anschlüsse liegen (aus dem Katalog, z. B. WC-Abwasser 230 mm über OKFF)?
 31. **Vorwand verschieben/drehen**: Montageelemente bleiben liegen. Mitgehen lassen oder hinter dem Apparat bleiben?
     (Weitere 7 Fragen in fachwerkzeuge.md Abschnitt 5: Montagewinkel-Abstand, GIS-Segmentstoss, Vorwand über Eck u. a.)
+32. **3D-Ansicht bei Landeskoordinaten**: Geometrie absolut als float32 in m – bei 2 600 000 m nur 0.25 m Auflösung (der XR-Export hat
+    einen Bezugspunkt, die 3D-Ansicht nicht). Werden Projekte je in Landeskoordinaten geführt? Sonst nicht nötig.
+33. **Klick im 3D**: eine Leitung gewinnt den Klick auch hinter einer undurchsichtigen Decke – so gewollt?
 7. **λ-Werte der Dämmarten**: welche Produkte verwendet ihr (dann λ mit Quelle eintragen)?
 
 **Prüfung Hauptlauf im Browser (18:00):** Rohr mit drei raschen Klicks und Esc wird vollständig angelegt (Klick-Reihe), Weiterzeichnen mit Bogen am Leitungsende kürzt die bestehende Leitung. Nebenbefund: Start an einem Anschluss verlangt zuerst Produktlinie und Höhe, obwohl der Anschluss beides vorgibt (pflichtPruefen vor dem Anschluss) – kleine Korrektur für Runde 3.
+
+Browser (Hauptlauf 18:28): 3D Gesamt im Beispielprojekt nach Runde 4 dargestellt, ohne Skriptfehler.
