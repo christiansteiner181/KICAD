@@ -207,7 +207,11 @@ public sealed class ProjektDienst(Einstellungen einstellungen, ILogger<ProjektDi
             // Hauptanlage je Gewerk und Präfixe (Christian 09.11.2026: «es braucht auch eine main-anlage für alle gewerke»)
             try { neu.Ausfuehren("system_praefixe_setzen", new JsonObject { ["alle_hauptanlagen"] = true }); }
             catch (HlksFehler) { }
-            return (neu, leer);
+            // Die Grundausstattung gehört zum Anlegen, nicht zur Arbeit des Benutzers: neu öffnen wie beim Beispiel, damit «Rückgängig» im frischen
+            // Projekt nicht die Hauptanlagen, Mustersysteme oder Familien wieder entfernt (der Stapel gilt je Sitzung des Projekts).
+            neu.Freigeben();
+            var frisch = new AbgleichSpeicher(SpeicherFuer(ordner));
+            return (Kern.Projekt.Oeffnen(Katalog, frisch, Einstellungen.Akteur, Einstellungen.Geraet, "mensch"), frisch);
         });
         await Umhaengen(p, sp);
         if (Einstellungen.ZuletztMerken) Zuletzt.Merken(ordner, p.Kopf.Name);

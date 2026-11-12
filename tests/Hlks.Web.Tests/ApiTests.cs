@@ -196,7 +196,13 @@ public class ApiTests
         using var s = new Server();
         var j = await s.Anlegen(beispiel: false, name: "Mein Neubau");
         Assert.Equal("Mein Neubau", Z(j["projekt"]));
-        Assert.Equal(0, j["stand"]!["elemente"]!.GetValue<int>());
+        // Grundausstattung eines neuen Projekts: die Hauptanlage je Gewerk (Christian 09.11.2026), sonst nichts im Modell. Die Familien der
+        // Bibliothek (Christian 12.11.2026) fehlen hier, weil der Testlauf keine Familienbibliothek hat – das sagt die Antwort, statt still leer anzulegen.
+        var alle = (await s.Post("/api/abfrage/elemente_suchen", new { })).Json!["elemente"]!.AsArray();
+        Assert.NotEmpty(alle);
+        Assert.All(alle, e => Assert.Equal("Anlage", Z(e!["klasse"])));
+        Assert.Equal(alle.Count, j["stand"]!["elemente"]!.GetValue<int>());
+        Assert.Contains("ohne Familien", Z(j["familienHinweis"]));
         await s.Post("/api/projekt/schliessen");
 
         using var s2 = new Server();
@@ -479,6 +485,7 @@ public class ApiTests
         ["sanitaer_dimensionierung"] = """{"anlage":"A-SAN"}""",   // Modul 4 Teil B (ohne Normtabellen: Hinweis)
         ["sanitaer_katalog"] = "{}",
         ["rueckmeldung_lesen"] = "{\"inhalt\":{\"format\":\"kicad-baustelle-rueckmeldung\",\"meldungen\":[]}}",   // BIM to field: leere Rückmeldung
+        ["mustersysteme"] = "{}",                                       // Mustersysteme (09.11.2026): im Test ohne Systembibliothek → leere Liste
         ["montageabschnitte"] = "{}",                                   // BIM to field Stufe 0: Beispiel ohne Abschnitte → leere Liste
         ["lueftung_schema"] = "{}",                                    // Modul 6 Teil A-3: Beispiel ohne Luftmengen → leer mit Befund
         ["lueftung_varianten"] = "{}",                                 // Modul 6 Teil A: Beispiel ohne Luftmengen → nur Befund
