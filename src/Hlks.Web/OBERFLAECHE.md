@@ -4332,8 +4332,10 @@ jedes neue Projekt erhält alle Mustersysteme.
   vor, sonst gilt die Dämmregel des Systems. Heute sind alle λ-Klassen offen (keine Werte aus dem Gedächtnis).
 - **Kreuzende Leitungen verdeckt** (Christian 12.11.2026: «leitungen die in einem Grundriss unter einer anderen Leitung durchlaufen (inkl. Dämmung)
   müssen verdeckt dargestellt werden», «bei grob wird die verdeckte leitung unterbrochen»): unter einer höheren Leitung (Band bzw. Dämmung) ist die
-  tiefere in mittel und fein ausgespart mit gestrichelten Rändern und Achse, in grob unterbrochen (Lücke je Seite 0.5 mm). Gleich hohe Leitungen
-  (auch mit Gefälle) verdecken einander nicht; Steigleitungen und Formteile verdecken hier noch nicht.
+  tiefere in mittel und fein ausgespart mit gestrichelten Rändern und Achse, in grob unterbrochen (Lücke je Seite 0.5 mm). Höher heisst: an der
+  Kreuzung höher (seit 13.11.2026 je Teilstück dort verglichen, wo die Bänder im Grundriss überlappen, mehr als 1 mm) – eine Leitung mit Gefälle
+  oder Etage verdeckt am hohen Teil und ist am tiefen verdeckt; dieselbe Regel gilt für die gestrichelten Dämmkanten. An der Kreuzung gleich hohe
+  Leitungen verdecken einander nicht; Steigleitungen und Formteile verdecken hier noch nicht.
 - **Grob: Kreise im effektiven Durchmesser** (Christian 12.11.2026): Steig- und Fallleitungen im Detailgrad grob als Kreis mit dem
   Aussendurchmesser (Kanal: grössere Seite, ohne Serie DN), mindestens 0.5 mm Papier; das Kreuz n.o. passt sich an.
 - **Teilen mit Vorschau** (Christian 12.11.2026): Ändern › Teilen trifft die Leitung auf ihrer ganzen Breite samt Dämmung; die Vorschau zeigt den

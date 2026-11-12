@@ -6,8 +6,9 @@
 // hier die unsichtbaren dämmkanten gestrichelt darstellen»): ein Rand unter einem höher liegenden Teil ist verdeckt und gestrichelt, ein Rand im Inneren
 // eines gleich hohen Teils entfällt (keine Schleifen am Innenradius), sonst ist er ausgezogen – in der Rohrfarbe, Stift fein 0.10 mm (Christian 12.11.2026:
 // «die aussenkontur in Rohrfarbe jedoch wesentlich feiner»; bis dahin schwarz 0.2 mm).
-// Höher liegt: bei waagrechten Teilen das Teil, dessen tiefste Achshöhe über der höchsten des anderen liegt (gleiche oder überlappende Höhen = gleiche Lage,
-// auch Leitungen mit Gefälle und ihre Formteile); mit einer Steig- bzw. Fallleitung das Teil, dessen mittlere Achshöhe über ihrer Mitte liegt.
+// Höher liegt: bei waagrechten Teilen das Teil, dessen Achse an der Kreuzung höher liegt (Kreuzungshoehe, Gesamtprüfung 13.11.2026: je Teilstück dort
+// verglichen, wo die Dämmbänder im Grundriss überlappen; gleiche oder sich dort schneidende Höhen = gleiche Lage – Leitungen mit Gefälle am Anschluss
+// und ihre Formteile, die mit ihrer ganzen Höhenspanne zählen); mit einer Steig- bzw. Fallleitung das Teil, dessen mittlere Achshöhe über ihrer Mitte liegt.
 // Detailgrad fein und mittel; grob: Punkt (HlksGrafik). Ganz unter dem Geschossboden (verdeckt) zeichnet HlksGrafik gestrichelt.
 
 using Clipper2Lib;
@@ -30,14 +31,16 @@ public static class DaemmGrafik
         public string ElementId = "";
         public double ZMin = double.MaxValue, ZMax = double.MinValue;
         public bool Senkrecht;
+        /// <summary>Achse in Teilstücken und Breite der Dämmung (waagrechte Teile): Höhenvergleich an der Kreuzung.</summary>
+        public List<Achsstueck> Stuecke = [];
+        public double Breite;
         public RectD Box;
         public double Mitte => (ZMin + ZMax) / 2;
         public void Z(double z) { ZMin = Math.Min(ZMin, z); ZMax = Math.Max(ZMax, z); }
     }
 
-    /// <summary>Liegt q über p (verdeckt q die Ränder von p)?</summary>
-    static bool Ueber(Teil q, Teil p) =>
-        p.Senkrecht || q.Senkrecht ? q.Mitte > p.Mitte + Eps : q.ZMin > p.ZMax + Eps;
+    /// <summary>Liegt q über p (verdeckt q die Ränder von p)? Nur mit einer Steig- bzw. Fallleitung (Ring); waagrechte Teile: Kreuzungshoehe.</summary>
+    static bool Ueber(Teil q, Teil p) => q.Mitte > p.Mitte + Eps;
 
     public static IEnumerable<Grafikteil> Teile(GrafikKontext ctx)
     {
@@ -45,22 +48,6 @@ public static class DaemmGrafik
         var m = ctx.Modell; var kat = ctx.Katalog;
         double boden = ctx.Geschoss?.Zahl("kote") ?? double.NegativeInfinity;
         var teile = new List<Teil>();
-        // Verbindungen je Element, einmal je Plan: Modell.VerbindungenVon durchsucht alle Verbindungen (je Formteil wären das Formteile × Verbindungen)
-        Dictionary<string, List<Verbindung>>? verbunden = null;
-        List<Verbindung> VerbindungenVon(string id)
-        {
-            if (verbunden is null)
-            {
-                verbunden = new(StringComparer.Ordinal);
-                foreach (var v in m.Verbindungen)
-                    foreach (var el in v.Von.Element == v.Nach.Element ? new[] { v.Von.Element } : [v.Von.Element, v.Nach.Element])
-                    {
-                        if (!verbunden.TryGetValue(el, out var l)) verbunden[el] = l = [];
-                        l.Add(v);
-                    }
-            }
-            return verbunden.TryGetValue(id, out var liste) ? liste : [];
-        }
         var masse =new Dictionary<string, LeitungsMass?>(StringComparer.Ordinal);
         LeitungsMass? Mass(Element e) => masse.TryGetValue(e.Id, out var x) ? x : masse[e.Id] = HlksMasse.Von(ctx.Projekt, e);
         string? Farbe(Element e) => HlksEinordnung.Farbe(HlksEinordnung.Medium(ctx.Projekt, e));
@@ -100,7 +87,7 @@ public static class DaemmGrafik
                 }
                 // waagrechte bzw. flache Stücke als Züge im Grundriss (senkrechte Stücke einer Polylinie: Ring in HlksGrafik)
                 var zug = new List<double[]>();
-                var tz = new Teil { Farbe = Farbe(e), ElementId = e.Id };
+                var tz = new Teil { Farbe = Farbe(e), ElementId = e.Id, Breite = ms.DaemmBreite };
                 void ZugFertig() { Band(tz, zug, ms.DaemmBreite); zug = []; }
                 for (int i = 1; i < pts.Count; i++)
                 {
@@ -109,7 +96,9 @@ public static class DaemmGrafik
                     {
                         if (zug.Count == 0) zug.Add([pts[i - 1][0], pts[i - 1][1]]);
                         zug.Add([pts[i][0], pts[i][1]]);
-                        tz.Z(pts[i - 1].Length > 2 ? pts[i - 1][2] : 0); tz.Z(pts[i].Length > 2 ? pts[i][2] : 0);
+                        double za = pts[i - 1].Length > 2 ? pts[i - 1][2] : 0, zb = pts[i].Length > 2 ? pts[i][2] : 0;
+                        tz.Z(za); tz.Z(zb);
+                        tz.Stuecke.Add(new(pts[i - 1][0], pts[i - 1][1], za, pts[i][0], pts[i][1], zb));
                     }
                     else ZugFertig();
                 }
@@ -120,16 +109,23 @@ public static class DaemmGrafik
                      && Familien.Aufloesung(m, kat, e, out _) is { } a)
             {
                 // Dämmung der angeschlossenen Leitung (die dickste), entlang der Achsen des Formteils
-                var nachbar = VerbindungenVon(e.Id).Select(v => m.Finde(v.Von.Element == e.Id ? v.Nach.Element : v.Von.Element)).OfType<Element>()
+                var nachbar = m.VerbindungenVon(e.Id).Select(v => m.Finde(v.Von.Element == e.Id ? v.Nach.Element : v.Von.Element)).OfType<Element>()
                     .Where(n => kat.IstArt(n, "Leitung")).Select(n => (El: n, Ms: Mass(n))).Where(x => x.Ms is { Daemmdicke: > 0 })
                     .OrderByDescending(x => x.Ms!.DaemmBreite).FirstOrDefault();
                 if (nachbar.Ms is null) continue;
-                var t = new Teil { Farbe = Farbe(nachbar.El), ElementId = e.Id };
+                var t = new Teil { Farbe = Farbe(nachbar.El), ElementId = e.Id, Breite = nachbar.Ms.DaemmBreite };
+                var achsen = new List<List<double[]>>();
                 foreach (var achse in a.Achsen)
                 {
                     foreach (var p in achse) t.Z(lage.Welt(p)[2]);
-                    Band(t, achse.Select(p => FamilienGrafik.W2(p, lage)).ToList(), nachbar.Ms.DaemmBreite);
+                    var xy = achse.Select(p => FamilienGrafik.W2(p, lage)).ToList();
+                    achsen.Add(xy);
+                    Band(t, xy, nachbar.Ms.DaemmBreite);
                 }
+                // das Formteil zählt mit seiner ganzen Höhenspanne (gleiche Lage wie die angeschlossene Leitung, auch als Bogen nach oben)
+                foreach (var xy in achsen)
+                    for (int i = 1; i < xy.Count; i++)
+                        t.Stuecke.Add(new(xy[i - 1][0], xy[i - 1][1], t.ZMin, xy[i][0], xy[i][1], t.ZMax, Spanne: true));
                 Fertig(t);
             }
         }
@@ -164,8 +160,23 @@ public static class DaemmGrafik
             foreach (var q in teile)
             {
                 if (ReferenceEquals(p, q) || !Ueberlappt(p.Box, q.Box)) continue;
-                if (Ueber(q, p)) hoeher.AddRange(q.Flaeche);
-                else if (!Ueber(p, q)) gleich.AddRange(q.Flaeche);
+                if (p.Senkrecht || q.Senkrecht)
+                {
+                    if (Ueber(q, p)) hoeher.AddRange(q.Flaeche);
+                    else if (!Ueber(p, q)) gleich.AddRange(q.Flaeche);
+                    continue;
+                }
+                // waagrechte Teile: Höhe je Teilstück an der Kreuzung; ohne Paar überlappen sich die Dämmbänder nicht
+                var paare = Kreuzungshoehe.Paare(p.Stuecke, q.Stuecke, (p.Breite + q.Breite) / 2 + Eps);
+                if (paare.Count == 0) continue;
+                bool ueber = paare.Any(x => x.Lage > 0), eben = paare.Any(x => x.Lage == 0), unter = paare.Any(x => x.Lage < 0);
+                if (ueber && !eben && !unter) hoeher.AddRange(q.Flaeche);
+                else if (eben && !ueber && !unter) gleich.AddRange(q.Flaeche);
+                else if (ueber || eben)
+                    // q liegt nur an einem Teil der Kreuzungen höher bzw. gleich (Gefälle, Etage): je Stelle einzeln
+                    foreach (var (i, j, lage) in paare)
+                        if (lage >= 0)
+                            (lage > 0 ? hoeher : gleich).AddRange(Kreuzungshoehe.Ausschnitt(q.Flaeche, q.Stuecke[j], q.Breite / 2 + Eps, p.Stuecke[i], p.Breite / 2 + Eps));
             }
             var rand = new PathsD(p.Flaeche.Select(r => { var o = new PathD(r); if (r.Count > 0) o.Add(r[0]); return o; }));
             if (gleich.Count > 0) rand = Offen(rand, Clipper.InflatePaths(gleich, Naht, JoinType.Miter, EndType.Polygon), ClipType.Difference);
