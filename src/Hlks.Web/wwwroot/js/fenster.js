@@ -170,7 +170,7 @@ function steuerungFuellen(o) {
   }
   if (art !== 'grundriss' && art !== '3d' && art !== 'schnitt' && art !== 'ansicht') { leiste.textContent = a.kennzeichen; return; }
   const massstaebe = [10, 20, 50, 100, 200, 500];
-  const m = a.werte?.massstab ?? 100;
+  const m = a.werte?.massstab ?? 50;   // ohne Angabe zeichnet der Kern 1:50 (Grafik.Kontext) – die Leiste zeigte 1:100
   const dg = a.werte?.detailgrad ?? 'mittel';
   leiste.innerHTML = `<label>1:<select class="massstab">${massstaebe.map(x => `<option ${x === m ? 'selected' : ''}>${x}</option>`).join('')}</select></label>
     <label>Detailgrad <select class="detailgrad">${['grob', 'mittel', 'fein'].map(x => `<option ${x === dg ? 'selected' : ''}>${x}</option>`).join('')}</select></label>
