@@ -363,4 +363,20 @@ public class MateriallisteTests
         Assert.All(Liste(o["formteile"]), z => Assert.Equal(45.0, Zahl(z!["winkel"])));
         Assert.Contains("Abzweigwinkel", Ableitungen.MateriallisteText);
     }
+
+    /// <summary>Gesamtprüfung 13.11.2026: eine Leitung mit eigenem System zählt nur in diesem – auch wenn sie an eine Leitung eines anderen
+    /// Systems angeschlossen ist (wie bei den Mengen; vorher stand sie in der Materialliste beider Systeme).</summary>
+    [Fact]
+    public void Materialliste_LeitungMitEigenemSystem_ZaehltNichtImSystemDerNachbarleitung()
+    {
+        var p = Projekt3();
+        Ok(p.Ausfuehren("element_anlegen", new JsonObject { ["klasse"] = "System", ["kennzeichen"] = "KW2", ["eigenschaften"] = new JsonObject { ["systemtyp"] = "Trinkwasser kalt" } }));
+        Ok(RohrIn(p, "RO-1", "DN 20", null, "EG", "KW", [0, 0, 500], [2000, 0, 500]));
+        Ok(RohrIn(p, "RO-2", "DN 20", null, "EG", "KW2", [2000, 0, 500], [5000, 0, 500]));
+        Ok(p.Ausfuehren("verbinden", new JsonObject { ["von"] = "RO-1.ende", ["nach"] = "RO-2.anfang" }));
+        Assert.Equal(2.0, Zahl(Ableitungen.Materialliste(p, system: "KW")["leitungslaengeTotal_m"]), 9);
+        Assert.Equal(3.0, Zahl(Ableitungen.Materialliste(p, system: "KW2")["leitungslaengeTotal_m"]), 9);
+        Assert.Equal(2.0, Ableitungen.Leitungslaengen(p, systemId: "KW").Sum(x => x.LaengeM), 9);
+        Assert.Equal(2.0, Zahl(Ableitungen.Mengen(p, "KW")["leitungslaengeTotal_m"]), 9);   // Mengen und Materialliste gleich
+    }
 }

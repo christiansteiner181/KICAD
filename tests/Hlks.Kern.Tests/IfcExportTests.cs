@@ -505,4 +505,21 @@ public sealed class IfcExportTests(Xunit.Abstractions.ITestOutputHelper aus) : I
         Assert.All(a.Parameter, x => Assert.False(x.Pflicht));
         Assert.Equal(["text", "text", "objekt", "bool", "liste"], a.Parameter.Select(x => x.Typ));
     }
+
+    // ------------------------------------------------------------------ Geometrie
+
+    /// <summary>Gesamtprüfung 13.11.2026: senkrechter Rechteckkanal mit querDrehung – die Breite steht wie im 3D (HlksKoerper.Kanal) und in der
+    /// Kollisionsprüfung (Achskoerper.KanalLage) in der gedrehten Richtung, nicht immer in x; waagrechte Stücke bleiben quer zur Achse.</summary>
+    [Fact]
+    public void Kanal_Senkrecht_QuerDrehungDrehtDieBreiteImGrundriss_AuchDieDaemmung()
+    {
+        static double[] Rund(double[] v) => v.Select(x => Math.Round(x, 9) + 0.0).ToArray();
+        var q = new IfcExportGeometrie.Querschnitt(true, 400, 200, 30, "Test", false);
+        var (leitung, daemmung) = IfcExportGeometrie.LeitungsKoerper([[0, 0, 0], [0, 0, 3000], [2000, 0, 3000]], q, 90);
+        Assert.Equal([0.0, 1.0, 0.0], Rund(Assert.IsType<IfcExQuader>(leitung[0]).RefX));    // senkrecht: b = 400 in y
+        Assert.Equal([0.0, 1.0, 0.0], Rund(Assert.IsType<IfcExQuader>(daemmung[0]).RefX));
+        Assert.Equal([0.0, 1.0, 0.0], Rund(Assert.IsType<IfcExQuader>(leitung[1]).RefX));    // waagrecht in x: quer = z × Achse = y, unabhängig von querDrehung
+        var ohne = IfcExportGeometrie.LeitungsKoerper([[0, 0, 0], [0, 0, 3000]], q).Leitung[0];
+        Assert.Equal([1.0, 0.0, 0.0], Rund(Assert.IsType<IfcExQuader>(ohne).RefX));          // ohne querDrehung wie bisher b in x
+    }
 }

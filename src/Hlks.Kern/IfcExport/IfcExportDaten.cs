@@ -372,7 +372,7 @@ public sealed class IfcExportAufbau
             if (pts.Count < 2) { Notiz("Leitungen ohne Verlauf (weniger als zwei Punkte) – ohne Körper", e.Kennzeichen); return; }
             var q = IfcExportGeometrie.LeitungsQuerschnitt(p, e);
             if (q.NurDarstellung) Notiz("Rohre ohne Aussendurchmesser: Körper DN-gerecht wie das 3D", e.Kennzeichen);
-            var (leitung, daemmung) = IfcExportGeometrie.LeitungsKoerper(pts, q);
+            var (leitung, daemmung) = IfcExportGeometrie.LeitungsKoerper(pts, q, q.Rechteck ? e.Zahl("querDrehung") ?? 0 : 0);
             x.Koerper.AddRange(leitung);
             if (daemmung.Count > 0)
                 x.Daemmung = new IfcExDaemmung { GlobalId = G("daemmung/" + e.Id), Dicke = q.Daemmdicke, Koerper = daemmung, Art = e.Text("daemmung") };
