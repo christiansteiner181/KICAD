@@ -78,7 +78,8 @@ public class LeitungsbezeichnungTests
         List<Primitiv> Prims() => Grafik.Plan(p, "AN-L").Teile.Single(x => x.Id == k.Id).Primitive;
         var dm = Grafik.Plan(p, "AN-L").Teile.Single(x => x.Id == "daemmung");   // vereinigte Fläche (DaemmGrafik)
         var fl = Assert.Single(dm.Primitive, x => x.Art == "polygon");   // Fläche ohne Rand, Ränder als dünne schwarze Linien
-        Assert.Equal(HlksGrafik.DaemmGelb, fl.Stil.Fuellung); Assert.Equal(HlksGrafik.DaemmDeckkraft, fl.Stil.Deckkraft);
+        Assert.Equal(HlksGrafik.DaemmFuellung(HlksEinordnung.Farbe(HlksEinordnung.Medium(p, k))), fl.Stil.Fuellung);   // Rohrfarbe (12.11.2026)
+        Assert.NotEqual(HlksGrafik.DaemmGelb, fl.Stil.Fuellung); Assert.Equal(HlksGrafik.DaemmDeckkraft, fl.Stil.Deckkraft);
         Assert.All(dm.Primitive.Where(x => x.Art == "polylinie"), x => Assert.Equal(HlksGrafik.DaemmLinie, x.Stil.Farbe));
         Assert.True(p.Ausfuehren("element_aendern", new JsonObject { ["element"] = "AN-L", ["eigenschaften"] = new JsonObject { ["detailgrad"] = "grob" } }).Angenommen);
         var grob = Prims();

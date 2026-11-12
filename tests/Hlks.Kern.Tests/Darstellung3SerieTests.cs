@@ -107,9 +107,10 @@ public class Darstellung3SerieTests
     }
 
     [Fact]
-    public void Grundriss_Daemmung_GelbesBandHinterDemRohr()
+    public void Grundriss_Daemmung_BandInRohrfarbeHinterDemRohr()
     {
-        // Christian 09.11.2026: «darstellung dämmung … schwarze linien, gelb transparent hinterlegt», «auch auf mittel anwenden»
+        // Christian 09.11.2026: «darstellung dämmung … schwarze linien, gelb transparent hinterlegt», «auch auf mittel anwenden»; seit 12.11.2026 in der
+        // Rohrfarbe transparent («wird die Dämmung gezeigt, so soll sie die Rohrfarbe mit transparenz erhalten»)
         var p = MitSerie(false);
         Ok(Rohr(p, "RO-1", "DN 20", [0, 0, 500], [3000, 0, 500]));
         Aendern(p, "RO-1", new JsonObject { ["daemmdicke"] = 20 });
@@ -117,7 +118,7 @@ public class Darstellung3SerieTests
         var plan = Grafik.Plan(p, "AN-EG");
         var dm = plan.Teile.Single(x => x.Id == "daemmung");
         var b = Flaeche(dm);
-        Assert.Equal(HlksGrafik.DaemmGelb, b.Stil.Fuellung);
+        Assert.Equal(HlksGrafik.DaemmDeckkraft, b.Stil.Deckkraft);
         Assert.Null(b.Stil.Stift);   // Fläche ohne Rand; die Ränder sind dünne schwarze Linien
         Assert.All(dm.Primitive.Where(x => x.Art == "polylinie"), x => { Assert.Equal(HlksGrafik.DaemmLinie, x.Stil.Farbe); Assert.Equal(Stifte.Hilf, x.Stil.Stift); Assert.Equal("voll", x.Stil.Linie); });
         Assert.Equal((3000.0, 65.0), Ausdehnung(b));
@@ -126,6 +127,7 @@ public class Darstellung3SerieTests
         Assert.DoesNotContain(t.Primitive, x => x.Stil.Fuellung == HlksGrafik.DaemmGelb);
         var rohr = t.Primitive.First(x => x.Art == "polygon");
         Assert.Equal(25, Abstand(rohr.Punkte[0], rohr.Punkte[3]), 6);   // das Rohr selbst bleibt 25 mm breit
+        Assert.Equal(rohr.Stil.Fuellung, b.Stil.Fuellung);              // Dämmung in der Rohrfarbe
         // ohne Dämmdicke keine Dämmfläche
         Aendern(p, "RO-1", new JsonObject { ["daemmdicke"] = 0 });
         Assert.Null(Daemmung(p));
@@ -291,7 +293,7 @@ public class Darstellung3SerieTests
         Assert.Equal(3, t.Primitive.Count);   // Kreis, Achsenkreuz (2 Linien); der Dämmring steht in der Dämmfläche (DaemmGrafik)
         var dr = Flaeche(Daemmung(p)!);
         Assert.Equal(65, Ausdehnung(dr).Breite, 1);                          // 2 · (25 / 2 + 20)
-        Assert.Equal(HlksGrafik.DaemmGelb, dr.Stil.Fuellung);
+        Assert.Equal(HlksGrafik.DaemmFuellung(HlksEinordnung.Farbe(HlksEinordnung.Medium(p, Hole(p, "RO-S")))), dr.Stil.Fuellung);   // Rohrfarbe (12.11.2026)
         // Polylinie mit senkrechtem Teilstück durch die Schnittebene: dort erscheint der Kreis zusätzlich
         Ok(Rohr(p, "RO-P", "DN 20", [0, 0, 500], [2000, 0, 500], [2000, 0, 2500], [4000, 0, 2500]));
         var pl = Teil(p, "RO-P");

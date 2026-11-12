@@ -4321,6 +4321,9 @@ jedes neue Projekt erhält alle Mustersysteme.
   muss sich die besetehnde leitung anpassen, dass dies nicht geblockt wird»): am freien Ende eines Rohrs bzw. Kanals rastet der Winkelfang auch auf die
   Bogenwinkel der Produktlinie; knickt der Zug dort ab, kürzt der Kern die bestehende Gerade um die Einbaulänge des Bogens (auch 2 × 45°), der Knick
   bleibt am bisherigen Ende. Gilt auch, wenn der Zug an einem Leitungsanfang endet. Ist die Gerade zu kurz für den Bogen, wird abgelehnt.
+- **Dämmung in der Rohrfarbe** (Christian 12.11.2026: «wird die Dämmung gezeigt, so soll sie die Rohrfarbe mit transparenz erhalten»): die Dämmfläche im
+  Grundriss (mittel, fein) ist transparent in der Farbe des Mediums der Leitung (bisher gelb); Formteile in der Farbe der angeschlossenen Leitung. Ränder
+  bleiben schwarz dünn, verdeckte gestrichelt. Im Detailgrad grob bleibt der gelbe Punkt.
 - **Abwasserleitung: Silent mit 2 % Gefälle** (Christian 12.11.2026: «Abwasser leitungen sind immer Silent mit 2% Gefälle», «Gefälle im gelben bereich
   einstellbar»): Sanitär › Abwasserleitung startet mit der Produktlinie Silent und 2 % Gefälle; bei Abwasser-Produktlinien steht das Gefälle in der gelben
   Optionsleiste. Rohr und Versorgungsleitung starten ohne Gefälle und ohne Abwasser-Produktlinie.

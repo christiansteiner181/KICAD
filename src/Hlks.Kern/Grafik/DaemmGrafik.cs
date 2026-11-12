@@ -1,6 +1,7 @@
 // Dämmung im Grundriss als eine vereinigte Fläche (Christian 09.11.2026: «auch bei den isolationen passt die darstellung noch nicht. überlappungen sind
 // frablich anders als der rest. zudem hat es beim innenradius noch falsche schwarze darstellungen.»): die Dämmbänder aller sichtbaren Leitungen, der
-// Formteile daneben (entlang ihrer Achse) und die Ringe der Steig- und Fallleitungen werden vereinigt (Clipper) – eine gelb transparente Fläche ohne Rand.
+// Formteile daneben (entlang ihrer Achse) und die Ringe der Steig- und Fallleitungen werden vereinigt (Clipper) – eine transparente Fläche ohne Rand je
+// Rohrfarbe (Christian 12.11.2026: «wird die Dämmung gezeigt, so soll sie die Rohrfarbe mit transparenz erhalten»; bis dahin gelb).
 // Die Ränder kommen je Teil dazu, nach Höhe geschichtet (Christian 09.11.2026: «bei dämmungen passt die darstellung bei bogen nach oben/bogen nach unten.
 // hier die unsichtbaren dämmkanten gestrichelt darstellen»): ein Rand unter einem höher liegenden Teil ist verdeckt und gestrichelt, ein Rand im Inneren
 // eines gleich hohen Teils entfällt (keine Schleifen am Innenradius), sonst ist er schwarz dünn ausgezogen.
@@ -22,6 +23,8 @@ public static class DaemmGrafik
     sealed class Teil
     {
         public PathsD Flaeche = [];
+        /// <summary>Rohrfarbe (Medienfarbe) der Leitung bzw. der angeschlossenen Leitung; null = Planfarbe.</summary>
+        public string? Farbe;
         public double ZMin = double.MaxValue, ZMax = double.MinValue;
         public bool Senkrecht;
         public RectD Box;
@@ -41,6 +44,7 @@ public static class DaemmGrafik
         var teile = new List<Teil>();
         var masse = new Dictionary<string, LeitungsMass?>(StringComparer.Ordinal);
         LeitungsMass? Mass(Element e) => masse.TryGetValue(e.Id, out var x) ? x : masse[e.Id] = HlksMasse.Von(ctx.Projekt, e);
+        string? Farbe(Element e) => HlksEinordnung.Farbe(HlksEinordnung.Medium(ctx.Projekt, e));
         static void Band(Teil t, List<double[]> xy, double breite)
         {
             if (xy.Count < 2) return;
@@ -63,7 +67,7 @@ public static class DaemmGrafik
                 if (HlksLinien.Laenge(pts.Select(q => new[] { q[0], q[1] }).ToList()) < 1)
                 {
                     // Steig- bzw. Fallleitung: Ring bzw. Rechteck der Dämmung
-                    var t = new Teil { Senkrecht = true };
+                    var t = new Teil { Senkrecht = true, Farbe = Farbe(e) };
                     foreach (var q in pts) t.Z(q.Length > 2 ? q[2] : 0);
                     var c = new PointD(pts[0][0], pts[0][1]);
                     if (ms.Rechteck)
@@ -77,7 +81,7 @@ public static class DaemmGrafik
                 }
                 // waagrechte bzw. flache Stücke als Züge im Grundriss (senkrechte Stücke einer Polylinie: Ring in HlksGrafik)
                 var zug = new List<double[]>();
-                var tz = new Teil();
+                var tz = new Teil { Farbe = Farbe(e) };
                 void ZugFertig() { Band(tz, zug, ms.DaemmBreite); zug = []; }
                 for (int i = 1; i < pts.Count; i++)
                 {
@@ -98,14 +102,14 @@ public static class DaemmGrafik
             {
                 // Dämmung der angeschlossenen Leitung (die dickste), entlang der Achsen des Formteils
                 var nachbar = m.VerbindungenVon(e.Id).Select(v => m.Finde(v.Von.Element == e.Id ? v.Nach.Element : v.Von.Element)).OfType<Element>()
-                    .Where(n => kat.IstArt(n, "Leitung")).Select(Mass).OfType<LeitungsMass>().Where(x => x.Daemmdicke > 0)
-                    .OrderByDescending(x => x.DaemmBreite).FirstOrDefault();
-                if (nachbar is null) continue;
-                var t = new Teil();
+                    .Where(n => kat.IstArt(n, "Leitung")).Select(n => (El: n, Ms: Mass(n))).Where(x => x.Ms is { Daemmdicke: > 0 })
+                    .OrderByDescending(x => x.Ms!.DaemmBreite).FirstOrDefault();
+                if (nachbar.Ms is null) continue;
+                var t = new Teil { Farbe = Farbe(nachbar.El) };
                 foreach (var achse in a.Achsen)
                 {
                     foreach (var p in achse) t.Z(lage.Welt(p)[2]);
-                    Band(t, achse.Select(p => FamilienGrafik.W2(p, lage)).ToList(), nachbar.DaemmBreite);
+                    Band(t, achse.Select(p => FamilienGrafik.W2(p, lage)).ToList(), nachbar.Ms.DaemmBreite);
                 }
                 Fertig(t);
             }
@@ -113,13 +117,14 @@ public static class DaemmGrafik
         if (teile.Count == 0) yield break;
 
         var teil = new Grafikteil { Id = "daemmung", Ebene = "leitung" };
-        // Fläche: alles vereinigt, ohne Rand
-        foreach (var f in Polygone.Flaechen(Clipper.Union(new PathsD(teile.SelectMany(t => t.Flaeche)), FillRule.NonZero)))
-            teil.Primitive.Add(new Primitiv
-            {
-                Art = "polygon", Punkte = f.Aussen, Loecher = f.Loecher.Count > 0 ? f.Loecher : null,
-                Stil = new Stil { Stift = null, Fuellung = HlksGrafik.DaemmGelb, Deckkraft = HlksGrafik.DaemmDeckkraft },
-            });
+        // Fläche: je Rohrfarbe alles vereinigt, ohne Rand, transparent in der Rohrfarbe (Christian 12.11.2026)
+        foreach (var gruppe in teile.GroupBy(t => t.Farbe))
+            foreach (var f in Polygone.Flaechen(Clipper.Union(new PathsD(gruppe.SelectMany(t => t.Flaeche)), FillRule.NonZero)))
+                teil.Primitive.Add(new Primitiv
+                {
+                    Art = "polygon", Punkte = f.Aussen, Loecher = f.Loecher.Count > 0 ? f.Loecher : null,
+                    Stil = new Stil { Stift = null, Fuellung = HlksGrafik.DaemmFuellung(gruppe.Key), Deckkraft = HlksGrafik.DaemmDeckkraft },
+                });
         // Ränder je Teil: innen (gleich hoch) weg, unter einem höheren Teil gestrichelt, sonst ausgezogen
         foreach (var p in teile)
         {

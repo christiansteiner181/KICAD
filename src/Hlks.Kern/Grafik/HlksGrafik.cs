@@ -337,19 +337,23 @@ public sealed class HlksGrafik : IGrafikquelle
     internal const double DaemmDeckkraft = 0.35;
     internal const double DaemmPunktRadius = 0.8;
 
-    static Stil DaemmStil(bool verdeckt) => verdeckt
+    /// <summary>Füllung der Dämmung: die Rohrfarbe (Medienfarbe) mit Transparenz (Christian 12.11.2026: «wird die Dämmung gezeigt, so soll sie die
+    /// Rohrfarbe mit transparenz erhalten»); ohne Medienfarbe die Planfarbe. Der Punkt im Detailgrad grob bleibt gelb.</summary>
+    internal static string DaemmFuellung(string? farbe) => farbe ?? "schnitt";
+
+    static Stil DaemmStil(bool verdeckt, string? farbe) => verdeckt
         ? new Stil { Stift = Stifte.Hilf, Linie = "strich", Farbe = DaemmLinie }
-        : new Stil { Stift = Stifte.Hilf, Linie = "voll", Farbe = DaemmLinie, Fuellung = DaemmGelb, Deckkraft = DaemmDeckkraft };
+        : new Stil { Stift = Stifte.Hilf, Linie = "voll", Farbe = DaemmLinie, Fuellung = DaemmFuellung(farbe), Deckkraft = DaemmDeckkraft };
 
     /// <summary>Dämmung als Band der Dämmbreite: dünne schwarze Ränder, gelbe transparente Füllung, ohne eigene Achse.</summary>
-    internal static IEnumerable<Primitiv> DaemmBand(List<double[]> xy, double breite)
+    internal static IEnumerable<Primitiv> DaemmBand(List<double[]> xy, double breite, string? farbe = null)
     {
         // eine einzige Fläche ohne Rand (Christian 09.11.2026: «bei den Isolationsbogen wird etwas noch nicht sauber dargestellt» – je Teilstück eigene
         // transparente Flächen überlagerten sich am Bogen) und zwei durchgehende Randlinien; keine Querstriche an den Stössen zu Formteilen
         if (xy.Count < 2) yield break;
         var links = HlksLinien.Versatz(xy, breite / 2); var rechts = HlksLinien.Versatz(xy, -breite / 2);
         if (links.Count < 2 || rechts.Count < 2) yield break;
-        yield return new Primitiv { Art = "polygon", Punkte = links.Concat(Enumerable.Reverse(rechts)).ToList(), Stil = new Stil { Stift = null, Fuellung = DaemmGelb, Deckkraft = DaemmDeckkraft } };
+        yield return new Primitiv { Art = "polygon", Punkte = links.Concat(Enumerable.Reverse(rechts)).ToList(), Stil = new Stil { Stift = null, Fuellung = DaemmFuellung(farbe), Deckkraft = DaemmDeckkraft } };
         foreach (var r in Raender(xy, breite, DaemmLinie, "voll")) yield return r;
     }
 
@@ -420,13 +424,13 @@ public sealed class HlksGrafik : IGrafikquelle
             if (mass.Rechteck)
             {
                 if (mass.Daemmdicke > 0 && daemmung)
-                    yield return new Primitiv { Art = "polygon", Punkte = Rechteck(x, y, mass.DaemmBreite, mass.DaemmHoehe), Stil = DaemmStil(verdeckt) };
+                    yield return new Primitiv { Art = "polygon", Punkte = Rechteck(x, y, mass.DaemmBreite, mass.DaemmHoehe), Stil = DaemmStil(verdeckt, farbe) };
                 yield return new Primitiv { Art = "polygon", Punkte = Rechteck(x, y, b, h), Stil = stil };
             }
             else
             {
                 if (mass.Daemmdicke > 0 && daemmung)
-                    yield return new Primitiv { Art = "kreis", Punkte = [[x, y]], Radius = mass.DaemmBreite / 2, Stil = DaemmStil(verdeckt) };
+                    yield return new Primitiv { Art = "kreis", Punkte = [[x, y]], Radius = mass.DaemmBreite / 2, Stil = DaemmStil(verdeckt, farbe) };
                 yield return new Primitiv { Art = "kreis", Punkte = [[x, y]], Radius = b / 2, Stil = stil };
                 if (wieLeitung)
                 {
