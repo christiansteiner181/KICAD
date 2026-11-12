@@ -28,20 +28,27 @@ public static class BaustelleZugaenge
     public static string Datei(Projekt p) => Path.Combine(p.Speicher?.Ort ?? throw new HlksFehler("Projekt ohne Ablage."), "baustelle", "zugaenge.json");
 
     /// <summary>Zugänge des Projekts oder null, wenn es keine Datei gibt (offener Testserver).</summary>
-    public static List<Zugang>? Lesen(Projekt p)
+    public static List<Zugang>? Lesen(Projekt p, bool besucher = false)
     {
         if (p.Speicher is null || !File.Exists(Datei(p))) return null;
-        return AusText(File.ReadAllText(Datei(p)));
+        return AusText(File.ReadAllText(Datei(p)), besucher);
     }
 
+    /// <summary>Wie Lesen, für die Seiten unter /baustelle/ (auch nicht angemeldete Besucher): eine unlesbare Datei meldet sich ohne Einzelheiten.</summary>
+    public static List<Zugang>? FuerBesucher(Projekt p) => Lesen(p, besucher: true);
+
     /// <summary>Zugänge aus dem Inhalt von zugaenge.json. Eine unlesbare Datei öffnet den Zugang nicht und gibt keine leere Antwort 500,
-    /// sondern eine Meldung mit Ausweg (Gesamtprüfung 13.11.2026); der Zugang bleibt bis dahin gesperrt.</summary>
-    public static List<Zugang> AusText(string text)
+    /// sondern eine Meldung mit Ausweg (Gesamtprüfung 13.11.2026); der Zugang bleibt bis dahin gesperrt. besucher: ohne Dateinamen und
+    /// ohne die Fehlerstelle des JSON – wer nicht angemeldet ist, erfährt nichts über den Inhalt der Datei (Gegenprüfung B10); die
+    /// ausführliche Meldung sieht KICAD (/api, nur localhost).</summary>
+    public static List<Zugang> AusText(string text, bool besucher = false)
     {
         JsonObject? o;
         try { o = JsonNode.Parse(text) as JsonObject; }
         catch (System.Text.Json.JsonException ex)
         {
+            if (besucher)
+                throw new HlksFehler("Die Zugänge der Baustelle sind zurzeit nicht lesbar.", "Bitte beim Projektleiter bzw. beim Planungsbüro melden.");
             throw new HlksFehler($"Die Zugänge der Baustelle (baustelle\\zugaenge.json) sind nicht lesbar: {ex.Message}",
                 "Die Datei im Projektordner berichtigen oder löschen und die Zugänge in KICAD neu anlegen (BIM to Field › Zugänge).");
         }

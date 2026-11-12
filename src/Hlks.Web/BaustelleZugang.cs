@@ -114,7 +114,7 @@ public static class BaustelleZugang
         // Persönlicher Link (12.11.2026): setzt das Cookie für ein Jahr und leitet auf die Übersicht; abmelden löscht es
         app.MapGet("/baustelle/z/{schluessel}", (string schluessel, HttpRequest anfrage) => Gesichert(async () =>
         {
-            var z = await dienst.Mit(p => BaustelleZugaenge.Lesen(p)?.FirstOrDefault(x => x.Schluessel == schluessel.Trim()));
+            var z = await dienst.Mit(p => BaustelleZugaenge.FuerBesucher(p)?.FirstOrDefault(x => x.Schluessel == schluessel.Trim()));
             if (z is null) return Html("<!doctype html><meta charset=utf-8><p>Dieser Link gilt nicht (mehr). Bitte beim Projektleiter einen neuen verlangen.</p>", 403);
             anfrage.HttpContext.Response.Cookies.Append(BaustelleZugaenge.Keks, z.Schluessel, new CookieOptions
             {
@@ -135,7 +135,7 @@ public static class BaustelleZugang
                 (titel, inhalt, wer) = await dienst.Mit(p =>
                 {
                     // Zugänge (12.11.2026, BaustelleZugaenge.cs): mit zugaenge.json nur angemeldet, Monteur nur Monteur-Seiten
-                    var zugaenge = BaustelleZugaenge.Lesen(p);
+                    var zugaenge = BaustelleZugaenge.FuerBesucher(p);
                     var zugang = zugaenge is null ? null : BaustelleZugaenge.Angemeldet(anfrage, zugaenge);
                     if (zugaenge is not null && zugang is null)
                         return (p.Kopf.Name, "<p>Nicht angemeldet. Bitte den persönlichen Link öffnen, den der Projektleiter bzw. das Planungsbüro geschickt hat.</p>", "");
@@ -167,7 +167,7 @@ public static class BaustelleZugang
             var (pfad, fehler, code) = await dienst.Mit(p =>
             {
                 // Zugänge (12.11.2026): angemeldet und für diese Rolle freigegeben
-                if (BaustelleZugaenge.Lesen(p) is { } zugaenge)
+                if (BaustelleZugaenge.FuerBesucher(p) is { } zugaenge)
                 {
                     var z = BaustelleZugaenge.Angemeldet(anfrage, zugaenge);
                     if (z is null) return ((string?)null, (string?)"Nicht angemeldet. Bitte den persönlichen Link öffnen.", 403);
@@ -211,7 +211,7 @@ public static class BaustelleZugang
             if ((string?)r["format"] != BaustelleRueckmeldung.Format || r["meldungen"] is not JsonArray m)
                 return Antwort(new { fehler = "Das ist keine Rückmeldung der Baustellen-Webseite." }, 400);
             // Zugänge (12.11.2026): die Rückmeldung trägt den Namen des angemeldeten Zugangs
-            var (mitZugaengen, zugang) = await dienst.Mit(p => BaustelleZugaenge.Lesen(p) is { } l ? (true, BaustelleZugaenge.Angemeldet(anfrage, l)) : (false, null));
+            var (mitZugaengen, zugang) = await dienst.Mit(p => BaustelleZugaenge.FuerBesucher(p) is { } l ? (true, BaustelleZugaenge.Angemeldet(anfrage, l)) : (false, null));
             if (mitZugaengen && zugang is null) return Antwort(new { fehler = "Nicht angemeldet.", vorschlag = "Den persönlichen Link öffnen und die Meldung noch einmal senden." }, 403);
             if (zugang is not null) r["person"] = zugang.Name;
             var person = ((string?)r["person"] ?? "").Trim();
