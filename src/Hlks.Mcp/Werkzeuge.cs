@@ -192,7 +192,7 @@ public sealed partial class Werkzeuge(Projekt projekt)
 
     [McpServerTool(Name = "datenpunktliste"), Description(Datenpunktliste.Text)]   // Modul 8 MSRL, Gerüst 04.11.2026
     public string DatenpunktlisteWerkzeug([Description(Datenpunktliste.ParAnlage)] string? anlage = null) =>
-        Lauf(() => Antwort((JsonNode)Tuer.Abfrage(projekt, "datenpunktliste", Parameter(("anlage", anlage)))), synchronisieren: false);
+        Lauf(() => Antwort((JsonNode)Tuer.Abfrage(projekt, "datenpunktliste", Parameter(("anlage", anlage)))));
 
     [McpServerTool(Name = "datenpunkte_vorschlagen"), Description(DatenpunkteVorschlagen.Text)]
     public string DatenpunkteVorschlagenWerkzeug(
