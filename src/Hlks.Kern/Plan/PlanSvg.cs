@@ -17,15 +17,18 @@ public static class PlanSvg
 
     public static string Svg(Plangrafik g)
     {
-        var b = g.Begrenzung ?? [0, 0, 1000, 1000];
+        // Gedrehte Ansicht (N9): die Gruppe dreht um den Ursprung (wie Grafik.Begrenzung mit Drehung), der Ausschnitt ist die Begrenzung in den Achsen
+        // der Ansicht – mit der ungedrehten Begrenzung lägen die Ecken eines gedrehten Plans ausserhalb der viewBox.
+        bool gedreht = g.Drehung != 0 && g.BegrenzungAnsicht is not null;
+        var b = (gedreht ? g.BegrenzungAnsicht : g.Begrenzung) ?? [0, 0, 1000, 1000];
         var rand = Math.Max(b[2] - b[0], b[3] - b[1]) * 0.02;
         double x0 = b[0] - rand, y0 = b[1] - rand, w = b[2] - b[0] + 2 * rand, h = b[3] - b[1] + 2 * rand;
         var m = g.Massstab <= 0 ? 1 : g.Massstab;
         var sb = new StringBuilder();
         // y nach oben: viewBox über −y, alle Punkte mit −y
         sb.Append($"<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"{Z(x0)} {Z(-(y0 + h))} {Z(w)} {Z(h)}\" data-ansicht=\"{Esc(g.Ansicht)}\" data-art=\"{g.Art}\" data-massstab=\"{Z(m)}\">");
-        var mitte = $"{Z(x0 + w / 2)} {Z(-(y0 + h / 2))}";
-        sb.Append(g.Drehung != 0 ? $"<g transform=\"rotate({Z(-g.Drehung)} {mitte})\">" : "<g>");
+        // Modell im Gegenuhrzeigersinn um den Ursprung = rotate(−Drehung) im y-gespiegelten SVG
+        sb.Append(gedreht ? $"<g transform=\"rotate({Z(-g.Drehung)})\">" : "<g>");
         foreach (var t in g.Teile.OrderBy(t => Ebenen.Rang(t.Ebene)))
         {
             var prims = t.Primitive.Where(p => !p.Stil.NurBildschirm && p.Art != "bild").ToList();
@@ -44,17 +47,10 @@ public static class PlanSvg
     {
         if (s.Stift is null) return " stroke=\"none\"";
         var farbe = s.Farbe ?? "#000000";
-        var dash = s.Linie switch
-        {
-            "strich" => $" stroke-dasharray=\"{Z(2 * m)} {Z(1 * m)}\"",
-            "strichpunkt" => $" stroke-dasharray=\"{Z(3 * m)} {Z(0.8 * m)} {Z(0.3 * m)} {Z(0.8 * m)}\"",
-            "punkt" => $" stroke-dasharray=\"{Z(0.3 * m)} {Z(0.8 * m)}\"",
-            "strichfein" => $" stroke-dasharray=\"{Z(0.8 * m)} {Z(0.5 * m)}\"",
-            "achse" => $" stroke-dasharray=\"{Z(1.5 * m)} {Z(0.4 * m)} {Z(0.2 * m)} {Z(0.4 * m)}\"",   // halb so lang wie strichpunkt (09.11.2026)
-            _ => "",
-        };
+        // Strichmuster und Strichstärke wie PDF und Bildschirm (PdfZeichner.Linienmuster; genaue Stärke Stil.Mm der 2D-Zeichnung vor dem Stift)
+        var dash = PdfZeichner.Linienmuster(s.Linie) is { } muster ? $" stroke-dasharray=\"{string.Join(" ", muster.Select(v => Z(v * m)))}\"" : "";
         var deck = s.Fuellung is null && s.Deckkraft is double d ? $" stroke-opacity=\"{Z(d)}\"" : "";
-        return $" stroke=\"{farbe}\" stroke-width=\"{Z(Stifte.Mm(s.Stift) * m)}\"{dash}{deck}";
+        return $" stroke=\"{farbe}\" stroke-width=\"{Z((s.Mm ?? Stifte.Mm(s.Stift)) * m)}\"{dash}{deck}";
     }
 
     static string Fuellung(Stil s)

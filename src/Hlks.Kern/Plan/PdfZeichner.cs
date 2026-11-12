@@ -1,4 +1,4 @@
-// Zeichnet die Primitive der Plangrafik (Kern-Grafik, Modul 1a) als Vektoren in ein PDF (PDFsharp 6.5).
+// Zeichnet die Primitive der Plangrafik (Kern-Grafik, Modul 1a) als Vektoren in ein PDF (PDFsharp 6.2.4).
 // Dieselben Primitive zeichnet der Bildschirm; hier nur die Übersetzung: Modell-mm → Papier-mm → PDF-Punkte,
 // Strichstärke in Papier-mm → Punkte, Linienarten als Strichmuster, Füllung, Schraffur (Linienscharen/Punkte, auf
 // das Polygon zugeschnitten), Text und Rasterbilder von Unterlagen. Primitive mit Stil.NurBildschirm werden weggelassen.
@@ -36,8 +36,13 @@ public sealed class PdfZeichner
     static readonly double[] Strich = [3.0, 1.0];
     static readonly double[] Strichpunkt = [6.0, 1.0, 0.5, 1.0];
     static readonly double[] Punkt = [0.5, 1.0];
-    static readonly double[] Achse = [3.0, 0.6, 0.3, 0.6];
-    static readonly double[] Strichfein = [0.8, 0.5];   // verdeckte Dämmkanten (09.11.2026; Masse ANNAHME)   // Achslinien, feiner als Strichpunkt (Christian 09.11.2026; Masse ANNAHME)
+    static readonly double[] Achse = [3.0, 0.6, 0.3, 0.6];   // Achslinien, feiner als Strichpunkt (Christian 09.11.2026; Masse ANNAHME)
+    static readonly double[] Strichfein = [0.8, 0.5];   // verdeckte Dämmkanten (09.11.2026; Masse ANNAHME)
+
+    /// <summary>Strichmuster einer Linienart in Papier-mm (Strich, Lücke, …) oder null = durchgezogen; dieselben Werte für PDF, SVG (PlanSvg) und
+    /// Bildschirm (plangrafik.js LINIENMUSTER).</summary>
+    internal static double[]? Linienmuster(string? linie) =>
+        linie switch { "strich" => Strich, "strichpunkt" => Strichpunkt, "punkt" => Punkt, "achse" => Achse, "strichfein" => Strichfein, _ => null };
 
     /// <summary>Durchmesser eines Punkts der Punktschraffur in mm (Annahme).</summary>
     const double PunktMm = 0.2;
@@ -78,7 +83,7 @@ public sealed class PdfZeichner
     {
         // Deckkraft gilt der Füllung; ohne Füllung der Linie (Unterlagen DWG/IFC: graue Linien halb deckend)
         var pen = new XPen(Farbe(s.Farbe, s.Fuellung is null ? s.Deckkraft : null), (mm ?? s.Mm ?? Stifte.Mm(s.Stift)) * PtJeMm) { LineJoin = XLineJoin.Miter };
-        var muster = s.Linie switch { "strich" => Strich, "strichpunkt" => Strichpunkt, "punkt" => Punkt, "achse" => Achse, "strichfein" => Strichfein, _ => null };
+        var muster = Linienmuster(s.Linie);
         // genaues Muster der DWG (Einheiten der Zeichnung × Massstab der Ausgabe); zu fein für das Papier (Periode unter 0.3 mm) = durchgezogen
         if (s.StrichEinheiten is { Length: >= 2 } einheiten && skala > 0)
         {
@@ -105,21 +110,11 @@ public sealed class PdfZeichner
 
     // ---------- Zeichnen ----------
 
-    // Rang nach Ebenen.Reihenfolge (Grafiktypen.cs). Eigene Suche, weil Ebenen.Rang die Reihenfolge auf List<string> umwandelt,
-    // was bei einem Sammlungsausdruck (Array) scheitert – Befund im Bericht.
-    static int Rang(string? ebene)
-    {
-        var r = Ebenen.Reihenfolge;
-        for (int i = 0; i < r.Count; i++) if (r[i] == ebene) return i;
-        for (int i = 0; i < r.Count; i++) if (r[i] == "sonst") return i;
-        return r.Count;
-    }
-
     /// <summary>Alle Teile einer Plangrafik in der Zeichenreihenfolge der Ebenen (unten → oben).</summary>
     public void Zeichnen(Plangrafik g, Abbildung abb)
     {
         var dreh = Drehen(abb);
-        foreach (var t in g.Teile.OrderBy(t => Rang(t.Ebene)))   // stabil: innerhalb einer Ebene Listenreihenfolge
+        foreach (var t in g.Teile.OrderBy(t => Ebenen.Rang(t.Ebene)))   // stabil: innerhalb einer Ebene Listenreihenfolge
             Primitive(t.Primitive, abb);
         if (dreh is not null) gfx.Restore(dreh);
     }

@@ -61,6 +61,25 @@ public class IfcDarstellungTests
 
     static bool Nahe(double[] a, double[] b, double tol = 1) => a.Length == b.Length && a.Zip(b).All(z => Math.Abs(z.First - z.Second) <= tol);
 
+    [Fact]
+    public void Ueberschreiben_UnsichtbareTrefferflaeche_BleibtUnsichtbar()
+    {
+        // Gesamtprüfung 13.11.2026: die Trefferfläche der Dämmung je Element (DaemmGrafik: nur Bildschirm, Deckkraft 0) darf durch deckkraftNachbau
+        // nicht sichtbar werden; die übrige Grafik übernimmt Farbe und Deckkraft
+        var t = new Grafikteil
+        {
+            Id = "e1", Primitive =
+            [
+                new Primitiv { Art = "polygon", Punkte = [[0, 0], [1, 0], [1, 1]], Stil = new Stil { Stift = null, Fuellung = "#ff0000", Deckkraft = 0, NurBildschirm = true } },
+                new Primitiv { Art = "polygon", Punkte = [[0, 0], [1, 0], [1, 1]], Stil = new Stil { Fuellung = "#ff0000" } },
+            ],
+        };
+        IfcDarstellung.Ueberschreiben(t, ("#00ff00", 0.5));
+        Assert.Equal(0, t.Primitive[0].Stil.Deckkraft);
+        Assert.Equal(0.5, t.Primitive[1].Stil.Deckkraft);
+        Assert.Equal("#00ff00", t.Primitive[1].Stil.Fuellung);
+    }
+
     // ------------------------------------------------------------------ Modus
 
     [Fact]

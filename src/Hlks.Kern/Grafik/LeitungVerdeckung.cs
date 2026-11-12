@@ -83,7 +83,8 @@ public static class LeitungVerdeckung
             if (p.Art == "kreis")
             {
                 // Kreise im Band (Knicke) unter der Deckfläche entfallen; Symbole (Steigleitung) bleiben
-                if (p.Punkte.Count > 0 && deck.Any(r => Polygone.Innen(r, p.Punkte[0][0], p.Punkte[0][1]))) continue;
+                // gerade-ungerade über alle Ringe: ein Punkt im Loch der Deckfläche (z. B. innerhalb eines Leitungsrings) ist nicht verdeckt
+                if (p.Punkte.Count > 0 && deck.Count(r => Polygone.Innen(r, p.Punkte[0][0], p.Punkte[0][1])) % 2 == 1) continue;
                 neu.Add(p); continue;
             }
             if (p.Art == "polygon")
