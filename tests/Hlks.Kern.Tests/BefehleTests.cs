@@ -541,6 +541,34 @@ public class BefehleTests
         Assert.Equal("RO-KW.ende – WC-1.kw", e.Aenderungen[0].Kennzeichen);
     }
 
+    /// <summary>Gesamtprüfung 12.11.2026: Kennzeichen mit Punkt (z. B. «WC-E.02») als Text ohne Anschlussname – bis dahin am letzten Punkt
+    /// getrennt («WC-E» gibt es nicht); mit Anschlussname gilt weiter die Trennung am letzten Punkt.</summary>
+    [Fact]
+    public void Verbinden_KennzeichenMitPunkt_AlsText()
+    {
+        var p = MitSystemen();
+        Ok(Anlegen(p, "WC", "WC-E.02"));
+        Ok(Rohr(p, "KW", "RO-KW"));
+        Ok(p.Ausfuehren("verbinden", new JsonObject { ["von"] = "RO-KW", ["nach"] = "WC-E.02" }));
+        Assert.NotNull(p.Modell.VerbindungAn(Hole(p, "WC-E.02").Id, "kw"));
+        Ok(p.Ausfuehren("trennen", new JsonObject { ["anschluss"] = "WC-E.02.kw" }));
+        Assert.Empty(p.Modell.Verbindungen);
+    }
+
+    /// <summary>Gesamtprüfung 12.11.2026: ungültige Eingaben werden abgelehnt (bis dahin Ausnahme bzw. Element ohne Kennzeichen).</summary>
+    [Fact]
+    public void PunktMitEinerKoordinate_UndLeeresKennzeichen_Abgelehnt()
+    {
+        var p = MitSystemen();
+        var geo = new JsonObject { ["art"] = "punkt", ["punkte"] = new JsonArray(new JsonArray(5)) };
+        var e = Abgelehnt(p.Ausfuehren("element_aendern", new JsonObject { ["element"] = "WC-1", ["geometrie"] = geo }));
+        Assert.Contains("mindestens x und y", e.Fehler);
+        Assert.False(string.IsNullOrWhiteSpace(e.Vorschlag));
+        e = Abgelehnt(p.Ausfuehren("element_aendern", new JsonObject { ["element"] = "WC-1", ["kennzeichen"] = "  " }));
+        Assert.Contains("nicht leer", e.Fehler);
+        Assert.Equal("WC-1", Hole(p, "WC-1").Kennzeichen);
+    }
+
     [Fact]
     public void Verbinden_WaehltAuchSchmutzwasserAnschlussRichtig()
     {

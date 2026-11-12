@@ -370,12 +370,18 @@ public sealed class Projekt
     public BefehlsErgebnis Wiederholen(bool trockenlauf = false)
     {
         if (wiederholenStapel.Count == 0)
-            return new BefehlsErgebnis { Angenommen = false, Befehl = "wiederholen", Meldung = "Nichts zu wiederholen." };
+            return new BefehlsErgebnis { Angenommen = false, Befehl = "wiederholen", Meldung = "Nichts zu wiederholen.", Fehler = "Keine rückgängig gemachte Änderung in dieser Sitzung." };
         var ziel = wiederholenStapel.Peek();
         var arbeit = Modell.Kopie();
         var ops = new List<Operation>();
         foreach (var op in ziel.Operationen)
         {
+            // Wie Rückgängig überschreibt auch Wiederholen nie eine spätere Änderung (Gesamtprüfung 12.11.2026): hat inzwischen jemand
+            // anderes die Stelle bearbeitet (Abgleich), stimmt der Stand nicht mehr mit dem «vorher» der Operation überein – bis dahin
+            // setzte Wiederholen den eigenen alten Stand ohne Meldung darüber.
+            if (NichtMehrWieVorher(op, arbeit) is { } fehler)
+                return new BefehlsErgebnis { Angenommen = false, Befehl = "wiederholen", Trockenlauf = trockenlauf, Meldung = "Abgelehnt: " + fehler, Fehler = fehler,
+                    Vorschlag = "Die Stelle wurde seither bearbeitet; die Änderung gezielt neu ausführen (z. B. element_aendern)." };
             Operation neu = op.Art switch
             {
                 "element.setzen" => new() { Art = op.Art, Id = op.Id, Basis = arbeit.Finde(op.Id)?.Version ?? 0, Element = op.Element!.Kopie(), ElementVorher = arbeit.Finde(op.Id)?.Kopie() },
@@ -528,6 +534,21 @@ public sealed class Projekt
         x.Geaendert = y.Geaendert = null;
         x.Paket = y.Paket = null;
         return Json.Text(x) == Json.Text(y);
+    }
+
+    /// <summary>Wiederholen: Stimmt der Stand noch mit dem «vorher» der Operation überein (Inhalt, nicht Version)? null = ja, sonst der Grund.</summary>
+    static string? NichtMehrWieVorher(Operation op, Modell m)
+    {
+        if (op.Art.StartsWith("element", StringComparison.Ordinal))
+        {
+            var jetzt = m.Finde(op.Id);
+            var kz = (op.ElementVorher ?? op.Element)?.Kennzeichen ?? op.Id;
+            if (op.ElementVorher is null) return jetzt is null ? null : $"{kz} existiert inzwischen schon.";
+            return jetzt is not null && GleicherInhalt(jetzt, op.ElementVorher) ? null : $"{kz} wurde inzwischen geändert oder gelöscht.";
+        }
+        var v = m.FindeVerbindung(op.Id);
+        if (op.VerbindungVorher is null) return v is null ? null : "Eine Verbindung existiert inzwischen schon.";
+        return v is not null && v.Von == op.VerbindungVorher.Von && v.Nach == op.VerbindungVorher.Nach ? null : "Eine Verbindung wurde inzwischen geändert oder getrennt.";
     }
 
     static Operation Umkehren(Operation op, Modell m, out string? fehler)

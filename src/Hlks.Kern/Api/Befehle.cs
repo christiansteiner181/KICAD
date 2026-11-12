@@ -174,13 +174,16 @@ public static class Param
         return liste;
     }
 
-    /// <summary>Anschlusspunkt aus { element, anschluss } oder aus Text «KENNZEICHEN.anschluss».</summary>
-    public static (string Element, string? Anschluss)? Punkt(JsonObject p, string name)
+    /// <summary>Anschlusspunkt aus { element, anschluss } oder aus Text «KENNZEICHEN.anschluss». Mit Modell: Ist der ganze Text ein Element
+    /// (Kennzeichen mit Punkt wie «WC-E.02», ohne Anschlussname), gilt er als Element – sonst würde am letzten Punkt getrennt und «WC-E» gesucht
+    /// (Gesamtprüfung 12.11.2026).</summary>
+    public static (string Element, string? Anschluss)? Punkt(JsonObject p, string name, Modell? m = null)
     {
         var n = p[name];
         if (n is null) return null;
         if (n is JsonValue v && v.TryGetValue<string>(out var s))
         {
+            if (m?.Finde(s) is not null) return (s, null);
             var i = s.LastIndexOf('.');
             return i > 0 ? (s[..i], s[(i + 1)..]) : (s, null);
         }
@@ -289,7 +292,10 @@ static class Elementpflege
         var erlaubt = d.Geometrie == "polylinie" ? new[] { "polylinie", "linie" } : d.Geometrie == "linie" ? new[] { "linie", "polylinie" } : new[] { d.Geometrie };
         if (!erlaubt.Contains(g.Art)) throw new HlksFehler($"{d.Name} braucht eine Geometrie der Art {d.Geometrie}, nicht {g.Art}.");
         int min = g.Art switch { "punkt" => 1, "polygon" => 3, _ => 2 };
-        if (g.Punkte.Count < min) throw new HlksFehler($"Geometrie {g.Art} braucht mindestens {min} Punkte.");
+        if (g.Punkte.Count < min) throw new HlksFehler($"Geometrie {g.Art} braucht mindestens {min} Punkte.", "Form: { \"art\": \"polylinie\", \"punkte\": [[x, y, z], [x, y, z]] } in mm");
+        // Gesamtprüfung 12.11.2026: ein Punkt mit nur einer Koordinate lief bis dahin als IndexOutOfRangeException durch (kein «Abgelehnt», HTTP 500)
+        if (g.Punkte.Any(q => q is null || q.Length < 2 || q.Any(c => !double.IsFinite(c))))
+            throw new HlksFehler("Geometrie ungültig: jeder Punkt braucht mindestens x und y als Zahl.", "Jeder Punkt als [x, y] oder [x, y, z] in mm");
         if (g.Art == "punkt" && g.Punkte.Count > 1) g.Punkte = [g.Punkte[0]];
         double? z0 = k.Arbeit.Finde(e.Geschoss)?.Zahl("kote");
         g.Punkte = g.Punkte.Select(p => p.Length >= 3 ? new[] { p[0], p[1], p[2] } : new[] { p[0], p[1], z0 ?? 0 }).ToList();
@@ -463,7 +469,11 @@ public sealed class ElementAendern : IBefehl
         var e = alt.Kopie();
         if (Param.Text(p, "kennzeichen") is { } kz && !kz.Equals(e.Kennzeichen, StringComparison.Ordinal))
         {
-            if (k.Arbeit.Finde(kz) is { } x && x.Id != e.Id) throw new HlksFehler($"Kennzeichen «{kz}» ist schon vergeben.");
+            // Gesamtprüfung 12.11.2026: ein leeres Kennzeichen wurde bis dahin angenommen – das Element war danach nur noch über seine Id ansprechbar
+            if (string.IsNullOrWhiteSpace(kz))
+                throw new HlksFehler("Das Kennzeichen darf nicht leer sein.", $"Ein Kennzeichen angeben, z. B. {k.NaechstesKennzeichen(d.Kuerzel)}, oder kennzeichen weglassen.");
+            if (k.Arbeit.Finde(kz) is { } x && x.Id != e.Id)
+                throw new HlksFehler($"Kennzeichen «{kz.Trim()}» ist schon vergeben ({x.Klasse}).", $"Anderes Kennzeichen wählen, z. B. {k.NaechstesKennzeichen(d.Kuerzel)}");
             e.Kennzeichen = kz.Trim();
         }
         if (p.ContainsKey("name")) e.Name = Param.Text(p, "name");
@@ -490,7 +500,7 @@ public sealed class ElementAendern : IBefehl
     static void Anschliessen(Kontext k, Element e, JsonObject vb)
     {
         var eigen = Param.Text(vb, "anschluss", true)!;
-        var (ne, na) = Param.Punkt(vb, "nach") ?? throw new HlksFehler("verbinden.nach fehlt.", "Form: { anschluss: \"ende\", nach: \"KENNZEICHEN.anschluss\" }");
+        var (ne, na) = Param.Punkt(vb, "nach", k.Arbeit) ?? throw new HlksFehler("verbinden.nach fehlt.", "Form: { anschluss: \"ende\", nach: \"KENNZEICHEN.anschluss\" }");
         var an = e.AnschlussNamens(eigen) ?? throw new HlksFehler($"{e.Kennzeichen} hat keinen Anschluss «{eigen}».",
             "Anschlüsse: " + string.Join(", ", e.Anschluesse.Select(x => x.Name)));
         var ziel = k.Arbeit.Hole(ne);
@@ -556,8 +566,8 @@ public sealed class Verbinden : IBefehl
 
     public void Ausfuehren(Kontext k, JsonObject p)
     {
-        var (ve, va) = Param.Punkt(p, "von") ?? throw new HlksFehler("Parameter «von» fehlt.");
-        var (ne, na) = Param.Punkt(p, "nach") ?? throw new HlksFehler("Parameter «nach» fehlt.");
+        var (ve, va) = Param.Punkt(p, "von", k.Arbeit) ?? throw new HlksFehler("Parameter «von» fehlt.");
+        var (ne, na) = Param.Punkt(p, "nach", k.Arbeit) ?? throw new HlksFehler("Parameter «nach» fehlt.");
         Ausfuehren(k, k.Arbeit.Hole(ve), va, k.Arbeit.Hole(ne), na);
     }
 
@@ -658,7 +668,7 @@ public sealed class Trennen : IBefehl
     {
         Verbindung? v = null;
         if (Param.Text(p, "verbindung") is { } id) v = k.Arbeit.FindeVerbindung(id) ?? throw new HlksFehler($"Verbindung {id} gibt es nicht.");
-        else if (Param.Punkt(p, "anschluss") is { } ap)
+        else if (Param.Punkt(p, "anschluss", k.Arbeit) is { } ap)
         {
             var el = k.Arbeit.Hole(ap.Element);
             if (ap.Anschluss is null) throw new HlksFehler("Anschlussname fehlt.", "Form: \"KENNZEICHEN.anschluss\"");
@@ -730,7 +740,7 @@ public sealed class LeitungZiehen : IBefehl
             Routing.GroesseSetzen(k, mitSerie, serie, sg);
             leitung = k.Setzen(mitSerie);
         }
-        if (Param.Punkt(p, "von") is { } von) Verbinden.Ausfuehren(k, k.Arbeit.Hole(von.Element), von.Anschluss, leitung, "anfang");
-        if (Param.Punkt(p, "nach") is { } nach) Verbinden.Ausfuehren(k, leitung, "ende", k.Arbeit.Hole(nach.Element), nach.Anschluss);
+        if (Param.Punkt(p, "von", k.Arbeit) is { } von) Verbinden.Ausfuehren(k, k.Arbeit.Hole(von.Element), von.Anschluss, leitung, "anfang");
+        if (Param.Punkt(p, "nach", k.Arbeit) is { } nach) Verbinden.Ausfuehren(k, leitung, "ende", k.Arbeit.Hole(nach.Element), nach.Anschluss);
     }
 }

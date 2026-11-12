@@ -173,6 +173,21 @@ test('Zelle unter dem Zeiger: Spalte × Zeile, auch Zonen', () => {
   assert.equal(L.zelleText(null), 'ausserhalb des Rasters');
 });
 
+test('Zelle im Bündel (Steigzone): der Strang mit der nächsten Linie, nicht immer der erste', () => {
+  // Bündel wie der Kern es liefert: gleiche x und Breite, Linien bei 40 / 43 / 46 (Bündelabstand 3 mm)
+  const d = daten();
+  d.spalten = [
+    { strang: 's-kw', kennzeichen: 'KW-1', system: 'KW', art: 'senkrecht', x: 30, breite: 70, linie: 40 },
+    { strang: 's-ww', kennzeichen: 'WW-1', system: 'WW', art: 'senkrecht', x: 30, breite: 70, linie: 43 },
+    { strang: 's-zi', kennzeichen: 'ZI-1', system: 'ZI', art: 'senkrecht', x: 30, breite: 70, linie: 46 },
+  ];
+  assert.equal(L.zelleBei(d, 39, 20).spalte.kennzeichen, 'KW-1');
+  assert.equal(L.zelleBei(d, 43.4, 20).spalte.kennzeichen, 'WW-1');
+  assert.equal(L.zelleBei(d, 41.5, 20).spalte.kennzeichen, 'KW-1');   // Gleichstand: der erste
+  assert.equal(L.zelleBei(d, 80, 20).spalte.kennzeichen, 'ZI-1');     // rechts des Bündels: die letzte Linie
+  assert.deepEqual(L.zuordnungAusZelle(L.zelleBei(d, 43, 70), 'armatur'), { geschoss: '1.OG', teilVon: 'WW-1' });
+});
+
 test('Umrandung, Wo-zeigt-es, nicht platziert', () => {
   const d = daten();
   assert.deepEqual(L.umrandung(d, 'e-wt'), { minx: 43, miny: 32, maxx: 67, maxy: 52 });

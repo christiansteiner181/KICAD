@@ -127,9 +127,18 @@ export function treffer(daten, p, toleranz, domId = null) {
   return { art: 'leer' };
 }
 
-/** Zelle (Spalte × Zeile) unter dem Punkt oder null (ausserhalb des Rasters). */
+/**
+ * Zelle (Spalte × Zeile) unter dem Punkt oder null (ausserhalb des Rasters). Die Stränge eines Bündels (Steigzone) teilen sich x und
+ * Breite ihrer Gruppe: es gilt der Strang, dessen Linie dem Punkt am nächsten liegt (bei Gleichstand der erste). Bis 12.11.2026 galt
+ * im Bündel immer der erste Strang – «Element einfügen» hängte dann alles an ihn, egal wo man klickte (Gesamtprüfung).
+ */
 export function zelleBei(daten, x, y) {
-  const spalte = (daten?.spalten ?? []).find((s) => x >= s.x && x < s.x + s.breite);
+  let spalte = null, bester = Infinity;
+  for (const s of daten?.spalten ?? []) {
+    if (!(x >= s.x && x < s.x + s.breite)) continue;
+    const d = gueltig(s.linie) ? Math.abs(x - Number(s.linie)) : Infinity;
+    if (!spalte || d < bester) { spalte = s; bester = d; }
+  }
   const zeile = (daten?.zeilen ?? []).find((z) => y >= z.y && y < z.y + z.hoehe);
   return spalte && zeile ? { spalte, zeile } : null;
 }
