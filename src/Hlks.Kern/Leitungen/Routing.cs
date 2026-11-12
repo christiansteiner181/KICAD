@@ -158,6 +158,68 @@ public static class Routing
 
     // ------------------------------------------------------------------ Vorbereitung (leitung_zeichnen, leitung_abzweigen)
 
+    /// <summary>Weiterzeichnen an einer Geraden mit Bogen (Christian 12.11.2026: «wird an einer leitung weitergezeichnet, und es wird bsp. direkt ein
+    /// 90° bogen gezeichnet, so muss sich die besetehnde leitung anpassen, dass dies nicht geblockt wird»): beginnt (anfang) bzw. endet der Verlauf am
+    /// freien Ende einer bestehenden Geraden und knickt dort ab, wird die Gerade um die Einbaulänge des Bogens gekürzt (gerechnet wie Planen, auch
+    /// 2 × 45° nach ZweiBoegen); der Knick bleibt am bisherigen Ende. Der Verlauf beginnt bzw. endet dann am neuen Ende mit dem Knick als zweitem bzw.
+    /// vorletztem Punkt, das neue Ende wird zurückgegeben. Ohne Knick bzw. an anderen Elementen bleibt alles, wie es ist.</summary>
+    public static RoutingEnde? AnGeradeKuerzen(Kontext k, Leitungsserie s, Leitungsgroesse g, RoutingEnde? ende, List<double[]> roh, double zVorgabe, bool anfang, List<string> hinweise)
+    {
+        if (ende is not { HatLage: true } || ende.Anschluss is not ("anfang" or "ende") || !k.Katalog.IstArt(ende.Element, "Leitung")) return ende;
+        var gp = ende.Element.Geometrie?.Punkte;
+        if (gp is not { Count: 2 }) return ende;
+        var K = ende.Lage; var r = ende.Richtung;   // Richtung aus der Geraden heraus
+        var naechster = (anfang ? roh : Enumerable.Reverse(roh)).Select(p => new V3(p[0], p[1], p.Length > 2 ? p[2] : zVorgabe))
+            .Where(p => (p - K).Laenge > Anschlusslagen.AbstandMax).Cast<V3?>().FirstOrDefault();
+        if (naechster is not V3 folge) return ende;
+        var u = (folge - K).Einheit();
+        if (Grad(u, r) <= Anschlusslagen.WinkelMax) return ende;
+        var andere = V3.Aus(gp[ende.Anschluss == "anfang" ? 1 : 0]);
+
+        // Probe: Gerade bis zum Knick, dann weit in die gezeichnete Richtung (nur der Bogen am Knick zählt)
+        var probe = new List<V3> { andere, K, K + u * 100_000 };
+        if (!anfang) probe.Reverse();
+        RoutingPlan plan;
+        try
+        {
+            ZweiBoegen(k.Arbeit, k.Katalog, s, g, probe, []);
+            plan = Planen(k.Arbeit, k.Katalog, s, g, probe, null, null);
+        }
+        catch (HlksFehler f)
+        {
+            throw new HlksFehler($"Am Ende von {ende.Element.Kennzeichen} lässt sich kein Bogen setzen: {f.Message}", f.Vorschlag);
+        }
+        var boegen = plan.Teile.OfType<PlanFormteil>().ToList();
+        if (boegen.Count == 0) return ende;
+        var neu = anfang ? boegen[0].EinLage : boegen[^1].AusLage;
+        double kurz = (K - neu).Laenge, rest = (neu - andere).Laenge;
+        if (rest <= Anschlusslagen.AbstandMax)
+            throw new HlksFehler($"{ende.Element.Kennzeichen} ist mit {Z((K - andere).Laenge)} mm zu kurz für den Bogen am Ende (Einbaulänge {Z(kurz)} mm).",
+                "Die bestehende Leitung verlängern oder den Bogen weiter vorne setzen.");
+
+        var e = ende.Element.Kopie();
+        var pkt = e.Geometrie!.Punkte!.ToList();
+        pkt[ende.Anschluss == "anfang" ? 0 : 1] = Familien.Runden(neu.Feld(), 6);
+        e.Geometrie = new Geometrie { Art = e.Geometrie.Art, Punkte = pkt };
+        e = k.Setzen(e);
+        hinweise.Add($"{e.Kennzeichen} um {Z(kurz)} mm gekürzt – der Bogen sitzt am bisherigen Ende {P(K)}.");
+
+        // Verlauf: neues Ende, Knick, dann die gezeichneten Punkte (die am bisherigen Ende entfallen)
+        var neuFeld = neu.Feld(); var kFeld = K.Feld();
+        bool amK(double[] p) => (new V3(p[0], p[1], p.Length > 2 ? p[2] : zVorgabe) - K).Laenge <= Anschlusslagen.AbstandMax;
+        if (anfang)
+        {
+            while (roh.Count > 0 && amK(roh[0])) roh.RemoveAt(0);
+            roh.InsertRange(0, [neuFeld, kFeld]);
+        }
+        else
+        {
+            while (roh.Count > 0 && amK(roh[^1])) roh.RemoveAt(roh.Count - 1);
+            roh.AddRange([kFeld, neuFeld]);
+        }
+        return RoutingBefehle.Ende(k, e, ende.Anschluss, anfang, null, anfang ? "von" : "nach");
+    }
+
     /// <summary>Knoten aus den eingegebenen Punkten: z fehlt → zVorgabe; doppelte Punkte entfallen; Anfang bzw. Ende an einen
     /// Anschluss mit Lage (bis 1 mm = dieser Punkt, sonst wird die Anschlusslage vorangestellt bzw. angehängt); Gefälle; Punkte
     /// ohne Knick entfallen; die Richtung an einem Anschluss muss seiner Achse folgen (≤ 1°, sonst abgelehnt).</summary>

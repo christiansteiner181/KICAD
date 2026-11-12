@@ -47,6 +47,30 @@ public class RoutingZeichnenTests
     }
 
     [Fact]
+    public void Weiterzeichnen_MitBogenAmEnde_KuerztDieBestehendeGerade()
+    {
+        // Christian 12.11.2026: am Ende einer Leitung direkt mit 90° weiterzeichnen – die bestehende Leitung passt sich an
+        var p = MitSerie();
+        Ok(Zeichnen(p, "DN 20", [[0, 0, 1000], [2000, 0, 1000]]));
+        var e = Ok(Zeichnen(p, "DN 20", [[2000, 0, 1000], [2000, 1500, 1000]], new JsonObject { ["von"] = "RO-1.ende" }));
+        // DN 20, 90°: La = Lb = 50 mm – RO-1 endet am Bogen, der Knick bleibt bei (2000, 0)
+        Gerade(p, "RO-1", [0, 0, 1000], [1950, 0, 1000]);
+        Assert.Equal(["BO-1"], Angelegt(e, "Bogen"));
+        Gerade(p, "RO-2", [2000, 50, 1000], [2000, 1500, 1000]);
+        IstVerbunden(p, "RO-1", "ende", "BO-1", "a");
+        IstVerbunden(p, "BO-1", "b", "RO-2", "anfang");
+        Sauber(p);
+        // gegen die Fliessrichtung gezeichnet: Verlauf endet am Anfang einer Geraden (nach)
+        Ok(Zeichnen(p, "DN 20", [[5000, 1500, 1000], [5000, 0, 1000]]));                      // RO-3 nach −y
+        Ok(Zeichnen(p, "DN 20", [[3500, 1500, 1000], [5000, 1500, 1000]], new JsonObject { ["nach"] = "RO-3.anfang" }));
+        Gerade(p, "RO-3", [5000, 1450, 1000], [5000, 0, 1000]);
+        Gerade(p, "RO-4", [3500, 1500, 1000], [4950, 1500, 1000]);
+        IstVerbunden(p, "RO-4", "ende", "BO-2", "a");
+        IstVerbunden(p, "BO-2", "b", "RO-3", "anfang");
+        Sauber(p);
+    }
+
+    [Fact]
     public void Steigleitung_ZweiBoegen_VollAusgerichtet()
     {
         var p = MitSerie();

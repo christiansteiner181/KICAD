@@ -4317,6 +4317,12 @@ jedes neue Projekt erhält alle Mustersysteme.
   alle gewählten Leitungen in einem Paket), Dämmung entfernen; in der Gruppe «Leitung» dazu «Neigung» (Gefälle des ganzen Zugs).
   Leitungsbefehle im Kontextregister (Dämmung, Neigung, Fliessrichtung umkehren, Aufteilen) erscheinen nur bei Rohren und Kanälen, bei anderen Bauteilen
   sind sie ausgeblendet (Christian 11.11.2026 «Ja, ausblenden»; Aktionseigenschaft `fuer`).
+- **Weiterzeichnen mit Bogen** (Christian 12.11.2026: «wird an einer leitung weitergezeichnet, und es wird bsp. direkt ein 90° bogen gezeichnet, so
+  muss sich die besetehnde leitung anpassen, dass dies nicht geblockt wird»): am freien Ende eines Rohrs bzw. Kanals rastet der Winkelfang auch auf die
+  Bogenwinkel der Produktlinie; knickt der Zug dort ab, kürzt der Kern die bestehende Gerade um die Einbaulänge des Bogens (auch 2 × 45°), der Knick
+  bleibt am bisherigen Ende. Gilt auch, wenn der Zug an einem Leitungsanfang endet. Ist die Gerade zu kurz für den Bogen, wird abgelehnt.
+- **Neue Projekte mit allen freigegebenen Familien** (Christian 12.11.2026): Projekt anlegen (leer) lädt jede Familie der Bibliothek, deren aktuelle
+  Version freigegeben ist, mit Herstellerunterlagen; Entwürfe nicht. Was nicht geladen werden konnte, meldet KICAD.
 - **Lage beim Weiterzeichnen** (Christian 11.11.2026: «wird an einer leitung weitergezeichnet, wird immer die Lage der bestehenden leitung übernommen»):
   beginnt ein Rohr an einem Anschluss bzw. als Abzweig, gilt die Lage, deren Höhe die Achse dort trifft (±5 mm); trifft keine, ist das Feld Lage leer und
   es gilt die Höhe des Punktes. Wurde die Lage bzw. Höhe im laufenden Werkzeug von Hand gewählt, bleibt sie (Christian 11.11.2026: «wird eine lage

@@ -381,7 +381,7 @@ public sealed class LeitungZeichnen : IBefehl
     {
         var s = Leitungsserie.Hole(k.Arbeit, k.Katalog, Param.Text(p, "serie", true));
         var sg = RoutingBefehle.Groesse(s, p["groesse"]);
-        var roh = Param.Punkte(p, "punkte");
+        var roh = Param.Punkte(p, "punkte").ToList();
         var geschoss = RoutingBefehle.Geschoss(k, p);
         var von = RoutingBefehle.Ende(k, p, "von", true, roh.FirstOrDefault());
         var nach = RoutingBefehle.Ende(k, p, "nach", false, roh.LastOrDefault());
@@ -390,7 +390,11 @@ public sealed class LeitungZeichnen : IBefehl
         var anschlussMedium = new[] { von, nach }.Select(x => x?.Stelle.Medium).FirstOrDefault(x => x is { Length: > 0 } and not "*");
         var ziel = RoutingBefehle.Ziel(k, p, geschoss, von?.Element ?? nach?.Element, kategorie: s.Kategorie, anschlussMedium: anschlussMedium);
         var hinweise = new List<string>();
-        var pkt = Routing.Vorbereiten(roh, geschoss?.Zahl("kote") ?? 0, von, nach, Param.Zahl(p, "gefaelle"), hinweise);
+        double zVorgabe = geschoss?.Zahl("kote") ?? 0;
+        // Weiterzeichnen an einer Geraden mit Bogen: die Gerade wird gekürzt (Christian 12.11.2026)
+        von = Routing.AnGeradeKuerzen(k, s, sg.Groesse, von, roh, zVorgabe, true, hinweise);
+        nach = Routing.AnGeradeKuerzen(k, s, sg.Groesse, nach, roh, zVorgabe, false, hinweise);
+        var pkt = Routing.Vorbereiten(roh, zVorgabe, von, nach, Param.Zahl(p, "gefaelle"), hinweise);
         Routing.ZweiBoegen(k.Arbeit, k.Katalog, s, sg.Groesse, pkt, hinweise);   // 90° ohne 90°-Bogen: 2 × 45° (06.11.2026)
         var plan = Routing.Planen(k.Arbeit, k.Katalog, s, sg.Groesse, pkt, von, nach, new PlanOptionen { Uebergang = p["uebergang"] as JsonObject });
         var liste = Routing.Umsetzen(k, plan, ziel);
