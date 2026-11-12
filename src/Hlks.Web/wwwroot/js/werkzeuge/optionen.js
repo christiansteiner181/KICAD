@@ -249,6 +249,20 @@ export function daemmDicke(regel, dn) {
   return st.find((s) => dn <= s.dnBis)?.dicke ?? null;
 }
 
+/** Dämmart im Dialog «Dämmung hinzufügen/bearbeiten»: Wert der Auswahl für «– keine Angabe –» (leer = «andere …» mit freiem Text). */
+export const DAEMMART_KEINE = '__keine__';
+/** Vorwahl der Dämmart: die bisherige Katalogart, «andere …» ('') für eine bisherige freie Angabe, ohne bisherige Art «– keine Angabe –».
+ *  Vorher war ohne bisherige Art die erste Katalogart vorgewählt und wurde mitgespeichert, auch wenn nur die Dicke geändert wurde. */
+export function daemmartVorwahl(arten, bisher) {
+  if (!bisher) return DAEMMART_KEINE;
+  return (arten ?? []).some((a) => a.name === bisher) ? bisher : '';
+}
+/** Zu speichernde Dämmart aus Auswahl und freiem Text; null = keine Angabe. */
+export function daemmartAusWahl(wahl, frei) {
+  if (wahl === DAEMMART_KEINE) return null;
+  return wahl || String(frei ?? '').trim() || null;
+}
+
 export const STEIG_LEITUNGEN = [['KW', 'KW', true], ['WW', 'WW', true], ['ZIR', 'Zirk', true], ['HZ-VL', 'VL', false], ['HZ-RL', 'RL', false]];
 export const STEIG_LUEFTUNG = [['AUL', 'AUL', false], ['FOL', 'FOL', false], ['ZUL', 'ZUL', true], ['ABL', 'ABL', true]];
 export const steigId = (m) => m.toLowerCase().replace(/[^a-z]/g, '');

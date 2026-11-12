@@ -12,7 +12,7 @@ import { aufElement, freiesKennzeichen, knoten, esc } from './werkzeug.js';
 import { auswahlElemente } from '../werkzeuge/auswahl.js';
 import { planAnsicht, werkzeugStarten, werkzeugAktiv } from '../werkzeuge/basis.js';
 import { leitungWerkzeug } from '../werkzeuge/leitung.js';
-import { daemmDicke } from '../werkzeuge/optionen.js';
+import { daemmDicke, DAEMMART_KEINE, daemmartVorwahl, daemmartAusWahl } from '../werkzeuge/optionen.js';
 import { parallelWerkzeug } from '../werkzeuge/parallel.js';
 import { fallleitungWerkzeug } from '../werkzeuge/fallleitung.js';
 import { steigleitungWerkzeug } from '../werkzeuge/steigleitung.js';
@@ -88,10 +88,14 @@ async function daemmungDialog(bearbeiten) {
   const arten = zustand.katalog?.daemmarten ?? [];
   const bisher = muster.werte?.daemmung ?? '';
   const imKatalog = arten.some((a) => a.name === bisher);
+  // ohne bisherige Art ist «– keine Angabe –» vorgewählt: wer nur die Dicke ändert, schreibt keine Art mit (Gegenprüfung 13.11.2026)
+  const vorwahl = daemmartVorwahl(arten, bisher);
+  const gew = (v) => (v === vorwahl ? ' selected' : '');
   const w = knoten(`<div>
     <label class="fz"><span>Dämmart</span><select class="d-wahl">
-      ${arten.map((a) => `<option value="${esc(a.name)}"${a.name === bisher || (!bisher && a === arten[0]) ? ' selected' : ''}>${esc(a.name)}</option>`).join('')}
-      <option value=""${bisher && !imKatalog ? ' selected' : ''}>andere …</option></select></label>
+      <option value="${DAEMMART_KEINE}"${gew(DAEMMART_KEINE)}>– keine Angabe –</option>
+      ${arten.map((a) => `<option value="${esc(a.name)}"${gew(a.name)}>${esc(a.name)}</option>`).join('')}
+      <option value=""${gew('')}>andere …</option></select></label>
     <label class="fz d-frei-zeile"${bisher && !imKatalog ? '' : ' style="display:none"'}><span>Art bzw. Produkt</span><input type="text" class="d-art" value="${esc(imKatalog ? '' : bisher)}" placeholder="z. B. Produktname des Herstellers"></label>
     <label class="fz"><span>Dämmdicke [mm]</span><input type="text" class="d-dicke" inputmode="decimal" value="${esc(String(vorDicke))}"></label>
     <p class="leise d-regel"></p>
@@ -124,8 +128,8 @@ async function daemmungDialog(bearbeiten) {
       pruefen: () => { const n = Number(w.querySelector('.d-dicke').value.replace(',', '.')); return Number.isFinite(n) && Math.round(n) >= 1 && n <= 500 ? true : 'Dämmdicke in ganzen mm eingeben (1 bis 500).'; } }],   // gespeichert wird gerundet: 0.4 ergäbe 0 = «entfernt»
   });
   if (ok !== true) return;
-  const art = wahl.value || w.querySelector('.d-art').value.trim();
-  await daemmungSetzen(l, { daemmdicke: Math.round(Number(w.querySelector('.d-dicke').value.replace(',', '.'))), daemmung: art || null });
+  const art = daemmartAusWahl(wahl.value, w.querySelector('.d-art').value);
+  await daemmungSetzen(l, { daemmdicke: Math.round(Number(w.querySelector('.d-dicke').value.replace(',', '.'))), daemmung: art });
 }
 
 registrieren({
