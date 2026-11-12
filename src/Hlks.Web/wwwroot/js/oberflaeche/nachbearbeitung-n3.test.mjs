@@ -147,6 +147,8 @@ test('Kürzel: jedes Register des Menübands hat einen Namen; «Beschriften», �
   assert.ok(ids.length >= 10);
   for (const [id, name] of ids) assert.equal(K.REGISTER_NAMEN[id], name, `Register ${id} heisst im Dialog wie im Menüband`);
   for (const r of ['beschriften', 'einfuegen', 'huelle', 'koordination', 'familie']) assert.ok(K.REGISTER_NAMEN[r], r);
+  // Die Liste KS folgt der Reihenfolge der Register im Menüband (Gesamtprüfung 13.11.2026: stand noch in der Reihenfolge vor dem 09.11.2026)
+  assert.deepEqual(Object.keys(K.REGISTER_NAMEN).slice(0, ids.length), ids.map(([id]) => id));
   assert.equal(K.REGISTER_NAMEN.beschriften, 'Beschriften');
   assert.equal(K.REGISTER_NAMEN.einfuegen, 'Einfügen');
   assert.equal(K.REGISTER_NAMEN.huelle, 'Hülle');

@@ -80,6 +80,19 @@ public static class BaustelleZugang
 
     public static string Eingang(Projekt p) => Path.Combine(p.Speicher?.Ort ?? throw new HlksFehler("Projekt ohne Ablage."), "eingang", "baustelle");
 
+    /// <summary>Freier Dateiname für eine Rückmeldung im Eingang: Zeit und Name (nur Buchstaben und Ziffern, höchstens 40 Zeichen). Gibt es die
+    /// Datei schon (zwei Rückmeldungen derselben Person in derselben Sekunde, z. B. nachgesendete), bekommt sie eine Laufnummer – bisher
+    /// überschrieb die zweite die erste (Gesamtprüfung 13.11.2026).</summary>
+    public static string RueckmeldungDatei(string ordner, DateTime zeit, string person)
+    {
+        var wer = string.Concat(person.Select(c => char.IsLetterOrDigit(c) ? c : '_'));
+        if (wer.Length > 40) wer = wer[..40];
+        var basis = $"Rueckmeldung_{zeit:yyyyMMdd-HHmmss}_{wer}";
+        var name = basis + ".json";
+        for (int i = 2; File.Exists(Path.Combine(ordner, name)); i++) name = $"{basis}_{i}.json";
+        return name;
+    }
+
     public static WebApplication MapBaustelleZugang(this WebApplication app, ProjektDienst dienst, int? port)
     {
         // Zugänge verwalten aus KICAD (Register «BIM to Field», Christian 12.11.2026: «mache für das einstellen aus KICAD einen Tab "BIM to Field"»);
@@ -208,7 +221,7 @@ public static class BaustelleZugang
                 BaustelleRueckmeldung.Lesen(p, r);   // wirft, wenn die Meldungen nicht lesbar sind
                 var ordner = Eingang(p);
                 Directory.CreateDirectory(ordner);
-                var name = $"Rueckmeldung_{DateTime.Now:yyyyMMdd-HHmmss}_{string.Concat(person.Select(c => char.IsLetterOrDigit(c) ? c : '_'))}.json";
+                var name = RueckmeldungDatei(ordner, DateTime.Now, person);
                 var pfad = Path.Combine(ordner, name);
                 File.WriteAllText(pfad, r.ToJsonString(), new UTF8Encoding(false));
                 return name;

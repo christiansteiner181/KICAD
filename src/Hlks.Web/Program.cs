@@ -46,6 +46,7 @@ builder.Services.AddResponseCompression(o =>
 builder.Services.Configure<GzipCompressionProviderOptions>(o => o.Level = System.IO.Compression.CompressionLevel.Fastest);
 var app = builder.Build();
 app.UseBaustelleZugang(baustellePort);   // auf dem Baustellen-Port nur /baustelle (vor allem anderen)
+app.UseFehlerschutz();   // unerwartete Ausnahmen unter /api als { fehler, vorschlag } mit 500 statt leerer Antwort (Fehlerschutz.cs)
 // Schutz gegen Fremdaufrufe (Befund B1 der Sicherheitsprüfung 3c): vor allen Endpunkten unter /api und /hilfe.
 app.UseHerkunftsschutz();
 app.UseHkXrOberflaeche();   // Oberfläche «Brille» aus HK_XR unter /hkxr/ (Dialog «App installieren …», Netz, Desktop-Status)

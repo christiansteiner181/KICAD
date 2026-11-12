@@ -2,10 +2,11 @@
 // Jedes Register des Menübands hat hier seinen Namen und seine Stelle in der Reihenfolge des Menübands; nur Aktionen ohne Register (z. B. Strg+D)
 // oder mit einem unbekannten Register stehen unter «Allgemein» – kein Kürzel eines Registers geht mehr dorthin verloren.
 
-/** Registerkennung → Anzeigename, in der Reihenfolge des Menübands (menueband.js REGISTER), dahinter Auswahl (Kontextregister) und Familie. */
+/** Registerkennung → Anzeigename, in der Reihenfolge des Menübands (menueband.js REGISTER; Christian 09.11.2026: «Tab Ordnung: Datei, Einfügen, Heizung, …»),
+ *  dahinter Auswahl (Kontextregister) und Familie. Die Reihenfolge der Schlüssel ist die Reihenfolge der Liste KS. */
 export const REGISTER_NAMEN = {
-  datei: 'Datei', architektur: 'Architektur', huelle: 'Hülle', heizung: 'Heizung', lueftung: 'Lüftung', sanitaer: 'Sanitär', msrl: 'MSRL', einfuegen: 'Einfügen', beschriften: 'Beschriften',
-  aendern: 'Ändern', koordination: 'Koordination', ansicht: 'Ansicht', xr: 'XR', verwalten: 'Verwalten', bim: 'BIM to Field', kontext: 'Auswahl', familie: 'Familie',
+  datei: 'Datei', einfuegen: 'Einfügen', heizung: 'Heizung', lueftung: 'Lüftung', sanitaer: 'Sanitär', koordination: 'Koordination', msrl: 'MSRL', architektur: 'Architektur', huelle: 'Hülle',
+  beschriften: 'Beschriften', ansicht: 'Ansicht', verwalten: 'Verwalten', bim: 'BIM to Field', xr: 'XR', aendern: 'Ändern', kontext: 'Auswahl', familie: 'Familie',
 };
 export const ALLGEMEIN = 'Allgemein';
 

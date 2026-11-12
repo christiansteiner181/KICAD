@@ -31,7 +31,20 @@ public static class BaustelleZugaenge
     public static List<Zugang>? Lesen(Projekt p)
     {
         if (p.Speicher is null || !File.Exists(Datei(p))) return null;
-        var o = JsonNode.Parse(File.ReadAllText(Datei(p))) as JsonObject;
+        return AusText(File.ReadAllText(Datei(p)));
+    }
+
+    /// <summary>Zugänge aus dem Inhalt von zugaenge.json. Eine unlesbare Datei öffnet den Zugang nicht und gibt keine leere Antwort 500,
+    /// sondern eine Meldung mit Ausweg (Gesamtprüfung 13.11.2026); der Zugang bleibt bis dahin gesperrt.</summary>
+    public static List<Zugang> AusText(string text)
+    {
+        JsonObject? o;
+        try { o = JsonNode.Parse(text) as JsonObject; }
+        catch (System.Text.Json.JsonException ex)
+        {
+            throw new HlksFehler($"Die Zugänge der Baustelle (baustelle\\zugaenge.json) sind nicht lesbar: {ex.Message}",
+                "Die Datei im Projektordner berichtigen oder löschen und die Zugänge in KICAD neu anlegen (BIM to Field › Zugänge).");
+        }
         return (o?["zugaenge"] as JsonArray ?? []).OfType<JsonObject>()
             .Select(z => new Zugang(((string?)z["name"] ?? "").Trim(), ((string?)z["rolle"] ?? "").Trim().ToLowerInvariant(), ((string?)z["schluessel"] ?? "").Trim()))
             .Where(z => z.Name.Length > 0 && Rollen.Contains(z.Rolle) && z.Schluessel.Length >= 8).ToList();

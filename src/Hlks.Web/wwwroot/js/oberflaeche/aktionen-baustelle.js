@@ -44,7 +44,10 @@ async function zugaengeDialog() {
     <p class="leise">Den Link einmal am Handy oder Tablet öffnen – das Gerät bleibt angemeldet. Entfernen macht den Link ungültig.</p></div>`);
   const q = (s) => w.querySelector(s);
   async function laden() {
-    const d = await (await fetch('/api/baustelle/zugaenge')).json();
+    const r = await fetch('/api/baustelle/zugaenge');
+    const d = await r.json().catch(() => ({}));
+    // Fehler (z. B. zugaenge.json unlesbar) nicht als «Noch keine Zugänge» zeigen (Gesamtprüfung 13.11.2026)
+    if (!r.ok) { q('.zg-liste').innerHTML = `<p class="dlg-fehler">${esc(d.fehler ?? `Die Zugänge lassen sich nicht lesen (Fehler ${r.status}).`)}${d.vorschlag ? '<br>' + esc(d.vorschlag) : ''}</p>`; return; }
     const l = d.zugaenge ?? [];
     q('.zg-liste').innerHTML = (d.testserver ? '<p class="leise">Die Links zeigen auf den Baustellen-Testserver (Port ' + esc(d.port) + ').</p>' : '')
       + (l.length === 0 ? '<p class="leise">Noch keine Zugänge.</p>' : `<table class="tab"><thead><tr><th>Name</th><th>Rolle</th><th>Link</th><th></th></tr></thead><tbody>${l.map((z) =>
@@ -54,7 +57,11 @@ async function zugaengeDialog() {
   w.addEventListener('click', async (e) => {
     const tr = e.target.closest('tr[data-s]');
     if (e.target.closest('.zg-kopie') && tr) { const v = tr.querySelector('input').value; try { await navigator.clipboard.writeText(v); meldung('Link kopiert.', 'ok'); } catch { tr.querySelector('input').select(); } }
-    else if (e.target.closest('.zg-weg') && tr) { await fetch('/api/baustelle/zugaenge/' + encodeURIComponent(tr.dataset.s), { method: 'DELETE' }); await laden(); }
+    else if (e.target.closest('.zg-weg') && tr) {
+      const r = await fetch('/api/baustelle/zugaenge/' + encodeURIComponent(tr.dataset.s), { method: 'DELETE' });
+      if (!r.ok) { const j = await r.json().catch(() => ({})); meldung(j.fehler ?? 'Der Zugang wurde nicht entfernt.', 'warnung', { vorschlag: j.vorschlag ?? undefined }); }
+      await laden();
+    }
     else if (e.target.closest('.zg-neu')) {
       const name = q('.zg-name').value.trim();
       if (!name) { meldung('Bitte einen Namen eintragen.', 'warnung'); return; }
