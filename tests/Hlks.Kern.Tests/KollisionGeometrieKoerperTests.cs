@@ -254,6 +254,54 @@ public class KollisionGeometrieKoerperTests
     }
 
     [Fact]
+    public void Pruefnetz_AusMehrerenNetzen_GeschlosseneBleibenEigeneTeile_OffeneSchliessenSichZusammen()
+    {
+        // Gesamtprüfung 13.11.2026: Gerätekörper 600 × 400 × 1800 und Sockel 600 × 400 × 100 mit denselben vier Bodenecken. Vorher ein
+        // Teil – in der Sockelzone traf jeder Strahl zwei Flächen (gerade Zahl) = «aussen».
+        var geraet = Pruefnetz.Aus([NetzBau.Quader([0, 0, 0], [600, 400, 1800]), NetzBau.Quader([0, 0, 0], [600, 400, 100])]);
+        Assert.Equal(2, geraet.Teile);
+        Assert.True(geraet.Geschlossen);
+        Assert.Equal(Punktlage.Innen, geraet.Lage(new V3(300, 200, 50)));
+        Assert.Equal(Punktlage.Innen, geraet.Lage(new V3(300, 200, 900)));
+        Assert.Equal(Punktlage.Aussen, geraet.Lage(new V3(300, 200, 1900)));
+        var innen = Assert.Single(geraet.InnenAbschnitte(new V3(300, 200, -500), new V3(300, 200, 2500)));
+        Assert.Equal(500.0 / 3000, innen.T0, 9); Assert.Equal(2300.0 / 3000, innen.T1, 9);
+
+        // Zwei offene Stücke (Wanne ohne Deckel, Deckel), die sich erst zusammen schliessen: wie bisher ein geschlossener Teil
+        var wanne = new Netz3(); var deckel = new Netz3();
+        int[] u = [wanne.Ecke(0, 0, 0), wanne.Ecke(100, 0, 0), wanne.Ecke(100, 100, 0), wanne.Ecke(0, 100, 0)];
+        int[] o = [wanne.Ecke(0, 0, 100), wanne.Ecke(100, 0, 100), wanne.Ecke(100, 100, 100), wanne.Ecke(0, 100, 100)];
+        wanne.Viereck(u[0], u[3], u[2], u[1]);
+        for (int i = 0; i < 4; i++) wanne.Viereck(u[i], u[(i + 1) % 4], o[(i + 1) % 4], o[i]);
+        deckel.Viereck(deckel.Ecke(0, 0, 100), deckel.Ecke(100, 0, 100), deckel.Ecke(100, 100, 100), deckel.Ecke(0, 100, 100));
+        Assert.False(Pruefnetz.Aus(wanne).Geschlossen);
+        var kiste = Pruefnetz.Aus([wanne, deckel]);
+        Assert.Equal(1, kiste.Teile);
+        Assert.True(kiste.Geschlossen);
+        Assert.Equal(Punktlage.Innen, kiste.Lage(new V3(50, 50, 50)));
+    }
+
+    [Fact]
+    public void NetzNetz_BuendigUeberlappt_IstSchnitt_NichtBeruehrung()
+    {
+        // Gesamtprüfung 13.11.2026: Schrank 600 × 400 × 1800 zweimal am selben Ort – alle Flächen liegen aufeinander, kein Dreieckspaar
+        // durchdringt sich, keine Ecke liegt innen. Handrechnung: Mitte (300, 200, 900), nächste Fläche y = 0 bzw. 400 → Tiefe 200.
+        var a = Kasten(0, 0, 0, 600, 400, 1800);
+        var doppelt = Schmalphase.Pruefen(a, Kasten(0, 0, 0, 600, 400, 1800));
+        Assert.Equal(Kontaktart.Schnitt, doppelt.Art);
+        Assert.Equal(200, doppelt.Eindringtiefe, 9);
+        // gleicher Querschnitt, um 300 längs verschoben: gemeinsamer Teil x 300…600, Mitte (450, 200, 900) → 150 bis x = 300 bzw. 600
+        var versetzt = Schmalphase.Pruefen(a, Kasten(300, 0, 0, 900, 400, 1800));
+        Assert.Equal(Kontaktart.Schnitt, versetzt.Art);
+        Assert.Equal(150, versetzt.Eindringtiefe, 9);
+        Nahe(new V3(450, 200, 900), versetzt.Ort);
+        // nebeneinander, Fläche an Fläche und bündig: weiterhin nur Berührung
+        Assert.Equal(Kontaktart.Beruehrung, Schmalphase.Pruefen(a, Kasten(600, 0, 0, 900, 400, 1800)).Art);
+        // L-förmig übereck, bündig an zwei Flächen, ohne gemeinsames Inneres
+        Assert.Equal(Kontaktart.Beruehrung, Schmalphase.Pruefen(a, Kasten(600, 0, 0, 900, 400, 900)).Art);
+    }
+
+    [Fact]
     public void Kontakt_Gespiegelt_TauschtPunkteUndEnthaltensein()
     {
         var k = new Kontakt(Kontaktart.Enthalten, 0, 3, new V3(1, 0, 0), new V3(2, 0, 0), true);

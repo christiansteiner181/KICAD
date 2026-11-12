@@ -343,6 +343,9 @@ public static class Schmalphase
             return new Kontakt(Kontaktart.Enthalten, 0, inB.Tiefe, inB.Ecke, inB.Fuss);
         if (a.Huelle.Umfasst(b.Huelle, Tol) && a.HatGeschlosseneTeile && EineEckeInnen(b, a) is { } inA)
             return new Kontakt(Kontaktart.Umschliesst, 0, inA.Tiefe, inA.Fuss, inA.Ecke);
+        // Bündig überlappende Körper (zweimal dasselbe Gerät am selben Ort, gleicher Querschnitt längs verschoben): alle Flächen liegen
+        // aufeinander bzw. enden in der Ebene der anderen – kein Dreieckspaar durchdringt sich, keine Ecke liegt innen. Vorher «Berührung».
+        if (beruehrt && GemeinsamesInneres(a, b) is { } gi) return new Kontakt(Kontaktart.Schnitt, 0, gi.Tiefe, gi.Punkt, gi.Punkt);
         if (beruehrt) return new Kontakt(Kontaktart.Beruehrung, 0, 0, bA, bB);
         if (maxAbstand <= 0) return Kontakt.Fern;
         var (x, y, w) = a.Index.NaechstesPaar(b.Index, (i, j) =>
@@ -373,6 +376,21 @@ public static class Schmalphase
             return (d, v, q);
         }
         return null;
+    }
+
+    /// <summary>Haben zwei sich berührende Netze ein gemeinsames Inneres? Geprüft an der Mitte des gemeinsamen Hüllquaders: liegt sie
+    /// in beiden (geschlossenen) Netzen, überlappen sich die Körper. Tiefe = ihr kleinerer Abstand zu den beiden Oberflächen
+    /// (zweimal derselbe Quader: die halbe kleinste Kante). Liegen die Körper nur aneinander, ist der gemeinsame Hüllquader flach
+    /// und seine Mitte auf der Fläche – null.</summary>
+    static (double Tiefe, V3 Punkt)? GemeinsamesInneres(Pruefnetz a, Pruefnetz b)
+    {
+        if (!a.HatGeschlosseneTeile || !b.HatGeschlosseneTeile) return null;
+        var min = new V3(Math.Max(a.Huelle.Min.X, b.Huelle.Min.X), Math.Max(a.Huelle.Min.Y, b.Huelle.Min.Y), Math.Max(a.Huelle.Min.Z, b.Huelle.Min.Z));
+        var max = new V3(Math.Min(a.Huelle.Max.X, b.Huelle.Max.X), Math.Min(a.Huelle.Max.Y, b.Huelle.Max.Y), Math.Min(a.Huelle.Max.Z, b.Huelle.Max.Z));
+        if (max.X - min.X <= 2 * Tol || max.Y - min.Y <= 2 * Tol || max.Z - min.Z <= 2 * Tol) return null;
+        var c = (min + max) * 0.5;
+        if (a.Lage(c) != Punktlage.Innen || b.Lage(c) != Punktlage.Innen) return null;
+        return (Math.Min(a.Naechster(c).Abstand, b.Naechster(c).Abstand), c);
     }
 
     /// <summary>Näherung der Eindringtiefe zweier sich durchdringender Netze (siehe Dateikopf).</summary>

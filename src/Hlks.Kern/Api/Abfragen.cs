@@ -362,9 +362,16 @@ public sealed class Abfragen(Projekt p)
     {
         if (richtung is not ("stromab" or "stromauf")) throw new HlksFehler("richtung muss stromab oder stromauf sein.");
         var start = M.Hole(von);
-        var schritte = Netz.Folgen(M, K, start, richtung, medium, bisKlasse);
+        // Die Ausgabe bleibt begrenzt (Antwortgrösse) – wird sie gekürzt, sagt es die Antwort (vorher still)
+        const int Grenze = 2000;
+        var schritte = Netz.Folgen(M, K, start, richtung, medium, bisKlasse, Grenze);
         string? StrangVon(Element e) => e.TeilVon is not null && M.Finde(e.TeilVon)?.Klasse == "Strang" ? Kz(e.TeilVon) : null;
-        return new JsonObject
+        var antwort = Antwort();
+        if (schritte.Count >= Grenze)
+            antwort["hinweis"] = $"Ausgabe nach {schritte.Count} Schritten gekürzt – das Netz geht weiter. Mit bisKlasse oder einem späteren Startelement eingrenzen.";
+        return antwort;
+
+        JsonObject Antwort() => new()
         {
             ["start"] = start.Kennzeichen, ["richtung"] = richtung, ["medium"] = medium, ["anzahl"] = schritte.Count,
             ["schritte"] = new JsonArray(schritte.Select(s => (JsonNode)new JsonObject
