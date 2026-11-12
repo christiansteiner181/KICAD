@@ -4373,7 +4373,8 @@ jedes neue Projekt erhält alle Mustersysteme.
   einstellbar»): Sanitär › Abwasserleitung startet mit der Produktlinie Silent und 2 % Gefälle; bei Abwasser-Produktlinien steht das Gefälle in der gelben
   Optionsleiste. Rohr und Versorgungsleitung starten ohne Gefälle und ohne Abwasser-Produktlinie.
 - **Neue Projekte mit allen freigegebenen Familien** (Christian 12.11.2026): Projekt anlegen (leer) lädt jede Familie der Bibliothek, deren aktuelle
-  Version freigegeben ist, mit Herstellerunterlagen; Entwürfe nicht. Was nicht geladen werden konnte, meldet KICAD.
+  Version freigegeben ist, mit Herstellerunterlagen; Entwürfe nicht. Was nicht geladen werden konnte, meldet KICAD. Die Grundausstattung (Familien,
+  Mustersysteme, Hauptanlagen) gehört zum Anlegen: «Rückgängig» im frischen Projekt nimmt sie nicht zurück (Gesamtprüfung 13.11.2026).
 - **Lage beim Weiterzeichnen** (Christian 11.11.2026: «wird an einer leitung weitergezeichnet, wird immer die Lage der bestehenden leitung übernommen»):
   beginnt ein Rohr an einem Anschluss bzw. als Abzweig, gilt die Lage, deren Höhe die Achse dort trifft (±5 mm); trifft keine, ist das Feld Lage leer und
   es gilt die Höhe des Punktes. Wurde die Lage bzw. Höhe im laufenden Werkzeug von Hand gewählt, bleibt sie (Christian 11.11.2026: «wird eine lage

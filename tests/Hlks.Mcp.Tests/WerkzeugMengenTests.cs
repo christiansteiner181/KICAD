@@ -25,7 +25,7 @@ public class WerkzeugMengenTests
         var z = o["leitungen"]!.AsArray().Single(x => x!["serie"]!.GetValue<string>() == "Testrohrserie (fiktiv)")!;
         Assert.Equal("NW 20", z["groesse"]!.GetValue<string>());   // B9b (Entscheid Christian 19.10.2026): Rohre ausser Abwasser mit NW (Vorgabe) statt Typname
         Assert.Equal(3.0, z["laenge_m"]!.GetValue<double>());
-        Assert.Contains(o["leitungen"]!.AsArray(), x => x!["serie"]!.GetValue<string>() == "ohne Serie");   // Altbestand des Beispielprojekts
+        Assert.Contains(o["leitungen"]!.AsArray(), x => x!["serie"]!.GetValue<string>() == HlksMasse.OhneSerie);   // Altbestand des Beispielprojekts («ohne Produktlinie», Christian 07.11.2026)
         Assert.Equal("KW", o["filter"]!["system"]!.GetValue<string>());
 
         // Filter wirkt: SW hat die Leitung nicht

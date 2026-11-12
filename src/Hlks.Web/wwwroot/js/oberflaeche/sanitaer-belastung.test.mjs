@@ -530,7 +530,11 @@ test('Verdrahtung: Aktion im Register Sanitär › Apparate und Armaturen, Liste
 });
 
 test('Verdrahtung: Register je Gewerk, die Gruppe «Apparate und Armaturen» steht unter Sanitär', () => {
-  assert.match(lies('./menueband.js'), /const REGISTER = \[\['datei', 'Datei'\], \['architektur', 'Architektur'\], \['huelle', 'Hülle'\], \['heizung', 'Heizung'\], \['lueftung', 'Lüftung'\], \['sanitaer', 'Sanitär'\], \['msrl', 'MSRL'\], \['einfuegen', 'Einfügen'\], \['beschriften', 'Beschriften'\], \['aendern', 'Ändern'\], \['koordination', 'Koordination'\], \['ansicht', 'Ansicht'\], \['xr', 'XR'\], \['verwalten', 'Verwalten'\]\]/);
+  // Je Gewerk ein Register (04.11.2026). Die ganze Registerzeile wird nicht mehr nachbuchstabiert: ihre Reihenfolge hat Christian am 09.11.2026 neu
+  // festgelegt, und «BIM to Field» kam am 12.11.2026 dazu – die Reihenfolge prüft nachbearbeitung-n3.test.mjs gegen die Kürzelliste.
+  const mb = lies('./menueband.js');
+  for (const r of ["['heizung', 'Heizung']", "['lueftung', 'Lüftung']", "['sanitaer', 'Sanitär']", "['msrl', 'MSRL']"]) assert.ok(mb.includes(r), r);
+  assert.ok(!mb.includes("['gebaeudetechnik'"), 'kein Register «Gebäudetechnik» mehr');
   assert.match(lies('./aktionen.js'), /\['gt\.sanitaerapparat', 'Sanitärapparat', 'apparat', 'PX', 'Apparate und Armaturen', 'sanitaer'\]/);
 });
 
