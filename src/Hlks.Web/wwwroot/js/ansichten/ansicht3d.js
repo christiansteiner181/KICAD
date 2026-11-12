@@ -22,7 +22,7 @@ import * as THREE from 'three';
 import { zustand, element, auswaehlen, derKlasse, merken } from '../zustand.js';
 import { holen, abfrage } from '../api.js';
 import { sichtbar } from './filter.js';
-import { baueKoerper, hervorheben, freigeben, brauchtAlleKoerper, koerperUrl, netzSchluessel, netzUrl, netzGeometrie, netzMesh, BLASS_HUELLE } from './koerper3d.js';
+import { baueKoerper, hervorheben, freigeben, brauchtAlleKoerper, koerperUrl, netzSchluessel, netzUrl, netzGeometrie, netzMesh, BLASS_HUELLE, darstellungSchluessel } from './koerper3d.js';
 import { istHuelle, legendeDaten, legendeHtml, infoHtml } from './huelle-darstellung.js';
 import { baueHuelle, zeileAmTreffer, umrissLinie, huelleFreigeben } from './huelle3d.js';
 import { leseNetz } from './netzdatei.js';
@@ -65,6 +65,7 @@ function erstellen(behaelter, ansichtElement) {
   let benutzt = false;     // Kamera vom Benutzer bewegt: dann bleibt sie bei Grössenänderung
   let hatGezoomt = false;  // nach dem ersten Laden einmal einpassen
   let huelleAn = istHuelle(ansichtElement);   // Darstellung «Hülle»
+  let darstellungAlt = darstellungSchluessel(ansichtElement);   // was die Körper bestimmt (ohne Schnittbereich und Startansicht)
   let huelleNr = 0;                           // gegen veraltete Antworten der Abfrage raumgrenzen
   let huelleTimer = null;
   let huelleGruppe = null;                    // three-Gruppe der Hüllflächen (ausserhalb von «modell», zählt nicht zum Einpassen)
@@ -729,7 +730,10 @@ function erstellen(behaelter, ansichtElement) {
       schnitt?.setzen(ansicht?.werte?.schnittbereich ?? null);
       const war = huelleAn;
       huelleAn = istHuelle(ansicht);
-      ausDatenNeu();   // Filter der Ansicht (Gewerke, Klassen) neu anwenden; bei Hülle auch blassere Körper
+      // Filter der Ansicht (Gewerke, Klassen) neu anwenden; bei Hülle auch blassere Körper. Nur wenn sich daran etwas geändert hat: der
+      // Schnittbereich (jedes Ziehen an einem Griff) und die Startansicht ändern auch die Ansicht, aber keinen Körper.
+      const schluessel = darstellungSchluessel(ansicht);
+      if (schluessel !== darstellungAlt) { darstellungAlt = schluessel; ausDatenNeu(); } else anfordern();
       if (war !== huelleAn) huelleLaden();
     } catch (e) { console.error('3D: Ansicht ändern fehlgeschlagen', e); }
   }

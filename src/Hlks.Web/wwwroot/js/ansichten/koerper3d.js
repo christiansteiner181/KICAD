@@ -42,6 +42,16 @@ export function brauchtAlleKoerper(ids, klasseVon, ebeneVon = () => null) {
   return false;
 }
 
+/** Eigenschaften einer Ansicht, die an den Körpern nichts ändern (Kamera, Schnittbereich = Clipping an den vorhandenen Materialien). */
+export const OHNE_NEUBAU = new Set(['schnittbereich', 'startansicht']);
+
+/** Schlüssel all dessen an einer Ansicht, was bestimmt, welche Körper wie gebaut werden (Filter, Darstellung …). Bleibt er gleich, baut die
+ *  3D-Ansicht die Körper nicht neu – sonst kostete jedes Ziehen am Schnittbereich und jede gemerkte Startansicht einen Neuaufbau aller Körper. */
+export function darstellungSchluessel(ansicht) {
+  const w = ansicht?.werte ?? {};
+  return JSON.stringify([ansicht?.id ?? null, ansicht?.geschoss ?? null, Object.keys(w).filter((k) => !OHNE_NEUBAU.has(k)).sort().map((k) => [k, w[k]])]);
+}
+
 /** URL für /api/koerper: alle oder nur die genannten Ids. */
 export function koerperUrl(ids) {
   if (!ids || ids.length === 0 || ids.length > MAX_IDS) return '/api/koerper';

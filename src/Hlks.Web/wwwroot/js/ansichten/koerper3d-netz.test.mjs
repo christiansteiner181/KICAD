@@ -107,3 +107,14 @@ test('3D Netz: Körper mit Mesh und Kanten, Material je Farbe, freigeben', () =>
   assert.equal(kanten[1].geometry.getAttribute('position').count, 2 * 48 * 2);
   assert.doesNotThrow(() => k3.freigeben(g));
 });
+
+test('darstellungSchluessel: Schnittbereich und Startansicht lösen keinen Neuaufbau aus, Filter und Darstellung schon', () => {
+  const a = { id: 'a1', werte: { art: '3d', gewerke: ['heizung'], schnittbereich: { aktiv: true, min: [0, 0, 0], max: [1, 1, 1] } } };
+  const s = k3.darstellungSchluessel(a);
+  assert.equal(k3.darstellungSchluessel({ ...a, werte: { ...a.werte, schnittbereich: null, startansicht: { azimutGrad: 10, polarGrad: 60 } } }), s);
+  assert.equal(k3.darstellungSchluessel({ id: 'a1', werte: { gewerke: ['heizung'], art: '3d' } }), s);   // Reihenfolge der Eigenschaften egal
+  assert.notEqual(k3.darstellungSchluessel({ ...a, werte: { ...a.werte, gewerke: ['heizung', 'sanitaer'] } }), s);
+  assert.notEqual(k3.darstellungSchluessel({ ...a, werte: { ...a.werte, darstellung: 'huelle' } }), s);
+  assert.notEqual(k3.darstellungSchluessel({ ...a, werte: { ...a.werte, ifcDarstellung: 'original' } }), s);
+  assert.notEqual(k3.darstellungSchluessel({ ...a, id: 'a2' }), s);   // andere Ansicht (vr-start.js)
+});
