@@ -175,7 +175,8 @@ public static class Grafik
         if (NieGrafisch.Contains(d.Schicht) || Gliederung.Contains(e.Klasse)) return false;
         if (IfcDarstellung.Ausgeblendet(ctx, e)) return false;   // N12: Ansicht zeigt nur das Original der IFC-Unterlage
         if (ctx.KlassenAus.Contains(e.Klasse) || d.Linie.Any(ctx.KlassenAus.Contains)) return false;
-        if (ctx.Gewerke is not null && d.Gewerk is { } gw && gw != "allgemein" && !ctx.Gewerke.Contains(gw)) return false;
+        // Gewerk der Klasse und des Systems bzw. Mediums (Leitungsklassen haben kein eigenes Gewerk) – wie 3D (filter.js) und Schema
+        if (!Ableitungen.GewerkGewaehlt(ctx.Modell, k, e, ctx.Gewerke)) return false;
         // Modul 3, B10: Einlagen und Grundleitungen nur im Einlage- bzw. Grundleitungsplan; dort nur die Elemente des Plans (EinlageGrafik)
         if (EinlageGrafik.Sichtbarkeit(ctx, e) is bool b) return b;
         // Achsen in allen Grundrissen; Unterlagen ohne Geschoss (IFC über mehrere Geschosse) ebenso, sie schneiden selbst

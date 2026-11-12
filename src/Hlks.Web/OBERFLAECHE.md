@@ -167,6 +167,11 @@ Doppelklick öffnet), **Ansichtsvorlagen** (Ansichten mit `vorlage: true`), **Pl
 (Gebäude → Geschoss → Räume; Klick wählt aus; dazu der Knoten **«Nicht platzierte Räume (n)»** für HKAP-Räume ohne Geometrie, Beschreibung im Abschnitt «Verwalten › HKAP»), **Systeme** (Anlage → System → Strang; Klick wählt aus),
 **Hülle** (seit 1c: Äste «Materialien (n)», «Aufbauten (n)», «Wärmebrücken (n)»; Doppelklick auf Material bzw. Aufbau öffnet den Dialog, Kontextmenü beim Aufbau: Bearbeiten …, Zuweisen …; Beschreibung im Abschnitt «Gebäudehülle»), **Unterlagen** (seit 1b: IFC, DWG/DXF, PDF, Bild mit Art und Geschoss, «ausgeblendet» bei `anzeigen = false`; Kontextmenü im Abschnitt «Register Einfügen»), **Familien** (seit Modul 2: die Familien des Projekts je Kategorie mit Typen, dazu der Knoten «Katalog» = Katalog nach Schicht → Klasse, nur lesen; siehe Abschnitt «Familien (Modul 2, C1)»).
 Kontextmenü auf Ansichten: Öffnen, Umbenennen, Duplizieren, Löschen, Als Vorlage speichern, Vorlage anwenden.
+Duplizieren übernimmt alle Einstellungen, das Geschoss und bei Schnitt und Ansicht die Schnittlinie (`ansicht-logik.js › duplikatParameter`; Beschriftungen der Ansicht
+gehen nicht mit). **Gewerkefilter** (`gewerke` der Ansicht, seit 13.11.2026 überall dieselbe Regel – Grundriss, Schnitt und PDF im Kern `Grafik.Sichtbar`, 3D in
+`filter.js › gewerkGewaehlt`, Schema `SchemaGraph`): ein Element hat die Gewerke seiner Klasse und seines Systems (Systemtyp, sonst Medium; ohne eigenes System die der direkt
+verbundenen Elemente, ohne jedes System das eigene Medium) – der Kern liefert sie je Element als `gewerke` (Liste) neben `gewerk`. Sichtbar ist es, wenn kein Gewerk bekannt
+ist, eines «allgemein» ist oder eines gewählt ist. Leitungen, Formteile und Armaturen haben kein Gewerk der Klasse; sie folgen ihrem System bzw. Medium.
 Live: neue/gelöschte/umbenannte Elemente erscheinen sofort.
 
 ## Register «Einfügen», Unterlagen und Koordinaten (Modul 1b, C1)

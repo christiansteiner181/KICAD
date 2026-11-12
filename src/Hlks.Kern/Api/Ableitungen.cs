@@ -176,12 +176,41 @@ public static class Ableitungen
 
     static double GeschossKote(Modell m, string? geschossId) => m.Finde(geschossId)?.Zahl("kote") ?? double.MinValue;
 
-    /// <summary>Gewerk eines Netzelements über den Systemtyp seines Systems, sonst aus dem Katalog.</summary>
+    /// <summary>Gewerk eines Netzelements über den Systemtyp seines Systems, sonst aus dem Katalog; Leitungsklassen ohne eigenes Gewerk
+    /// (Rohr, Formteil, Armatur …) ohne Systemtyp über ihr Medium (Christian 02.11.2026: «leitungen gehören einem medium»).</summary>
     public static string? Gewerk(Modell m, Katalog k, Element e)
     {
         var sys = m.Finde(e.System) ?? Netz.SystemeVon(m, e).FirstOrDefault();
         if (sys?.Text("systemtyp") is { } typ && k.Systemtypen.TryGetValue(typ, out var st)) return st.Gewerk;
-        return k.Klassen.TryGetValue(e.Klasse, out var d) ? d.Gewerk : null;
+        if (k.Klassen.TryGetValue(e.Klasse, out var d) && d.Gewerk is { } g) return g;
+        return MediumGewerk(k, sys?.Text("medium") ?? e.Text("medium"));
+    }
+
+    static string? MediumGewerk(Katalog k, string? medium) =>
+        medium is { Length: > 0 } && k.Medien.TryGetValue(medium, out var md) && md.Gewerk is { Length: > 0 } g ? g : null;
+
+    /// <summary>Alle Gewerke eines Elements für die Filter der Ansichten (Grundriss, Schnitt, PDF, 3D) und der Montageabschnitte: Gewerk der
+    /// Klasse und das seines Systems (Systemtyp, sonst Medium); ohne eigenes System die Systeme der direkt verbundenen Elemente (ein Gerät
+    /// zwischen zwei Gewerken gehört zu beiden – dieselbe Regel wie im Schema, SchemaGraph.GewerkeVon); ohne jedes System das eigene Medium.
+    /// Leer = kein Gewerk bekannt.</summary>
+    public static List<string> Gewerke(Modell m, Katalog k, Element e)
+    {
+        var l = new List<string>(2);
+        void Dazu(string? g) { if (g is { Length: > 0 } && !l.Contains(g = KaelteAlias.Gewerk(g))) l.Add(g); }
+        if (k.Klassen.TryGetValue(e.Klasse, out var d)) Dazu(d.Gewerk);
+        List<Element> systeme = e.System is not null ? (m.Finde(e.System) is { } eigen ? [eigen] : []) : Netz.SystemeVon(m, e);
+        foreach (var sys in systeme)
+            Dazu(sys.Text("systemtyp") is { } typ && k.Systemtypen.TryGetValue(typ, out var st) ? st.Gewerk : MediumGewerk(k, sys.Text("medium")));
+        if (systeme.Count == 0) Dazu(MediumGewerk(k, e.Text("medium")));
+        return l;
+    }
+
+    /// <summary>Zeigt ein Gewerkefilter (null = alle) das Element? Ja, wenn kein Gewerk bekannt ist, eines «allgemein» ist oder eines gewählt ist.</summary>
+    public static bool GewerkGewaehlt(Modell m, Katalog k, Element e, IReadOnlySet<string>? gewaehlt)
+    {
+        if (gewaehlt is null) return true;
+        var gw = Gewerke(m, k, e);
+        return gw.Count == 0 || gw.Any(g => g == "allgemein" || gewaehlt.Contains(g));
     }
 
     public static JsonObject Raumliste(Projekt p, string? geschoss = null)

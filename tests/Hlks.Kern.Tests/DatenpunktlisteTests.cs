@@ -28,4 +28,23 @@ public class DatenpunktlisteTests
             Assert.Equal((int)a["anzahl"]!, a["jeSignal"]!.AsObject().Sum(x => (int)x.Value!));
         Assert.True(nachEins > vorher);
     }
+
+    [Fact]
+    public void Datenpunktliste_AnlageUeberNachbarsystem_UndNurAnlagenAlsFilter()
+    {
+        var p = AnsichtSichtbarkeitTests.Neu();
+        var rohr = AnsichtSichtbarkeitTests.Anlegen(p, new JsonObject { ["klasse"] = "Rohr", ["kennzeichen"] = "KW-1", ["system"] = "S-KW", ["geschoss"] = "EG",
+            ["eigenschaften"] = new JsonObject { ["dn"] = 32 }, ["geometrie"] = AnsichtSichtbarkeitTests.Linie([0, 0, 2500], [4000, 0, 2500]) });
+        // Pumpe ohne eigenes System (freiwillig), am Rohr angeschlossen: ihre Anlage ist die des Rohrs
+        var pumpe = AnsichtSichtbarkeitTests.Anlegen(p, new JsonObject { ["klasse"] = "Pumpe", ["kennzeichen"] = "P-1", ["geschoss"] = "EG", ["eigenschaften"] = new JsonObject { ["dn"] = 32 } });
+        var v = p.Ausfuehren("verbinden", new JsonObject { ["von"] = "KW-1.ende", ["nach"] = "P-1" });
+        Assert.True(v.Angenommen, v.Fehler);
+        Assert.Equal("A-1", Datenpunktliste.AnlageVon(p.Modell, pumpe)?.Kennzeichen);
+        Assert.True(p.Ausfuehren("datenpunkte_vorschlagen", new JsonObject { ["anlage"] = "A-1" }).Angenommen);
+        var liste = (JsonObject)Tuer.Abfrage(p, "datenpunktliste", new JsonObject { ["anlage"] = "A-1" });
+        Assert.Equal(3, (int)liste["anzahl"]!);   // Betrieb, Störung, Ein/Aus der Pumpe – vorher «ohne Anlage» und damit 0
+        // ein System ist keine Anlage: Meldung statt stiller leerer Liste
+        Assert.Contains("kein Anlage", Assert.Throws<HlksFehler>(() => Tuer.Abfrage(p, "datenpunktliste", new JsonObject { ["anlage"] = "S-KW" })).Message);
+        Assert.False(p.Ausfuehren("datenpunkte_vorschlagen", new JsonObject { ["anlage"] = "S-KW" }).Angenommen);
+    }
 }

@@ -27,6 +27,8 @@ public static class Darstellung
             ["schicht"] = d?.Schicht,
             ["rolle"] = d?.Rolle,
             ["gewerk"] = Ableitungen.Gewerk(m, k, e),
+            // alle Gewerke des Elements für den Gewerkefilter der Ansichten (filter.js) – dieselbe Regel wie Grafik.Sichtbar
+            ["gewerke"] = new JsonArray(Ableitungen.Gewerke(m, k, e).Select(g => (JsonNode)JsonValue.Create(g)!).ToArray()),
             ["basis"] = d is null || d.Linie.Count == 0 ? null : d.Linie[0],
             ["medium"] = medium,
             ["farbe"] = md?.FarbeHex,

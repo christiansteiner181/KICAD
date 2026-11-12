@@ -17,6 +17,7 @@ import { esc, knoten, vergleichen, gewerkeListe, aufElement, freiesKennzeichen, 
 import { systemGewerk } from './projektbrowser-gliederung.js';
 import { anlageMitGewerk, anlagenVorne } from './sanitaer-anlage.js';
 import { MODI, MODUS_NAMEN, ARTEN as IFC_ARTEN, ifcModus } from '../ansichten/ifc-darstellung.js';
+import { duplikatParameter, vorlageEigenschaften } from './ansicht-logik.js';
 import { steuerung as gesten } from '../gesten/gesten-steuerung.js';   // Grundschalter «Gesten» (Modul G); gesten.js selbst wird erst beim Einschalten geladen
 
 const MASSSTAEBE = [10, 20, 50, 100, 200, 500];
@@ -103,7 +104,9 @@ function ansichtFormular(art) {
     const t = v.werte ?? {};
     if (t.massstab && q('.f-massstab')) q('.f-massstab').value = String(t.massstab);
     if (t.detailgrad && q('.f-detail')) q('.f-detail').value = t.detailgrad;
-    if (Array.isArray(t.gewerke)) w.querySelectorAll('.f-gewerke input').forEach((c) => { c.checked = t.gewerke.includes(c.value); });
+    // Vorlage ohne Gewerkefilter zeigt alle Gewerke: die Haken fallen weg (sonst bekäme die neue Ansicht den Filter der Vorgabe)
+    const g = Array.isArray(t.gewerke) ? t.gewerke : [];
+    w.querySelectorAll('.f-gewerke input').forEach((c) => { c.checked = g.includes(c.value); });
   });
   vorschlag();
   return w;
@@ -133,12 +136,7 @@ async function ansichtAnlegen(art) {
   }
   if (art === 'grundriss') eig.massstab = Number(q('.f-massstab').value);
   const v = element(q('.f-vorlage')?.value);
-  if (v) {
-    eig.ansichtsvorlage = v.kennzeichen;
-    if (v.werte?.schnitthoehe !== undefined && art === 'grundriss') eig.schnitthoehe = v.werte.schnitthoehe;
-    if (v.werte?.schnitthoeheNachSia !== undefined && art === 'grundriss') eig.schnitthoeheNachSia = v.werte.schnitthoeheNachSia;   // N21
-    if (Array.isArray(v.werte?.klassenAusblenden)) eig.klassenAusblenden = v.werte.klassenAusblenden;
-  }
+  if (v) Object.assign(eig, vorlageEigenschaften(v, art));
   const param = { klasse: 'Ansicht', kennzeichen: kz, name: q('.f-name').value.trim(), eigenschaften: eig };
   if (art === 'grundriss') param.geschoss = q('.f-geschoss').value;
   const r = await sende('element_anlegen', param);
@@ -166,9 +164,7 @@ registrieren({
     const a = ansichtVon(p);
     const kz = freiesKennzeichen(a.kennzeichen);
     const name = freierName(`${anzeigeName(a)} – Kopie`, ansichten().map((x) => x.name || x.kennzeichen));
-    const param = { klasse: 'Ansicht', kennzeichen: kz, name, eigenschaften: werteKopie(a) };
-    if (a.geschoss) param.geschoss = a.geschoss;
-    const r = await sende('element_anlegen', param);
+    const r = await sende('element_anlegen', duplikatParameter(a, kz, name));   // samt Schnittlinie (Schnitt, Ansicht)
     if (!ergebnisMelden(r, `Ansicht «${name}» angelegt.`)) return;
     if (a.werte?.vorlage !== true && await aufElement(kz)) await fenster.ansichtOeffnen(kz);
   },
@@ -440,7 +436,7 @@ function raeumeVon(p) {
 }
 /** Die 3D-Ansicht für «Raum im 3D zeigen»: die zuletzt benutzte, sonst eine offene, sonst irgendeine (nach Kennzeichen); null = der Befehl legt eine an. */
 function ansicht3dFuerRaum() {
-  const alle = ansichten().filter((a) => a.werte?.art === '3d').sort((a, b) => vergleichen(a.kennzeichen, b.kennzeichen));
+  const alle = ansichten().filter((a) => a.werte?.art === '3d' && a.werte?.vorlage !== true).sort((a, b) => vergleichen(a.kennzeichen, b.kennzeichen));
   const offen = new Set(fenster.alle().map((o) => o.id));
   return alle.find((a) => a.kennzeichen === letzte3d) ?? alle.find((a) => offen.has(a.id)) ?? alle[0] ?? null;
 }
