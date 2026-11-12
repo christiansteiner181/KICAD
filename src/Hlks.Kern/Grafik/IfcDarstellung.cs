@@ -75,6 +75,7 @@ public static partial class IfcDarstellung
         foreach (var p in teil.Primitive)
         {
             if (p.Art is "text" or "bild") continue;
+            if (p.Stil is { NurBildschirm: true, Deckkraft: 0 }) continue;   // unsichtbare Trefferfläche (Dämmung je Element, DaemmGrafik) bleibt unsichtbar
             var n = p.Stil.Kopie();
             if (s.Farbe is { } f)
             {
