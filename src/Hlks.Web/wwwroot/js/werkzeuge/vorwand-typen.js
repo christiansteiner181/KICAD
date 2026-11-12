@@ -10,5 +10,8 @@ export async function elementtypenLaden() {
   return typen;
 }
 
+/** Breite des Elementtyps in mm (für die Vorschau); 500 wie die Vorgabe des Kerns, solange der Typ unbekannt ist. */
+export const elementBreite = (id) => typen.find((t) => t.id === id)?.breite ?? 500;
+
 /** Auswahlwerte [[id, Titel (Artikel)], …]. */
 export const elementWerte = () => typen.map((t) => [t.id, `${t.titel}${t.artikel ? ` (${t.artikel})` : ''}`]);
