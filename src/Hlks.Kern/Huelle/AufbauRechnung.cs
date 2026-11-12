@@ -111,7 +111,7 @@ public static class HuelleRechnung
                 r = s.Dicke.Value / 1000.0 / lam;
                 summe += r.Value;
                 terme.Add($"{Z(s.Dicke.Value / 1000.0)} m / {Z(lam)} W/(m·K)");
-                if (lq is not null && mat is not null && !lambdaQuellen.Any(x => x.StartsWith(mat.Kennzeichen + " ", StringComparison.Ordinal)))
+                if (lq is not null && mat is not null && !lambdaQuellen.Any(x => x.StartsWith(mat.Kennzeichen + ": ", StringComparison.Ordinal)))
                     lambdaQuellen.Add($"{mat.Kennzeichen}: {lq}");
             }
             erg.Schichten.Add(new SchichtErgebnis

@@ -157,7 +157,8 @@ public static class Raumgrenzen
         return a >= 360 ? 0 : a;
     }
 
-    public static double Nordwinkel(Modell m) => m.DerKlasse("Projektinformation").FirstOrDefault()?.Zahl("nordwinkel") ?? 0;
+    /// <summary>Nordwinkel der Projektinformation – derselben, aus der die Hülle Rsi/Rse und HKAP die Verknüpfung liest (erste nach Kennzeichen).</summary>
+    public static double Nordwinkel(Modell m) => HuelleHilfe.Projektinfo(m)?.Zahl("nordwinkel") ?? 0;
 
     /// <summary>Raum.beheizt, ohne Angabe ja (Spezifikation).</summary>
     public static bool Beheizt(Element raum) =>

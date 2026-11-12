@@ -67,13 +67,22 @@ public static class Lagen
 
     static Element? Gebaeude(Projekt p, Element g) => g.TeilVon is { } t ? p.Modell.Finde(t) : null;
 
+    static readonly System.Text.RegularExpressions.Regex Abstand = new(@"[-−–]?\s*(\d+(?:\.\d+)?)\s*(cm|mm)?",
+        System.Text.RegularExpressions.RegexOptions.IgnoreCase | System.Text.RegularExpressions.RegexOptions.Compiled);
+
+    /// <summary>Liest die Abstände «120, 240, 360». Einheit je Wert: ohne Angabe und «mm» = mm, «cm» wird umgerechnet (Christian 05.11.2026 schreibt
+    /// selbst «UKD −12cm»; vorher galt «12cm» als 12 mm). Ein Minus davor meint dasselbe («unter UK roh Decke») und zählt als Abstand – vorher fiel
+    /// der Wert still weg und die Lagen dahinter rückten um eine Nummer vor.</summary>
     static double[]? Lesen(string? t)
     {
         if (string.IsNullOrWhiteSpace(t)) return null;
-        var w = t.Split([',', ';', ' '], StringSplitOptions.RemoveEmptyEntries)
-            .Select(s => double.TryParse(s.Replace("cm", "").Replace("mm", ""), NumberStyles.Float, CultureInfo.InvariantCulture, out var v) ? v : double.NaN)
-            .Where(v => v > 0).ToArray();
-        return w.Length > 0 ? w : null;
+        var w = new List<double>();
+        foreach (System.Text.RegularExpressions.Match x in Abstand.Matches(t))
+        {
+            if (!double.TryParse(x.Groups[1].Value, NumberStyles.Float, CultureInfo.InvariantCulture, out var v) || v <= 0) continue;
+            w.Add(x.Groups[2].Value.Equals("cm", StringComparison.OrdinalIgnoreCase) ? v * 10 : v);
+        }
+        return w.Count > 0 ? [.. w] : null;
     }
 
     /// <summary>Lage eines Rohrs (1 …) aus der Höhe seiner Achse; null, wenn es kein Rohr ist, senkrecht oder keiner Lage entspricht.</summary>

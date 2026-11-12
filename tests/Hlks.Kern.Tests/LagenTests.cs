@@ -93,4 +93,16 @@ public class LagenTests
         Assert.Equal("geschoss", (string)og["lagenQuelle"]!);
         Assert.Equal([150.0], ((JsonArray)og["lagen"]!).Select(l => (double)l!["abstand"]!));
     }
+
+    /// <summary>Christian 05.11.2026: «1. Lage UKD −12cm, 2. Lage UKD −24cm» – so geschrieben sind es 120 und 240 mm, nicht 12 und 24 mm,
+    /// und das Minus lässt keine Lage wegfallen (Gesamtprüfung 13.11.2026).</summary>
+    [Fact]
+    public void Lagen_EinheitCmUndMinus_WieGeschrieben()
+    {
+        var p = Neu();
+        Ok(p.Ausfuehren("element_aendern", new JsonObject { ["element"] = "EG", ["eigenschaften"] = new JsonObject { ["ukRohdecke"] = 2700, ["lagen"] = "-12cm, −24 cm, 360, 480mm" } }));
+        var eg = Geschoss(p, "EG");
+        Assert.Equal([120.0, 240.0, 360.0, 480.0], ((JsonArray)eg["lagen"]!).Select(l => (double)l!["abstand"]!));
+        Assert.Equal(2580, (double)eg["lagen"]![0]!["hoehe"]!);   // 2700 − 120
+    }
 }
