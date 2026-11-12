@@ -139,7 +139,7 @@ if (-not $OhneFenster) {
   Start-Process ("http://localhost:$BaustellePort/baustelle/" + $(if ($pl) { "z/$($pl.schluessel)" } else { '' }))
   $text = "Testserver laeuft.`n`nPersoenliche Links (einmal am Handy/Tablet oeffnen, das Geraet bleibt angemeldet; in der Zwischenablage):`n$links" +
     "`n`nAndere Adressen dieses PCs: " + ($liste -join ', ') +
-    "`n`nDann im Browsermenue 'Zum Startbildschirm hinzufuegen'.`nKICAD des Testservers (Testprojekt): http://localhost:$Port - dort Datei > Ausgabe > 'Baustelle (Webseite)' fuer neue Webseiten`n" +
+    "`n`nDann im Browsermenue 'Zum Startbildschirm hinzufuegen'.`nKICAD des Testservers (Testprojekt): http://localhost:$Port - dort Register 'BIM to Field' fuer neue Webseiten und Zugaenge`n" +
     "und 'Rueckmeldung Baustelle' fuer die Meldungen vom Tablet.`n`nKeine Verbindung? Windows-Firewall: dotnet.exe fuer private Netzwerke zulassen."
   Hinweis $text
 }

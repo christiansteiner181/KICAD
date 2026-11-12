@@ -4307,6 +4307,10 @@ jedes neue Projekt erhält alle Mustersysteme.
   Projektleiter des Unternehmers anlegen, kopieren, entfernen; /api/baustelle/zugaenge), Rückmeldungen. Die Baustellen-Webseite startet im Grundriss, dann
   Strangschema, Prinzipschema, 3D (Christian: der Monteur orientiert sich am Grundriss – was kommt wo, wo läuft es durch –, die Schemas zeigen den Zusammenhang,
   das 3D-Modell dort, wo der Grundriss nicht alle Zusammenhänge zeigt).
+- **Baustellen-Webseite: Raum in 3D** (Christian 12.11.2026: «in den grundrissen müssen räume gewählt werden können, im kontext menü soll in die 3d ansicht
+  des raumes gewechselt werden»): Räume im Grundriss auf der ganzen Fläche antippbar. Rechtsklick bzw. 0,5 s lange antippen öffnet ein Kontextmenü
+  «Raum in 3D», «Raum wählen»; «Raum in 3D» auch als Knopf in der Info des gewählten Raums. Wechselt ins 3D, setzt das Geschoss, schneidet um den Raum
+  (Raumkasten `box3d` aus dem Export, 0,3 m Rand) und richtet die Kamera auf den Raum; «Raumschnitt aufheben» bzw. «Alles zeigen» heben den Schnitt auf.
 - **Ändern | Rohr wie Revit** (Christian 11.11.2026: «ist eine leitung angewählt soll der tab "ändern" aktiv sein», «in ändern werden auch dinge wie
   isolation angezeigt. richte dich dabei an der revit basis»): wird eine Leitung angewählt, springt das Menüband aus jedem Register auf «Ändern | Rohr»
   (nicht während ein Werkzeug läuft); beim Abwählen zurück. Neue Gruppe «Dämmung»: Dämmung hinzufügen, Dämmung bearbeiten (Art bzw. Produkt, Dicke; für
