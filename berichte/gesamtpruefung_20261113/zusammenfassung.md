@@ -12,9 +12,9 @@ führt zusammen und testet gefiltert. Einzelberichte in diesem Ordner.
 | Leitungen | 7 (Weiterzeichnen mit Gefälle bzw. Reduktion, Winkelfang geradeaus am Leitungsende, Teilen behält IFC-Kennung nur einmal, Silent-Wahl, Meldung Produktlinie, Teilen-Vorschau 3D-Länge) | leitungen.md |
 | Grafik | 3 Commits (doppelte Achslinie an gedämmten Leitungen, verdeckte Dämmkanten in Rohrfarbe fein, Kreis im Loch der Deckfläche, Verbindungsindex in DaemmGrafik, IFC-Nachbau Trefferfläche, SVG wie PDF: Strichmuster/Stärke/gedrehte Ansicht) | grafik.md |
 | Oberfläche | 5 (Kürzelliste, Kontextbefehle nur am passenden Bauteil, Rückmeldungen überschreiben sich nicht, unlesbare zugaenge.json mit Meldung, Fehlerschutz für /api) | oberflaeche.md |
-| Import, Familien, Baustelle | läuft | – |
+| Import, Familien, Baustelle | 5 Commits (Referenzkegel: 180°-Verwechslung bei zwei Kegeln, Monteur sah bei «_Monteur_» im Projektnamen Bauleitungsseiten, familie_laden übernahm «freigegeben» aus Dateien auch für KI/Import, Raum in 3D bis Oberkante Geschoss, IFC-Deckkraft 0…1, keine javascript:-Links, Grundbestand meldet fehlende Bibliothek) | import_familien_baustelle.md |
 
-Tests nach dem Zusammenführen (gefiltert): Kern 169 + 86 grün, Web 5 grün, Node 46 + 2 + 32 + 49 + 23 grün. Stand `geprueft-20261112-1748`.
+Tests nach dem Zusammenführen (gefiltert): Kern 169 + 86 grün, Web 5 grün, Node 46 + 2 + 32 + 49 + 23 grün. Nach Import/Familien/Baustelle: Kern 56, Web 6 grün (Konflikt in den Baustellen-Zugängen mit der Fassung der Oberfläche gelöst).
 
 ## Fragen an Christian (gesammelt)
 
@@ -29,4 +29,7 @@ Tests nach dem Zusammenführen (gefiltert): Kern 169 + 86 grün, Web 5 grün, No
 5. **Steigleitungen und Verdeckung**: entscheidet die mittlere Höhe oder das obere Ende?
 6. Annahmen von heute bestätigen: Dämmkante/Achsen 0.10 mm, Abwasser-Kontur 0.20 mm, Lücke grob 0.5 mm, Kreis grob min. 0.5 mm,
    Dämmung Deckkraft 0.15.
+8. **«Nachzeichnen? Nein» beim IFC-Import** (hoch): der Kern behandelt das wie «Einlesen für Familie aus IFC» – keine Prüfung der Lage, kein Abbruch bei Abweichung, die erste Datei setzt keinen Projektbezug. Widerspricht «kein Modell wird stillschweigend verschoben». Vorschlag: zwei Fälle trennen. Freigabe?
+9. **Raum in 3D**: der Schnitt reicht jetzt bis Oberkante Geschoss (vorher lichte Höhe) – so gewollt?
+10. **Landeskoordinaten in mm-Dateien**: MapUnit wird nicht gelesen (Faktor 1000 möglich, bricht dann ab statt still zu verschieben); braucht Quelle IFC4 und eine echte Prüfdatei.
 7. **λ-Werte der Dämmarten**: welche Produkte verwendet ihr (dann λ mit Quelle eintragen)?
