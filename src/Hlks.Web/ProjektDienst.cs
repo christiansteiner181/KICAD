@@ -464,7 +464,10 @@ public sealed class ProjektDienst(Einstellungen einstellungen, ILogger<ProjektDi
             if (etappe.Count >= Math.Max(1, Einstellungen.EtappeMax)) { weitere = true; break; }
             try
             {
-                vorgelesen[id] = sp.Innen.PaketLesen(id);
+                var gelesen = sp.Innen.PaketLesen(id);
+                // gültiges JSON, aber kein anwendbares Paket («{}», unbekannte Operation): wie unlesbar, mit Wartezeit und Meldung
+                if (gelesen.Mangel() is { } mangel) { UnlesbarMerken(gen, id, mangel, jetzt); continue; }
+                vorgelesen[id] = gelesen;
                 etappe.Add(id);
                 if (warten.ContainsKey(id)) lock (zustandSperre) unlesbar.Remove(id);
             }

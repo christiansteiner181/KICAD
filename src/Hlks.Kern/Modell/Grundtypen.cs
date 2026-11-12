@@ -207,6 +207,37 @@ public sealed class Paket
         o.Art.StartsWith("element") ? [o.Id] :
         new[] { o.Verbindung?.Von.Element, o.Verbindung?.Nach.Element, o.VerbindungVorher?.Von.Element, o.VerbindungVorher?.Nach.Element }
             .Where(x => x is not null).Select(x => x!)).Distinct();
+
+    /// <summary>Prüft ein aus der Ablage gelesenes Paket, bevor es angewandt wird: null = anwendbar, sonst der Mangel. Gültiges JSON mit
+    /// unbrauchbarem Inhalt (leere Datei «{}», Operation einer neueren Programmversion, von Hand verändert) würde sonst mitten im Anwenden
+    /// eine Ausnahme auslösen – das Paket wäre halb angewandt und der Abgleich bliebe daran hängen (Gesamtprüfung 13.11.2026).</summary>
+    public string? Mangel()
+    {
+        if (string.IsNullOrWhiteSpace(Id)) return "Paket ohne Id.";
+        if (Operationen is null) return "Paket ohne Operationen.";
+        for (int i = 0; i < Operationen.Count; i++)
+        {
+            var o = Operationen[i];
+            string Nr() => $"Operation {i + 1}";
+            if (o is null) return $"{Nr()} fehlt.";
+            if (string.IsNullOrEmpty(o.Id)) return $"{Nr()} ohne Id.";
+            switch (o.Art)
+            {
+                case "element.setzen":
+                    if (o.Element is null) return $"{Nr()} (element.setzen) ohne Element.";
+                    if (o.Element.Kennzeichen is null) return $"{Nr()} (element.setzen) ohne Kennzeichen.";
+                    break;
+                case "verbindung.setzen":
+                    if (o.Verbindung?.Von?.Element is null || o.Verbindung.Von.Anschluss is null
+                        || o.Verbindung.Nach?.Element is null || o.Verbindung.Nach.Anschluss is null)
+                        return $"{Nr()} (verbindung.setzen) ohne vollständige Verbindung.";
+                    break;
+                case "element.loeschen" or "verbindung.loeschen": break;
+                default: return $"{Nr()}: unbekannte Art «{o.Art}» (evtl. von einer neueren Programmversion geschrieben).";
+            }
+        }
+        return null;
+    }
 }
 
 /// <summary>Kopf des Projekts (projekt.json).</summary>
