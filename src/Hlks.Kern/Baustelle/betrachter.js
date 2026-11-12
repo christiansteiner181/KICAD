@@ -503,7 +503,10 @@
   rmZeigen(); arbeitsplan(); liste(); material(); d3Filter(); if (renderer) zeichnen();
   reiter('grundriss');   // Start im Grundriss (Christian 12.11.2026: «der monteur braucht unterschiedliche werkzeuge. primär arbeitet er mit einem grundrissplan, strang und prinzipschema.»)
   // Adresse: #d3 | #plaene | #elemente | #material, dazu ein Kennzeichen (#plaene/E.01 oder #E.01) – für Links auf ein Element
-  for (const teil of decodeURIComponent(location.hash.slice(1)).split("/").filter((x) => x)) {
+  // eine kaputte Adresse (einzelnes «%») darf den Start nicht abbrechen – dann gilt die Adresse wie geschrieben
+  let adresse = location.hash.slice(1);
+  try { adresse = decodeURIComponent(adresse); } catch { /* bleibt roh */ }
+  for (const teil of adresse.split("/").filter((x) => x)) {
     if (["d3", "plaene", "grundriss", "strang", "prinzip", "elemente", "material", "abschnitte", "meldungen"].includes(teil)) reiter(teil); else if (nachKz.has(teil)) waehlen(nachKz.get(teil));
   }
   window.kicad = { daten: D, waehlen: (kz) => waehlen(nachKz.get(kz) || null), reiter };
