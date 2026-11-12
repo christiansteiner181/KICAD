@@ -10,6 +10,7 @@
   --ol-eingabe-feld: #ffffff;
   --ol-eingabe-rand: #b5b09a;
   --ol-eingabe-platzhalter: #8a8a8a;
+  --ol-eingabe-warnung: #b7791f;   /* Warnfarbe des hellen Designs: auf dem Gelb auch im dunklen Design lesbar */
   --schrift: "Segoe UI", system-ui, -apple-system, sans-serif;
   --schrift-mono: Consolas, "Cascadia Mono", monospace;
   --schriftgroesse: 12px;
@@ -115,6 +116,7 @@
   --ol-eingabe-feld: #ffffff;
   --ol-eingabe-rand: #b5b09a;
   --ol-eingabe-platzhalter: #8a8a8a;
+  --ol-eingabe-warnung: #b7791f;   /* Warnfarbe des hellen Designs: auf dem Gelb auch im dunklen Design lesbar */
   color-scheme: dark;
   --text: #f5f5f5;
   --text-leise: #aab1bb;
