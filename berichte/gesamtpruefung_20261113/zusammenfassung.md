@@ -64,6 +64,13 @@ Paketkopie vor dem Original doppelt (B6); Vorwand spiegeln ohne gesetzte Rückse
 Nachführung bis zur Grenze (B9); Kleinigkeiten (B10). Dazu Verhaltensänderungen: Dämmdialog wählt ohne bisherige Art die erste
 Katalogart vor und speichert sie. → Korrekturrunde.
 
+**Korrekturrunde (Runde 6, 19:10):** alle elf Punkte korrigiert (gegenpruefung_korrekturen.md): B1 Eckverlängerung mit Abstand des
+Wandendes zur Achse (nur schräge Anschlüsse; Handbeispiel e = 182.84 mm), B2 Klick-Reihe nur für Mehrpunkt-Werkzeuge, B3 eingereihte
+Längeneingabe mit neuem Fang, B4 KI-Pfadprüfung für baustelle_export/ifc_export, B5 Links nur http/https/file, B6 Paketkopie vor dem
+Original, B7 Vorwand spiegeln mit Vorgabe-Rückseite, B8 Lagen je Wert als Ganzes (Unlesbares gemeldet; Werte nur mit Leerzeichen
+getrennt gelten jetzt als unlesbar), B9 Pendeln der Nachführung erkannt, B10 Kleinigkeiten, Dämmdialog «– keine Angabe –».
+Gefiltert: Kern 230, Web 3, Node 54 grün.
+
 ## Fragen an Christian (gesammelt)
 
 1. **Gefälle 2 % gegen Toleranz 1°** (Leitungen): 2 % = 1.146° – jede Verbindung einer waagrechten Achse mit einem Stück mit 2 % wird
@@ -153,3 +160,5 @@ Katalogart vor und speichert sie. → Korrekturrunde.
 **Prüfung Hauptlauf im Browser (18:00):** Rohr mit drei raschen Klicks und Esc wird vollständig angelegt (Klick-Reihe), Weiterzeichnen mit Bogen am Leitungsende kürzt die bestehende Leitung. Nebenbefund: Start an einem Anschluss verlangt zuerst Produktlinie und Höhe, obwohl der Anschluss beides vorgibt (pflichtPruefen vor dem Anschluss) – kleine Korrektur für Runde 3.
 
 Browser (Hauptlauf 18:28): 3D Gesamt im Beispielprojekt nach Runde 4 dargestellt, ohne Skriptfehler.
+
+Browser (Hauptlauf 19:12): Dämmung hinzufügen an ungedämmter Leitung zeigt «– keine Angabe –».
