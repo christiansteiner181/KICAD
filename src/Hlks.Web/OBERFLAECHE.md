@@ -4316,7 +4316,9 @@ jedes neue Projekt erhält alle Mustersysteme.
   (nicht während ein Werkzeug läuft); beim Abwählen zurück. Neue Gruppe «Dämmung»: Dämmung hinzufügen, Dämmung bearbeiten (Art bzw. Produkt, Dicke; für
   alle gewählten Leitungen in einem Paket), Dämmung entfernen; in der Gruppe «Leitung» dazu «Neigung» (Gefälle des ganzen Zugs).
   Leitungsbefehle im Kontextregister (Dämmung, Neigung, Fliessrichtung umkehren, Aufteilen) erscheinen nur bei Rohren und Kanälen, bei anderen Bauteilen
-  sind sie ausgeblendet (Christian 11.11.2026 «Ja, ausblenden»; Aktionseigenschaft `fuer`).
+  sind sie ausgeblendet (Christian 11.11.2026 «Ja, ausblenden»; Aktionseigenschaft `fuer`). Gleich seit der Gesamtprüfung 13.11.2026: «Zu T-Stück (+)»
+  nur am Bogen, «Abzweig entfernen (−)» nur am T-Stück, «Fliessrichtung ab hier» nur an Pumpe und Lüftungsgerät. Die Liste KS (Tastaturkürzel) steht
+  in der Reihenfolge der Register vom 09.11.2026.
 - **Weiterzeichnen mit Bogen** (Christian 12.11.2026: «wird an einer leitung weitergezeichnet, und es wird bsp. direkt ein 90° bogen gezeichnet, so
   muss sich die besetehnde leitung anpassen, dass dies nicht geblockt wird»): am freien Ende eines Rohrs bzw. Kanals rastet der Winkelfang auch auf die
   Bogenwinkel der Produktlinie; knickt der Zug dort ab, kürzt der Kern die bestehende Gerade um die Einbaulänge des Bogens (auch 2 × 45°), der Knick
