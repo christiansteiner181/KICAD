@@ -23,4 +23,21 @@ public class DaemmungTests
         var auswahl = Kat.Klasse("System").Eigenschaften.Single(e => e.Name == "daemmregel").Auswahl!;
         Assert.Equal(Kat.Daemmung.Namen.Order(), auswahl.Order());
     }
+
+    [Fact]
+    public void Daemmarten_Katalog_RegelNurMitLambdaUndQuelle()
+    {
+        // Christian 12.11.2026: «Dämmingsarten sollten auswählbar sein», «Ja, Katalog» – eindeutige Namen; eine λ-Klasse (Regel) nur mit λ und Quelle
+        var arten = Kat.Daemmung!.Arten;
+        Assert.NotEmpty(arten);
+        Assert.Equal(arten.Count, arten.Select(a => a.Name).Distinct().Count());
+        Assert.All(arten, a =>
+        {
+            Assert.False(string.IsNullOrWhiteSpace(a.Name));
+            if (a.Regel is not null) { Assert.NotNull(Kat.Daemmung.Regel(a.Regel)); Assert.NotNull(a.Lambda); Assert.False(string.IsNullOrWhiteSpace(a.Quelle)); }
+        });
+        // ohne λ-Klasse gilt die Regel des Systems
+        Assert.Equal("MuKEn 2014 (λ > 0,03 W/(m·K))", Kat.Daemmung.RegelFuer(arten[0].Name, "MuKEn 2014 (λ > 0,03 W/(m·K))")!.Name);
+        Assert.Null(Kat.Daemmung.RegelFuer("unbekannt", null));
+    }
 }

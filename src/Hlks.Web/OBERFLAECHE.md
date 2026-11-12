@@ -4324,6 +4324,10 @@ jedes neue Projekt erhält alle Mustersysteme.
 - **Dämmung in der Rohrfarbe** (Christian 12.11.2026: «wird die Dämmung gezeigt, so soll sie die Rohrfarbe mit transparenz erhalten»): die Dämmfläche im
   Grundriss (mittel, fein) ist transparent in der Farbe des Mediums der Leitung (bisher gelb); Formteile in der Farbe der angeschlossenen Leitung. Die
   Aussenkontur ebenfalls in der Rohrfarbe, wesentlich feiner (Stift «fein» 0.10 mm, Christian 12.11.2026), verdeckte gestrichelt. Im Detailgrad grob bleibt der gelbe Punkt.
+- **Dämmarten zur Auswahl** (Christian 12.11.2026: «Dämmingsarten sollten auswählbar sein», «Ja, Katalog»): Dämmung hinzufügen/bearbeiten bietet
+  die Dämmarten aus `kataloge/daemmung.json` (arten) zur Auswahl, «andere …» für eine freie Angabe; in der Eigenschaftspalette als Vorschlagsliste.
+  Jede Art kann eine λ-Klasse (MuKEn-Spalte) tragen – nur mit λ und Quelle aus der Herstellerunterlage; dann schlägt der Dialog die Dicke nach DN
+  vor, sonst gilt die Dämmregel des Systems. Heute sind alle λ-Klassen offen (keine Werte aus dem Gedächtnis).
 - **Kreuzende Leitungen verdeckt** (Christian 12.11.2026: «leitungen die in einem Grundriss unter einer anderen Leitung durchlaufen (inkl. Dämmung)
   müssen verdeckt dargestellt werden», «bei grob wird die verdeckte leitung unterbrochen»): unter einer höheren Leitung (Band bzw. Dämmung) ist die
   tiefere in mittel und fein ausgespart mit gestrichelten Rändern und Achse, in grob unterbrochen (Lücke je Seite 0.5 mm). Gleich hohe Leitungen

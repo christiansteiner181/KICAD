@@ -12,6 +12,7 @@ import { aufElement, freiesKennzeichen, knoten, esc } from './werkzeug.js';
 import { auswahlElemente } from '../werkzeuge/auswahl.js';
 import { planAnsicht, werkzeugStarten, werkzeugAktiv } from '../werkzeuge/basis.js';
 import { leitungWerkzeug } from '../werkzeuge/leitung.js';
+import { daemmDicke } from '../werkzeuge/optionen.js';
 import { parallelWerkzeug } from '../werkzeuge/parallel.js';
 import { fallleitungWerkzeug } from '../werkzeuge/fallleitung.js';
 import { steigleitungWerkzeug } from '../werkzeuge/steigleitung.js';
@@ -83,17 +84,41 @@ async function daemmungDialog(bearbeiten) {
   const muster = l.find((e) => dicke(e) > 0) ?? l[0];
   const sys = element(muster.system);
   const vorDicke = dicke(muster) || Number(sys?.werte?.daemmdicke) || '';
+  // Dämmarten aus dem Katalog (Christian 12.11.2026: «Dämmingsarten sollten auswählbar sein», «Ja, Katalog»); «andere …» für eine freie Angabe
+  const arten = zustand.katalog?.daemmarten ?? [];
+  const bisher = muster.werte?.daemmung ?? '';
+  const imKatalog = arten.some((a) => a.name === bisher);
   const w = knoten(`<div>
-    <label class="fz"><span>Dämmung (Art bzw. Produkt)</span><input type="text" class="d-art" value="${esc(muster.werte?.daemmung ?? '')}" placeholder="z. B. Mineralwolle alukaschiert"></label>
+    <label class="fz"><span>Dämmart</span><select class="d-wahl">
+      ${arten.map((a) => `<option value="${esc(a.name)}"${a.name === bisher || (!bisher && a === arten[0]) ? ' selected' : ''}>${esc(a.name)}</option>`).join('')}
+      <option value=""${bisher && !imKatalog ? ' selected' : ''}>andere …</option></select></label>
+    <label class="fz d-frei-zeile"${bisher && !imKatalog ? '' : ' style="display:none"'}><span>Art bzw. Produkt</span><input type="text" class="d-art" value="${esc(imKatalog ? '' : bisher)}" placeholder="z. B. Produktname des Herstellers"></label>
     <label class="fz"><span>Dämmdicke [mm]</span><input type="text" class="d-dicke" inputmode="decimal" value="${esc(String(vorDicke))}"></label>
-    <p class="leise">${l.length} Leitung(en) gewählt. Die Dicke nach Energiegesetz (MuKEn 2014) gibt die Dämmregel des Systems vor (Koordination › Anlagen und Systeme).</p></div>`);
+    <p class="leise d-regel"></p>
+    <p class="leise">${l.length} Leitung(en) gewählt. Die Dicke nach Energiegesetz (MuKEn 2014) gibt die λ-Klasse der Dämmart vor, sonst die Dämmregel des Systems (Koordination › Anlagen und Systeme).</p></div>`);
+  const wahl = w.querySelector('.d-wahl');
+  // Dicke vorschlagen: Regel der Dämmart (λ-Klasse), sonst die des Systems, mit der DN der ersten Leitung
+  const dn = Number(muster.werte?.dn) || Number(/DN\s*(\d+)/i.exec(String(muster.werte?.familientyp ?? ''))?.[1]) || 0;
+  // beim Hinzufügen gleich die Dicke vorschlagen, beim Bearbeiten erst, wenn die Art gewechselt wird (die bisherige Dicke bleibt sonst)
+  const vorschlag = (gewechselt = false) => {
+    w.querySelector('.d-frei-zeile').style.display = wahl.value !== '' ? 'none' : '';   // .fz setzt display, «hidden» griffe nicht
+    const art = arten.find((a) => a.name === wahl.value);
+    const regeln = zustand.katalog?.daemmregeln ?? [];
+    const regel = regeln.find((r) => r.name === art?.regel) ?? regeln.find((r) => r.name === sys?.werte?.daemmregel);
+    const d = regel ? daemmDicke(regel, dn) : null;
+    w.querySelector('.d-regel').textContent = art && !art.regel ? `λ-Klasse der Dämmart offen (Herstellerangabe fehlt)${regel ? ' – es gilt die Regel des Systems.' : '.'}`
+      : regel ? `Regel: ${regel.name}${d ? `, DN ${dn} → ${d} mm` : ''}.` : '';
+    if (d && (!bearbeiten || gewechselt)) w.querySelector('.d-dicke').value = String(d);
+  };
+  wahl.addEventListener('change', () => vorschlag(true));
+  vorschlag();
   const ok = await zeigen({
     titel: bearbeiten ? 'Dämmung bearbeiten' : 'Dämmung hinzufügen', inhalt: w, breite: 440,
     knoepfe: [{ text: 'Abbrechen', wert: false }, { text: 'Übernehmen', wert: true, primaer: true,
       pruefen: () => { const n = Number(w.querySelector('.d-dicke').value.replace(',', '.')); return Number.isFinite(n) && n > 0 && n <= 500 ? true : 'Dämmdicke in mm eingeben (grösser als 0).'; } }],
   });
   if (ok !== true) return;
-  const art = w.querySelector('.d-art').value.trim();
+  const art = wahl.value || w.querySelector('.d-art').value.trim();
   await daemmungSetzen(l, { daemmdicke: Math.round(Number(w.querySelector('.d-dicke').value.replace(',', '.'))), daemmung: art || null });
 }
 

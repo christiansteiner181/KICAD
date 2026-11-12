@@ -8,28 +8,121 @@
       "name": "MuKEn 2014 (λ > 0,03 W/(m·K))",
       "spalte": "λ > 0,03 W/(m·K) bis λ ≤ 0,05 W/(m·K)",
       "stufen": [
-        { "dnVon": 10, "dnBis": 15, "dicke": 40 },
-        { "dnVon": 20, "dnBis": 32, "dicke": 50 },
-        { "dnVon": 40, "dnBis": 50, "dicke": 60 },
-        { "dnVon": 65, "dnBis": 80, "dicke": 80 },
-        { "dnVon": 100, "dnBis": 150, "dicke": 100 },
-        { "dnVon": 175, "dnBis": 200, "dicke": 120 }
+        {
+          "dnVon": 10,
+          "dnBis": 15,
+          "dicke": 40
+        },
+        {
+          "dnVon": 20,
+          "dnBis": 32,
+          "dicke": 50
+        },
+        {
+          "dnVon": 40,
+          "dnBis": 50,
+          "dicke": 60
+        },
+        {
+          "dnVon": 65,
+          "dnBis": 80,
+          "dicke": 80
+        },
+        {
+          "dnVon": 100,
+          "dnBis": 150,
+          "dicke": 100
+        },
+        {
+          "dnVon": 175,
+          "dnBis": 200,
+          "dicke": 120
+        }
       ]
     },
     {
       "name": "MuKEn 2014 (λ ≤ 0,03 W/(m·K))",
       "spalte": "λ ≤ 0,03 W/(m·K)",
       "stufen": [
-        { "dnVon": 10, "dnBis": 15, "dicke": 30 },
-        { "dnVon": 20, "dnBis": 32, "dicke": 40 },
-        { "dnVon": 40, "dnBis": 50, "dicke": 50 },
-        { "dnVon": 65, "dnBis": 80, "dicke": 60 },
-        { "dnVon": 100, "dnBis": 150, "dicke": 80 },
-        { "dnVon": 175, "dnBis": 200, "dicke": 80 }
+        {
+          "dnVon": 10,
+          "dnBis": 15,
+          "dicke": 30
+        },
+        {
+          "dnVon": 20,
+          "dnBis": 32,
+          "dicke": 40
+        },
+        {
+          "dnVon": 40,
+          "dnBis": 50,
+          "dicke": 50
+        },
+        {
+          "dnVon": 65,
+          "dnBis": 80,
+          "dicke": 60
+        },
+        {
+          "dnVon": 100,
+          "dnBis": 150,
+          "dicke": 80
+        },
+        {
+          "dnVon": 175,
+          "dnBis": 200,
+          "dicke": 80
+        }
       ]
     }
   ],
   "annahmen": [
-    "ANNAHME (Hauptlauf 09.11.2026): Eine DN zwischen zwei Stufen der Tabelle (z. B. DN 16–19) gilt wie die nächstgrössere Stufe; DN unter 10 wie DN 10–15. Über DN 200 nennt die MuKEn keinen Wert – keine Vorgabe, Hinweis."
+    "ANNAHME (Hauptlauf 09.11.2026): Eine DN zwischen zwei Stufen der Tabelle (z. B. DN 16–19) gilt wie die nächstgrössere Stufe; DN unter 10 wie DN 10–15. Über DN 200 nennt die MuKEn keinen Wert – keine Vorgabe, Hinweis.",
+    "Dämmarten (Christian 12.11.2026: «Dämmingsarten sollten auswählbar sein», «Ja, Katalog»): Liste der gängigen Arten ohne Hersteller. Die λ-Klasse (regel) ist je Art erst gesetzt, wenn λ mit Quelle (Herstellerunterlage) eingetragen ist – keine Werte aus dem Gedächtnis (Hauptlauf 12.11.2026). Ohne regel gilt die Dämmregel des Systems."
+  ],
+  "arten": [
+    {
+      "name": "Mineralwolle-Rohrschale, alukaschiert",
+      "regel": null,
+      "lambda": null,
+      "quelle": null,
+      "hinweis": "λ-Klasse offen: λ des Produkts aus der Herstellerunterlage eintragen (lambda, quelle) und die passende Regel setzen. Bis dahin gilt die Dämmregel des Systems."
+    },
+    {
+      "name": "Mineralwolle-Rohrschale mit PVC-Mantel",
+      "regel": null,
+      "lambda": null,
+      "quelle": null,
+      "hinweis": "λ-Klasse offen: λ des Produkts aus der Herstellerunterlage eintragen (lambda, quelle) und die passende Regel setzen. Bis dahin gilt die Dämmregel des Systems."
+    },
+    {
+      "name": "Synthesekautschuk (Elastomer), geschlossenzellig",
+      "regel": null,
+      "lambda": null,
+      "quelle": null,
+      "hinweis": "λ-Klasse offen: λ des Produkts aus der Herstellerunterlage eintragen (lambda, quelle) und die passende Regel setzen. Bis dahin gilt die Dämmregel des Systems."
+    },
+    {
+      "name": "PE-Schaum (Polyethylen)",
+      "regel": null,
+      "lambda": null,
+      "quelle": null,
+      "hinweis": "λ-Klasse offen: λ des Produkts aus der Herstellerunterlage eintragen (lambda, quelle) und die passende Regel setzen. Bis dahin gilt die Dämmregel des Systems."
+    },
+    {
+      "name": "PIR/PUR-Hartschaumschale",
+      "regel": null,
+      "lambda": null,
+      "quelle": null,
+      "hinweis": "λ-Klasse offen: λ des Produkts aus der Herstellerunterlage eintragen (lambda, quelle) und die passende Regel setzen. Bis dahin gilt die Dämmregel des Systems."
+    },
+    {
+      "name": "Mineralwolle-Matte, alukaschiert (Kanäle)",
+      "regel": null,
+      "lambda": null,
+      "quelle": null,
+      "hinweis": "λ-Klasse offen: λ des Produkts aus der Herstellerunterlage eintragen (lambda, quelle) und die passende Regel setzen. Bis dahin gilt die Dämmregel des Systems."
+    }
   ]
 }

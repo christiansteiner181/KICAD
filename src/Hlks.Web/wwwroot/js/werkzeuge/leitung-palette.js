@@ -8,7 +8,7 @@
 // Die Bausteine zeile/gruppe/nurLesen liefert eigenschaften.js (Parameter H), damit das Aussehen einheitlich bleibt.
 
 import { esc } from './schicht.js';
-import { element } from '../zustand.js';
+import { element, zustand } from '../zustand.js';
 import { groessenListe, hatSerie, istLeitungsklasse, istFormteilklasse, kategorieVon, mmText } from './leitung-logik.js';
 import { istFrei, istRechteck, istAbwasser, nachAussendurchmesser, groessenOptionen, rasterVorschlag, groesseAnzeige, freiHinweis, abwasserHinweis, beschriftungVon, zahlText } from './leitung-frei.js';
 
@@ -108,7 +108,9 @@ export function leitungGruppe(d, H) {
   // kommenden Leitungen (Christian 09.11.2026: «wird beim zeichnen ein lagewechsel vorgenommen, gilt dies nur für die kommenden leitungen»)
   if (h !== null && d.zeichnen) zeilen.push(H.zeile('Höhe', H.nurLesen(`${zahl(h)} mm`), { titel: 'Höhe des gezeichneten Teils. Ein Lage- bzw. Höhenwechsel beim Zeichnen (Optionsleiste) gilt nur für die kommenden Leitungen; zum Ändern dieses Teils das Werkzeug beenden und das Teil anwählen.' }));
   else if (h !== null) zeilen.push(H.zeile('Höhe', `<input type="text" inputmode="decimal" data-ziel="lt:hoehe" data-typ="zahl" value="${esc(zahl(h))}"><span class="ep-einheit">mm</span>`, { titel: 'Höhe der Achse am Anfang über OK Geschoss: hebt bzw. senkt den Leitungszug; an T-Stücken und Geräten entsteht ein Versatz' }));;
-  zeilen.push(H.zeile('Dämmung', `<input type="text" data-ziel="eig:daemmung" data-typ="text" value="${esc(wertVon(l, 'daemmung') ?? '')}" placeholder="Art / Produkt">`, { titel: 'Art der Dämmung' }));
+  // Dämmarten aus dem Katalog zur Auswahl, freie Angabe bleibt möglich (Christian 12.11.2026: «Dämmingsarten sollten auswählbar sein»)
+  const arten = (zustand.katalog?.daemmarten ?? []).map((a) => `<option value="${esc(a.name)}"></option>`).join('');
+  zeilen.push(H.zeile('Dämmung', `<input type="text" list="lp-daemmarten" data-ziel="eig:daemmung" data-typ="text" value="${esc(wertVon(l, 'daemmung') ?? '')}" placeholder="Art wählen …"><datalist id="lp-daemmarten">${arten}</datalist>`, { titel: 'Art der Dämmung (Katalog oder freie Angabe)' }));
   zeilen.push(H.zeile('Dämmdicke', `<input type="text" inputmode="decimal" data-ziel="eig:daemmdicke" data-typ="zahl" value="${esc(zahl(wertVon(l, 'daemmdicke')))}"><span class="ep-einheit">mm</span>`, { titel: 'Dämmdicke (zweite Kontur im Plan)' }));
   const zt = zugText(zug);
   if (zt) zeilen.push(H.zeile('Leitungszug', H.nurLesen(zt), { titel: 'Zusammenhängende Leitungen über Bögen und Reduktionen bis zum nächsten T-Stück, Gerät oder offenen Ende', klasse: 'klein' }));

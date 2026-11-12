@@ -29,6 +29,17 @@ public sealed class DaemmRegel
     }
 }
 
+/// <summary>Dämmart zur Auswahl (Christian 12.11.2026: «Dämmingsarten sollten auswählbar sein», «Ja, Katalog»). Regel = λ-Spalte der MuKEn
+/// (Name einer DaemmRegel), nur mit λ und Quelle aus der Herstellerunterlage gesetzt; null = offen, es gilt die Dämmregel des Systems.</summary>
+public sealed class DaemmArt
+{
+    public string Name { get; set; } = "";
+    public string? Regel { get; set; }
+    public double? Lambda { get; set; }
+    public string? Quelle { get; set; }
+    public string? Hinweis { get; set; }
+}
+
 public sealed class DaemmKatalog
 {
     public const string Datei = "daemmung.json";
@@ -37,7 +48,12 @@ public sealed class DaemmKatalog
     public string Gilt { get; set; } = "";
     public string Hinweis { get; set; } = "";
     public List<DaemmRegel> Regeln { get; set; } = [];
+    public List<DaemmArt> Arten { get; set; } = [];
     public List<string> Annahmen { get; set; } = [];
+
+    /// <summary>Regel einer Dämmart (λ-Spalte), sonst die Regel des Systems; null, wenn keine gilt.</summary>
+    public DaemmRegel? RegelFuer(string? art, string? systemRegel) =>
+        Regel(Arten.FirstOrDefault(a => a.Name == art)?.Regel) ?? Regel(systemRegel);
 
     [JsonIgnore] public IReadOnlyList<string> Namen => Regeln.Select(r => r.Name).ToList();
 
