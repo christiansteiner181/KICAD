@@ -309,6 +309,9 @@ public sealed class Modell
     /// ohne die Kopie (ein Drittel der Arbeit).</summary>
     static readonly System.Text.Json.JsonSerializerOptions PruefsummeOptionen = PruefsummeOptionenBauen();
 
+    /// <summary>Fachlicher Inhalt eines Elements wie in der Prüfsumme (ohne Versionszähler und Paket) – zum Vergleichen zweier Stände.</summary>
+    internal static byte[] InhaltOhneVersion(Element e) => System.Text.Json.JsonSerializer.SerializeToUtf8Bytes(e, PruefsummeOptionen);
+
     static System.Text.Json.JsonSerializerOptions PruefsummeOptionenBauen()
     {
         var o = new System.Text.Json.JsonSerializerOptions(Json.Optionen)

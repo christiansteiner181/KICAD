@@ -243,16 +243,37 @@ public class RoutingNachfuehrungTests
         Gerade(p, "RO-2", [240, 0, 0], [1240, 0, 0]);
     }
 
-    /// <summary>Regel, die sich selbst endlos auslöst (setzt jedes geänderte Element erneut).</summary>
-    sealed class Endlos : INachfuehrung
+    /// <summary>Regel, die sich selbst endlos auslöst: setzt jedes geänderte Element erneut – mit immer neuem Inhalt (Zähler im Namen)
+    /// bzw. als Pendel zwischen zwei Namen.</summary>
+    sealed class Endlos(bool pendel = false) : INachfuehrung
     {
         public string Name => "endlos";
         public int Aufrufe;
         public void Nachfuehren(Kontext k, IReadOnlySet<string> geaendert, IReadOnlySet<string> geloescht)
         {
             Aufrufe++;
-            foreach (var id in geaendert) k.Setzen(k.Arbeit.Finde(id)!.Kopie());
+            foreach (var id in geaendert)
+            {
+                var e = k.Arbeit.Finde(id)!.Kopie();
+                e.Name = pendel ? (e.Name == "hin" ? "her" : "hin") : "Runde " + Aufrufe;
+                k.Setzen(e);
+            }
         }
+    }
+
+    [Fact]
+    public void Pendeln_WirdErkanntUndGemeldet_StattBisZurGrenzeZuRechnen()
+    {
+        // Gegenprüfung B9: Die Regel setzt den Namen abwechselnd «hin» und «her». Runde 1: (alt → hin), Runde 2: (hin → her), Runde 3: (her → hin),
+        // Runde 4: (hin → her) = Runde 2 → Abbruch nach 4 Aufrufen statt 500.
+        var p = MitSerie();
+        Ok(Modul3Hilfe.Rohr(p, "RO-1", "DN 25", [0, 0, 0], [1000, 0, 0]));
+        var k = new Kontext(p, p.Modell.Kopie(), new Herkunft { Art = "mensch", Akteur = "T", Zeit = DateTimeOffset.Now });
+        k.Setzen(k.Arbeit.Hole("RO-1").Kopie());
+        var regel = new Endlos(pendel: true);
+        Nachfuehrungen.Ausfuehren(k, [regel], 500);
+        Assert.Equal(4, regel.Aufrufe);
+        Assert.Contains(k.Hinweise, h => h.Contains("abgebrochen") && h.Contains("pendeln") && h.Contains("RO-1"));
     }
 
     [Fact]

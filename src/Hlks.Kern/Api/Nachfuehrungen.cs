@@ -41,23 +41,58 @@ public static class Nachfuehrungen
     public static void Ausfuehren(Kontext k, IReadOnlyList<INachfuehrung> regeln, int grenze)
     {
         int bearbeitet = 0;
+        var frueher = new Dictionary<string, int>(StringComparer.Ordinal);   // Fingerabdruck einer Runde → ihre Nummer
         for (int runde = 0; bearbeitet < k.Operationen.Count; runde++)
         {
             var neu = k.Operationen.Skip(bearbeitet).ToList();
             var geaendert = neu.Where(o => o.Art == "element.setzen").Select(o => o.Id).ToHashSet(StringComparer.Ordinal);
             var geloescht = neu.Where(o => o.Art == "element.loeschen").Select(o => o.Id).ToHashSet(StringComparer.Ordinal);
             if (geaendert.Count == 0 && geloescht.Count == 0) return;
-            if (runde >= grenze)
+            string Offen()
             {
                 var offen = geaendert.Concat(geloescht).Select(id => k.Arbeit.Finde(id)?.Kennzeichen
                     ?? neu.Last(o => o.Id == id).ElementVorher?.Kennzeichen ?? id).Distinct().Order(StringComparer.Ordinal).ToList();
-                k.Hinweise.Add($"Nachführung nach {grenze} Runden abgebrochen: die Folgeänderungen lösen einander weiter aus (zuletzt geändert: "
-                    + $"{string.Join(", ", offen.Take(5))}{(offen.Count > 5 ? " …" : "")}). Was an diesen Elementen hängt, ist nicht mehr nachgeführt – "
-                    + "Prüfbefunde ansehen (P13 nennt Anschlüsse, die auseinanderliegen) oder den Befehl rückgängig machen.");
+                return $"{string.Join(", ", offen.Take(5))}{(offen.Count > 5 ? " …" : "")}";
+            }
+            const string Ausweg = "Was an diesen Elementen hängt, ist nicht mehr nachgeführt – Prüfbefunde ansehen (P13 nennt Anschlüsse, die auseinanderliegen) oder den Befehl rückgängig machen.";
+            if (runde >= grenze)
+            {
+                k.Hinweise.Add($"Nachführung nach {grenze} Runden abgebrochen: die Folgeänderungen lösen einander weiter aus (zuletzt geändert: {Offen()}). {Ausweg}");
                 return;
+            }
+            // Pendeln (Gegenprüfung B9): Setzt eine Runde der Regeln dieselben Elemente vom selben Stand auf denselben Inhalt wie eine frühere,
+            // wiederholt sich der Ablauf – sofort aufhören und es sagen, statt bis zur Grenze (bis 2000 Runden) weiterzurechnen.
+            // Runde 0 ist der Befehl selbst (kann sehr gross sein, z. B. ein Import) und zählt nicht.
+            if (runde > 0)
+            {
+                var abdruck = Fingerabdruck(neu);
+                if (frueher.TryGetValue(abdruck, out int gleich))
+                {
+                    k.Hinweise.Add($"Nachführung nach {runde} Runden abgebrochen: die Folgeänderungen pendeln (Runde {runde} setzt dasselbe wie Runde {gleich}: {Offen()}). {Ausweg}");
+                    return;
+                }
+                frueher[abdruck] = runde;
             }
             bearbeitet = k.Operationen.Count;
             foreach (var r in regeln) r.Nachfuehren(k, geaendert, geloescht);
         }
+    }
+
+    /// <summary>Fingerabdruck der Element-Operationen einer Runde: Art, Id, Inhalt vorher und nachher (ohne Version und Paket), in der Reihenfolge der Runde.</summary>
+    static string Fingerabdruck(List<Operation> runde)
+    {
+        using var h = System.Security.Cryptography.IncrementalHash.CreateHash(System.Security.Cryptography.HashAlgorithmName.SHA256);
+        var trenner = "\n"u8.ToArray();
+        foreach (var o in runde)
+        {
+            if (o.Art is not ("element.setzen" or "element.loeschen")) continue;
+            h.AppendData(System.Text.Encoding.UTF8.GetBytes(o.Art + " " + o.Id));
+            h.AppendData(trenner);
+            if (o.ElementVorher is { } v) h.AppendData(Modell.InhaltOhneVersion(v));
+            h.AppendData(trenner);
+            if (o.Element is { } e) h.AppendData(Modell.InhaltOhneVersion(e));
+            h.AppendData(trenner);
+        }
+        return Convert.ToHexString(h.GetHashAndReset());
     }
 }
