@@ -86,6 +86,22 @@ public class RoutingZeichnenTests
     }
 
     [Fact]
+    public void Weiterzeichnen_MitBogenUndAndererGroesse_KuerztUmBogenUndReduktion()
+    {
+        // RO-1 DN 25, weiter mit DN 20 und 90°: Reduktion (Testreduktion l = 40) und Bogen DN 20 (La = 50) brauchen 90 mm am Ende von RO-1
+        var p = MitSerie();
+        Ok(Zeichnen(p, "DN 25", [[0, 0, 1000], [2000, 0, 1000]]));
+        var e = Ok(Zeichnen(p, "DN 20", [[2000, 0, 1000], [2000, 1500, 1000]], new JsonObject { ["von"] = "RO-1.ende" }));
+        Gerade(p, "RO-1", [0, 0, 1000], [1910, 0, 1000]);
+        var rd = Assert.Single(Angelegt(e, "Reduktion"));
+        IstVerbunden(p, "RO-1", "ende", rd, "a");
+        IstVerbunden(p, rd, "b", "BO-1", "a");
+        Etwa([2000, 0, 1000], Familien.Einfuegepunkt(Hole(p, "BO-1")));
+        Gerade(p, "RO-2", [2000, 50, 1000], [2000, 1500, 1000]);
+        Sauber(p);
+    }
+
+    [Fact]
     public void Weiterzeichnen_MitGefaelle_GeradeausUndMitBogen()
     {
         // Abwasser mit 2 % (Neigung der Achse 1.146° > 1°): das waagrecht gezeichnete Stück am Ende der Leitung fällt mit dem Gefälle und liegt

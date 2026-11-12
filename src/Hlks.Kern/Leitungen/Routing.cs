@@ -200,8 +200,12 @@ public static class Routing
         var boegen = plan.Teile.OfType<PlanFormteil>().ToList();
         if (boegen.Count == 0) return ende;
         var neu = anfang ? boegen[0].EinLage : boegen[^1].AusLage;
-        double kurz = (K - neu).Laenge, rest = (neu - andere).Laenge;
-        if (rest <= Anschlusslagen.AbstandMax)
+        // Andere Grösse als die bestehende Gerade: Planen setzt zwischen Gerade und Bogen eine Reduktion – auch ihre Einbaulänge wird frei gemacht
+        if (ende.Stelle.HatGroesse && !ende.Stelle.Groesse.Gleich(g)
+            && (anfang ? s.Formteil(k.Arbeit, k.Katalog, "reduktion", ende.Stelle.Groesse, g) : s.Formteil(k.Arbeit, k.Katalog, "reduktion", g, ende.Stelle.Groesse)) is { Ok: true } rw)
+            neu += (andere - K).Einheit() * rw.Geometrie!.Einbaulaenge("b");
+        double kurz = (K - neu).Laenge;
+        if ((K - andere).Laenge - kurz <= Anschlusslagen.AbstandMax)
             throw new HlksFehler($"{ende.Element.Kennzeichen} ist mit {Z((K - andere).Laenge)} mm zu kurz für den Bogen am Ende (Einbaulänge {Z(kurz)} mm).",
                 "Die bestehende Leitung verlängern oder den Bogen weiter vorne setzen.");
 
