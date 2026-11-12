@@ -73,9 +73,11 @@ public class ProtokollTests
             // Nachtrag 21.10.2026: der Abbruch (CancellationToken) von leitungsserie ist kein Werkzeugparameter
             var serie = werkzeuge.Single(t => t["name"]!.GetValue<string>() == "leitungsserie");
             Assert.Equal(["familie"], serie["inputSchema"]!["properties"]!.AsObject().Select(x => x.Key).ToArray());
-            var erwartet = Abfragen.Liste.Select(a => a.Name).Concat(Projekt.Anlegen(Kat, null, "x", "x", "x").Befehle.Alle.Select(b => b.Name))
-                .Concat(["rueckgaengig", "wiederholen", "synchronisieren", "kontext_bild"]).Order().ToList();   // kontext_bild: Sitzungswerkzeug (Modul 3c)
-            Assert.Equal(erwartet, namen.Order().ToList());
+            // Der Server listet genau seine Werkzeuge (Abfragen, Befehle, Sitzungswerkzeuge und seit 10.11.2026 das 2D-CAD «Zeichnung»); woraus
+            // sich diese Liste zusammensetzt, prüft SicherheitTests.Werkzeugauswahl_Lesen_UndAlle.
+            Assert.Equal(Werkzeugauswahl.Alle(), namen.Order(StringComparer.Ordinal).ToList());
+            Assert.Contains("projekt_ueberblick", namen);
+            Assert.Contains("zeichnung_oeffnen", namen);
 
             var aufruf = g.Anfrage("tools/call", new JsonObject { ["name"] = "projekt_ueberblick", ["arguments"] = new JsonObject() });
             var inhalt = aufruf["result"]!["content"]!.AsArray().Select(c => c!["text"]!.GetValue<string>()).First();

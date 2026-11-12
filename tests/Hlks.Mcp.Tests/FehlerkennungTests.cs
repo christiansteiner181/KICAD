@@ -96,7 +96,7 @@ public class FehlerkennungTests(ITestOutputHelper aus)
         // Alle Werkzeuge mit Parametern aus ihrer Methode (Name und Typ wie im Schema); Pflichtparameter erzwingen die Ablehnung:
         // Text = ein Pfad ausserhalb der erlaubten Wurzeln (für Pfade: Pfadprüfung; für Elemente, Klassen, Namen: «gibt es nicht»), Zahl 1,
         // JSON = derselbe Pfad als Text (Liste bei unterlagen). Wo es trockenlauf gibt, true – nichts wird gespeichert.
-        var werkzeuge = new[] { typeof(Werkzeuge), typeof(SitzungWerkzeuge) }.SelectMany(t => t.GetMethods())
+        var werkzeuge = new[] { typeof(Werkzeuge), typeof(SitzungWerkzeuge), typeof(ZeichnungWerkzeuge) }.SelectMany(t => t.GetMethods())
             .Select(m => (Name: m.GetCustomAttribute<McpServerToolAttribute>()?.Name, Methode: m)).Where(x => x.Name is not null)
             .OrderBy(x => x.Name, StringComparer.Ordinal).ToList();
         Assert.Equal(Werkzeugauswahl.Alle(), werkzeuge.Select(x => x.Name!).ToList());

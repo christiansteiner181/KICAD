@@ -39,8 +39,11 @@ public class WerkzeugAbzweigwinkelTests
         var lage = ts["lage"]!.AsArray().Select(x => x!.GetValue<double>()).ToArray();
         Assert.Equal(2844.437, lage[0], 2);
         Assert.Equal(90155.563, lage[1], 2);
-        // Winkel, den die Serie nicht hat: abgelehnt mit den verfügbaren
-        var n = Json(w.LeitungAbzweigenWerkzeug("SWX-1", Elem("[1000, 90000, 1000]"), winkel: 60, seite: Elem("[0, 1, 0]"), laenge: 1000));
+        // Winkel, den die Serie nicht hat: bis 30° daneben auf den nächsten angepasst mit Hinweis (Christian 06.11.2026 «passe die abzweigewinkel
+        // automatisch an»), weiter daneben abgelehnt mit den verfügbaren
+        var an = Json(w.LeitungAbzweigenWerkzeug("SWX-1", Elem("[2000, 90000, 1000]"), winkel: 60, seite: Elem("[0, 1, 0]"), laenge: 1000, trockenlauf: true));
+        Assert.Contains(an["hinweise"]!.AsArray(), h => h!.GetValue<string>().Contains("gesetzt 45°"));
+        var n = Json(w.LeitungAbzweigenWerkzeug("SWX-1", Elem("[1000, 90000, 1000]"), winkel: 10, seite: Elem("[0, 1, 0]"), laenge: 1000));
         Assert.False(n["angenommen"]!.GetValue<bool>());
         Assert.Contains("verfügbar: 45°, 88.5°", n["fehler"]!.GetValue<string>());
     }
