@@ -21,6 +21,8 @@ Tests nach dem Zusammenführen (gefiltert): Kern 169 + 86 grün, Web 5 grün, No
 | Bereich | Korrekturen | Bericht |
 |---|---|---|
 | Leitungen 2 | 4 (Parallele Leitung auf der Seite des angeklickten Stücks statt des ersten, eckige Lüftungs-Steigleitungen mit querDrehung, Dämmdicke < 0.5 mm nicht als «entfernt», Meldung Bogenwinkel) | leitungen2.md |
+| Verdeckung | gebaut: Höhe an der Kreuzung statt Höhenspanne der ganzen Leitung (Gefälle, Etagen; neu Kreuzungshoehe.cs, auch für Dämmkanten), Index Element → Verbindungen im Modell (Leistung) | verdeckung.md |
+| Oberfläche 2 | 4 (Klick während laufender Abfrage wird eingereiht statt verworfen, weiteres Esc beendet bei hängendem Server nach 5 s, Raster rundet nicht auf Länge 0, Mehrfachauswahl «verschieden» auch bei Auswahl/Häkchen, Kennzeichen bleibt bei «System weitergeben», Serien-PDF «Fertig», Lesbarkeit gelbe Leiste) | oberflaeche2.md |
 
 ## Fragen an Christian (gesammelt)
 
@@ -40,4 +42,10 @@ Tests nach dem Zusammenführen (gefiltert): Kern 169 + 86 grün, Web 5 grün, No
 10. **Landeskoordinaten in mm-Dateien**: MapUnit wird nicht gelesen (Faktor 1000 möglich, bricht dann ab statt still zu verschieben); braucht Quelle IFC4 und eine echte Prüfdatei.
 11. **Parallele «oben/unten» an Zügen mit Steigstück**: heute nur in z versetzt – senkrechtes Stück deckungsgleich, 45°-Stück nur 0.71 · Abstand. Gehrung in 3D oder solche Züge ablehnen?
 12. **Nachführen beim Verschieben**: «gedreht» wird gegen die bisherige Richtung gemessen, nicht gegen die Anschlussachse – viele kleine Schritte (je < 1°) summieren sich zu einer Schieflage (hängt mit Frage 1 zusammen).
+13. **Formteile und Steigleitungsringe als Deckfläche** bei Kreuzungen (heute verdecken nur waagrechte Leitungen)?
+14. **Shift + Anschluss**: Shift zieht einen Anschluss bis 10 px auf die Flucht und übernimmt trotzdem die Anschlussdaten. Anschluss immer in echter Lage, Fluchtpunkt mit eigenem Namen?
+15. **Esc im Textfeld des Textwerkzeugs** übernimmt den Text statt abzubrechen – abbrechen?
+16. **Esc bei hängendem Server**: zweites Esc beendet das Werkzeug nach 5 s offener Anfrage – passt 5 s auch über VPN?
 7. **λ-Werte der Dämmarten**: welche Produkte verwendet ihr (dann λ mit Quelle eintragen)?
+
+**Prüfung Hauptlauf im Browser (18:00):** Rohr mit drei raschen Klicks und Esc wird vollständig angelegt (Klick-Reihe), Weiterzeichnen mit Bogen am Leitungsende kürzt die bestehende Leitung. Nebenbefund: Start an einem Anschluss verlangt zuerst Produktlinie und Höhe, obwohl der Anschluss beides vorgibt (pflichtPruefen vor dem Anschluss) – kleine Korrektur für Runde 3.
