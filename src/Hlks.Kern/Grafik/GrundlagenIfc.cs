@@ -45,14 +45,14 @@ public sealed class GrundlagenIfc : IGrundlagenArt
         {
             Id = unterlage.Id, Ebene = "grundlage",
             // IFC 1:1 (Christian 02.11.2026): ohne eigene Farbe an der Unterlage die Farben aus dem IFC
-            Teile = [new Koerperteil { Art = "netz", Quelle = unterlage.Id, Material = "sonst", Farbe = IfcDarstellung.Farbe(unterlage, "farbeOriginal") ?? Farbe, Deckkraft = unterlage.Zahl("deckkraft") ?? VorgabeDeckkraft,
+            Teile = [new Koerperteil { Art = "netz", Quelle = unterlage.Id, Material = "sonst", Farbe = IfcDarstellung.Farbe(unterlage, "farbeOriginal") ?? Farbe, Deckkraft = IfcDarstellung.Deckkraft(unterlage, "deckkraft") ?? VorgabeDeckkraft,
                 IfcFarben = IfcDarstellung.Farbe(unterlage, "farbeOriginal") is null ? true : null }],
         };
     }
 
     /// <summary>Stil des Originals: dünn, Farbe farbeOriginal (Vorgabe grau), Deckkraft der Unterlage (Vorgabe 0.5).</summary>
     static Stil OriginalStil(Element unterlage) =>
-        new() { Stift = Stifte.Duenn, Farbe = IfcDarstellung.Farbe(unterlage, "farbeOriginal") ?? Farbe, Deckkraft = unterlage.Zahl("deckkraft") ?? VorgabeDeckkraft };
+        new() { Stift = Stifte.Duenn, Farbe = IfcDarstellung.Farbe(unterlage, "farbeOriginal") ?? Farbe, Deckkraft = IfcDarstellung.Deckkraft(unterlage, "deckkraft") ?? VorgabeDeckkraft };
 
     /// <summary>Schnitt und Ansicht (N12): das Original aller Produkte, geschnitten mit der Schnittebene w = 0, als Linienzüge (u, v) dünn in der
     /// Farbe des Originals. Nur wenn die Ansicht das Original zeigt (ifcDarstellung original oder beide). Annahme: die Ansicht (ohne
