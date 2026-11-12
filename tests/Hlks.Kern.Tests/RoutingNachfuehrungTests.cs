@@ -213,4 +213,61 @@ public class RoutingNachfuehrungTests
         }));
         Assert.Contains(Befunde(p, "P16"), b => b.Element == "RO-2" && b.Schwere == "fehler");
     }
+
+    /// <summary>Gesamtprüfung 12.11.2026: sechs Reduktionen DN 25/20 (l = 40, FIKTIV) direkt aneinander, abwechselnd gewendet (0 … 240 mm),
+    /// davor RO-1 (−1000 … 0), dahinter RO-2 (240 … 1240, Ende frei). Bis dahin endete die Nachführung nach 5 Runden: RE-6 und RO-2 blieben
+    /// stehen, das Netz riss ohne Hinweis.</summary>
+    [Fact]
+    public void KetteAusSechsFormteilen_FolgtGanz_BisZurLeitungDahinter()
+    {
+        var p = MitSerie();
+        Ok(Modul3Hilfe.Rohr(p, "RO-1", "DN 25", [-1000, 0, 0], [0, 0, 0]));
+        Ok(Modul3Hilfe.Rohr(p, "RO-2", "DN 25", [240, 0, 0], [1240, 0, 0]));
+        for (int i = 1; i <= 6; i++)
+        {
+            bool gewendet = i % 2 == 0;   // ungerade: a (DN 25) vorn bei 40·(i−1); gerade: a hinten bei 40·i
+            double x = gewendet ? 40 * i : 40 * (i - 1);
+            Ok(Formteil(p, "fam-test-reduktion", "DN 25/20", $"RE-{i}", [x, 0, 0], x: gewendet ? [-1, 0, 0] : [1, 0, 0], z: [0, 0, 1]));
+        }
+        void V(string von, string nach) => Ok(p.Ausfuehren("verbinden", new JsonObject { ["von"] = von, ["nach"] = nach }));
+        V("RO-1.ende", "RE-1.a");
+        for (int i = 1; i < 6; i++) V($"RE-{i}.{(i % 2 == 1 ? "b" : "a")}", $"RE-{i + 1}.{(i % 2 == 1 ? "b" : "a")}");
+        V("RE-6.a", "RO-2.anfang");
+
+        var e = Ok(p.Ausfuehren("elemente_verschieben", new JsonObject { ["elemente"] = new JsonArray("RO-1"), ["dy"] = 100 }));
+        for (int i = 1; i <= 6; i++) Etwa(100, Hole(p, $"RE-{i}").Geometrie!.Punkte[0][1], 1e-6, $"RE-{i}");
+        Gerade(p, "RO-2", [240, 100, 0], [1240, 100, 0]);
+        Assert.DoesNotContain(e.Hinweise, h => h.Contains("abgebrochen"));
+        Assert.Empty(Befunde(p, "P13"));
+        Ok(p.Rueckgaengig());
+        Gerade(p, "RO-2", [240, 0, 0], [1240, 0, 0]);
+    }
+
+    /// <summary>Regel, die sich selbst endlos auslöst (setzt jedes geänderte Element erneut).</summary>
+    sealed class Endlos : INachfuehrung
+    {
+        public string Name => "endlos";
+        public int Aufrufe;
+        public void Nachfuehren(Kontext k, IReadOnlySet<string> geaendert, IReadOnlySet<string> geloescht)
+        {
+            Aufrufe++;
+            foreach (var id in geaendert) k.Setzen(k.Arbeit.Finde(id)!.Kopie());
+        }
+    }
+
+    [Fact]
+    public void Rundengrenze_EndlosRegel_HoertAufUndMeldetEs()
+    {
+        var p = MitSerie();
+        Ok(Modul3Hilfe.Rohr(p, "RO-1", "DN 25", [0, 0, 0], [1000, 0, 0]));
+        var k = new Kontext(p, p.Modell.Kopie(), new Herkunft { Art = "mensch", Akteur = "T", Zeit = DateTimeOffset.Now });
+        k.Setzen(k.Arbeit.Hole("RO-1").Kopie());
+        var regel = new Endlos();
+        Nachfuehrungen.Ausfuehren(k, [regel], 12);
+        Assert.Equal(12, regel.Aufrufe);
+        Assert.Contains(k.Hinweise, h => h.StartsWith("Nachführung nach 12 Runden abgebrochen") && h.Contains("RO-1"));
+        Assert.Equal(8, Nachfuehrungen.Rundengrenze(0));
+        Assert.Equal(502, Nachfuehrungen.Rundengrenze(500));
+        Assert.Equal(2000, Nachfuehrungen.Rundengrenze(100000));
+    }
 }
