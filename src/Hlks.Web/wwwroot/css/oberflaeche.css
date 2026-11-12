@@ -314,6 +314,8 @@ tr.art-angelegt td:first-child { color: var(--ok); }
 .wz-schicht .wz-achse { stroke-dasharray: 10 3 2 3; }
 .wz-schicht .wz-polar { stroke: var(--warnung); stroke-width: 1px; stroke-dasharray: 4 3; }
 .wz-schicht .wz-schnitt { stroke-width: 2px; stroke-dasharray: 10 3 2 3; }
+/* Vorschau «Teilen» (12.11.2026): durchgehender Schnitt quer über Leitung und Dämmung */
+.wz-schicht .wz-teilen { stroke: var(--warnung); stroke-width: 2.5px; stroke-dasharray: none; }
 .wz-schicht .wz-hilf { stroke: var(--text-leise); stroke-width: 1px; }
 .wz-schicht .wz-mass { stroke: var(--akzent); stroke-width: 1px; }
 .wz-schicht .wz-auswahl { stroke: var(--auswahl); stroke-width: 1.6px; stroke-dasharray: 6 3; fill: none; }

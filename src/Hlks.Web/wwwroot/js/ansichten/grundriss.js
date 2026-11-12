@@ -576,6 +576,8 @@ function erstellen(behaelter, ansichtElement) {
     pxJeMm() { const { W } = groesse(); return vb && W > 0 ? W / vb.w : 1; },
     /** Fangpunkte und -kanten aus der Plangrafik. */
     fangdaten() { return (fang ??= fangdatenVon(plan)); },
+    /** Grafikteile eines Elements in der Plangrafik (Leitung und ihre Dämmung), z. B. für die Breite in der Vorschau «Teilen». */
+    teile(id) { return (plan?.teile ?? []).filter((t) => t.id === id); },
     /** SVG-<g> in Modellkoordinaten (y wie im Modell) für Vorschau, Fangsymbol, Gummiband – über allem. */
     werkzeugSchicht,
     setzeWerkzeug(w) {
