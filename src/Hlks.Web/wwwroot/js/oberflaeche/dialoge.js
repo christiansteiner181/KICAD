@@ -239,6 +239,8 @@ export async function anlegenAusfuehren(ordner, name, beispiel) {
   merken.schreiben('projektOrdner', ordner);
   const status = await senden('/api/projekt/anlegen', { ordner, name, beispiel });
   await projektGeoeffnet(status);
+  // Neue Projekte laden alle freigegebenen Familien (12.11.2026); was nicht geladen werden konnte, meldet der Server
+  if (status?.familienHinweis) meldung(status.familienHinweis, 'warnung');
 }
 
 /** Dialog «Projekt öffnen»: Ordner-Browser über den Server (Laufwerke, Projektablage, zuletzt benutzte Ordner); Pfad eintippen geht weiter. */

@@ -537,4 +537,25 @@ public sealed class FamilienBibliothekTests : BibliothekTestBasis
         Assert.Equal(2, Log().Eintraege.Single(x => x.Version == 3).Basis);
         Assert.Empty(Eintrag().Abzweige);
     }
+
+    [Fact]
+    public void Grundbestand_NeuesProjekt_ErhaeltAlleFreigegebenenFamilien_KeineEntwuerfe()
+    {
+        // Christian 12.11.2026: «jedes neue projekt [muss] alle freigegebenen familien beinhalten»
+        var a = NeuesProjekt("Projekt A");
+        Ok(a.Ausfuehren("familie_entwurf", Entwurf()));
+        Ok(a.Ausfuehren("familie_freigeben", new JsonObject { ["familie"] = "FAM-1" }));
+        var zweite = Testheizkoerper();
+        zweite["id"] = "fam-test-entwurf";
+        zweite["name"] = "Testheizkörper Entwurf (fiktiv)";
+        Ok(a.Ausfuehren("familie_entwurf", Entwurf(zweite)));
+        Assert.Equal("entwurf", Eintrag("fam-test-entwurf").Status);
+
+        var b = Hlks.Kern.Projekt.Anlegen(Kat, new OrdnerSpeicher(Path.Combine(Wurzel, "projekte", "neu"), TimeSpan.FromMilliseconds(1)), "Neu", "Christian", "PC-A");
+        var erg = FamilienGrundbestand.Laden(b);
+        Assert.Equal((1, 1), (erg.Freigegeben, erg.Geladen));
+        Assert.Null(erg.Hinweis);
+        var fam = Assert.Single(b.Modell.DerKlasse("Familie"));
+        Assert.Equal(HkId, Familien.DefinitionsId(fam));
+    }
 }

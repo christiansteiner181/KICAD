@@ -187,6 +187,7 @@ public sealed class ProjektDienst(Einstellungen einstellungen, ILogger<ProjektDi
     public async Task<JsonObject> Anlegen(string ordner, string name, bool beispiel, bool klein = false)
     {
         ordner = OrdnerPruefen(ordner);
+        string? familienHinweis = null;
         var (p, sp) = await Task.Run(() =>
         {
             if (beispiel)
@@ -198,6 +199,8 @@ public sealed class ProjektDienst(Einstellungen einstellungen, ILogger<ProjektDi
             }
             var leer = new AbgleichSpeicher(SpeicherFuer(ordner));
             var neu = Kern.Projekt.Anlegen(Katalog, leer, name, Einstellungen.Akteur, Einstellungen.Geraet, "mensch");
+            // Alle freigegebenen Familien der Bibliothek (Christian 12.11.2026: «jedes neue projekt [muss] alle freigegebenen familien beinhalten»)
+            familienHinweis = FamilienGrundbestand.Laden(neu).Hinweis;
             // Mustersysteme (Christian 09.11.2026: «wie die Familien in jedem Projekt als basis»): jedes neue Projekt erhält alle; ohne Bibliothek bleibt es leer
             try { neu.Ausfuehren("mustersysteme_uebernehmen", new JsonObject()); }
             catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or HlksFehler) { }
@@ -208,7 +211,9 @@ public sealed class ProjektDienst(Einstellungen einstellungen, ILogger<ProjektDi
         });
         await Umhaengen(p, sp);
         if (Einstellungen.ZuletztMerken) Zuletzt.Merken(ordner, p.Kopf.Name);
-        return await Status();
+        var status = await Status();
+        if (familienHinweis is not null) status["familienHinweis"] = familienHinweis;
+        return status;
     }
 
     /// <summary>Schliesst das Projekt: Reservierungen freigeben, Standabbild bei vielen neuen Paketen. Hängt die Ablage,
