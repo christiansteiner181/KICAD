@@ -207,7 +207,7 @@ registrieren({
 const QUELLEN = ['Pumpe', 'Lueftungsgeraet'];
 const gewaehlteQuelle = (p) => element(p?.element ?? zustand.auswahl);
 registrieren({
-  id: 'kontext.fliessrichtung', titel: 'Fliessrichtung ab hier', symbol: 'netzAb', kuerzel: null, register: 'kontext', gruppe: 'Netz',
+  id: 'kontext.fliessrichtung', fuer: (el) => QUELLEN.includes(el?.klasse), titel: 'Fliessrichtung ab hier', symbol: 'netzAb', kuerzel: null, register: 'kontext', gruppe: 'Netz',
   aktiv: (p) => QUELLEN.includes(gewaehlteQuelle(p)?.klasse),
   hinweis: 'Zuerst eine Pumpe oder ein Lüftungsgerät wählen.',
   async ausfuehren(p) {

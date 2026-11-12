@@ -76,12 +76,12 @@ async function plus(el) { ergebnisMelden(await sende('bogen_zu_tstueck', { bogen
 async function minus(el) { ergebnisMelden(await sende('tstueck_zu_bogen', { tstueck: el.kennzeichen }), `Abzweig von ${el.kennzeichen} entfernt.`); }
 
 registrieren({
-  id: 'kontext.plus', titel: 'Zu T-Stück (+)', symbol: 'formteil', kuerzel: null, register: 'kontext', gruppe: 'Formteil',
+  id: 'kontext.plus', fuer: istBogen, titel: 'Zu T-Stück (+)', symbol: 'formteil', kuerzel: null, register: 'kontext', gruppe: 'Formteil',
   aktiv: (p) => istBogen(ZIEL(p)), hinweis: 'Zuerst einen Bogen wählen.',
   ausfuehren: (p) => plus(ZIEL(p)),
 });
 registrieren({
-  id: 'kontext.minus', titel: 'Abzweig entfernen (−)', symbol: 'formteil', kuerzel: null, register: 'kontext', gruppe: 'Formteil',
+  id: 'kontext.minus', fuer: istTStueck, titel: 'Abzweig entfernen (−)', symbol: 'formteil', kuerzel: null, register: 'kontext', gruppe: 'Formteil',
   aktiv: (p) => istTStueck(ZIEL(p)), hinweis: 'Zuerst ein T-Stück wählen.',
   ausfuehren: (p) => minus(ZIEL(p)),
 });
