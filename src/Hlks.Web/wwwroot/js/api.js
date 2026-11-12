@@ -17,8 +17,22 @@ async function antwort(r) {
 
 export async function holen(pfad) { return antwort(await fetch(pfad, { cache: 'no-store' })); }
 
+// Offene Anfragen an den Server (Beginn in ms), damit ein Werkzeug erkennt, dass der Server nicht antwortet (basis.js: weiteres Esc).
+// Bewusst keine Zeitgrenze: ein Befehl, dessen Antwort die Oberfläche nicht mehr abwartet, läuft im Kern trotzdem zu Ende.
+const offen = new Set();
+/** Alter der ältesten noch unbeantworteten Anfrage in ms, 0 ohne offene Anfrage. */
+export function laengsteOffeneAnfrageMs(jetzt = Date.now()) {
+  let aeltest = jetzt;
+  for (const a of offen) if (a.t < aeltest) aeltest = a.t;
+  return jetzt - aeltest;
+}
+
 export async function senden(pfad, koerper = {}, { signal } = {}) {
-  return antwort(await fetch(pfad, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(koerper), signal }));
+  const marke = { t: Date.now() };
+  offen.add(marke);
+  try {
+    return await antwort(await fetch(pfad, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(koerper), signal }));
+  } finally { offen.delete(marke); }
 }
 
 /** Abfrage über ihren Namen (siehe faehigkeiten). Ergebnis: Objekt oder Text (Textansichten).

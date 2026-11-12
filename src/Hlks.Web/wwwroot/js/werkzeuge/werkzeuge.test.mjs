@@ -622,3 +622,42 @@ test('Dämmdicke nach MuKEn 2014 Anhang 4 aus der DN (Christian 09.11.2026: «d�
   assert.equal(O.daemmDicke(r, 18), 50);
   assert.equal(O.daemmDicke(r, 250), null);
 });
+
+// ============================================================================================== Arbeitsreihe (Klick während laufender Abfrage)
+
+test('Arbeitsreihe: Schritte während eines laufenden Schritts gehen nicht verloren und laufen in der Reihenfolge der Eingabe', async () => {
+  const { Arbeitsreihe } = await import('./reihe.js');
+  const punkte = [], fehler = [];
+  let danach = 0, beendet = false;
+  const r = new Arbeitsreihe({ fehler: (e) => fehler.push(e.message), danach: () => { danach++; }, fertig: () => beendet });
+  let weiter;
+  const kern = new Promise((ok) => { weiter = ok; });
+  // erster Klick wartet auf den Kern; zweiter und dritter Klick sowie Esc kommen in dieser Zeit
+  const lauf = r.ausfuehren(async () => { await kern; punkte.push('A'); });
+  assert.equal(r.beschaeftigt, true);
+  r.ausfuehren(() => { punkte.push(`B nach ${punkte.at(-1)}`); });          // sieht den Stand nach dem ersten Schritt
+  r.ausfuehren(async () => { await null; punkte.push('C'); });
+  r.ausfuehren(() => { punkte.push('Esc'); }, 'esc');
+  assert.equal(r.wartet('esc'), true);                                       // daran erkennt das Werkzeug ein zweites Esc
+  assert.deepEqual(punkte, []);
+  weiter();
+  await lauf;
+  assert.deepEqual(punkte, ['A', 'B nach A', 'C', 'Esc']);
+  assert.equal(r.beschaeftigt, false);
+  assert.equal(danach, 1);
+
+  // Wirft ein Schritt, entfallen die wartenden (sie bauten auf seinem Ergebnis auf); danach ist die Reihe wieder frei
+  const l2 = r.ausfuehren(async () => { await null; throw new Error('abgelehnt'); });
+  r.ausfuehren(() => { punkte.push('darf nicht'); });
+  await l2;
+  assert.deepEqual(fehler, ['abgelehnt']);
+  assert.equal(punkte.includes('darf nicht'), false);
+  await r.ausfuehren(() => { punkte.push('D'); });
+  assert.equal(punkte.at(-1), 'D');
+
+  // Beendet ein Schritt das Werkzeug, laufen die wartenden nicht mehr
+  const l3 = r.ausfuehren(async () => { await null; beendet = true; });
+  r.ausfuehren(() => { punkte.push('nach Ende'); });
+  await l3;
+  assert.equal(punkte.includes('nach Ende'), false);
+});
