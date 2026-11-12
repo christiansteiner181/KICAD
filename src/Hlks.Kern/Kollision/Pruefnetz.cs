@@ -10,6 +10,10 @@
 // ebenfalls. Strahlen, die eine Kante, eine Ecke oder streifend eine Fläche treffen, werden verworfen; entschieden wird mit
 // zwei übereinstimmenden von bis zu sechs Richtungen. Liegt der Punkt näher als die Toleranz an der Oberfläche (vorab über den
 // nächsten Punkt geprüft), heisst das «Flaeche». Offene Teile (Flächenmodelle, Löcher im Netz) haben kein Innen.
+// Mehrere Netze zu einem Prüfnetz (Familienkörper aus Grundkörpern, Pruefnetz.Aus): ein Netz, das für sich geschlossen ist, bleibt ein
+// eigener Teil, auch wenn es Ecken mit einem anderen teilt (Gesamtprüfung 13.11.2026). Vorher verschmolzen z. B. ein Gerätekörper und
+// sein Sockel mit denselben Eckpunkten zu einem Teil; wo sie sich überlappen, zählte der Strahl zwei Flächen = «aussen». Netze, die
+// für sich offen sind (Flächenstücke, die sich erst zusammen schliessen), werden wie bisher miteinander verschweisst.
 
 namespace Hlks.Kern;
 
@@ -31,6 +35,7 @@ public sealed class Pruefnetz
     readonly double[] p;
     readonly int[] d;
     readonly int[] nutzbar;   // Dreiecke mit Fläche (für Geometrie); die Topologie zählt alle
+    readonly int[]? quelle;   // je Ecke das Netz, aus dem sie stammt (1, 2 …; Pruefnetz.Aus mit mehreren Netzen), sonst null
     readonly object sperre = new();
     Raumindex? index;
     Topologie? topo;
@@ -49,9 +54,12 @@ public sealed class Pruefnetz
 
     /// <summary>Netz aus Punkten (x, y, z hintereinander, mm) und Dreiecken (je drei Eckindizes). Dreiecke mit ungültigen
     /// Indizes entfallen; Dreiecke ohne Fläche zählen nur für die Geschlossenheit.</summary>
-    public Pruefnetz(double[] punkte, int[] dreiecke)
+    public Pruefnetz(double[] punkte, int[] dreiecke) : this(punkte, dreiecke, null) { }
+
+    Pruefnetz(double[] punkte, int[] dreiecke, int[]? quelleJeEcke)
     {
         p = punkte;
+        quelle = quelleJeEcke;
         int n = punkte.Length / 3;
         var dl = new List<int>(dreiecke.Length);
         for (int i = 0; i + 2 < dreiecke.Length; i += 3)
@@ -86,14 +94,16 @@ public sealed class Pruefnetz
     /// <summary>Mehrere Netze zu einem Prüfnetz (jedes bleibt ein eigener Teil, sofern es keine Ecke mit einem anderen teilt).</summary>
     public static Pruefnetz Aus(IEnumerable<Netz3> netze)
     {
-        var pu = new List<double>(); var dr = new List<int>();
+        var pu = new List<double>(); var dr = new List<int>(); var qu = new List<int>();
+        int nr = 0;
         foreach (var n in netze)
         {
             int basis = pu.Count / 3;
-            foreach (var e in n.Ecken) { pu.Add(e[0]); pu.Add(e.Length > 1 ? e[1] : 0); pu.Add(e.Length > 2 ? e[2] : 0); }
+            nr++;
+            foreach (var e in n.Ecken) { pu.Add(e[0]); pu.Add(e.Length > 1 ? e[1] : 0); pu.Add(e.Length > 2 ? e[2] : 0); qu.Add(nr); }
             foreach (var t in n.Dreiecke) if (t.Length == 3) { dr.Add(basis + t[0]); dr.Add(basis + t[1]); dr.Add(basis + t[2]); }
         }
-        return new Pruefnetz([.. pu], [.. dr]);
+        return new Pruefnetz([.. pu], [.. dr], nr > 1 ? [.. qu] : null);
     }
 
     /// <summary>Gedrehter Quader (Mitte, orthonormale Achsen, halbe Kantenlängen) als geschlossenes Netz, Normalen nach aussen.</summary>
@@ -208,18 +218,47 @@ public sealed class Pruefnetz
     /// <summary>Mindestens ein Teil geschlossen (Innen-Test möglich, zählt nur geschlossene Teile).</summary>
     public bool HatGeschlosseneTeile => Topo.Geschlossen.Any(g => g);
 
-    Topologie TopologieBauen()
+    /// <summary>Quellnetze, die für sich allein nicht geschlossen sind (eine Kante in ungerader Zahl Dreiecke) – nur sie werden
+    /// mit anderen Netzen verschweisst.</summary>
+    HashSet<int> OffeneQuellen(int[] qu)
+    {
+        var (schweiss, _) = Verschweissen(i => qu[i]);
+        var kanten = new Dictionary<long, int>();
+        var quelleVon = new Dictionary<long, int>();
+        for (int t = 0; t < d.Length / 3; t++)
+            for (int k = 0; k < 3; k++)
+            {
+                int x = schweiss[d[3 * t + k]], y = schweiss[d[3 * t + (k + 1) % 3]];
+                if (x == y) continue;
+                long key = x < y ? ((long)x << 32) | (uint)y : ((long)y << 32) | (uint)x;
+                kanten[key] = kanten.GetValueOrDefault(key) + 1;
+                quelleVon[key] = qu[d[3 * t]];
+            }
+        var offen = new HashSet<int>();
+        foreach (var (key, anzahl) in kanten) if (anzahl % 2 == 1) offen.Add(quelleVon[key]);
+        return offen;
+    }
+
+    /// <summary>Ecken nach Lage verschweissen (Schweissraster), getrennt je Gruppe.</summary>
+    (int[] Schweiss, int Anzahl) Verschweissen(Func<int, int> gruppe)
     {
         int n = AnzahlEcken;
         var schweiss = new int[n];
-        var nachLage = new Dictionary<(long, long, long), int>();
+        var nachLage = new Dictionary<(int, long, long, long), int>();
         for (int i = 0; i < n; i++)
         {
-            var key = ((long)Math.Round(p[3 * i] / Schweissraster), (long)Math.Round(p[3 * i + 1] / Schweissraster), (long)Math.Round(p[3 * i + 2] / Schweissraster));
+            var key = (gruppe(i), (long)Math.Round(p[3 * i] / Schweissraster), (long)Math.Round(p[3 * i + 1] / Schweissraster), (long)Math.Round(p[3 * i + 2] / Schweissraster));
             if (!nachLage.TryGetValue(key, out var w)) nachLage[key] = w = nachLage.Count;
             schweiss[i] = w;
         }
-        int m = nachLage.Count;
+        return (schweiss, nachLage.Count);
+    }
+
+    Topologie TopologieBauen()
+    {
+        // für sich geschlossene Quellnetze bleiben eigene Teile (Gruppe = ihre Nummer), alles andere wird gemeinsam verschweisst (0)
+        var offen = quelle is { } q0 ? OffeneQuellen(q0) : null;
+        var (schweiss, m) = Verschweissen(i => quelle is { } q && !offen!.Contains(q[i]) ? q[i] : 0);
         var eltern = new int[m];
         for (int i = 0; i < m; i++) eltern[i] = i;
         int Wurzel(int x) { while (eltern[x] != x) { eltern[x] = eltern[eltern[x]]; x = eltern[x]; } return x; }

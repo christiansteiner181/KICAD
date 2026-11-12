@@ -254,6 +254,34 @@ public class KollisionGeometrieKoerperTests
     }
 
     [Fact]
+    public void Pruefnetz_AusMehrerenNetzen_GeschlosseneBleibenEigeneTeile_OffeneSchliessenSichZusammen()
+    {
+        // Gesamtprüfung 13.11.2026: Gerätekörper 600 × 400 × 1800 und Sockel 600 × 400 × 100 mit denselben vier Bodenecken. Vorher ein
+        // Teil – in der Sockelzone traf jeder Strahl zwei Flächen (gerade Zahl) = «aussen».
+        var geraet = Pruefnetz.Aus([NetzBau.Quader([0, 0, 0], [600, 400, 1800]), NetzBau.Quader([0, 0, 0], [600, 400, 100])]);
+        Assert.Equal(2, geraet.Teile);
+        Assert.True(geraet.Geschlossen);
+        Assert.Equal(Punktlage.Innen, geraet.Lage(new V3(300, 200, 50)));
+        Assert.Equal(Punktlage.Innen, geraet.Lage(new V3(300, 200, 900)));
+        Assert.Equal(Punktlage.Aussen, geraet.Lage(new V3(300, 200, 1900)));
+        var innen = Assert.Single(geraet.InnenAbschnitte(new V3(300, 200, -500), new V3(300, 200, 2500)));
+        Assert.Equal(500.0 / 3000, innen.T0, 9); Assert.Equal(2300.0 / 3000, innen.T1, 9);
+
+        // Zwei offene Stücke (Wanne ohne Deckel, Deckel), die sich erst zusammen schliessen: wie bisher ein geschlossener Teil
+        var wanne = new Netz3(); var deckel = new Netz3();
+        int[] u = [wanne.Ecke(0, 0, 0), wanne.Ecke(100, 0, 0), wanne.Ecke(100, 100, 0), wanne.Ecke(0, 100, 0)];
+        int[] o = [wanne.Ecke(0, 0, 100), wanne.Ecke(100, 0, 100), wanne.Ecke(100, 100, 100), wanne.Ecke(0, 100, 100)];
+        wanne.Viereck(u[0], u[3], u[2], u[1]);
+        for (int i = 0; i < 4; i++) wanne.Viereck(u[i], u[(i + 1) % 4], o[(i + 1) % 4], o[i]);
+        deckel.Viereck(deckel.Ecke(0, 0, 100), deckel.Ecke(100, 0, 100), deckel.Ecke(100, 100, 100), deckel.Ecke(0, 100, 100));
+        Assert.False(Pruefnetz.Aus(wanne).Geschlossen);
+        var kiste = Pruefnetz.Aus([wanne, deckel]);
+        Assert.Equal(1, kiste.Teile);
+        Assert.True(kiste.Geschlossen);
+        Assert.Equal(Punktlage.Innen, kiste.Lage(new V3(50, 50, 50)));
+    }
+
+    [Fact]
     public void NetzNetz_BuendigUeberlappt_IstSchnitt_NichtBeruehrung()
     {
         // Gesamtprüfung 13.11.2026: Schrank 600 × 400 × 1800 zweimal am selben Ort – alle Flächen liegen aufeinander, kein Dreieckspaar
