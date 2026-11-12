@@ -44,6 +44,7 @@ Tests nach dem Zusammenführen (gefiltert): Kern 169 + 86 grün, Web 5 grün, No
 | Ausgabe | 2 (IFC-Export: senkrechte Rechteckkanäle mit querDrehung wie 3D und Kollision; Materialliste und Leitungslängen zählen eine Leitung nur in ihrem eigenen System – vorher KW 5 m statt 2 m) | ausgabe.md |
 | Fachwerkzeuge | 3 (sehr kurze Vorwand brach Grundriss/3D/Stückliste ab; Spiegeln stellt die Rückseite der Vorwand um; Kanalrahmen: Stoss- und Endrahmen überlappen nicht; Montageelement-Vorschau in Elementbreite) | fachwerkzeuge.md |
 | 3D, Schnitte, XR | 4 (Kante am Absatz eines Prismas – L-förmige Decke – fehlte in Schnitt/Ansicht; «alles zeigen» passt im schmalen Fenster ein; Schnittbereich ziehen baut nicht mehr alle Körper neu; Farbe #rrggbbaa im 3D wie im XR-Export). Koordinatenwechsel Modell → three.js/glTF nachgerechnet | dreid_schnitte_xr.md |
+| Kollision, Prüfregeln | 3 (Netz.Folgen hatte eine stille Grenze von 2000 Schritten – Stranglisten, Sanitär-Dimensionierung, Lüftungsnetz, Kanal-Druckverlust; doppelt platzierte bzw. bündig überlappende Körper sind ein Schnitt statt «Berührung»; Familienkörper aus überlappenden Grundkörpern richtig innen/aussen). Leistung gemessen: 6000 Kapseln 21 ms, Pruefungen.Alle 6000 Rohre 24 ms; Netz.Verbraucher quadratisch (3000 Bauteile 2.8 s) | kollision_pruefungen.md |
 
 Browser (Hauptlauf 18:13): Rohr am freien Leitungsende mit leerer Höhe begonnen – Höhe und Grösse des Anschlusses übernommen, Zug angelegt.
 
@@ -100,6 +101,11 @@ Browser (Hauptlauf 18:13): Rohr am freien Leitungsende mit leerer Höhe begonnen
 32. **3D-Ansicht bei Landeskoordinaten**: Geometrie absolut als float32 in m – bei 2 600 000 m nur 0.25 m Auflösung (der XR-Export hat
     einen Bezugspunkt, die 3D-Ansicht nicht). Werden Projekte je in Landeskoordinaten geführt? Sonst nicht nötig.
 33. **Klick im 3D**: eine Leitung gewinnt den Klick auch hinter einer undurchsichtigen Decke – so gewollt?
+34. **Kollision an freien Leitungsenden**: die Kapsel hat ein halbrundes Ende – ein Rohr d 110, das 40 mm vor der Wand endet, gilt als
+    Schnitt mit 15 mm Tiefe. Ebene Enden rechnen?
+35. **Länge bis hier in Ringleitungen**: folgt dem Weg mit den wenigsten Bauteilen, nicht dem kürzesten bzw. längsten – die massgebende
+    Länge der Sanitär-Dimensionierung kann in Maschen zu kurz sein. Welche Länge soll gelten?
+36. **Doppelt platzierte Geräte** als eigener Befund melden?
 7. **λ-Werte der Dämmarten**: welche Produkte verwendet ihr (dann λ mit Quelle eintragen)?
 
 **Prüfung Hauptlauf im Browser (18:00):** Rohr mit drei raschen Klicks und Esc wird vollständig angelegt (Klick-Reihe), Weiterzeichnen mit Bogen am Leitungsende kürzt die bestehende Leitung. Nebenbefund: Start an einem Anschluss verlangt zuerst Produktlinie und Höhe, obwohl der Anschluss beides vorgibt (pflichtPruefen vor dem Anschluss) – kleine Korrektur für Runde 3.
