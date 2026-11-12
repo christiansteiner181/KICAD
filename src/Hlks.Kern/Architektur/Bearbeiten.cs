@@ -62,7 +62,7 @@ static class Bearbeitung
     {
         if (!Param.Bool(p, "kopieren")) return MitGeometrie(k, ArchParam.Elemente(k, p));
         int vorher = k.Operationen.Count, hinweise = k.Hinweise.Count;
-        new ElementeKopieren().Ausfuehren(k, new JsonObject { ["elemente"] = p["elemente"]!.DeepClone() });
+        new ElementeKopieren().Ausfuehren(k, new JsonObject { ["elemente"] = p["elemente"]?.DeepClone() });   // fehlt die Liste: Fehler mit Vorschlag statt Absturz
         k.Hinweise.RemoveRange(hinweise, k.Hinweise.Count - hinweise);
         var neu = k.Operationen.Skip(vorher).Where(o => o.Art == "element.setzen" && o.ElementVorher is null).Select(o => k.Arbeit.Finde(o.Id)).OfType<Element>()
             .DistinctBy(e => e.Id).Where(e => e.Geometrie is { Punkte.Count: > 0 }).ToList();
