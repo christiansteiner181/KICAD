@@ -63,7 +63,7 @@ public sealed record Einbaulage(double[] Ursprung, V3 X, V3 Y, V3 Z)
     /// <summary>Schlüssel der Achsen (für Zwischenspeicher je Ausrichtung).</summary>
     public string AchsenSchluessel => string.Join(",", new[] { X.X, X.Y, X.Z, Z.X, Z.Y, Z.Z }.Select(v => Math.Round(v, 9).ToString("R", System.Globalization.CultureInfo.InvariantCulture)));
 
-    /// <summary>{ ursprung, x, y, z } für Abfragen.</summary>
+    /// <summary>{ x, y, z } (Achsen, ohne Ursprung) für Abfragen.</summary>
     public JsonObject AlsJson() => new()
     {
         ["x"] = Json.Knoten(Familien.Runden(X.Feld(), 9)), ["y"] = Json.Knoten(Familien.Runden(Y.Feld(), 9)), ["z"] = Json.Knoten(Familien.Runden(Z.Feld(), 9)),
