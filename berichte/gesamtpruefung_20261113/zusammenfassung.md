@@ -71,6 +71,11 @@ Original, B7 Vorwand spiegeln mit Vorgabe-Rückseite, B8 Lagen je Wert als Ganze
 getrennt gelten jetzt als unlesbar), B9 Pendeln der Nachführung erkannt, B10 Kleinigkeiten, Dämmdialog «– keine Angabe –».
 Gefiltert: Kern 230, Web 3, Node 54 grün.
 
+## Volle Testreihe auf dem Endstand (stand_pruefen 032efb7, 19:13–20:26)
+
+Kern 5297 Tests grün (8 Zeitüberschreitungen im ersten Lauf, in der Wiederholung grün). Rot: Mcp 4 von 82, Web 7 von 789, Node 3 von
+1447 – Klärung, ob vor der Nacht schon rot oder durch eine Korrektur verursacht, läuft (rote_tests.md).
+
 ## Fragen an Christian (gesammelt)
 
 1. **Gefälle 2 % gegen Toleranz 1°** (Leitungen): 2 % = 1.146° – jede Verbindung einer waagrechten Achse mit einem Stück mit 2 % wird
