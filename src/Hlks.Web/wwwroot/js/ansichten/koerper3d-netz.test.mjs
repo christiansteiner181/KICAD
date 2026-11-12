@@ -108,6 +108,14 @@ test('3D Netz: Körper mit Mesh und Kanten, Material je Farbe, freigeben', () =>
   assert.doesNotThrow(() => k3.freigeben(g));
 });
 
+test('teilFarbe: nur #rgb und #rrggbb gelten, sonst die Materialfarbe (wie XrFarben im Kern)', () => {
+  assert.equal(k3.teilFarbe({ farbe: '#D0312D', material: 'rohr' }), '#D0312D');
+  assert.equal(k3.teilFarbe({ farbe: '#abc', material: 'rohr' }), '#abc');
+  const material = k3.teilFarbe({ material: 'rohr' });
+  assert.equal(k3.teilFarbe({ farbe: '#d0312d80', material: 'rohr' }), material);   // three liest #rrggbbaa nicht: der Körper wäre weiss
+  assert.equal(k3.teilFarbe({ farbe: '#d031', material: 'rohr' }), material);
+});
+
 test('darstellungSchluessel: Schnittbereich und Startansicht lösen keinen Neuaufbau aus, Filter und Darstellung schon', () => {
   const a = { id: 'a1', werte: { art: '3d', gewerke: ['heizung'], schnittbereich: { aktiv: true, min: [0, 0, 0], max: [1, 1, 1] } } };
   const s = k3.darstellungSchluessel(a);

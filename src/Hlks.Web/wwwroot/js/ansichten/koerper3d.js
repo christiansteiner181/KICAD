@@ -73,7 +73,9 @@ function designName() {
   catch { return 'hell'; }   // ohne Browser (Tests)
 }
 
-const hexOderNull = (f) => (typeof f === 'string' && /^#[0-9a-fA-F]{3,8}$/.test(f) ? f : null);
+// Nur #rgb und #rrggbb: andere Längen (z. B. #rrggbbaa) liest three r160 nicht – der Körper bliebe weiss. Dann gilt die Materialfarbe,
+// wie im Export für die Brille (XrFarben.Normiert).
+const hexOderNull = (f) => (typeof f === 'string' && /^#(?:[0-9a-fA-F]{3}|[0-9a-fA-F]{6})$/.test(f) ? f : null);
 const KANTE_AB_DECKKRAFT = 0.2;   // Kanten nur bei halbwegs deckenden Körpern (durchscheinende Räume bleiben ohne Gitter)
 
 /** Farbe eines Teils: Teil.farbe, sonst --d3-<material> aus dem Design, sonst Vorgabe. */
