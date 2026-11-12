@@ -270,4 +270,40 @@ public class VorwandTests
         Assert.Contains("#8c96a0", flaechen);              // Ständer und Schienen grau
         Assert.DoesNotContain("#9fd3c0", flaechen);        // keine Beplankung geschnitten
     }
+
+    /// <summary>Gesamtprüfung 13.11.2026: eine Vorwand kürzer als ein Profil bzw. Ständer warf beim Ableiten (Math.Clamp mit min &gt; max) – der ganze
+    /// Grundriss und die Stückliste brachen ab. Jetzt ein Befund, die Ansicht wird gezeichnet.</summary>
+    [Theory]
+    [InlineData("gis", 50)]
+    [InlineData("duofix", 30)]
+    public void SehrKurzeVorwand_BefundStattAbsturz(string system, double laenge)
+    {
+        var p = Rechteck();
+        Ok(p.Ausfuehren("vorwand_zeichnen", new JsonObject
+        {
+            ["geschoss"] = "EG", ["punkte"] = Pts([100, 100], [100 + laenge, 100]), ["system"] = system, ["tiefe"] = 200, ["hoehe"] = 1140, ["bezugslinie"] = "rechts",
+        }));
+        Assert.Contains(Stueckliste(p, "VW-1")["befunde"]!.AsArray(), b => ((string?)b)!.Contains("kein baubares Gestell"));
+        Assert.NotEmpty(Teil(Grafik.Plan(p, "AN-EG"), p, "VW-1").Primitive);
+    }
+
+    /// <summary>Gesamtprüfung 13.11.2026: «rueckseite» zählt links/rechts in Zeichenrichtung. Beim Spiegeln kehrt der Drehsinn um – ohne Umstellen
+    /// lag die Rohbauwandseite der gespiegelten Vorwand auf der Raumseite. Vorwand an der Wandfläche y = 100, Vorderseite y = 300; gespiegelt an
+    /// x = 0 bleibt beides.</summary>
+    [Fact]
+    public void Spiegeln_RueckseiteBleibtAnDerRohbauwand()
+    {
+        var p = Rechteck();
+        Ok(p.Ausfuehren("vorwand_zeichnen", new JsonObject
+        {
+            ["geschoss"] = "EG", ["punkte"] = Pts([100, 100], [2100, 100]), ["system"] = "gis", ["tiefe"] = 200, ["hoehe"] = 1140, ["bezugslinie"] = "rechts",
+        }));
+        Ok(p.Ausfuehren("elemente_spiegeln", new JsonObject { ["elemente"] = new JsonArray("VW-1"), ["achse"] = Pts([0, 0], [0, 1000]) }));
+        var vw = Hole(p, "VW-1");
+        Assert.Equal("links", vw.Text("rueckseite"));
+        var auf = VorwandGestell.Ableiten(p.Modell, p.Katalog, vw)!;
+        Assert.Equal(-100, auf.Punkt(0, 0)[0], 6);
+        Assert.Equal(100, auf.Punkt(0, 0)[1], 6);            // Rückseite weiter an der Wandfläche
+        Assert.Equal(300, auf.Punkt(0, auf.Tiefe)[1], 6);    // Vorderseite zum Raum
+    }
 }
