@@ -236,7 +236,7 @@ function abzweigStarten(z, hit, maus, ctx, id) {
   if (el.werte?.familientyp) setze(id, 'groesse', el.werte.familientyp);
   // Freie Grösse (Nachtrag): Breite × Höhe bzw. Durchmesser der Leitung (aus ihren Eigenschaften) in die Zahlenfelder; sie gelten nur bei einer freien Serie
   F.abzweigGroesse(el.werte).forEach(([feld, w]) => setze(id, feld, w));
-  if (laufend?.manuell) z.punkte = L.hoehenWechsel(z.punkte, zH).punkte;   // von Hand gewählte Lage bzw. Höhe bleibt: senkrecht dorthin
+  if (laufend?.manuell && zH !== null) z.punkte = L.hoehenWechsel(z.punkte, zH).punkte;   // von Hand gewählte Lage bzw. Höhe bleibt: senkrecht dorthin
   else {
     setze(id, 'hoehe', L.hoeheRelativ(kote(ctx), q[2]));
     if (el.klasse === 'Rohr') lageUebernehmen(id, ctx, q[2]);   // Lage der Leitung (11.11.2026)
@@ -274,7 +274,10 @@ function leitungenImGeschoss(kategorie, ctx) {
 
 async function klick(z, fang, ctx, id, kategorie) {
   z.vorschau = null; leisteAus();
-  if (!pflichtPruefen(ctx, kategorie)) return;
+  // Der erste Klick auf einen Anschluss bzw. eine Leitung liefert Dimension, Höhe und Medium selbst (Christian 02.11.2026: «wird ab einem Punkt weiter
+  // konstruiert, wird die Dimension und höhe sowie medium des Punktes übernommen»): dort erst übernehmen, dann die Pflichtfelder prüfen
+  const erster = z.punkte.length === 0;
+  if (!erster && !pflichtPruefen(ctx, kategorie)) return;
   const zl = fang.art === 'eingabe' ? { punkt: fang.punkt, art: 'eingabe' } : ziel(z, fang, ctx);
   if (!zl) return;
   const zH = hoeheZ(ctx);
@@ -287,7 +290,7 @@ async function klick(z, fang, ctx, id, kategorie) {
       z.punkte.push([a.lage[0], a.lage[1], a.lage[2]]);
       // Lage der bestehenden Leitung übernehmen; wurde die Lage bzw. Höhe von Hand anders gewählt, bleibt sie (Christian 11.11.2026: «wird eine lage
       // manuell anders eingestellt wird manuell übernommen») – dann senkrecht vom Anschluss auf diese Höhe
-      if (laufend?.manuell) {
+      if (laufend?.manuell && zH !== null) {
         const w = L.hoehenWechsel(z.punkte, zH);
         z.punkte = w.punkte;
         if (w.angehaengt) hinweisSetzen(`Von Hand gewählte Höhe ${Math.round(ctx.opt.hoehe)} mm über OK Geschoss: senkrecht vom Anschluss – nächsten Punkt anklicken.`, 4000);
@@ -297,13 +300,15 @@ async function klick(z, fang, ctx, id, kategorie) {
       }
       punktUebernehmen(a, ctx, id);                                     // Dimension und Medium des Punktes
       ctx.optionenNeu();
+      if (!pflichtPruefen(ctx, kategorie)) zuruecksetzen(z);            // was der Anschluss nicht liefert (z. B. die Produktlinie am Gerät), fehlt weiter
       return;
     }
     if (ctx.maus) {
       const hit = L.leitungUnterMaus(ctx.maus, leitungenImGeschoss(kategorie, ctx), 8 * ctx.s(), kategorie);
-      if (hit && abzweigStarten(z, hit, ctx.maus, ctx, id)) return;
+      if (hit && abzweigStarten(z, hit, ctx.maus, ctx, id)) { if (!pflichtPruefen(ctx, kategorie)) zuruecksetzen(z); return; }
       if (hit) return;
     }
+    if (!pflichtPruefen(ctx, kategorie)) return;
     z.punkte.push([zl.punkt[0], zl.punkt[1], zH]);
     return;
   }
