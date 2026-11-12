@@ -208,7 +208,10 @@ public static class BaustelleZugang
                 BaustelleRueckmeldung.Lesen(p, r);   // wirft, wenn die Meldungen nicht lesbar sind
                 var ordner = Eingang(p);
                 Directory.CreateDirectory(ordner);
-                var name = $"Rueckmeldung_{DateTime.Now:yyyyMMdd-HHmmss}_{string.Concat(person.Select(c => char.IsLetterOrDigit(c) ? c : '_'))}.json";
+                // Name höchstens 40 Zeichen (Pfadlänge); zwei Meldungen derselben Person in derselben Sekunde überschreiben sich nicht
+                var stamm = $"Rueckmeldung_{DateTime.Now:yyyyMMdd-HHmmss}_{string.Concat(person.Take(40).Select(c => char.IsLetterOrDigit(c) ? c : '_'))}";
+                var name = stamm + ".json";
+                for (int i = 2; File.Exists(Path.Combine(ordner, name)); i++) name = $"{stamm}_{i}.json";
                 var pfad = Path.Combine(ordner, name);
                 File.WriteAllText(pfad, r.ToJsonString(), new UTF8Encoding(false));
                 return name;

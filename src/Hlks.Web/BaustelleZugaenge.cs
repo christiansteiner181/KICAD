@@ -31,7 +31,14 @@ public static class BaustelleZugaenge
     public static List<Zugang>? Lesen(Projekt p)
     {
         if (p.Speicher is null || !File.Exists(Datei(p))) return null;
-        var o = JsonNode.Parse(File.ReadAllText(Datei(p))) as JsonObject;
+        JsonObject? o;
+        // unlesbare Datei: gesperrt bleiben (nicht «offen wie ohne Datei») und es klar sagen statt Fehler 500
+        try { o = JsonNode.Parse(File.ReadAllText(Datei(p))) as JsonObject; }
+        catch (System.Text.Json.JsonException)
+        {
+            throw new HlksFehler("Die Zugänge dieses Projekts sind nicht lesbar (baustelle\\zugaenge.json ist kein gültiges JSON).",
+                "Im Planungsbüro melden: die Datei korrigieren oder löschen und die Zugänge in KICAD (Register «BIM to Field») neu anlegen.");
+        }
         return (o?["zugaenge"] as JsonArray ?? []).OfType<JsonObject>()
             .Select(z => new Zugang(((string?)z["name"] ?? "").Trim(), ((string?)z["rolle"] ?? "").Trim().ToLowerInvariant(), ((string?)z["schluessel"] ?? "").Trim()))
             .Where(z => z.Name.Length > 0 && Rollen.Contains(z.Rolle) && z.Schluessel.Length >= 8).ToList();
@@ -71,9 +78,16 @@ public static class BaustelleZugaenge
     public static Zugang? Angemeldet(HttpRequest r, List<Zugang> liste) =>
         r.Cookies.TryGetValue(Keks, out var k) && !string.IsNullOrEmpty(k) ? liste.FirstOrDefault(z => z.Schluessel == k) : null;
 
-    /// <summary>Darf der Zugang diese Webseite sehen? Monteur nur Monteur-Seiten (Dateiname «…_monteur_…»), Projektleiter alle.</summary>
-    public static bool DarfSehen(Zugang z, string datei) =>
-        z.Rolle == Projektleiter || Path.GetFileName(datei).Contains("_monteur_", StringComparison.OrdinalIgnoreCase);
+    /// <summary>Darf der Zugang diese Webseite sehen? Monteur nur Monteur-Seiten, Projektleiter alle. Der Export nennt die Datei
+    /// «&lt;Projekt&gt;_&lt;rolle&gt;_&lt;Zeit&gt;.html»; massgebend ist darum die LETZTE Rollenangabe im Namen – ein Projekt, das «…_Monteur_…» im
+    /// Namen trägt, macht aus einer Bauleitungs-Webseite (Arbeitsstand) keine Monteur-Seite.</summary>
+    public static bool DarfSehen(Zugang z, string datei)
+    {
+        if (z.Rolle == Projektleiter) return true;
+        var name = Path.GetFileName(datei);
+        int monteur = name.LastIndexOf("_monteur_", StringComparison.OrdinalIgnoreCase);
+        return monteur >= 0 && monteur > name.LastIndexOf("_bauleitung_", StringComparison.OrdinalIgnoreCase);
+    }
 
     public static string RollenText(string rolle) => rolle == Projektleiter ? "Projektleiter" : "Monteur";
 }
