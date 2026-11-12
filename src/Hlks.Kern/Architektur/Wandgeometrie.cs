@@ -3,7 +3,8 @@
 // Örtliches System der Wand: s entlang der Achse ab Anfang, q quer dazu, positiv nach links (in Wandrichtung).
 // Ecken und Anschlüsse: Ein Wandende, das eine andere Wand desselben Geschosses berührt (Abstand zur Achse der anderen
 // Wand höchstens deren halbe Dicke + 1 mm), wird um die halbe Dicke der anderen Wand verlängert; die Vereinigung der
-// Wandflächen bereinigt dann die Ecke (Spezifikation Modul 1a, Auftrag B1).
+// Wandflächen bereinigt dann die Ecke (Spezifikation Modul 1a, Auftrag B1). Schräge Ecken: Verlängerung nach dem Winkel
+// (Eckverlaengerung), damit das Wandende nicht über die Fläche der anderen Wand vorsteht.
 
 using Clipper2Lib;
 
@@ -206,12 +207,21 @@ public static class Wandgeometrie
         foreach (var o in waende)
         {
             if (o.Id == w.Id || o.Dicke <= 0) continue;
-            if (Math.Abs(w.Ux * o.Uy - w.Uy * o.Ux) < Parallel) continue;
+            double sin = Math.Abs(w.Ux * o.Uy - w.Uy * o.Ux);
+            if (sin < Parallel) continue;
             double d = Polygone.AbstandZurStrecke(px, py, o.Ax, o.Ay, o.Bx, o.By);
-            if (d <= o.Dicke / 2 + 1) e = Math.Max(e, o.Dicke / 2);
+            if (d <= o.Dicke / 2 + 1) e = Math.Max(e, Eckverlaengerung(w.Dicke, o.Dicke, sin, Math.Abs(w.Ux * o.Ux + w.Uy * o.Uy)));
         }
         return e;
     }
+
+    /// <summary>Verlängerung eines Wandendes, das auf der Achse einer anderen Wand liegt: so weit, dass die vordere Ecke des Wandendes
+    /// genau auf der abgewandten Fläche der anderen Wand liegt – (Dicke der anderen / 2 − eigene Dicke / 2 · |cos|) / |sin|, nie negativ.
+    /// Rechtwinklig (cos = 0) ist das die halbe Dicke der anderen Wand (Spezifikation Modul 1a). Bei schrägen Ecken stand die Wand mit der
+    /// festen halben Dicke über die Fläche der anderen vor (Gesamtprüfung 13.11.2026: 135°-Ecke zweier 200-mm-Wände → Zacken von 59 und
+    /// 41 mm im Wandumriss; nötig sind 41.4 mm je Wand, die Ecke wird dann sauber auf Gehrung geschlossen).</summary>
+    internal static double Eckverlaengerung(double eigeneDicke, double andereDicke, double sin, double cos) =>
+        cos < 1e-9 ? andereDicke / 2 : Math.Max(0, (andereDicke / 2 - eigeneDicke / 2 * cos) / sin);
 
     public static bool IstOeffnung(Katalog k, Element e) => k.IstArt(e, "Tuer") || k.IstArt(e, "Fenster");
 

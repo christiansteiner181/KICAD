@@ -526,4 +526,25 @@ public class ArchitekturBefehleTests
         Assert.Equal(new ElementLoeschen().Beschreibung, loeschen.Beschreibung);   // Hülle behält Beschreibung und Parameter
         Assert.Equal(new ElementLoeschen().Parameter.Select(x => x.Name), loeschen.Parameter.Select(x => x.Name));
     }
+
+    [Fact]
+    public void SchraegeEcke_WandumrissOhneZacken()
+    {
+        // Zwei Wände 200 mm, Ecke bei (5000, 0), Richtungswechsel 45° (stumpfe Ecke 135°). Handrechnung: Die Aussenflächen y = −100 und
+        // y = x − 5000 − 141.42 schneiden sich bei x = 5041.42; Verlängerung je Wand (100 − 100 · cos 45°) / sin 45° = 41.42 mm. Der
+        // Umriss ist dann die Gehrung: Fläche = 5000 · 200 + 3000 · 200 = 1.6 m² (aussen kommt dazu, was innen wegfällt), kein Punkt
+        // ausserhalb der beiden Aussenflächen. Mit der festen halben Dicke (100 mm) standen Zacken bis x = 5100 bzw. y = −141 vor.
+        var p = Neu();
+        double c = Math.Sqrt(0.5);
+        Ok(p.Ausfuehren("wand_zeichnen", new JsonObject { ["geschoss"] = "EG", ["punkte"] = Pts([0, 0], [5000, 0], [5000 + 3000 * c, 3000 * c]), ["dicke"] = 200 }));
+        var l = Wandgeometrie.DesGeschosses(p.Modell, Kat, Hole(p, "EG").Id);
+        Assert.Equal(41.421, l[0].VerlEnde, 3);
+        Assert.Equal(41.421, l[1].VerlAnfang, 3);
+        var umriss = Polygone.Vereinigen(new Clipper2Lib.PathsD(l.Select(w => w.Band())));
+        Assert.Single(umriss);
+        Assert.InRange(Math.Abs(Clipper2Lib.Clipper.Area(umriss)), 1.6e6 - 10, 1.6e6 + 10);   // vorher 1 603 430 mm²; Rundung der Clipper-Koordinaten auf 0.001 mm
+        Assert.All(umriss[0], q => Assert.True(q.y >= -100.01 && q.y >= q.x - 5000 - 100 / c - 0.01, $"Punkt ({q.x}, {q.y}) steht über die Aussenfläche vor"));
+        // rechtwinklig bleibt die halbe Dicke der anderen Wand (Spezifikation Modul 1a)
+        Assert.Equal(100, Wandgeometrie.Eckverlaengerung(150, 200, 1, 0));
+    }
 }
