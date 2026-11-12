@@ -54,12 +54,14 @@ test('Register XR: mit den drei Gruppen in der Reihenfolge Brille · Zeigen · K
   assert.deepEqual(Object.keys(ERWARTET), ['Brille', 'Zeigen', 'Koordination']);
 });
 
-test('Kürzeldialog: das Register XR heisst dort wie im Menüband und steht zwischen Ansicht und Verwalten', () => {
+test('Kürzeldialog: das Register XR heisst dort wie im Menüband; seine Kürzel stehen nach Verwalten und vor Ändern (Reihenfolge 09.11.2026)', () => {
   assert.equal(K.REGISTER_NAMEN.xr, 'XR');
-  const folge = Object.keys(K.REGISTER_NAMEN);
-  assert.equal(folge.indexOf('xr'), folge.indexOf('ansicht') + 1);
-  assert.equal(folge.indexOf('verwalten'), folge.indexOf('xr') + 1);
   assert.equal(K.registerName({ register: 'xr' }), 'XR');
+  // Christian 09.11.2026: «Tab Ordnung: … Verwalten, XR, Ändern» – geprüft an der sortierten Liste, nicht an der Schreibweise der Tabelle
+  const zeilen = K.kuerzelZeilen([
+    { titel: 'c', kuerzel: 'C', register: 'aendern' }, { titel: 'b', kuerzel: 'B', register: 'xr' }, { titel: 'a', kuerzel: 'A', register: 'verwalten' },
+  ]);
+  assert.deepEqual(zeilen.map((z) => z.register), ['Verwalten', 'XR', 'Ändern']);
 });
 
 test('Alle VR/XR-Aktionen stehen im Register XR, in der erwarteten Gruppe, und es sind genau die erwarteten', () => {
