@@ -32,6 +32,8 @@ Tests nach dem Zusammenführen (gefiltert): Kern 169 + 86 grün, Web 5 grün, No
 | Restliste | 7 (Start an Anschluss übernimmt zuerst Dimension/Höhe/Medium, dann Pflichtfelder; Kanalumriss und Fliesspfeil an Kreuzungen; Lücke grob ab Strichrand; Gewinde 5/4" = 1 1/4"; IFC-Achsensystem x ∥ z; Meldung ohne Familienbibliothek; Hinweis Dämmdialog bei gemischten DN; Baustellen-Webseite startet trotz kaputter Adresse) | restliste.md |
 | Rechenkerne | 7 (Kanal-Druckverlust: Weg endet am Gerät statt durchs andere Netz – ZD-1 2.08 statt 2.30 Pa, kein Abbruch ohne Volumenstrom, Rohre im Luftnetz mit Innendurchmesser, «Kunststoff» nur als eigenes Wort; Summen nennen Leitungen ohne Druckverlust; Heizlast und Heizkörper ohne Division durch null). Norm-, Tabellen- und Stoffwerte unberührt; Diff vom Hauptlauf gelesen | rechenkerne.md |
 
+| Schema, Kern-API | 4 (Nachführung läuft bis keine Regel mehr greift statt fest 5 Runden, mit Hinweis an der Grenze; Wiederholen überschreibt keine spätere fremde Änderung; Kennzeichen mit Punkt, Punkt mit einer Koordinate, leeres Kennzeichen; Schema: «Element einfügen» im Bündel trifft den richtigen Strang) | schema_api.md |
+
 Browser (Hauptlauf 18:13): Rohr am freien Leitungsende mit leerer Höhe begonnen – Höhe und Grösse des Anschlusses übernommen, Zug angelegt.
 
 ## Fragen an Christian (gesammelt)
@@ -65,6 +67,11 @@ Browser (Hauptlauf 18:13): Rohr am freien Leitungsende mit leerer Höhe begonnen
     rechnet aus dem Bedarf. Entscheid 02.11.2026 stammt aus der Zeit vor Teil B – auf Bedarf umstellen?
 21. **Hauptleitungen ausserhalb einer Heizgruppe** (Erzeuger bis Verteiler) haben keine Temperatur und damit keinen Druckverlust; in Maschen
     trägt jeder parallele Weg den vollen Strom. Mit welcher Temperatur dort rechnen?
+22. **Schemasymbole und Fliessrichtung** (hoch): Symbole drehen nur nach «Leitung senkrecht/waagrecht» – Rückschlagventil, Pumpe,
+    Schmutzfänger können gegen die Fliessrichtung zeigen. Nach Fliessrichtung drehen?
+23. **Strangschema eng**: ab 9 Steigknoten in einer Zelle 2 mm Abstand bei 4 × 3 mm Symbolen, ohne Hinweis; Geräte an Strängen
+    verschiedener Gruppen führen Linien quer durch fremde Gruppen. Zeile wachsen lassen oder Hinweis?
+24. **Nachführung an der Grenze**: Befehl ablehnen statt nur Hinweis?
 7. **λ-Werte der Dämmarten**: welche Produkte verwendet ihr (dann λ mit Quelle eintragen)?
 
 **Prüfung Hauptlauf im Browser (18:00):** Rohr mit drei raschen Klicks und Esc wird vollständig angelegt (Klick-Reihe), Weiterzeichnen mit Bogen am Leitungsende kürzt die bestehende Leitung. Nebenbefund: Start an einem Anschluss verlangt zuerst Produktlinie und Höhe, obwohl der Anschluss beides vorgibt (pflichtPruefen vor dem Anschluss) – kleine Korrektur für Runde 3.
