@@ -38,6 +38,9 @@ public class HuelleAufbauTests
         Ok(Material(p, "Testmaterial B", 0.04));                                         // Testwert
         Ok(p.Ausfuehren("aufbau_aendern", new JsonObject { ["aufbau"] = "AUF-1", ["schichten"] = Schichten(("MAT-1", 200), ("MAT-2", 100), ("MAT-1", 20)) }));
         Gleich(0.4 + 2.5 + 0.04, Zahl(p, "AUF-1", "rWert"), 1e-9);                       // 0.2/0.5 + 0.1/0.04 + 0.02/0.5
+        // MAT-1 kommt zweimal vor: seine λ-Quelle steht in der Herkunft nur einmal (Gesamtprüfung 13.11.2026)
+        var quelle = Hole(p, "AUF-1").Eigenschaft("rWert")!.Herkunft.Quelle!;
+        Assert.Single(System.Text.RegularExpressions.Regex.Matches(quelle, "MAT-1: "));
         Ok(Uebergang(p, "horizontal", 0.13, 0.04));
         Gleich(1 / (0.13 + 2.94 + 0.04), Zahl(p, "AUF-1", "uWert"), 1e-9);
     }
