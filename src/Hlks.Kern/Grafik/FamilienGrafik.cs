@@ -51,6 +51,7 @@ public sealed class FamilienGrafik : IGrafikquelle
         var farbe = Farben.Oberflaeche(p, e) ?? HlksEinordnung.Farbe(HlksEinordnung.Medium(p, e));   // Heizkörper in ihrer Oberflächenfarbe (Farben.cs)
         var k = new Koerper { Id = e.Id, Ebene = Ebene(p.Katalog, e) };
         foreach (var t in a.Teile(detail)) k.Teile.Add(FamilienKoerper.Platzieren(t, lage, farbe));
+        if (IstFormteil(p.Katalog, e)) HlksKoerper.DaemmungFormteil(p, k, e, a, lage, detail);   // Dämmung an Bögen usw. (12.11.2026)
         return k.Leer ? null : k;
     }
 
@@ -199,7 +200,7 @@ public sealed class FamilienGrafik : IGrafikquelle
         {
             var s = p.Stil;
             if (p.Art == "text" || s.Stift is null || s.NurBildschirm == true) continue;
-            s.Stift = s.Linie is "strichpunkt" or Achslinien.Linie ? Stifte.Hilf
+            s.Stift = s.Linie is "strichpunkt" or Achslinien.Linie ? Achslinien.Stift
                 : s.Fuellung == "papier" || s.Stift is Stifte.Mittel or Stifte.Dick or Stifte.Kontur ? Stifte.Kontur : Stifte.Hilf;
         }
     }

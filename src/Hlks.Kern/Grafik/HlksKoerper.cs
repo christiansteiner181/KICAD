@@ -216,6 +216,26 @@ public static class HlksKoerper
         Daemmteile(k, teile);
     }
 
+    /// <summary>Dämmung eines Formteils mit Familie (Christian 12.11.2026: «dämmungen an Bogen fehlen im 3d»): wie im Grundriss (DaemmGrafik) die Dämmung
+    /// der angeschlossenen Leitung mit der grössten Dämmbreite, entlang der Achsen des Formteils; Detailgrad fein wie bei den Leitungen.</summary>
+    internal static void DaemmungFormteil(Projekt p, Koerper k, Element e, FamAufloesung a, Einbaulage lage, string detail)
+    {
+        if (detail != "fein") return;
+        var m = p.Modell; var kat = p.Katalog;
+        var n = m.VerbindungenVon(e.Id).Select(v => m.Finde(v.Von.Element == e.Id ? v.Nach.Element : v.Von.Element)).OfType<Element>()
+            .Where(x => kat.IstArt(x, "Leitung")).Select(x => (El: x, Ms: HlksMasse.Von(p, x))).Where(x => x.Ms is { Daemmdicke: > 0 })
+            .OrderByDescending(x => x.Ms!.DaemmBreite).FirstOrDefault();
+        if (n.Ms is not { } ms) return;
+        var farbe = HlksEinordnung.Farbe(HlksEinordnung.Medium(p, n.El));
+        foreach (var achse in a.Achsen)
+        {
+            var pts = achse.Select(lage.Welt).ToList();
+            if (pts.Count < 2) continue;
+            if (ms.Rechteck) DaemmungKanal(k, pts, ms, farbe);
+            else DaemmungRohr(k, pts, ms.Durchmesser / 2, ms.Daemmdicke, farbe);
+        }
+    }
+
     static void DaemmungKanal(Koerper k, List<double[]> pts, LeitungsMass mass, string? farbe)
     {
         var teile = new Koerper();

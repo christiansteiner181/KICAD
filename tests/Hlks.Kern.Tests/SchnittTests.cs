@@ -291,7 +291,7 @@ public class SchnittTests(ITestOutputHelper aus)
 
         var t3 = TeilVon(g, p, "RO-3")!;
         Assert.Empty(Flaechen(t3));
-        Assert.All(Kanten(t3), x => Assert.Equal(x.Stil.Linie == Achslinien.Linie ? Stifte.Hilf : Stifte.Duenn, x.Stil.Stift));   // Achsen 0.2 mm (09.11.2026)
+        Assert.All(Kanten(t3), x => Assert.Equal(x.Stil.Linie == Achslinien.Linie ? Stifte.Fein : Stifte.Duenn, x.Stil.Stift));   // Achsen fein 0.1 mm (12.11.2026)
         foreach (var v in new[] { 450.0, 550.0 })
         {
             var (von, bis) = Assert.Single(Waagrecht(t3, v));

@@ -47,6 +47,21 @@ public class RoutingZeichnenTests
     }
 
     [Fact]
+    public void Daemmung3D_AuchAmBogen()
+    {
+        // Christian 12.11.2026: «dämmungen an Bogen fehlen im 3d» – der Bogen bekommt die Dämmung der angeschlossenen Leitung entlang seiner Achse
+        var p = MitSerie();
+        Ok(Zeichnen(p, "DN 20", [[0, 0, 1000], [2000, 0, 1000], [2000, 1500, 1000]]));
+        bool Daemmkoerper(Koerperteil t) => t.NichtSchneiden && t.Deckkraft == 0.35;
+        Assert.DoesNotContain(Grafik.Koerper(p, [Hole(p, "BO-1").Id]).Single().Teile, Daemmkoerper);   // ohne Dämmung an den Leitungen
+        foreach (var kz in new[] { "RO-1", "RO-2" })
+            Ok(p.Ausfuehren("element_aendern", new JsonObject { ["element"] = kz, ["eigenschaften"] = new JsonObject { ["daemmdicke"] = 20 } }));
+        var daemm = Grafik.Koerper(p, [Hole(p, "BO-1").Id]).Single().Teile.Where(Daemmkoerper).ToList();
+        Assert.NotEmpty(daemm);
+        Assert.All(daemm.Where(t => t.Radius is not null), t => Assert.Equal(32.5, t.Radius!.Value, 6));   // da 25 / 2 + 20, wie an der Leitung
+    }
+
+    [Fact]
     public void Weiterzeichnen_MitBogenAmEnde_KuerztDieBestehendeGerade()
     {
         // Christian 12.11.2026: am Ende einer Leitung direkt mit 90° weiterzeichnen – die bestehende Leitung passt sich an

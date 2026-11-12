@@ -4324,6 +4324,10 @@ jedes neue Projekt erhält alle Mustersysteme.
 - **Dämmung in der Rohrfarbe** (Christian 12.11.2026: «wird die Dämmung gezeigt, so soll sie die Rohrfarbe mit transparenz erhalten»): die Dämmfläche im
   Grundriss (mittel, fein) ist transparent in der Farbe des Mediums der Leitung (bisher gelb); Formteile in der Farbe der angeschlossenen Leitung. Die
   Aussenkontur ebenfalls in der Rohrfarbe, wesentlich feiner (Stift «fein» 0.10 mm, Christian 12.11.2026), verdeckte gestrichelt. Im Detailgrad grob bleibt der gelbe Punkt.
+- **Dämmung an Bögen im 3D** (Christian 12.11.2026: «dämmungen an Bogen fehlen im 3d»): Formteile bekommen im 3D (fein) die Dämmung der angeschlossenen
+  Leitung entlang ihrer Achse, wie im Grundriss.
+- **Achslinien fein** (Christian 12.11.2026: «alle achslinien feiner machen. eher wie dämmungskannte»): alle Achslinien (Leitungen, Formteile, Familien,
+  Achsenkreuze, Schnitte) mit dem Stift «fein» 0.10 mm statt 0.20 mm.
 - **Abwasserleitung: Silent mit 2 % Gefälle** (Christian 12.11.2026: «Abwasser leitungen sind immer Silent mit 2% Gefälle», «Gefälle im gelben bereich
   einstellbar»): Sanitär › Abwasserleitung startet mit der Produktlinie Silent und 2 % Gefälle; bei Abwasser-Produktlinien steht das Gefälle in der gelben
   Optionsleiste. Rohr und Versorgungsleitung starten ohne Gefälle und ohne Abwasser-Produktlinie.

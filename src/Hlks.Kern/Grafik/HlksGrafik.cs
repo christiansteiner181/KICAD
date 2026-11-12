@@ -440,7 +440,7 @@ public sealed class HlksGrafik : IGrafikquelle
                 {
                     // Achsenkreuz mit Überstand, anthrazit (Christian 06.11.2026: «hier können die achskreuze verlängert werden», «achskreuze in antrazith»)
                     double r = b / 2, hk = r + Achslinien.Ueberstand(r, M);
-                    var kreuzStil = new Stil { Stift = Stifte.Hilf, Linie = Achslinien.Linie, Farbe = AchseAnthrazit };
+                    var kreuzStil = new Stil { Stift = Achslinien.Stift, Linie = Achslinien.Linie, Farbe = AchseAnthrazit };
                     yield return new Primitiv { Art = "linie", Punkte = [[x - hk, y], [x + hk, y]], Stil = kreuzStil };
                     yield return new Primitiv { Art = "linie", Punkte = [[x, y - hk], [x, y + hk]], Stil = kreuzStil };
                 }
