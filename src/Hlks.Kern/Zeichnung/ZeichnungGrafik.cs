@@ -58,8 +58,10 @@ public static class ZeichnungGrafik
         {
             if (!(vp.ViewHeight > 0) || !(vp.Height > 0) || !(vp.Width > 0)) { lauf.Nicht("Viewport (ohne Grösse)"); continue; }
             double k = vp.Height / vp.ViewHeight;
-            var t = Afin.Verschiebung(vp.Center.X, vp.Center.Y).Nach(Afin.Skalierung(k, k)).Nach(Afin.Drehung(vp.TwistAngle))
-                        .Nach(Afin.Verschiebung(-(vp.ViewTarget.X + vp.ViewCenter.X), -(vp.ViewTarget.Y + vp.ViewCenter.Y)));
+            // Blatt = Mitte + k · (Drehung(Verdrehung) · (Modell − Ziel) − Ansichtsmitte): die Ansichtsmitte (ViewCenter) steht im gedrehten
+            // Anzeigesystem des Fensters (DCS), das Ziel (ViewTarget) im Weltsystem – sie wird deshalb NACH der Drehung abgezogen.
+            var t = Afin.Verschiebung(vp.Center.X, vp.Center.Y).Nach(Afin.Skalierung(k, k)).Nach(Afin.Verschiebung(-vp.ViewCenter.X, -vp.ViewCenter.Y))
+                        .Nach(Afin.Drehung(vp.TwistAngle)).Nach(Afin.Verschiebung(-vp.ViewTarget.X, -vp.ViewTarget.Y));
             var teil = new ZeichnungTeil { Fenster = [vp.Center.X - vp.Width / 2, vp.Center.Y - vp.Height / 2, vp.Center.X + vp.Width / 2, vp.Center.Y + vp.Height / 2] };
             var gefroren = vp.FrozenLayers.Select(l => l.Name).ToHashSet(StringComparer.OrdinalIgnoreCase);
             var ctx = Kontext.Oben with { T = t, Gefroren = gefroren.Count > 0 ? gefroren : null };
