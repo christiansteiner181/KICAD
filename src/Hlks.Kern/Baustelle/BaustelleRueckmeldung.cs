@@ -30,15 +30,18 @@ public static class BaustelleRueckmeldung
     public static readonly IReadOnlyList<AbfrageDef> Definitionen =
         [new("rueckmeldung_lesen", LesenText, [new("datei", "text", false, ParDatei), new("inhalt", "objekt", false, ParInhalt)])];
 
-    public static object? Tuer(Projekt p, string name, JsonObject par) => name == "rueckmeldung_lesen" ? Lesen(p, Laden(par)) : null;
+    public static object? Tuer(Projekt p, string name, JsonObject par) => name == "rueckmeldung_lesen" ? Lesen(p, Laden(p, par)) : null;
 
     public static void Registrieren(Befehlsregister r) => r.Hinzufuegen(new RueckmeldungUebernehmen());
 
-    public static JsonObject Laden(JsonObject par)
+    /// <summary>Rückmeldung aus «inhalt» oder aus der Datei. Die KI (rueckmeldung_lesen ist für sie erlaubt) nennt Dateien nur unter dem Projektordner und den
+    /// Wurzeln aus kataloge/buero.json – geprüft vor dem ersten Dateizugriff (KiPfade, Sicherheitsprüfung 3c B3a/B4; Gesamtprüfung 13.11.2026).</summary>
+    public static JsonObject Laden(Projekt p, JsonObject par)
     {
         if (par["inhalt"] is JsonObject o) return o;
         var datei = Param.Text(par, "datei")?.Trim().Trim('"');
         if (string.IsNullOrEmpty(datei)) throw new HlksFehler("Rückmeldung fehlt.", "datei (Pfad der .json) oder inhalt angeben.");
+        datei = KiPfade.Pruefen(p, datei, "rueckmeldung_lesen");
         if (!File.Exists(datei)) throw new HlksFehler($"Die Datei «{datei}» gibt es nicht.", "Vollständigen Pfad der Rückmeldedatei angeben.");
         try { return JsonNode.Parse(File.ReadAllText(datei)) as JsonObject ?? throw new HlksFehler("Die Datei ist keine Rückmeldung."); }
         catch (System.Text.Json.JsonException ex) { throw new HlksFehler($"Die Datei ist kein gültiges JSON: {ex.Message}"); }
@@ -99,8 +102,9 @@ public sealed class RueckmeldungUebernehmen : IBefehl
 
     public void Ausfuehren(Kontext k, JsonObject p)
     {
-        if (k.Projekt.AkteurArt == "ki") throw new HlksFehler("Rückmeldungen der Baustelle übernimmt der Mensch.", "Den Projektleiter bitten.");
-        var r = BaustelleRueckmeldung.Laden(p);
+        // Herkunft des Aufrufs, nicht Art des Projekts: eine KI über HTTP meldet sich je Aufruf (X-Hlks-Akteur-Art: ki, Rang 4)
+        if (k.Herkunft.Art == "ki") throw new HlksFehler("Rückmeldungen der Baustelle übernimmt der Mensch.", "Den Projektleiter bitten.");
+        var r = BaustelleRueckmeldung.Laden(k.Projekt, p);
         var liste = BaustelleRueckmeldung.Pruefen(k.Projekt, r);
         var nur = p["meldungen"] is JsonArray a ? a.Select(x => x?.GetValue<string>()).OfType<string>().ToHashSet() : null;
         var person = T(r["person"]) ?? "Baustelle";

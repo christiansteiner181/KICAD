@@ -524,6 +524,10 @@ public class WerkzeugTests
             Assert.Contains("Fremdname", w.ElementLesen("E.02"));                 // ohne eigenes synchronisieren
             Assert.Equal(b.Modell.Pruefsumme(), a.Modell.Pruefsumme());
 
+            // Gesamtprüfung 13.11.2026: auch die Fachabfragen, die das Modell lesen (lagen, heizlast, datenpunktliste …), gleichen vorher ab
+            Assert.True(b.Ausfuehren("element_aendern", new JsonObject { ["element"] = "EG", ["eigenschaften"] = new JsonObject { ["ukRohdecke"] = 2777 } }).Angenommen);
+            Assert.Contains("2777", w.LagenWerkzeug("EG"));
+
             var s = Json(w.Synchronisieren()).AsObject();                         // nichts Neues mehr
             Assert.Equal(0, s["neuePakete"]!.GetValue<int>());
             a.Freigeben(); b.Freigeben();

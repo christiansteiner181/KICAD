@@ -13,7 +13,7 @@ public sealed partial class Werkzeuge
 {
     [McpServerTool(Name = "kanal_druckverlust"), Description(KanalDruckverlust.Text)]   // Modul 6 Teil B
     public string KanalDruckverlustWerkzeug([Description(KanalDruckverlust.ParTemperatur)] double? temperatur = null) =>
-        Lauf(() => Antwort((JsonNode)Tuer.Abfrage(projekt, "kanal_druckverlust", Parameter(("temperatur", temperatur)))), synchronisieren: false);
+        Lauf(() => Antwort((JsonNode)Tuer.Abfrage(projekt, "kanal_druckverlust", Parameter(("temperatur", temperatur)))));
 
     [McpServerTool(Name = "lueftung_varianten"), Description(LueftungKette.AbfrageText)]
     public string LueftungVariantenLesen(

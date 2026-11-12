@@ -94,7 +94,7 @@ public sealed partial class Werkzeuge
 
     [McpServerTool(Name = "lagen"), Description(Hlks.Kern.Lagen.Text)]   // Lagemanager, 05.11.2026
     public string LagenWerkzeug([Description(Hlks.Kern.Lagen.ParGeschoss)] string? geschoss = null) =>
-        Lauf(() => Antwort((System.Text.Json.Nodes.JsonNode)Hlks.Kern.Tuer.Abfrage(projekt, "lagen", Parameter(("geschoss", geschoss)))), synchronisieren: false);
+        Lauf(() => Antwort((System.Text.Json.Nodes.JsonNode)Hlks.Kern.Tuer.Abfrage(projekt, "lagen", Parameter(("geschoss", geschoss)))));
 
     [McpServerTool(Name = "farben"), Description(Hlks.Kern.Farben.Text)]   // Heizkörperfarben, 04.11.2026
     public string FarbenWerkzeug() =>
@@ -102,7 +102,7 @@ public sealed partial class Werkzeuge
 
     [McpServerTool(Name = "vorwand_stueckliste"), Description(Hlks.Kern.VorwandStueckliste.Text)]
     public string VorwandStuecklisteWerkzeug([Description("Vorwand (Kennzeichen oder Id); leer = alle")] string? vorwand = null) =>
-        Lauf(() => Antwort((System.Text.Json.Nodes.JsonNode)Hlks.Kern.Tuer.Abfrage(projekt, "vorwand_stueckliste", Parameter(("vorwand", vorwand)))), synchronisieren: false);
+        Lauf(() => Antwort((System.Text.Json.Nodes.JsonNode)Hlks.Kern.Tuer.Abfrage(projekt, "vorwand_stueckliste", Parameter(("vorwand", vorwand)))));
 
     [McpServerTool(Name = "elemente_verschieben"), Description("Verschiebt Elemente mit Geometrie (Architektur, HLKS, Beschriftung) um dx, dy, dz. Türen und Fenster folgen ihrer Wand; eine Öffnung allein wandert entlang ihrer Wand.")]
     public string ElementeVerschieben(

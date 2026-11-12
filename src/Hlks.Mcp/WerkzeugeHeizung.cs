@@ -21,7 +21,7 @@ public sealed partial class Werkzeuge
     public string HeizlastRechnen(
         [Description(Heizlast.ParRaum)] string? raum = null,
         [Description(Heizlast.ParGebaeude)] string? gebaeude = null) =>
-        Lauf(() => Antwort((JsonNode)Tuer.Abfrage(projekt, "heizlast", Parameter(("raum", raum), ("gebaeude", gebaeude)))), synchronisieren: false);
+        Lauf(() => Antwort((JsonNode)Tuer.Abfrage(projekt, "heizlast", Parameter(("raum", raum), ("gebaeude", gebaeude)))));
 
     [McpServerTool(Name = "heizung_leistung"), Description(HeizungAbfragen.LeistungText)]
     public string HeizungLeistungLesen(
@@ -124,11 +124,11 @@ public sealed partial class Werkzeuge
 
     [McpServerTool(Name = "heizkoerper_auslegung"), Description(HeizkoerperAuslegung.Text)]   // Modul 5 Teil B
     public string HeizkoerperAuslegungWerkzeug([Description(HeizkoerperAuslegung.ParRaum)] string? raum = null) =>
-        Lauf(() => Antwort((JsonNode)Tuer.Abfrage(projekt, "heizkoerper_auslegung", Parameter(("raum", raum)))), synchronisieren: false);
+        Lauf(() => Antwort((JsonNode)Tuer.Abfrage(projekt, "heizkoerper_auslegung", Parameter(("raum", raum)))));
 
     [McpServerTool(Name = "rohr_druckverlust"), Description(RohrDruckverlust.Text)]   // Modul 5 Teil B
     public string RohrDruckverlustWerkzeug() =>
-        Lauf(() => Antwort((JsonNode)Tuer.Abfrage(projekt, "rohr_druckverlust", new JsonObject())), synchronisieren: false);
+        Lauf(() => Antwort((JsonNode)Tuer.Abfrage(projekt, "rohr_druckverlust", new JsonObject())));
 
     [McpServerTool(Name = "heizlast_uebernehmen"), Description(HeizlastUebernehmen.Text)]   // Modul 5 Teil B-H
     public string HeizlastUebernehmenWerkzeug(

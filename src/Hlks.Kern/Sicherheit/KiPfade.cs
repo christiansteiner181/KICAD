@@ -2,7 +2,7 @@
 //
 // Dateipfade in Parametern darf die KI nur unter diesen Wurzeln angeben (alle Werkzeuge mit Pfad-Parametern, Stand 20.10.2026:
 // unterlagen_lesen, befunde, unterlage_bild, familie_vergleichen, unterlage_einfuegen, ifc_pruefen, ifc_uebernehmen, familie_laden, bcf_lesen,
-// bcf_import, bcf_export, aussparungen_ifc, plan_pdf, plansatz_pdf, plansatz_setzen ausgabe.ordner; norm_lesen prüft selbst gegen die Normenwurzel,
+// bcf_import, bcf_export, aussparungen_ifc, plan_pdf, plansatz_pdf, plansatz_setzen ausgabe.ordner, seither rvt_als_ifc und rueckmeldung_lesen; norm_lesen prüft selbst gegen die Normenwurzel,
 // familie_speichern lehnt die KI ganz ab):
 //   - Projektordner: Ablage des offenen Projekts (…\e_KICAD); ohne Ablage dessen Unterlagenordner unter %TEMP%
 //   - Projektablage:  HLKS_PROJEKTABLAGE › kataloge/buero.json projektablage.pfad
