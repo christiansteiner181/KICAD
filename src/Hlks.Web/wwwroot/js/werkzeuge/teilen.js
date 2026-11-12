@@ -51,7 +51,9 @@ export function teilenWerkzeug() {
       const [a, b] = g.element.geometrie.punkte, q = g.projektion.punkt;
       const l = Math.hypot(b[0] - a[0], b[1] - a[1]) || 1, n = [-(b[1] - a[1]) / l, (b[0] - a[0]) / l];
       const h = Math.max(g.halb, 4 * s) + 6 * s;   // quer über Leitung und Dämmung, etwas darüber hinaus
-      const la = Math.round(Math.hypot(q[0] - a[0], q[1] - a[1])), lb = Math.round(Math.hypot(b[0] - q[0], b[1] - q[1]));
+      // Längen entlang der Achse (mit Höhe), wie der Kern sie meldet – bei geneigten Leitungen ist die Grundrisslänge kürzer
+      const hz = (p) => p[2] ?? 0;
+      const la = Math.round(Math.hypot(q[0] - a[0], q[1] - a[1], hz(q) - hz(a))), lb = Math.round(Math.hypot(b[0] - q[0], b[1] - q[1], hz(b) - hz(q)));
       return S.linie([q[0] - n[0] * h, q[1] - n[1] * h], [q[0] + n[0] * h, q[1] + n[1] * h], 'wz-schnitt wz-teilen')
         + S.text([q[0] + n[0] * h, q[1] + n[1] * h], `${g.element.kennzeichen}: ${la} | ${lb} mm`, s, { versatzPx: [6, -6], klasse: 'wz-text wz-masstext' });
     },
