@@ -54,6 +54,20 @@ public static class BaustelleZugaenge
         return z;
     }
 
+    /// <summary>Entfernt den Zugang mit diesem Schlüssel (der Link gilt danach nicht mehr); false, wenn es ihn nicht gibt.</summary>
+    public static bool Entfernen(Projekt p, string schluessel)
+    {
+        var liste = Lesen(p);
+        if (liste is null || liste.RemoveAll(z => z.Schluessel == schluessel) == 0) return false;
+        var json = new JsonObject { ["zugaenge"] = new JsonArray(liste.Select(x => (JsonNode)new JsonObject { ["name"] = x.Name, ["rolle"] = x.Rolle, ["schluessel"] = x.Schluessel }).ToArray()) };
+        File.WriteAllText(Datei(p), json.ToJsonString(new System.Text.Json.JsonSerializerOptions { WriteIndented = true }));
+        return true;
+    }
+
+    /// <summary>Link eines Zugangs für das Büronetz: erste IPv4-Adresse dieses Rechners und der Baustellen-Port (ohne Port: 5135 des Testservers).</summary>
+    public static string Link(Zugang z, int? port) =>
+        $"http://{BaustelleZugang.Adressen().FirstOrDefault() ?? "localhost"}:{port ?? 5135}/baustelle/z/{z.Schluessel}";
+
     public static Zugang? Angemeldet(HttpRequest r, List<Zugang> liste) =>
         r.Cookies.TryGetValue(Keks, out var k) && !string.IsNullOrEmpty(k) ? liste.FirstOrDefault(z => z.Schluessel == k) : null;
 

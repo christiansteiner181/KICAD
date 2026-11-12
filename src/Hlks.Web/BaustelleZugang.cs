@@ -82,6 +82,22 @@ public static class BaustelleZugang
 
     public static WebApplication MapBaustelleZugang(this WebApplication app, ProjektDienst dienst, int? port)
     {
+        // Zugänge verwalten aus KICAD (Register «BIM to Field», Christian 12.11.2026: «mache für das einstellen aus KICAD einen Tab "BIM to Field"»);
+        // nur über localhost (/api ist auf dem Baustellen-Port gesperrt)
+        app.MapGet("/api/baustelle/zugaenge", () => Gesichert(async () => Antwort(await dienst.Mit(p => new
+        {
+            zugaenge = (BaustelleZugaenge.Lesen(p) ?? []).Select(z => new { name = z.Name, rolle = z.Rolle, schluessel = z.Schluessel, link = BaustelleZugaenge.Link(z, port) }),
+            port = port ?? 5135, testserver = port is null,
+        }))));
+        app.MapPost("/api/baustelle/zugaenge", (HttpRequest anfrage) => Gesichert(async () =>
+        {
+            var o = await JsonNode.ParseAsync(anfrage.Body) as JsonObject ?? throw new HlksFehler("Keine Angaben.");
+            var z = await dienst.Mit(p => BaustelleZugaenge.Anlegen(p, (string?)o["name"] ?? "", (string?)o["rolle"] ?? ""));
+            return Antwort(new { name = z.Name, rolle = z.Rolle, schluessel = z.Schluessel, link = BaustelleZugaenge.Link(z, port) });
+        }));
+        app.MapDelete("/api/baustelle/zugaenge/{schluessel}", (string schluessel) => Gesichert(async () =>
+            await dienst.Mit(p => BaustelleZugaenge.Entfernen(p, schluessel)) ? Antwort(new { ok = true }) : Antwort(new { fehler = "Diesen Zugang gibt es nicht." }, 404)));
+
         // Persönlicher Link (12.11.2026): setzt das Cookie für ein Jahr und leitet auf die Übersicht; abmelden löscht es
         app.MapGet("/baustelle/z/{schluessel}", (string schluessel, HttpRequest anfrage) => Gesichert(async () =>
         {

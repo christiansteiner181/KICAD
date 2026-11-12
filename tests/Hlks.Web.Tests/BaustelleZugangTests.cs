@@ -131,6 +131,15 @@ public class BaustelleZugangTests
             Assert.Equal(200, (await Netz("POST", "/baustelle/rueckmeldung", "mmmmmmmm2222", r)).Response.StatusCode);
             var eingang = JsonNode.Parse(await http.GetStringAsync("/api/baustelle/eingang"))!["dateien"]!.AsArray();
             Assert.Equal("Monteur Test", (string)Assert.Single(eingang)!["person"]!);
+            // Verwalten aus KICAD (Register BIM to Field): anlegen, Link gilt, entfernen macht ihn ungültig
+            var neu = JsonNode.Parse(await (await http.PostAsync("/api/baustelle/zugaenge", Json(new { name = "Neu Monteur", rolle = "monteur" }))).Content.ReadAsStringAsync())!;
+            var s = (string)neu["schluessel"]!;
+            Assert.EndsWith("/baustelle/z/" + s, (string)neu["link"]!);
+            Assert.Equal(3, JsonNode.Parse(await http.GetStringAsync("/api/baustelle/zugaenge"))!["zugaenge"]!.AsArray().Count);
+            Assert.Equal(302, (await Netz("GET", "/baustelle/z/" + s)).Response.StatusCode);
+            Assert.Equal(HttpStatusCode.OK, (await http.DeleteAsync("/api/baustelle/zugaenge/" + s)).StatusCode);
+            Assert.Equal(403, (await Netz("GET", "/baustelle/z/" + s)).Response.StatusCode);
+            Assert.Equal(404, (await Netz("GET", "/api/baustelle/zugaenge")).Response.StatusCode);   // nicht über den Baustellen-Port
             await http.PostAsync("/api/projekt/schliessen", Json(new { }));
         }
         finally

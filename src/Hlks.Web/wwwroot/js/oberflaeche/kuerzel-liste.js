@@ -5,7 +5,7 @@
 /** Registerkennung → Anzeigename, in der Reihenfolge des Menübands (menueband.js REGISTER), dahinter Auswahl (Kontextregister) und Familie. */
 export const REGISTER_NAMEN = {
   datei: 'Datei', architektur: 'Architektur', huelle: 'Hülle', heizung: 'Heizung', lueftung: 'Lüftung', sanitaer: 'Sanitär', msrl: 'MSRL', einfuegen: 'Einfügen', beschriften: 'Beschriften',
-  aendern: 'Ändern', koordination: 'Koordination', ansicht: 'Ansicht', xr: 'XR', verwalten: 'Verwalten', kontext: 'Auswahl', familie: 'Familie',
+  aendern: 'Ändern', koordination: 'Koordination', ansicht: 'Ansicht', xr: 'XR', verwalten: 'Verwalten', bim: 'BIM to Field', kontext: 'Auswahl', familie: 'Familie',
 };
 export const ALLGEMEIN = 'Allgemein';
 

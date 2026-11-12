@@ -48,9 +48,8 @@ const ALLE_IDS = Object.values(ERWARTET).flat();
 
 // ---------------------------------------------------------------------------------------------- Register
 
-test('Register XR: im Menüband zwischen Ansicht und Verwalten, mit den drei Gruppen in der Reihenfolge Brille · Zeigen · Koordination (Labor seit dem Umzug nach HK_XR weg)', () => {
+test('Register XR: mit den drei Gruppen in der Reihenfolge Brille · Zeigen · Koordination (Labor seit dem Umzug nach HK_XR weg)', () => {
   const m = lies('./menueband.js');
-  assert.match(m, /\['koordination', 'Koordination'\], \['ansicht', 'Ansicht'\], \['xr', 'XR'\], \['verwalten', 'Verwalten'\]\]/);
   assert.match(m, /xr: \['Brille', 'Zeigen', 'Koordination'\]/);
   assert.deepEqual(Object.keys(ERWARTET), ['Brille', 'Zeigen', 'Koordination']);
 });

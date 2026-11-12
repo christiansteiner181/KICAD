@@ -9,8 +9,68 @@ import { zeigen, meldung } from './dialoge.js';
 import { knoten, esc } from './werkzeug.js';
 import { sende, ergebnisMelden } from './befehle.js';
 
+// Register «BIM to Field» (Christian 12.11.2026: «mache für das einstellen aus KICAD einen Tab "BIM to Field"»): Webseiten für Monteur und
+// Projektleiter, Zugänge (persönliche Links), Rückmeldungen. Der Monteur orientiert sich am Grundriss (was kommt wo, wo läuft es durch), die Schemas
+// zeigen ihm den Zusammenhang, das 3D-Modell dort, wo der Grundriss nicht alle Zusammenhänge zeigt (Christian 12.11.2026).
+async function webseite(rolle, stand) {
+  try {
+    const erg = await abfrage('baustelle_export', { rolle, stand });
+    window.open('/api/baustelle/datei?pfad=' + encodeURIComponent(erg.datei), '_blank');
+    meldung(`Webseite ${rolle === 'monteur' ? 'Monteur' : 'Projektleiter'} erzeugt: ${erg.datei}`, 'ok');
+  } catch (e) { meldung(e instanceof ApiFehler ? e.message : String(e?.message ?? e), 'warnung', { vorschlag: e?.vorschlag ?? undefined }); }
+}
+const offen = () => !!zustand.status?.offen;
 registrieren({
-  id: 'datei.baustelle-export', titel: 'Baustelle (Webseite)', symbol: 'bildschirm', kuerzel: null, register: 'datei', gruppe: 'Ausgabe',
+  id: 'bim.webseite-monteur', titel: 'Webseite Monteur', symbol: 'bildschirm', kuerzel: null, register: 'bim', gruppe: 'Webseiten',
+  aktiv: offen, hinweis: 'Zuerst ein Projekt öffnen.', ausfuehren: () => webseite('monteur', 'freigegeben'),
+});
+registrieren({
+  id: 'bim.webseite-projektleiter', titel: 'Webseite Projektleiter', symbol: 'bildschirm', kuerzel: null, register: 'bim', gruppe: 'Webseiten',
+  aktiv: offen, hinweis: 'Zuerst ein Projekt öffnen.', ausfuehren: () => webseite('bauleitung', 'arbeitsstand'),
+});
+registrieren({
+  id: 'bim.zugaenge', titel: 'Zugänge', symbol: 'eigenschaften', kuerzel: null, register: 'bim', gruppe: 'Zugänge',
+  aktiv: offen, hinweis: 'Zuerst ein Projekt öffnen.', ausfuehren: () => zugaengeDialog(),
+});
+
+/** Zugänge des Projekts (persönliche Links für Monteur und Projektleiter des Unternehmers): anlegen, Link kopieren, entfernen. */
+async function zugaengeDialog() {
+  const w = knoten(`<div style="display:grid;gap:10px">
+    <div class="zg-liste"></div>
+    <fieldset><legend>Neuer Zugang</legend>
+      <label class="fz"><span>Name</span><input type="text" class="zg-name" placeholder="z. B. Hans Muster (Firma)"></label>
+      <label class="fz"><span>Rolle</span><select class="zg-rolle"><option value="monteur">Monteur – nur freigegebene Webseiten</option><option value="projektleiter">Projektleiter – alles, auch Arbeitsstand</option></select></label>
+      <button type="button" class="dlg-knopf zg-neu">Zugang anlegen</button></fieldset>
+    <p class="leise">Den Link einmal am Handy oder Tablet öffnen – das Gerät bleibt angemeldet. Entfernen macht den Link ungültig.</p></div>`);
+  const q = (s) => w.querySelector(s);
+  async function laden() {
+    const d = await (await fetch('/api/baustelle/zugaenge')).json();
+    const l = d.zugaenge ?? [];
+    q('.zg-liste').innerHTML = (d.testserver ? '<p class="leise">Die Links zeigen auf den Baustellen-Testserver (Port ' + esc(d.port) + ').</p>' : '')
+      + (l.length === 0 ? '<p class="leise">Noch keine Zugänge.</p>' : `<table class="tab"><thead><tr><th>Name</th><th>Rolle</th><th>Link</th><th></th></tr></thead><tbody>${l.map((z) =>
+        `<tr data-s="${esc(z.schluessel)}"><td>${esc(z.name)}</td><td>${z.rolle === 'projektleiter' ? 'Projektleiter' : 'Monteur'}</td><td><input type="text" readonly value="${esc(z.link)}" size="38"></td>`
+        + `<td><button type="button" class="dlg-knopf zg-kopie">Kopieren</button> <button type="button" class="dlg-knopf zg-weg">Entfernen</button></td></tr>`).join('')}</tbody></table>`);
+  }
+  w.addEventListener('click', async (e) => {
+    const tr = e.target.closest('tr[data-s]');
+    if (e.target.closest('.zg-kopie') && tr) { const v = tr.querySelector('input').value; try { await navigator.clipboard.writeText(v); meldung('Link kopiert.', 'ok'); } catch { tr.querySelector('input').select(); } }
+    else if (e.target.closest('.zg-weg') && tr) { await fetch('/api/baustelle/zugaenge/' + encodeURIComponent(tr.dataset.s), { method: 'DELETE' }); await laden(); }
+    else if (e.target.closest('.zg-neu')) {
+      const name = q('.zg-name').value.trim();
+      if (!name) { meldung('Bitte einen Namen eintragen.', 'warnung'); return; }
+      const r = await fetch('/api/baustelle/zugaenge', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ name, rolle: q('.zg-rolle').value }) });
+      const j = await r.json();
+      if (!r.ok) { meldung(j.fehler ?? 'Zugang nicht angelegt.', 'warnung', { vorschlag: j.vorschlag ?? undefined }); return; }
+      q('.zg-name').value = '';
+      await laden();
+    }
+  });
+  await laden();
+  await zeigen({ titel: 'Zugänge KICAD Baustelle', inhalt: w, breite: 820, knoepfe: [{ text: 'Schliessen', wert: true, primaer: true }] });
+}
+
+registrieren({
+  id: 'datei.baustelle-export', titel: 'Webseite …', symbol: 'bildschirm', kuerzel: null, register: 'bim', gruppe: 'Webseiten',
   aktiv: () => !!zustand.status?.offen, hinweis: 'Zuerst ein Projekt öffnen.',
   ausfuehren: () => baustelleDialog(),
 });
@@ -18,7 +78,7 @@ registrieren({
 // Rückkanal (Datei von der Baustellen-Webseite): Vorschau mit rueckmeldung_lesen, Übernahme der angehakten Meldungen mit rueckmeldung_uebernehmen
 // (ein Paket; Status ans Element, Mängel/Fragen/Abweichungen als Problem-Marker). Übernehmen tut der Mensch.
 registrieren({
-  id: 'datei.baustelle-rueckmeldung', titel: 'Rückmeldung Baustelle', symbol: 'problemMarker', kuerzel: null, register: 'datei', gruppe: 'Ausgabe',
+  id: 'datei.baustelle-rueckmeldung', titel: 'Rückmeldungen', symbol: 'problemMarker', kuerzel: null, register: 'bim', gruppe: 'Rückmeldungen',
   aktiv: () => !!zustand.status?.offen, hinweis: 'Zuerst ein Projekt öffnen.',
   ausfuehren: () => rueckmeldungDialog(),
 });

@@ -4302,6 +4302,11 @@ jedes neue Projekt erhält alle Mustersysteme.
 - **Dämmung als eine vereinigte Fläche** (09.11.2026, «überlappungen sind frablich anders als der rest. zudem hat es beim innenradius noch falsche
   schwarze darstellungen»): `DaemmGrafik` vereinigt die Dämmbänder aller sichtbaren Leitungen und der angeschlossenen Formteile (entlang ihrer Achsen) zu
   einer Fläche je Zusammenhang (Teil «daemmung», unter den Leitungen), gelb transparent, nur der Aussenrand schwarz dünn; aussen gerundet, innen scharf.
+- **Register «BIM to Field»** (Christian 12.11.2026: «mache für das einstellen aus KICAD einen Tab "BIM to Field"»), zwischen Verwalten und XR: Gruppe
+  Webseiten (Webseite Monteur = freigegeben, Webseite Projektleiter = Arbeitsstand, Webseite … mit Auswahl), Zugänge (persönliche Links für Monteur und
+  Projektleiter des Unternehmers anlegen, kopieren, entfernen; /api/baustelle/zugaenge), Rückmeldungen. Die Baustellen-Webseite startet im Grundriss, dann
+  Strangschema, Prinzipschema, 3D (Christian: der Monteur orientiert sich am Grundriss – was kommt wo, wo läuft es durch –, die Schemas zeigen den Zusammenhang,
+  das 3D-Modell dort, wo der Grundriss nicht alle Zusammenhänge zeigt).
 - **Ändern | Rohr wie Revit** (Christian 11.11.2026: «ist eine leitung angewählt soll der tab "ändern" aktiv sein», «in ändern werden auch dinge wie
   isolation angezeigt. richte dich dabei an der revit basis»): wird eine Leitung angewählt, springt das Menüband aus jedem Register auf «Ändern | Rohr»
   (nicht während ein Werkzeug läuft); beim Abwählen zurück. Neue Gruppe «Dämmung»: Dämmung hinzufügen, Dämmung bearbeiten (Art bzw. Produkt, Dicke; für

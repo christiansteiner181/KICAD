@@ -32,10 +32,11 @@ function tabGewerk(id) {
 }
 
 // Reihenfolge Christian 09.11.2026: «Tab Ordnung: Datei, Einfügen, Heizung, Lüftung, Sanitär, Koordination, MSRL, Architektur, Hülle, Beschriften, Verwalten, XR, Ändern» (Ansicht nach Beschriften)
-const REGISTER = [['datei', 'Datei'], ['einfuegen', 'Einfügen'], ['heizung', 'Heizung'], ['lueftung', 'Lüftung'], ['sanitaer', 'Sanitär'], ['koordination', 'Koordination'], ['msrl', 'MSRL'], ['architektur', 'Architektur'], ['huelle', 'Hülle'], ['beschriften', 'Beschriften'], ['ansicht', 'Ansicht'], ['verwalten', 'Verwalten'], ['xr', 'XR'], ['aendern', 'Ändern']];
+const REGISTER = [['datei', 'Datei'], ['einfuegen', 'Einfügen'], ['heizung', 'Heizung'], ['lueftung', 'Lüftung'], ['sanitaer', 'Sanitär'], ['koordination', 'Koordination'], ['msrl', 'MSRL'], ['architektur', 'Architektur'], ['huelle', 'Hülle'], ['beschriften', 'Beschriften'], ['ansicht', 'Ansicht'], ['verwalten', 'Verwalten'], ['bim', 'BIM to Field'], ['xr', 'XR'], ['aendern', 'Ändern']];
 // Reihenfolge der Gruppen je Register (Einfügereihenfolge der Aktionen reicht nicht, weil Werkzeuge nachträglich dazukommen)
 const GRUPPENFOLGE = {
-  datei: ['Projekt', 'Ausgabe'],   // «Zuletzt geöffnet» hängt gruppenListe() immer hinten an; Ausgabe seit Modul 7 Teil B2 (IFC exportieren)
+  datei: ['Projekt', 'Ausgabe'],
+  bim: ['Webseiten', 'Zugänge', 'Rückmeldungen'],   // BIM to Field (Christian 12.11.2026)   // «Zuletzt geöffnet» hängt gruppenListe() immer hinten an; Ausgabe seit Modul 7 Teil B2 (IFC exportieren)
   architektur: ['Bauteile', 'Decke, Boden, Dach', 'Raum', 'Raster'],
   huelle: ['Aufbauten', 'Materialien', 'Fenster', 'Übergang', 'Prüfen', 'Listen'],
   heizung: ['Leitungen', 'Familien'],
