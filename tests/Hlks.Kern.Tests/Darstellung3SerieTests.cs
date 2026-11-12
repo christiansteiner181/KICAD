@@ -408,6 +408,39 @@ public class Darstellung3SerieTests
     }
 
     [Fact]
+    public void Kreuzung_KanalMitKontur_UmrissBleibtAusserhalbDerDeckflaeche()
+    {
+        // Gesamtprüfung 13.11.2026 (Restliste): Kanal 400 × 200 (Kontur 0.5 mm) von x = 0 bis 2000 bei y = 1000, ein höheres Rohr kreuzt bei
+        // x = 1000 (Band 25 mm). Der Umriss des Kanals bleibt mit seinem Stift stehen – samt Stirnkanten bei x = 0 und 2000 – und ist nur unter
+        // dem Rohr (987.5 … 1012.5) unterbrochen. Vorher: Umriss durch Ersatzränder ohne Stirnkanten ersetzt.
+        var p = MitKanaelen();
+        Ok(Rohr(p, "RO-H", "DN 20", [1000, 500, 1500], [1000, 1500, 1500]));
+        var t = Teil(p, "KA-2");
+        var umriss = t.Primitive.Where(x => x.Art == "polylinie" && x.Stil.Stift == Stifte.Kontur && x.Stil.Linie == "voll").ToList();
+        static bool Kante(Primitiv x, double xx) => x.Punkte.Zip(x.Punkte.Skip(1)).Any(s =>
+            Math.Abs(s.First[0] - xx) < 0.01 && Math.Abs(s.Second[0] - xx) < 0.01 && Math.Abs(Math.Abs(s.First[1] - s.Second[1]) - 400) < 0.01);
+        Assert.Contains(umriss, x => Kante(x, 0)); Assert.Contains(umriss, x => Kante(x, 2000));   // Stirnkanten
+        Assert.All(umriss, x => Assert.Null(x.Stil.Fuellung));
+        Assert.DoesNotContain(umriss, x => x.Punkte.Zip(x.Punkte.Skip(1)).Any(s => Math.Min(s.First[0], s.Second[0]) < 999 && Math.Max(s.First[0], s.Second[0]) > 1001));
+        Assert.Equal(987.5, umriss.SelectMany(x => x.Punkte).Where(q => q[0] < 1000).Max(q => q[0]), 1);
+        Assert.Contains(t.Primitive, x => x.Art == "polylinie" && x.Stil.Linie == "strich" && x.Stil.Stift == Stifte.Hilf);   // verdeckte Ränder
+    }
+
+    [Fact]
+    public void Kreuzung_Grob_LueckeAbRandDesGezeichnetenStrichs()
+    {
+        // Handrechnung: grob wird mit Stift «mittel» 0.35 mm gezeichnet, Lücke je Seite 0.5 mm Papier → Unterbruch 0.35 + 2 × 0.5 = 1.35 mm Papier,
+        // im Massstab 1:50 67.5 mm (vorher aus 0.25 mm gerechnet: 62.5 mm, sichtbare Lücke nur 0.45 mm)
+        var p = MitSerie(false);
+        Ok(Rohr(p, "RO-1", "DN 20", [0, 0, 500], [3000, 0, 500]));
+        Ok(Rohr(p, "RO-2", "DN 20", [1500, -1000, 1500], [1500, 1000, 1500]));
+        Aendern(p, "AN-EG", new JsonObject { ["detailgrad"] = "grob" });
+        var m = Grafik.Plan(p, "AN-EG").Massstab;
+        var x = Teil(p, "RO-1").Primitive.Where(q => q.Art == "polylinie").SelectMany(q => q.Punkte).Select(q => q[0]).ToList();
+        Assert.Equal(1.35 * m, x.Where(v => v > 1500).Min() - x.Where(v => v < 1500).Max(), 1);
+    }
+
+    [Fact]
     public void Kreuzung_PunktImLochDerDeckflaeche_BleibtSichtbar()
     {
         // Gesamtprüfung 13.11.2026: die höhere Leitung als geschlossener Ring – der Dämmpunkt (grob) der tieferen Leitung liegt im Loch der
