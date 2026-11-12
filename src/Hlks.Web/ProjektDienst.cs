@@ -446,8 +446,11 @@ public sealed class ProjektDienst(Einstellungen einstellungen, ILogger<ProjektDi
             if (gen != Generation) return null;
             var bekannt = p.BekanntePakete;
             offen = liste.Where(id => !bekannt.Contains(id)).ToList();
+            // Solange ein Standabbild noch geschrieben wird (grosses Modell über VPN), kein weiteres vorbereiten: es würde in jedem Takt
+            // unter der Sperre das ganze Modell kopieren und dann verworfen (StandImHintergrund nimmt nur eines zur Zeit).
             lock (zustandSperre)
-                standFaellig = bekannt.Count - paketeImStand >= Einstellungen.StandNachPaketen && DateTimeOffset.Now >= standNaechsterVersuch;
+                standFaellig = bekannt.Count - paketeImStand >= Einstellungen.StandNachPaketen && DateTimeOffset.Now >= standNaechsterVersuch
+                    && Volatile.Read(ref standSchreibtGerade) == 0;
         }
         finally { sperre.Release(); }
 
@@ -501,7 +504,7 @@ public sealed class ProjektDienst(Einstellungen einstellungen, ILogger<ProjektDi
                         Senden(new JsonObject { ["art"] = "konflikt", ["konflikte"] = Json.Knoten(s.Konflikte) });
                 }
                 int imStand; bool standErlaubt;
-                lock (zustandSperre) { imStand = paketeImStand; standErlaubt = DateTimeOffset.Now >= standNaechsterVersuch; }
+                lock (zustandSperre) { imStand = paketeImStand; standErlaubt = DateTimeOffset.Now >= standNaechsterVersuch && Volatile.Read(ref standSchreibtGerade) == 0; }
                 if (!weitere && standErlaubt && p.BekanntePakete.Count - imStand >= Einstellungen.StandNachPaketen)
                 {
                     abbild = sp.Abbilden(p);
