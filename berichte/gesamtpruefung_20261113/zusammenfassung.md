@@ -46,6 +46,7 @@ Tests nach dem Zusammenführen (gefiltert): Kern 169 + 86 grün, Web 5 grün, No
 | 3D, Schnitte, XR | 4 (Kante am Absatz eines Prismas – L-förmige Decke – fehlte in Schnitt/Ansicht; «alles zeigen» passt im schmalen Fenster ein; Schnittbereich ziehen baut nicht mehr alle Körper neu; Farbe #rrggbbaa im 3D wie im XR-Export). Koordinatenwechsel Modell → three.js/glTF nachgerechnet | dreid_schnitte_xr.md |
 | Kollision, Prüfregeln | 3 (Netz.Folgen hatte eine stille Grenze von 2000 Schritten – Stranglisten, Sanitär-Dimensionierung, Lüftungsnetz, Kanal-Druckverlust; doppelt platzierte bzw. bündig überlappende Körper sind ein Schnitt statt «Berührung»; Familienkörper aus überlappenden Grundkörpern richtig innen/aussen). Leistung gemessen: 6000 Kapseln 21 ms, Pruefungen.Alle 6000 Rohre 24 ms; Netz.Verbraucher quadratisch (3000 Bauteile 2.8 s) | kollision_pruefungen.md |
 | KI-Schnittstelle | 2 Sicherheitsfehler (rueckmeldung_lesen nahm jeden Dateipfad der KI, auch fremde Netzpfade; rueckmeldung_uebernehmen liess eine KI über HTTP durch) und Abgleich vor 8 MCP-Fachabfragen (KI bekam sonst den alten Stand) | ki_schnittstelle.md |
+| Unterlagen, 2D-Zeichnung | 3 (Kalibrieren: Verschiebung zu den gerundet gespeicherten Werten – bei LV95 vorher 20 mm Versatz; DWG ausrichten aus den wirklichen Winkeln – 12.4° statt 12.0°, 43 mm an der Ecke; verdrehtes Ansichtsfenster im Layout lag ausserhalb) | unterlagen_zeichnung.md |
 
 Browser (Hauptlauf 18:13): Rohr am freien Leitungsende mit leerer Höhe begonnen – Höhe und Grösse des Anschlusses übernommen, Zug angelegt.
 
@@ -113,6 +114,8 @@ Browser (Hauptlauf 18:13): Rohr am freien Leitungsende mit leerer Höhe begonnen
 38. **Pfadgrenze für KI über HTTP**: gilt heute nach der Art des Projekts, nicht des Aufrufs – umstellen (Sitzungen, die heute Dateien
     von ausserhalb übernehmen, würden abgelehnt)?
 39. **unterlage_einfuegen im Trockenlauf** kopiert die Datei schon – darf das so bleiben?
+40. **Text spiegeln an waagrechter Achse** (2D-Zeichnung): steht danach auf dem Kopf, der Kommentar sagt «bleibt lesbar» – lesbar
+    halten? Dazu PSLTSCALE: Strichmuster im Layout-PDF bei 1:100 hundertfach zu fein – eine echte DWG mit Layout zur Prüfung zustellen?
 7. **λ-Werte der Dämmarten**: welche Produkte verwendet ihr (dann λ mit Quelle eintragen)?
 
 **Prüfung Hauptlauf im Browser (18:00):** Rohr mit drei raschen Klicks und Esc wird vollständig angelegt (Klick-Reihe), Weiterzeichnen mit Bogen am Leitungsende kürzt die bestehende Leitung. Nebenbefund: Start an einem Anschluss verlangt zuerst Produktlinie und Höhe, obwohl der Anschluss beides vorgibt (pflichtPruefen vor dem Anschluss) – kleine Korrektur für Runde 3.
