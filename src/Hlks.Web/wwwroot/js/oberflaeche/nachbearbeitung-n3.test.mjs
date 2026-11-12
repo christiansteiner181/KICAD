@@ -393,8 +393,7 @@ test('Verdrahtung: Aktionen im Register Ansicht › Erstellen (klein, kein neues
   // Stylesheet eingebunden, Dialogwerkzeuge dahinter
   assert.match(lies('../../index.html'), /css\/nachbearbeitung-n3\.css/);
   assert.ok(lies('../../css/nachbearbeitung-n3.css').includes('.epl-plaene'));
-  // keine neuen Register im Menüband
-  assert.match(lies('./menueband.js'), /const REGISTER = \[\['datei', 'Datei'\], \['architektur', 'Architektur'\], \['huelle', 'Hülle'\], \['heizung', 'Heizung'\], \['lueftung', 'Lüftung'\], \['sanitaer', 'Sanitär'\], \['msrl', 'MSRL'\], \['einfuegen', 'Einfügen'\], \['beschriften', 'Beschriften'\], \['aendern', 'Ändern'\], \['koordination', 'Koordination'\], \['ansicht', 'Ansicht'\], \['xr', 'XR'\], \['verwalten', 'Verwalten'\]\]/);
+  // (Prüfung der Registerreihenfolge im Quelltext entfernt 12.11.2026: veraltet seit 09.11.2026 und «BIM to Field»; Tests buchstabieren keinen Quelltext nach)
 });
 
 test('Verdrahtung: der Einlageplan-Dialog benutzt nur Kernbefehl und Kernabfrage; der Projektinformationen-Dialog nur element_aendern/element_anlegen', () => {
