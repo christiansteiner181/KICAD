@@ -59,6 +59,7 @@
     const a = $('info'); a.innerHTML = '';
     if (!e) { a.append(el('div', { className: 'leer', textContent: 'Element antippen – im 3D, im Plan oder in der Liste.' })); return; }
     a.append(el('h3', { textContent: e.kz }), el('div', { className: 'unter', textContent: [e.klasse, e.name].filter((x) => x).join(' · ') }));
+    if (e.box3d && renderer) a.append(el('button', { className: 'knopf-raum3d', textContent: 'Raum in 3D', onclick: () => raumIn3d(e) }));
     const t = el('table'); const tb = el('tbody'); t.append(tb);
     const zeile = (n, w) => { if (w !== undefined && w !== null && w !== '') tb.append(el('tr', {}, el('td', { textContent: n }), el('td', { textContent: w }))); };
     zeile('Geschoss', e.geschoss); zeile('Raum', e.raum); zeile('System', e.system); zeile('Gehört zu', e.teilVon);
@@ -291,7 +292,11 @@
     const f = $('plan-flaeche'); f.innerHTML = a ? a.svg : `<p style="padding:12px">${leer}</p>`;
     const svg = f.querySelector('svg'); if (!svg) return;
     const vb = svg.viewBox.baseVal; svg.setAttribute('width', vb.width); svg.setAttribute('height', vb.height);
-    for (const g of svg.querySelectorAll('g[data-id]')) g.addEventListener('click', (ev) => { if (!planGezogen && nachId.has(g.dataset.id)) { ev.stopPropagation(); waehlen(nachId.get(g.dataset.id), 'plan'); } });
+    for (const g of svg.querySelectorAll('g[data-id]')) {
+      g.addEventListener('click', (ev) => { if (!planGezogen && nachId.has(g.dataset.id)) { ev.stopPropagation(); waehlen(nachId.get(g.dataset.id), 'plan'); } });
+      // Räume auf der ganzen Fläche antippbar (nicht nur am Rand) (Christian 12.11.2026: «Das ganze muss etwas interaktiver werden. in den grundrissen müssen räume gewählt werden können, im kontext menü soll in die 3d ansicht des raumes gewechselt werden.»); sie liegen unter den Leitungen
+      if (nachId.get(g.dataset.id)?.klasse === 'Raum') for (const f of g.querySelectorAll('polygon, path, rect')) f.style.pointerEvents = 'all';
+    }
     planEinpassen(); planMarkieren();
   }
   // Plan mit dem gewählten Element: der aktuelle, wenn er es enthält, sonst der erste Grundriss bzw. die erste Ansicht damit
@@ -333,6 +338,36 @@
   });
   const loslassen = (ev) => { zeiger.delete(ev.pointerId); start = { ...plan, z: [...zeiger.values()] }; };
   pf.addEventListener('pointerup', loslassen); pf.addEventListener('pointercancel', loslassen);
+
+  // ------------------------------------------------------------ Kontextmenü im Plan (Christian 12.11.2026: «Das ganze muss etwas interaktiver werden. in den grundrissen müssen räume gewählt werden können, im kontext menü soll in die 3d ansicht des raumes gewechselt werden.»)
+  // Rechtsklick bzw. lange antippen (0.5 s) auf einen Raum: «Raum in 3D», «Raum wählen»
+  let menue = null, langTimer = null;
+  const menueZu = () => { menue?.remove(); menue = null; };
+  function raumUnter(x, y) {
+    for (const n of document.elementsFromPoint(x, y)) { const g = n.closest?.('#plan-flaeche g[data-id]'); const e = g && nachId.get(g.dataset.id); if (e?.klasse === 'Raum') return e; }
+    return null;
+  }
+  function menueAuf(x, y) {
+    const r = raumUnter(x, y); if (!r) return false;
+    menueZu();
+    menue = el('div', { className: 'kontextmenue' });
+    const punkt = (t, f) => menue.append(el('button', { textContent: t, onclick: () => { menueZu(); f(); } }));
+    menue.append(el('div', { className: 'km-titel', textContent: [r.kz, r.name].filter((x) => x).join(' · ') }));
+    if (r.box3d && renderer) punkt('Raum in 3D', () => raumIn3d(r));
+    punkt('Raum wählen', () => waehlen(r, 'plan'));
+    Object.assign(menue.style, { left: Math.min(x, innerWidth - 200) + 'px', top: Math.min(y, innerHeight - 120) + 'px' });
+    document.body.append(menue);
+    return true;
+  }
+  pf.addEventListener('contextmenu', (ev) => { if (menueAuf(ev.clientX, ev.clientY)) ev.preventDefault(); });
+  pf.addEventListener('pointerdown', (ev) => {
+    clearTimeout(langTimer);
+    if (ev.pointerType === 'mouse') return;
+    const x = ev.clientX, y = ev.clientY;
+    langTimer = setTimeout(() => { if (!planGezogen && zeiger.size === 1 && menueAuf(x, y)) planGezogen = true; }, 500);   // planGezogen: kein Antippen danach
+  });
+  for (const t of ['pointerup', 'pointercancel']) pf.addEventListener(t, () => clearTimeout(langTimer));
+  document.addEventListener('pointerdown', (ev) => { if (menue && !menue.contains(ev.target)) menueZu(); }, true);
 
   // ------------------------------------------------------------ 3D
   const flaeche = $('d3-flaeche');
@@ -400,7 +435,27 @@
     kamera.position.set(c.x + r * 0.9, c.y + r * 0.8, c.z + r * 1.1); kamera.near = r / 500; kamera.far = r * 50; kamera.updateProjectionMatrix();
     steuerung.target.copy(c); steuerung.update();
   }
-  $('d3-alles').addEventListener('click', () => { for (const g of gruppen) { g.an = true; g.cb.checked = true; } $('f-geschoss').value = ''; d3Filter(); liste(); material(); d3Einpassen(); });
+  // Raum in 3D: Geschoss des Raums, Schnittkasten um den Raum (0.3 m Rand), Kamera auf den Raum (Christian 12.11.2026: «Das ganze muss etwas interaktiver werden. in den grundrissen müssen räume gewählt werden können, im kontext menü soll in die 3d ansicht des raumes gewechselt werden.»)
+  const raumSchnitt = el('button', { textContent: 'Raumschnitt aufheben', hidden: true });
+  $('d3-leiste').append(raumSchnitt);
+  raumSchnitt.addEventListener('click', () => { if (renderer) renderer.clippingPlanes = []; raumSchnitt.hidden = true; d3Einpassen(); });
+  function raumIn3d(r) {
+    if (!renderer || !r.box3d) return;
+    reiter('d3');
+    if (r.geschoss && [...$('f-geschoss').options].some((o) => o.value === r.geschoss)) { $('f-geschoss').value = r.geschoss; d3Filter(); liste(); material(); }
+    const [x0, y0, z0, x1, y1, z1] = r.box3d, rand = 0.3;
+    renderer.clippingPlanes = [
+      new Plane(new Vector3(1, 0, 0), -(x0 - rand)), new Plane(new Vector3(-1, 0, 0), x1 + rand),
+      new Plane(new Vector3(0, 1, 0), -(y0 - rand)), new Plane(new Vector3(0, -1, 0), y1 + rand),
+      new Plane(new Vector3(0, 0, 1), -(z0 - rand)), new Plane(new Vector3(0, 0, -1), z1 + rand),
+    ];
+    raumSchnitt.hidden = false;
+    const c = new Vector3((x0 + x1) / 2, (y0 + y1) / 2, (z0 + z1) / 2), d = Math.hypot(x1 - x0, y1 - y0, z1 - z0) / 2 || 3;
+    kamera.position.set(c.x + d * 1.1, c.y + d * 0.9, c.z + d * 1.3); kamera.near = d / 200; kamera.far = d * 80; kamera.updateProjectionMatrix();
+    steuerung.target.copy(c); steuerung.update();
+    waehlen(r, '3d');
+  }
+  $('d3-alles').addEventListener('click', () => { if (renderer) renderer.clippingPlanes = []; raumSchnitt.hidden = true; for (const g of gruppen) { g.an = true; g.cb.checked = true; } $('f-geschoss').value = ''; d3Filter(); liste(); material(); d3Einpassen(); });
   function d3Groesse() { if (!renderer) return; const r = flaeche.getBoundingClientRect(); if (r.width < 2) return; renderer.setSize(r.width, r.height); kamera.aspect = r.width / r.height; kamera.updateProjectionMatrix(); }
   window.addEventListener('resize', d3Groesse);
 
@@ -428,7 +483,7 @@
   }
   function d3Markieren() {
     if (markierung) { szene.remove(markierung); markierung.geometry.dispose(); markierung = null; }
-    if (!gewaehlt) return;
+    if (!gewaehlt || gewaehlt.klasse === 'Raum') return;   // ein Raum würde seinen Inhalt verdecken (Raum in 3D zeigt ihn als Schnitt)
     const pos = [];
     for (const g of gruppen) g.modell.traverse((o) => {
       const z = o.userData.zuordnung; if (!o.isMesh || !z) return;

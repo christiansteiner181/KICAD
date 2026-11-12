@@ -36,6 +36,11 @@ public class BaustelleExportTests
         Assert.Contains("grundriss", gruppen);
         Assert.Contains("strangschema", gruppen);
         Assert.Subset(new HashSet<string> { "grundriss", "strangschema", "prinzipschema", "schnitt" }, gruppen);
+        // Räume mit Begrenzung für «Raum in 3D» (Christian 12.11.2026): glTF-Meter, min < max je Achse
+        var raum = daten["elemente"]!.AsArray().First(x => (string?)x!["klasse"] == "Raum" && x["box3d"] is not null)!;
+        var b = raum["box3d"]!.AsArray().Select(v => v!.GetValue<double>()).ToArray();
+        Assert.Equal(6, b.Length);
+        Assert.True(b[0] < b[3] && b[1] < b[4] && b[2] < b[5]);
         // three.js im selben Modul, ohne Import-Zeilen (läuft von file://)
         Assert.DoesNotContain("from 'three'", html);
         Assert.Contains("class OrbitControls", html);

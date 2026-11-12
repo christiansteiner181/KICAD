@@ -140,6 +140,17 @@ public static class BaustelleExport
 
         // 3D: dieselben GLB wie die Quest App, je Geschoss Modell und Unterlage (Architekten-IFC)
         var xr = XrModell.Stand(p);
+        // Räume für «Raum in 3D» (Christian 12.11.2026: «in den grundrissen müssen räume gewählt werden können, im kontext menü soll in die 3d ansicht
+        // des raumes gewechselt werden»): Begrenzung [min x, y, z, max x, y, z] in glTF-Koordinaten der GLB (XrKoordinaten, Bezugspunkt des Stands)
+        foreach (var o in elemente.OfType<JsonObject>().Where(o => (string?)o["klasse"] == "Raum"))
+        {
+            if (m.Finde((string)o["id"]!) is not { Geometrie.Punkte: { Count: >= 3 } pts } r) continue;
+            double kote = m.Finde(r.Geschoss)?.Zahl("kote") ?? 0, h = Raumgrenzen.Raumhoehe(m, r);
+            if (h <= 0) h = 3000;   // ANNAHME: ohne Höhe 3 m
+            var a0 = XrKoordinaten.Punkt(pts.Min(q => q[0]), pts.Max(q => q[1]), kote, xr.Bezugspunkt);
+            var a1 = XrKoordinaten.Punkt(pts.Max(q => q[0]), pts.Min(q => q[1]), kote + h, xr.Bezugspunkt);
+            o["box3d"] = new JsonArray(Math.Round(a0.X, 3), Math.Round(a0.Y, 3), Math.Round(a0.Z, 3), Math.Round(a1.X, 3), Math.Round(a1.Y, 3), Math.Round(a1.Z, 3));
+        }
         var geschosse3d = new JsonArray();
         foreach (var gs in xr.Geschosse)
         {

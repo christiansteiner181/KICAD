@@ -56,3 +56,10 @@ h4 { margin: 12px 0 4px; font-size: 13px; color: var(--blau); }
   #info { width: auto; max-height: 40%; border-left: none; border-top: 1px solid var(--rand); }
   #filter .suche input { width: 140px; }
 }
+
+/* Kontextmenü im Plan und Knopf «Raum in 3D» (12.11.2026) */
+.kontextmenue{position:fixed;z-index:50;background:#fff;border:1px solid #c8ced6;border-radius:8px;box-shadow:0 6px 20px rgba(0,0,0,.18);padding:4px;min-width:180px;display:flex;flex-direction:column}
+.kontextmenue .km-titel{font-size:13px;color:#667;padding:6px 10px 4px}
+.kontextmenue button{border:0;background:none;text-align:left;padding:10px 12px;font-size:16px;border-radius:6px;cursor:pointer}
+.kontextmenue button:hover{background:#eef3fa}
+.knopf-raum3d{margin:6px 0 8px;padding:8px 12px;font-size:15px;border-radius:6px;border:1px solid #1d5fa8;background:#1d5fa8;color:#fff;cursor:pointer}
