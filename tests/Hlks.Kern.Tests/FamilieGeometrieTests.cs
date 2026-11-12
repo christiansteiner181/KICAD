@@ -40,6 +40,20 @@ public class FamilieGeometrieTests
         Nahe([100, 50, 100], max);
     }
 
+    /// <summary>Gesamtprüfung 13.11.2026: das Netz des Übergangs war nach innen orientiert (Volumen negativ – Normalen in 3D und XR verkehrt);
+    /// oben in der Achse ergab still einen Körper ohne Volumen.</summary>
+    [Fact]
+    public void Uebergang_ist_aussen_orientiert_und_lehnt_oben_in_der_Achse_ab()
+    {
+        var n = NetzBau.Uebergang([0, 0, 0], [60, 80, 20], 50, null, null, (200, 60));
+        Assert.Null(n.GeschlossenFehler());
+        Assert.True(n.Volumen() > 0, $"Volumen {n.Volumen()}");
+        // Handrechnung Zylinder r 50, Länge 100 als Übergang Kreis → Kreis: π·50²·100 = 785 398 mm³ (48-Eck: −0.3 %)
+        Assert.InRange(NetzBau.Uebergang([0, 0, 0], [0, 0, 100], 50, null, 50, null).Volumen(), 785398 * 0.995, 785398);
+        Assert.Contains("oben", Assert.Throws<HlksFehler>(() => NetzBau.Uebergang([0, 0, 0], [0, 0, 100], null, (100, 50), null, (100, 50), [0, 0, 1])).Message);
+        Assert.Contains("kreis", Assert.Throws<HlksFehler>(() => NetzBau.Uebergang([0, 0, 0], [0, 0, 100], -50, null, 50, null)).Message);
+    }
+
     [Fact]
     public void Netz_wird_gedreht_und_verschoben()
     {
