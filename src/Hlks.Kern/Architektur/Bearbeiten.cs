@@ -62,7 +62,7 @@ static class Bearbeitung
     {
         if (!Param.Bool(p, "kopieren")) return MitGeometrie(k, ArchParam.Elemente(k, p));
         int vorher = k.Operationen.Count, hinweise = k.Hinweise.Count;
-        new ElementeKopieren().Ausfuehren(k, new JsonObject { ["elemente"] = p["elemente"]!.DeepClone() });
+        new ElementeKopieren().Ausfuehren(k, new JsonObject { ["elemente"] = p["elemente"]?.DeepClone() });   // fehlt die Liste: Fehler mit Vorschlag statt Absturz
         k.Hinweise.RemoveRange(hinweise, k.Hinweise.Count - hinweise);
         var neu = k.Operationen.Skip(vorher).Where(o => o.Art == "element.setzen" && o.ElementVorher is null).Select(o => k.Arbeit.Finde(o.Id)).OfType<Element>()
             .DistinctBy(e => e.Id).Where(e => e.Geometrie is { Punkte.Count: > 0 }).ToList();
@@ -209,6 +209,16 @@ public sealed class ElementeDrehen : IBefehl
             var g = Bearbeitung.Abbilden(e.Geometrie!, Drehung);
             JsonObject? eig = null;
             if (Bearbeitung.HatDrehung(k.Katalog, e)) eig = new JsonObject { ["winkel"] = Bearbeitung.Norm((e.Zahl("winkel") ?? 0) + winkel) };
+            // Platzierte Familie (Apparat, Heizkörper, Formteil …): ihre Lage dreht mit – sonst wanderte nur der Einfügepunkt um den
+            // Drehpunkt und der Körper behielt seine Richtung (Gesamtprüfung 13.11.2026). ausrichtung geht drehung vor (Familien.Einbaulage).
+            else if (Familien.Typ(e) is not null && e.Geometrie is { Art: "punkt" } && !Wandgeometrie.IstOeffnung(k.Katalog, e))   // Türen/Fenster folgen der Wand
+            {
+                (V3 X, V3 Z)? aus = null;
+                try { aus = Familien.AusrichtungLesen(e.Eigenschaft("ausrichtung")?.Inhalt); } catch (HlksFehler) { }   // ungültig: wie Einbaulage → drehung
+                V3 Um(V3 v) => new(v.X * cos - v.Y * sin, v.X * sin + v.Y * cos, v.Z);
+                eig = aus is { } a ? new JsonObject { ["ausrichtung"] = Familien.AusrichtungJson(Um(a.X), Um(a.Z)) }
+                    : new JsonObject { ["drehung"] = Bearbeitung.Norm(Familien.Drehung(e) + winkel) };
+            }
             Bearbeitung.Setzen(k, e, g, Bearbeitung.Mitgefuehrt(e, Drehung, false, eig));
         }
     }

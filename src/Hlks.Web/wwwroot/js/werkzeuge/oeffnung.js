@@ -46,8 +46,9 @@ export function oeffnungVorschau(w, klasse, breite, seite, band) {
   if (klasse === 'Fenster') return g + S.linie(P(-b2, 0), P(b2, 0), 'wz-oeffnung');
   const sBand = band === 'ende' ? b2 : -b2;          // Bandseite entlang der Achse
   const sFrei = -sBand;
-  const H = P(sBand, 0), G = P(sFrei, 0);
   const schlag = seite === 'rechts' ? -1 : 1;        // links = Seite der linken Wandnormalen
+  const qf = schlag * w.dicke / 2;                   // Drehpunkt auf der Wandfläche der Aufschlagseite, wie der Kern die Tür zeichnet (nicht in der Achse)
+  const H = P(sBand, qf), G = P(sFrei, qf);
   const T = [H[0] + n[0] * schlag * breite, H[1] + n[1] * schlag * breite];
   const kreuz = (G[0] - H[0]) * (T[1] - H[1]) - (G[1] - H[1]) * (T[0] - H[0]);
   g += S.linie(H, T, 'wz-oeffnung') + S.bogen(G, T, breite, kreuz > 0 ? 1 : 0, 'wz-oeffnung wz-duenn');

@@ -18,6 +18,8 @@ public class KopierenOptionenTests
         Assert.Equal(vorher, Hole(p, "W-1").Geometrie!.Punkte.Select(q => q[..2]).ToList());
         Etwa([0, 3000], Hole(p, "W-2").Geometrie!.Punkte[1][..2]);
         Assert.Contains(e.Hinweise, h => h.StartsWith("Kopiert: W-2"));
+        // ohne «elemente»: Fehler mit Vorschlag (vorher NullReferenceException in ZielElemente)
+        Nein(p.Ausfuehren("elemente_drehen", new JsonObject { ["mitte"] = new JsonArray(0, 0), ["winkel"] = 90, ["kopieren"] = true }));
     }
 
     [Fact]

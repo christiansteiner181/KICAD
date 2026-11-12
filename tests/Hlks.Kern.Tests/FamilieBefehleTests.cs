@@ -420,4 +420,15 @@ public class FamilieBefehleTests
         var p = Neu();
         foreach (var n in new[] { "familie_entwurf", "familie_aendern", "familie_laden", "familie_platzieren" }) Assert.NotNull(p.Befehle.Hole(n));
     }
+
+    [Fact]
+    public void Drehen_PlatzierteFamilieDrehtIhreLageMit()
+    {
+        // HK-1 bei (5000, 3000, 0), Drehung 90°: vl liegt bei (4950, 3950, 120) (Handrechnung oben). elemente_drehen um (0, 0) um 90°:
+        // (x, y) → (−y, x), also Einfügepunkt (−3000, 5000), vl (−3950, 4950, 120), Drehung 90 + 90 = 180°.
+        var p = MitHeizkoerper();
+        Ok(p.Ausfuehren("elemente_drehen", new JsonObject { ["elemente"] = new JsonArray("HK-1"), ["mitte"] = new JsonArray(0, 0), ["winkel"] = 90 }));
+        Assert.Equal(180, Hole(p, "HK-1").Zahl("drehung"));
+        Etwa([-3950, 4950, 120], Lage(p, "HK-1", "vl").Lage, 1e-6, "vl");
+    }
 }
