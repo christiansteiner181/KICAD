@@ -97,6 +97,16 @@ test('Fangen: Shift = orthogonal, Länge auf das Raster', () => {
   assert.deepEqual(v.punkt, [0, 2500]);
 });
 
+test('Fangen: Raster rundet die Länge bei Shift und Polar nie auf 0 (näher als ein halber Rasterschritt: ungerundet)', () => {
+  const leer = { punkte: [], kanten: [] };
+  const f = F.fangen({ punkt: [1030, 504], daten: leer, radius: 10, letzter: [1000, 500], ortho: true, raster: 100 });
+  assert.deepEqual(f.punkt, [1030, 500]);
+  assert.equal(f.art, 'frei');
+  const p = F.fangen({ punkt: [1040, 501], daten: leer, radius: 10, letzter: [1000, 500], raster: 100, polar: 15, arten: ['raster'] });
+  assert.equal(p.art, 'polar');
+  punktGleich(p.punkt, [1040, 500]);
+});
+
 test('Fangen: Shift fängt Endpunkte nur auf der waagrechten/senkrechten Linie', () => {
   const d = { punkte: [{ p: [3000, 4], id: 'a' }, { p: [3000, 900], id: 'b' }], kanten: [] };
   const f = F.fangen({ punkt: [3002, 150], daten: d, radius: 10, letzter: [0, 0], ortho: true, raster: 0 });

@@ -228,8 +228,9 @@ export function fangenPolar({ punkt, kanten = [], radius, letzter, raster = 0, e
     }
     if (best) return treffer('schnittpunkt', best.p);
   }
-  if (erlaubt.has('raster') && raster > 0) return treffer('polar', auf(Math.round(s / raster) * raster));
-  return treffer('polar', wunsch);
+  // Länge auf das Raster; gäbe die Rundung 0 (näher als ein halber Rasterschritt am letzten Punkt), bleibt die Länge ungerundet
+  const sr = erlaubt.has('raster') && raster > 0 ? Math.round(s / raster) * raster : 0;
+  return treffer('polar', sr > 0 ? auf(sr) : wunsch);
 }
 
 function fangenPunkte({ punkt, punkte, kanten, radius, letzter, raster, erlaubt, anschluesse }) {
@@ -358,7 +359,9 @@ function fangenOrtho({ punkt, punkte, kanten, radius, letzter, raster, erlaubt, 
   if (erlaubt.has('raster') && raster > 0) {
     const s = waagrecht ? punkt[0] - letzter[0] : punkt[1] - letzter[1];
     const sr = Math.round(s / raster) * raster;
-    return treffer('raster', waagrecht ? [letzter[0] + sr, letzter[1]] : [letzter[0], letzter[1] + sr]);
+    // Näher als ein halber Rasterschritt am letzten Punkt gäbe die Rundung die Länge 0 (Punkt = letzter Punkt, Klick ohne Wirkung): dann ungerundet
+    if (sr === 0) return treffer('frei', wunsch);
+    return treffer('raster',waagrecht ? [letzter[0] + sr, letzter[1]] : [letzter[0], letzter[1] + sr]);
   }
   return treffer('frei', wunsch);
 }
