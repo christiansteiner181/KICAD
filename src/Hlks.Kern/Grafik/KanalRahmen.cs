@@ -33,7 +33,8 @@ public static class KanalRahmen
         double t = p.Tiefe;
         if (l < 2 * t) return [(0, l)];
         aus.Add((0, t));
-        for (double s = p.Normlaenge; s < l - t - 1; s += p.Normlaenge) aus.Add((s - t, s + t));
+        // Stoss nur, wenn sein Doppelprofil vor dem Endrahmen Platz hat – sonst überlappten Stoss- und Endrahmen (Gesamtprüfung 13.11.2026)
+        for (double s = p.Normlaenge; s < l - 2 * t - 1; s += p.Normlaenge) aus.Add((s - t, s + t));
         aus.Add((l - t, l));
         return aus;
     }
