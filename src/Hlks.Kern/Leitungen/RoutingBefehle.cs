@@ -101,7 +101,7 @@ public static class RoutingBefehle
     /// <summary>Ende eines Verlaufs an einem Anschluss (Parameter { element, anschluss } bzw. "KZ.anschluss"); null = nicht angegeben.</summary>
     public static RoutingEnde? Ende(Kontext k, JsonObject p, string name, bool anfang, double[]? naheBei)
     {
-        if (Param.Punkt(p, name) is not { } pt) return null;
+        if (Param.Punkt(p, name, k.Arbeit) is not { } pt) return null;
         return Ende(k, k.Arbeit.Hole(pt.Element, name), pt.Anschluss, anfang, naheBei, name);
     }
 
