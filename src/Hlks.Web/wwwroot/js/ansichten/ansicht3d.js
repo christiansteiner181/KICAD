@@ -38,7 +38,7 @@ import { erzeugeBrillen } from './xr-teilnehmer.js';
 import { standortAusKamera } from './vr-logik.js';
 import { startansichtUebernahme } from './schnittbereich-logik.js';
 import { befehl } from '../api.js';
-import { navigieren3d, rolleZwischen } from './navigieren-logik.js';
+import { navigieren3d, rolleZwischen, einpassAbstand } from './navigieren-logik.js';
 
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 
@@ -463,7 +463,7 @@ function erstellen(behaelter, ansichtElement) {
     const sk = schnitt?.kugelWelt();   // N13: ist ein Schnittbereich aktiv, wird er eingepasst (nur das ist sichtbar)
     const kugel = sk ? new THREE.Sphere(sk.mitte, sk.radius) : box.getBoundingSphere(new THREE.Sphere());
     const r = Math.max(kugel.radius, 0.5);
-    const dist = (r / Math.sin(THREE.MathUtils.degToRad(kamera.fov) / 2)) * 1.05;
+    const dist = einpassAbstand(r, kamera.fov, kamera.aspect);   // auch im schmalen Fenster ganz im Bild
     kamera.near = Math.max(dist / 500, 0.02);
     kamera.far = dist * 40 + 100;
     kamera.updateProjectionMatrix();

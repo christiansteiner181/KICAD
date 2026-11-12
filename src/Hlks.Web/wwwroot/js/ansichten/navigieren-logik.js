@@ -145,3 +145,17 @@ export function navigieren2d(vb, eingabe, opt = {}) {
   }
   return { x, y, w, h };
 }
+
+// ---------------------------------------------------------------------------------------------------- Einpassen (3D)
+
+/**
+ * Abstand der Kamera von der Mitte einer Kugel (Radius in m), bei dem die ganze Kugel im Bild ist, mit 5 % Rand. Massgebend ist der kleinere der beiden
+ * halben Öffnungswinkel: fovGrad ist der senkrechte Winkel der Kamera; ist das Fenster schmaler als hoch (Seitenverhältnis Breite : Höhe < 1), ist der
+ * waagrechte kleiner (tan(h/2) = tan(v/2) · Seitenverhältnis) – sonst ragte das Modell links und rechts aus dem Bild (Gesamtprüfung 13.11.2026).
+ */
+export function einpassAbstand(radius, fovGrad, seitenverhaeltnis = 1) {
+  const halbV = (fovGrad * Math.PI / 180) / 2;
+  const sv = zahl(seitenverhaeltnis) && seitenverhaeltnis > 0 ? seitenverhaeltnis : 1;
+  const halb = sv < 1 ? Math.atan(Math.tan(halbV) * sv) : halbV;
+  return (radius / Math.sin(halb)) * 1.05;
+}
