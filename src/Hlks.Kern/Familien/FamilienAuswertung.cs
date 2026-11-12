@@ -750,12 +750,19 @@ public static class FamilienUmriss
                 case "koerper":
                 {
                     var e = t.Ecken!;
+                    static double Doppelt(double[] p0, double[] p1, double[] p2) => (p1[0] - p0[0]) * (p2[1] - p0[1]) - (p1[1] - p0[1]) * (p2[0] - p0[0]);
+                    // Geschlossenes, einheitlich orientiertes Netz: die projizierten Flächen heben sich auf, die Hälfte der Dreiecke deckt die Projektion
+                    // ganz. Ein übernommenes Netz (Körper «netz» aus IFC/STL) kann offen oder uneinheitlich orientiert sein – dann zählen alle Dreiecke,
+                    // sonst fehlten Stücke des Umrisses (oder er blieb leer).
+                    double plus = 0, minus = 0;
+                    foreach (var d in t.Dreiecke!) { var f = Doppelt(e[d[0]], e[d[1]], e[d[2]]); if (f > 0) plus += f; else minus -= f; }
+                    bool alle = Math.Abs(plus - minus) > 1e-3 * Math.Max(plus, minus);
                     foreach (var d in t.Dreiecke!)
                     {
                         var p0 = e[d[0]]; var p1 = e[d[1]]; var p2 = e[d[2]];
-                        double flaeche = (p1[0] - p0[0]) * (p2[1] - p0[1]) - (p1[1] - p0[1]) * (p2[0] - p0[0]);
-                        if (flaeche <= 1e-6) continue;   // nur nach oben zeigende Dreiecke (geschlossenes Netz: decken die Projektion ganz)
-                        pfade.Add([new PointD(p0[0], p0[1]), new PointD(p1[0], p1[1]), new PointD(p2[0], p2[1])]);
+                        double flaeche = Doppelt(p0, p1, p2);
+                        if (flaeche > 1e-6) pfade.Add([new PointD(p0[0], p0[1]), new PointD(p1[0], p1[1]), new PointD(p2[0], p2[1])]);
+                        else if (alle && flaeche < -1e-6) pfade.Add([new PointD(p0[0], p0[1]), new PointD(p2[0], p2[1]), new PointD(p1[0], p1[1])]);
                     }
                     break;
                 }

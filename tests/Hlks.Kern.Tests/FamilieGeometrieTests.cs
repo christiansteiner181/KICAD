@@ -67,6 +67,18 @@ public class FamilieGeometrieTests
         Nahe([1000, 100, 25], max);
     }
 
+    /// <summary>Gesamtprüfung 13.11.2026: ein übernommenes Netz mit einem verkehrt orientierten Dreieck hatte keinen Umriss von oben (nur «nach oben»
+    /// laufende Dreiecke zählten). Handrechnung: Tetraeder mit Grundfläche 100 × 50 / 2 = 2500 mm².</summary>
+    [Fact]
+    public void Umriss_eines_uneinheitlich_orientierten_Netzes_ist_vollstaendig()
+    {
+        var a = Aufloesen("""
+            { "id": "n", "art": "netz", "ecken": [[0,0,0],[100,0,0],[0,50,0],[0,0,20]], "dreiecke": [[0,2,1],[0,1,3],[0,3,2],[1,3,2]], "herkunft": "fiktiv" }
+            """);
+        var u = Assert.Single(a.Umriss("mittel"));
+        Assert.Equal(2500, Math.Abs(NetzBau.Flaeche(u.Aussen.Select(p => (p[0], p[1])).ToList())), 1);
+    }
+
     [Fact]
     public void Netz_mit_Index_ausserhalb_ist_ungueltig()
     {
