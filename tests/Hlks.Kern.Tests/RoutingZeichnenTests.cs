@@ -86,6 +86,27 @@ public class RoutingZeichnenTests
     }
 
     [Fact]
+    public void Weiterzeichnen_MitGefaelle_GeradeausUndMitBogen()
+    {
+        // Abwasser mit 2 % (Neigung der Achse 1.146° > 1°): das waagrecht gezeichnete Stück am Ende der Leitung fällt mit dem Gefälle und liegt
+        // damit in ihrer Achse – geradeaus ist kein Knick, die Leitung wird nicht gekürzt
+        var p = MitSerie();
+        MitSystem(p, "SW", "Schmutzwasser");
+        Ok(Zeichnen(p, "DN 50", [[0, 0, 1000], [3000, 0, 1000]], new JsonObject { ["gefaelle"] = 2 }, system: "SW"));
+        var e = Ok(Zeichnen(p, "DN 50", [[3000, 0, 940], [5000, 0, 940]], new JsonObject { ["gefaelle"] = 2, ["von"] = "RO-1.ende" }, system: "SW"));
+        Assert.Empty(Angelegt(e, "Bogen"));
+        Gerade(p, "RO-1", [0, 0, 1000], [3000, 0, 940]);
+        Gerade(p, "RO-2", [3000, 0, 940], [5000, 0, 900]);
+        IstVerbunden(p, "RO-1", "ende", "RO-2", "anfang");
+        // mit 90° am Ende: RO-2 wird um die Einbaulänge gekürzt (DN 50: La = 110 mm), der Bogen sitzt am bisherigen Ende
+        e = Ok(Zeichnen(p, "DN 50", [[5000, 0, 900], [5000, 1000, 900]], new JsonObject { ["gefaelle"] = 2, ["von"] = "RO-2.ende" }, system: "SW"));
+        Assert.Single(Angelegt(e, "Bogen"));
+        Etwa(2000 * Math.Sqrt(1.0004) - 110, Laenge(p, "RO-2"), 1e-3);
+        Etwa(880, Pkt(p, "RO-3")[1][2], 1e-3);   // 900 − 0.02 · 1000
+        Sauber(p);
+    }
+
+    [Fact]
     public void Steigleitung_ZweiBoegen_VollAusgerichtet()
     {
         var p = MitSerie();

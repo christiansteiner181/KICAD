@@ -392,9 +392,10 @@ public sealed class LeitungZeichnen : IBefehl
         var hinweise = new List<string>();
         double zVorgabe = geschoss?.Zahl("kote") ?? 0;
         // Weiterzeichnen an einer Geraden mit Bogen: die Gerade wird gekürzt (Christian 12.11.2026)
-        von = Routing.AnGeradeKuerzen(k, s, sg.Groesse, von, roh, zVorgabe, true, hinweise);
-        nach = Routing.AnGeradeKuerzen(k, s, sg.Groesse, nach, roh, zVorgabe, false, hinweise);
-        var pkt = Routing.Vorbereiten(roh, zVorgabe, von, nach, Param.Zahl(p, "gefaelle"), hinweise);
+        var gefaelle = Param.Zahl(p, "gefaelle");
+        von = Routing.AnGeradeKuerzen(k, s, sg.Groesse, von, roh, zVorgabe, true, hinweise, gefaelle);
+        nach = Routing.AnGeradeKuerzen(k, s, sg.Groesse, nach, roh, zVorgabe, false, hinweise, gefaelle);
+        var pkt = Routing.Vorbereiten(roh, zVorgabe, von, nach, gefaelle, hinweise);
         Routing.ZweiBoegen(k.Arbeit, k.Katalog, s, sg.Groesse, pkt, hinweise);   // 90° ohne 90°-Bogen: 2 × 45° (06.11.2026)
         var plan = Routing.Planen(k.Arbeit, k.Katalog, s, sg.Groesse, pkt, von, nach, new PlanOptionen { Uebergang = p["uebergang"] as JsonObject });
         var liste = Routing.Umsetzen(k, plan, ziel);

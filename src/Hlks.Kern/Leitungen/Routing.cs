@@ -163,7 +163,7 @@ public static class Routing
     /// freien Ende einer bestehenden Geraden und knickt dort ab, wird die Gerade um die Einbaulänge des Bogens gekürzt (gerechnet wie Planen, auch
     /// 2 × 45° nach ZweiBoegen); der Knick bleibt am bisherigen Ende. Der Verlauf beginnt bzw. endet dann am neuen Ende mit dem Knick als zweitem bzw.
     /// vorletztem Punkt, das neue Ende wird zurückgegeben. Ohne Knick bzw. an anderen Elementen bleibt alles, wie es ist.</summary>
-    public static RoutingEnde? AnGeradeKuerzen(Kontext k, Leitungsserie s, Leitungsgroesse g, RoutingEnde? ende, List<double[]> roh, double zVorgabe, bool anfang, List<string> hinweise)
+    public static RoutingEnde? AnGeradeKuerzen(Kontext k, Leitungsserie s, Leitungsgroesse g, RoutingEnde? ende, List<double[]> roh, double zVorgabe, bool anfang, List<string> hinweise, double? gefaelle = null)
     {
         if (ende is not { HatLage: true } || ende.Anschluss is not ("anfang" or "ende") || !k.Katalog.IstArt(ende.Element, "Leitung")) return ende;
         var gp = ende.Element.Geometrie?.Punkte;
@@ -172,6 +172,14 @@ public static class Routing
         var naechster = (anfang ? roh : Enumerable.Reverse(roh)).Select(p => new V3(p[0], p[1], p.Length > 2 ? p[2] : zVorgabe))
             .Where(p => (p - K).Laenge > Anschlusslagen.AbstandMax).Cast<V3?>().FirstOrDefault();
         if (naechster is not V3 folge) return ende;
+        // Mit Gefälle zählt die Richtung, die das Stück nach Vorbereiten hat (waagrecht gezeichnet = fällt in Fliessrichtung): an einer Leitung mit
+        // 2 % (Achse 1.146° geneigt) wäre geradeaus sonst schon ein «Knick» über WinkelMax und das Weiterzeichnen würde abgelehnt
+        if (gefaelle is double gf && double.IsFinite(gf) && gf > 0)
+        {
+            double neigung = AchsNeigungFuerGefaelle(ende, gf);
+            var paar = MitGefaelle(anfang ? [K, folge] : [folge, K], gf, vomEnde: !anfang, anfangNeigung: neigung, endeNeigung: neigung);
+            folge = anfang ? paar[1] : paar[0];
+        }
         var u = (folge - K).Einheit();
         if (Grad(u, r) <= Anschlusslagen.WinkelMax) return ende;
         var andere = V3.Aus(gp[ende.Anschluss == "anfang" ? 1 : 0]);
