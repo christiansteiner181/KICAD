@@ -119,7 +119,10 @@ internal sealed partial class Schnittzerlegung(Schnittraum raum, bool schnitt)
         }
 
         // Seitenflächen, deren Normale zum Betrachter zeigt (w-Anteil < 0)
-        var senkrechte = new HashSet<long>();   // senkrechte Kanten je Körper nur einmal (gemeinsame Ecke zweier Flächen)
+        // Senkrechte Kanten je Körper nur einmal (gemeinsame Ecke zweier Flächen): gleiche Lage u UND gleiche Tiefe w. Nur u genügte nicht –
+        // bei einem abgesetzten Grundriss (L-Form) liegen zwei Ecken in der Projektion übereinander; blieb die hintere, verdeckte sie die
+        // vordere Fläche, und die Kante am Absatz fehlte ganz (Gesamtprüfung 13.11.2026).
+        var senkrechte = new HashSet<(long, long)>();
         for (int k = 0; k < ringe.Count; k++)
         {
             var xy = ringe[k]; var r = uw[k];
@@ -150,8 +153,8 @@ internal sealed partial class Schnittzerlegung(Schnittraum raum, bool schnitt)
                 // Senkrechte Kanten an echten Ecken und an der Sichttiefe; wo die Ebene w = 0 die Fläche abschneidet, liegt die
                 // Kante auf der Schnittfläche (Schnitt) bzw. auf deren Umriss (Ansicht) und entfällt hier.
                 bool kanteA = !(t0 > 0 && dw > 0), kanteB = !(t1 < 1 && dw < 0);
-                kanteA = kanteA && senkrechte.Add((long)Math.Round(ua * 1000));
-                kanteB = kanteB && senkrechte.Add((long)Math.Round(ub * 1000));
+                kanteA = kanteA && senkrechte.Add(((long)Math.Round(ua * 1000), (long)Math.Round(wa * 1000)));
+                kanteB = kanteB && senkrechte.Add(((long)Math.Round(ub * 1000), (long)Math.Round(wb * 1000)));
                 RechteckKanten(f, ua, wa, ub, wb, unten, oben, kanteA, kanteB);
                 Teile.Add(f);
             }

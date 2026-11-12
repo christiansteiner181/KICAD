@@ -423,6 +423,27 @@ public class SchnittTests(ITestOutputHelper aus)
         return (sortiert[anzahl / 2], zeiten);
     }
 
+    /// <summary>Gesamtprüfung 13.11.2026: L-förmiges Prisma von Norden gesehen. Die hintere Fläche (y = 1000) und die vordere (y = 3000)
+    /// stossen in der Projektion bei x = 2000 aneinander; die Kante am Absatz gehört zur vorderen Fläche und muss sichtbar sein
+    /// (vorher blieb nur die hintere Ecke, die von der vorderen Fläche verdeckt ist – die Kante fehlte).</summary>
+    [Fact]
+    public void Ansicht_PrismaMitAbsatz_KanteAmAbsatzSichtbar()
+    {
+        // Blick nach Süden (−y): Linie von (5000, 5000) nach (−1000, 5000), u = 5000 − x, w = 5000 − y
+        var raum = new Schnittraum { Ax = 5000, Ay = 5000, Dx = -1, Dy = 0, Nx = 0, Ny = -1, Laenge = 6000, Tiefe = double.PositiveInfinity };
+        var z = new Schnittzerlegung(raum, false);
+        z.Koerper(0, new Koerper
+        {
+            Id = "k", Ebene = "decke",
+            Teile = [new Koerperteil { Art = "prisma", Unten = 0, Oben = 250, Grundriss = [[0, 0], [4000, 0], [4000, 1000], [2000, 1000], [2000, 3000], [0, 3000]] }],
+        });
+        var sichtbar = Schnittverdeckung.Rechnen(z.Teile, z.Schnittstuecke).SelectMany(x => x).ToList();
+        double Hoehe(double u) => sichtbar.Where(s => Math.Abs(s.A.U - u) < 1e-6 && Math.Abs(s.B.U - u) < 1e-6).Sum(s => Math.Abs(s.B.V - s.A.V));
+        Assert.Equal(250, Hoehe(3000), 3);   // Absatz bei x = 2000: genau einmal, über die ganze Höhe
+        Assert.Equal(250, Hoehe(1000), 3);   // rechte Aussenecke der hinteren Fläche (x = 4000)
+        Assert.Equal(250, Hoehe(5000), 3);   // linke Aussenecke der vorderen Fläche (x = 0)
+    }
+
     [Fact]
     public void Beispielprojekt_SchnittQuerDurchsGebaeude_NichtLeerUndSchnell()
     {

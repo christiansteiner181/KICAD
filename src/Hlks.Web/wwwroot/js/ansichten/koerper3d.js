@@ -42,6 +42,16 @@ export function brauchtAlleKoerper(ids, klasseVon, ebeneVon = () => null) {
   return false;
 }
 
+/** Eigenschaften einer Ansicht, die an den Körpern nichts ändern (Kamera, Schnittbereich = Clipping an den vorhandenen Materialien). */
+export const OHNE_NEUBAU = new Set(['schnittbereich', 'startansicht']);
+
+/** Schlüssel all dessen an einer Ansicht, was bestimmt, welche Körper wie gebaut werden (Filter, Darstellung …). Bleibt er gleich, baut die
+ *  3D-Ansicht die Körper nicht neu – sonst kostete jedes Ziehen am Schnittbereich und jede gemerkte Startansicht einen Neuaufbau aller Körper. */
+export function darstellungSchluessel(ansicht) {
+  const w = ansicht?.werte ?? {};
+  return JSON.stringify([ansicht?.id ?? null, ansicht?.geschoss ?? null, Object.keys(w).filter((k) => !OHNE_NEUBAU.has(k)).sort().map((k) => [k, w[k]])]);
+}
+
 /** URL für /api/koerper: alle oder nur die genannten Ids. */
 export function koerperUrl(ids) {
   if (!ids || ids.length === 0 || ids.length > MAX_IDS) return '/api/koerper';
@@ -63,7 +73,9 @@ function designName() {
   catch { return 'hell'; }   // ohne Browser (Tests)
 }
 
-const hexOderNull = (f) => (typeof f === 'string' && /^#[0-9a-fA-F]{3,8}$/.test(f) ? f : null);
+// Nur #rgb und #rrggbb: andere Längen (z. B. #rrggbbaa) liest three r160 nicht – der Körper bliebe weiss. Dann gilt die Materialfarbe,
+// wie im Export für die Brille (XrFarben.Normiert).
+const hexOderNull = (f) => (typeof f === 'string' && /^#(?:[0-9a-fA-F]{3}|[0-9a-fA-F]{6})$/.test(f) ? f : null);
 const KANTE_AB_DECKKRAFT = 0.2;   // Kanten nur bei halbwegs deckenden Körpern (durchscheinende Räume bleiben ohne Gitter)
 
 /** Farbe eines Teils: Teil.farbe, sonst --d3-<material> aus dem Design, sonst Vorgabe. */

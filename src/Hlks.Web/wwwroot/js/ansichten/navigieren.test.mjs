@@ -189,3 +189,16 @@ test('ansicht3d: Maus nach dem Rollen – die Steuerung dreht weiter um die Hoch
   basis.lookAt(z.s.target);
   assert.ok(nahe(N.rolleZwischen(basis.quaternion.toArray(), z.kamera.quaternion.toArray()), rolle, 1e-9));
 });
+
+test('einpassAbstand: im schmalen Fenster bestimmt der waagrechte Öffnungswinkel den Abstand', () => {
+  // breit oder quadratisch: wie bisher r / sin(fov / 2) · 1.05
+  assert.ok(nahe(N.einpassAbstand(10, 45, 16 / 9), (10 / Math.sin(22.5 * Math.PI / 180)) * 1.05, 1e-12));
+  assert.ok(nahe(N.einpassAbstand(10, 45, 1), N.einpassAbstand(10, 45, 2), 1e-12));
+  // halb so breit wie hoch: halber waagrechter Winkel atan(tan 22.5° · 0.5) = 11.70°, Abstand 10 / sin 11.70° · 1.05 = 51.78
+  const d = N.einpassAbstand(10, 45, 0.5);
+  assert.ok(nahe(d, 51.78, 0.01), String(d));
+  // die Kugel bleibt innerhalb des seitlichen Bildrands
+  assert.ok(Math.asin(10 / d) < Math.atan(Math.tan(22.5 * Math.PI / 180) * 0.5));
+  // ungültiges Seitenverhältnis: wie 1
+  assert.ok(nahe(N.einpassAbstand(10, 45, NaN), N.einpassAbstand(10, 45, 1), 1e-12));
+});

@@ -22,7 +22,7 @@ import * as THREE from 'three';
 import { zustand, element, auswaehlen, derKlasse, merken } from '../zustand.js';
 import { holen, abfrage } from '../api.js';
 import { sichtbar } from './filter.js';
-import { baueKoerper, hervorheben, freigeben, brauchtAlleKoerper, koerperUrl, netzSchluessel, netzUrl, netzGeometrie, netzMesh, BLASS_HUELLE } from './koerper3d.js';
+import { baueKoerper, hervorheben, freigeben, brauchtAlleKoerper, koerperUrl, netzSchluessel, netzUrl, netzGeometrie, netzMesh, BLASS_HUELLE, darstellungSchluessel } from './koerper3d.js';
 import { istHuelle, legendeDaten, legendeHtml, infoHtml } from './huelle-darstellung.js';
 import { baueHuelle, zeileAmTreffer, umrissLinie, huelleFreigeben } from './huelle3d.js';
 import { leseNetz } from './netzdatei.js';
@@ -38,7 +38,7 @@ import { erzeugeBrillen } from './xr-teilnehmer.js';
 import { standortAusKamera } from './vr-logik.js';
 import { startansichtUebernahme } from './schnittbereich-logik.js';
 import { befehl } from '../api.js';
-import { navigieren3d, rolleZwischen } from './navigieren-logik.js';
+import { navigieren3d, rolleZwischen, einpassAbstand } from './navigieren-logik.js';
 
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 
@@ -65,6 +65,7 @@ function erstellen(behaelter, ansichtElement) {
   let benutzt = false;     // Kamera vom Benutzer bewegt: dann bleibt sie bei Grössenänderung
   let hatGezoomt = false;  // nach dem ersten Laden einmal einpassen
   let huelleAn = istHuelle(ansichtElement);   // Darstellung «Hülle»
+  let darstellungAlt = darstellungSchluessel(ansichtElement);   // was die Körper bestimmt (ohne Schnittbereich und Startansicht)
   let huelleNr = 0;                           // gegen veraltete Antworten der Abfrage raumgrenzen
   let huelleTimer = null;
   let huelleGruppe = null;                    // three-Gruppe der Hüllflächen (ausserhalb von «modell», zählt nicht zum Einpassen)
@@ -463,7 +464,7 @@ function erstellen(behaelter, ansichtElement) {
     const sk = schnitt?.kugelWelt();   // N13: ist ein Schnittbereich aktiv, wird er eingepasst (nur das ist sichtbar)
     const kugel = sk ? new THREE.Sphere(sk.mitte, sk.radius) : box.getBoundingSphere(new THREE.Sphere());
     const r = Math.max(kugel.radius, 0.5);
-    const dist = (r / Math.sin(THREE.MathUtils.degToRad(kamera.fov) / 2)) * 1.05;
+    const dist = einpassAbstand(r, kamera.fov, kamera.aspect);   // auch im schmalen Fenster ganz im Bild
     kamera.near = Math.max(dist / 500, 0.02);
     kamera.far = dist * 40 + 100;
     kamera.updateProjectionMatrix();
@@ -729,7 +730,10 @@ function erstellen(behaelter, ansichtElement) {
       schnitt?.setzen(ansicht?.werte?.schnittbereich ?? null);
       const war = huelleAn;
       huelleAn = istHuelle(ansicht);
-      ausDatenNeu();   // Filter der Ansicht (Gewerke, Klassen) neu anwenden; bei Hülle auch blassere Körper
+      // Filter der Ansicht (Gewerke, Klassen) neu anwenden; bei Hülle auch blassere Körper. Nur wenn sich daran etwas geändert hat: der
+      // Schnittbereich (jedes Ziehen an einem Griff) und die Startansicht ändern auch die Ansicht, aber keinen Körper.
+      const schluessel = darstellungSchluessel(ansicht);
+      if (schluessel !== darstellungAlt) { darstellungAlt = schluessel; ausDatenNeu(); } else anfordern();
       if (war !== huelleAn) huelleLaden();
     } catch (e) { console.error('3D: Ansicht ändern fehlgeschlagen', e); }
   }
