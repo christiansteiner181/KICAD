@@ -3,8 +3,9 @@
 // ist sie dort verdeckt. Deckfläche der höheren Leitung = ihr Band bzw. ihre Dämmung (die breitere), in grob ihre Strichbreite plus eine Lücke.
 //   mittel, fein: Füllung der tieferen Leitung unter der Deckfläche ausgespart, Ränder und Achse dort gestrichelt (Ränder dünn, Stift hilf).
 //   grob: die tiefere Linie ist an der Deckfläche unterbrochen.
-// Höher wie in DaemmGrafik: tiefste Achshöhe der waagrechten Stücke über der höchsten der anderen Leitung (+1 mm); gleich hohe bzw. sich
-// überlappende Höhen (Gefälle) verdecken einander nicht. Senkrechte Stücke (Steigleitungen) und Formteile verdecken hier nicht.
+// Höher = an der Kreuzung höher (Kreuzungshoehe, Gesamtprüfung 13.11.2026): je waagrechtes Teilstück wird die Achshöhe dort verglichen, wo die
+// Bänder im Grundriss überlappen (+1 mm); gleich hohe bzw. sich dort schneidende Höhen verdecken einander nicht. Eine Abwasserleitung mit Gefälle
+// verdeckt also am hohen Ende und ist am tiefen Ende verdeckt. Senkrechte Stücke (Steigleitungen) und Formteile verdecken hier nicht.
 // ANNAHME Hauptlauf (Gestaltung): Lücke in grob je Seite 0.5 mm Papier.
 
 using System.Runtime.CompilerServices;
@@ -14,31 +15,30 @@ namespace Hlks.Kern;
 
 public static class LeitungVerdeckung
 {
-    const double Eps = 1.0;              // mm Achshöhe
     const double LueckeGrob = 0.5;       // mm Papier je Seite
 
-    sealed record Decke(string Id, PathsD Flaeche, double ZMin, double ZMax, RectD Box);
+    sealed record Decke(string Id, PathsD Flaeche, double Breite, List<Achsstueck> Stuecke, RectD Box);
+    sealed record Plan(List<Decke> Alle, Dictionary<string, Decke> NachId);
 
-    static readonly ConditionalWeakTable<GrafikKontext, List<Decke>> decken = new();
+    static readonly ConditionalWeakTable<GrafikKontext, Plan> decken = new();
 
-    /// <summary>Waagrechte Stücke einer Leitung als Züge im Grundriss und ihre Achshöhen (min, max); null ohne waagrechte Stücke.</summary>
-    static (List<List<double[]>> Zuege, double ZMin, double ZMax)? Waagrecht(List<double[]> pts)
+    /// <summary>Waagrechte Stücke einer Leitung als Züge im Grundriss und als Teilstücke mit Achshöhe; null ohne waagrechte Stücke.</summary>
+    static (List<List<double[]>> Zuege, List<Achsstueck> Stuecke)? Waagrecht(List<double[]> pts)
     {
         var zuege = new List<List<double[]>>(); List<double[]>? zug = null;
-        double zmin = double.MaxValue, zmax = double.MinValue;
+        var stuecke = new List<Achsstueck>();
         for (int i = 1; i < pts.Count; i++)
         {
             var a = pts[i - 1]; var b = pts[i];
             if (Math.Abs(b[0] - a[0]) + Math.Abs(b[1] - a[1]) <= 1) { zug = null; continue; }
             if (zug is null) { zug = [[a[0], a[1]]]; zuege.Add(zug); }
             zug.Add([b[0], b[1]]);
-            double za = a.Length > 2 ? a[2] : 0, zb = b.Length > 2 ? b[2] : 0;
-            zmin = Math.Min(zmin, Math.Min(za, zb)); zmax = Math.Max(zmax, Math.Max(za, zb));
+            stuecke.Add(new(a[0], a[1], a.Length > 2 ? a[2] : 0, b[0], b[1], b.Length > 2 ? b[2] : 0));
         }
-        return zuege.Count == 0 ? null : (zuege, zmin, zmax);
+        return zuege.Count == 0 ? null : (zuege, stuecke);
     }
 
-    static List<Decke> Decken(GrafikKontext ctx) => decken.GetValue(ctx, c =>
+    static Plan Decken(GrafikKontext ctx) => decken.GetValue(ctx, c =>
     {
         var l = new List<Decke>();
         bool grob = c.Detailgrad == "grob";
@@ -55,9 +55,9 @@ public static class LeitungVerdeckung
             foreach (var zug in w.Zuege)
                 flaeche.AddRange(Clipper.InflatePaths(new PathsD { new PathD(zug.Select(q => new PointD(q[0], q[1]))) }, breite / 2, JoinType.Round, EndType.Butt, 2, 2));
             var u = Clipper.Union(flaeche, FillRule.NonZero);
-            if (u.Count > 0) l.Add(new Decke(e.Id, u, w.ZMin, w.ZMax, Clipper.GetBounds(u)));
+            if (u.Count > 0) l.Add(new Decke(e.Id, u, breite, w.Stuecke, Clipper.GetBounds(u)));
         }
-        return l;
+        return new Plan(l, l.ToDictionary(d => d.Id, StringComparer.Ordinal));
     });
 
     /// <summary>Verdeckt den Teil der Grafik einer waagrechten Leitung, der unter einer höheren Leitung liegt (siehe Dateikopf). randBreite: Breite des
@@ -69,8 +69,19 @@ public static class LeitungVerdeckung
         if (box is null) return;
         var eigene = new RectD(box[0], box[1], box[2], box[3]);
         var deck = new PathsD();
-        foreach (var d in Decken(ctx))
-            if (d.Id != e.Id && d.ZMin > w.ZMax + Eps && Ueberlappt(d.Box, eigene)) deck.AddRange(d.Flaeche);
+        var plan = Decken(ctx);
+        double eigeneBreite = plan.NachId.TryGetValue(e.Id, out var ich) ? ich.Breite : 0;
+        foreach (var d in plan.Alle)
+        {
+            if (d.Id == e.Id || !Ueberlappt(d.Box, eigene)) continue;
+            // Höhe je Teilstück an der Kreuzung (Kreuzungshoehe); überlappen sich die Bänder nirgends, gibt es kein Paar
+            var paare = Kreuzungshoehe.Paare(w.Stuecke, d.Stuecke, (eigeneBreite + d.Breite) / 2);
+            if (!paare.Any(x => x.Lage > 0)) continue;
+            if (paare.All(x => x.Lage > 0)) { deck.AddRange(d.Flaeche); continue; }
+            // die andere Leitung liegt nur an einem Teil der Kreuzungen höher (Gefälle, Etage): nur diese Stellen verdecken
+            foreach (var (i, j, lage) in paare)
+                if (lage > 0) deck.AddRange(Kreuzungshoehe.Ausschnitt(d.Flaeche, d.Stuecke[j], d.Breite / 2 + 1, w.Stuecke[i], eigeneBreite / 2 + 1));
+        }
         if (deck.Count == 0) return;
         deck = Clipper.Union(deck, FillRule.NonZero);
         bool grob = ctx.Detailgrad == "grob";

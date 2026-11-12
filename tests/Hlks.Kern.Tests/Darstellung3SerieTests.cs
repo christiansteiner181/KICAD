@@ -423,6 +423,59 @@ public class Darstellung3SerieTests
     }
 
     [Fact]
+    public void Kreuzung_Gefaelleleitung_HoeheAnDerKreuzungEntscheidet()
+    {
+        // Gesamtprüfung 13.11.2026, Handbeispiel: RO-G 10 m mit 2 % Gefälle (2600 → 2400), drei Leitungen auf 2500 kreuzen bei x = 500 (RO-G dort
+        // 2590: liegt darüber), x = 5000 (2500: gleich hoch) und x = 9500 (2410: liegt darunter). Vorher (Höhenspanne der ganzen Leitung): nichts verdeckt.
+        var p = MitSerie(false);
+        Ok(Rohr(p, "RO-G", "DN 20", [0, 0, 2600], [10000, 0, 2400]));
+        Ok(Rohr(p, "RO-A", "DN 20", [500, -1000, 2500], [500, 1000, 2500]));
+        Ok(Rohr(p, "RO-B", "DN 20", [5000, -1000, 2500], [5000, 1000, 2500]));
+        Ok(Rohr(p, "RO-C", "DN 20", [9500, -1000, 2500], [9500, 1000, 2500]));
+        static bool Gefuellt(Grafikteil t, double x) => t.Primitive.Any(q => q.Art == "polygon" && Polygone.Innen(q.Punkte, x, 0));
+        var g = Teil(p, "RO-G");
+        Assert.True(Gefuellt(g, 500)); Assert.True(Gefuellt(g, 5000)); Assert.False(Gefuellt(g, 9500));
+        Assert.False(Gefuellt(Teil(p, "RO-A"), 500));     // unter RO-G
+        Assert.True(Gefuellt(Teil(p, "RO-B"), 5000));     // gleich hoch: keine verdeckt die andere
+        Assert.True(Gefuellt(Teil(p, "RO-C"), 9500));     // über RO-G
+        Assert.DoesNotContain(Teil(p, "RO-B").Primitive, x => x.Stil.Linie == "strich");
+        Assert.DoesNotContain(Teil(p, "RO-C").Primitive, x => x.Stil.Linie == "strich");
+        // verdeckte Ränder von RO-G nur bei x = 9500 (Band von RO-C 25 mm breit)
+        var strich = g.Primitive.Where(x => x.Stil.Linie == "strich").ToList();
+        Assert.NotEmpty(strich);
+        Assert.All(strich.SelectMany(x => x.Punkte), q => Assert.InRange(q[0], 9500 - 13, 9500 + 13));
+
+        // Dämmkanten (DaemmGrafik) nach derselben Regel: gestrichelt die Kanten von RO-A unter RO-G (x = 500 ± 32.5, |y| ≤ 32.5) und die von RO-G
+        // unter RO-C (y = ±32.5, x = 9500 ± 32.5); bei x = 5000 gleiche Lage – keine gestrichelte Kante
+        foreach (var kz in new[] { "RO-G", "RO-A", "RO-B", "RO-C" }) Aendern(p, kz, new JsonObject { ["daemmdicke"] = 20 });
+        var kanten = Strichlinien(Daemmung(p)!).ToList();
+        Assert.Contains(kanten, x => x.Punkte.All(q => Math.Abs(Math.Abs(q[0] - 500) - 32.5) < 0.5 && Math.Abs(q[1]) <= 33));
+        Assert.Contains(kanten, x => x.Punkte.All(q => Math.Abs(Math.Abs(q[1]) - 32.5) < 0.5 && Math.Abs(q[0] - 9500) <= 33));
+        Assert.All(kanten.SelectMany(x => x.Punkte), q => Assert.True(Math.Abs(q[0] - 500) <= 33 || Math.Abs(q[0] - 9500) <= 33, $"{q[0]}/{q[1]}"));
+    }
+
+    [Fact]
+    public void Kreuzung_LeitungMitEtage_VerdecktObenUndIstUntenVerdeckt()
+    {
+        // Gesamtprüfung 13.11.2026, Handbeispiel: RO-E in einem Element 500 → Etage → 2500; RO-U auf 1500 kreuzt sie zweimal (x = 1000 über dem
+        // tiefen, x = 5000 unter dem hohen Teil). Vorher: Spannen 500…2500 und 1500 überlappen – nichts verdeckt.
+        var p = MitSerie(false);
+        Ok(Rohr(p, "RO-E", "DN 20", [0, 0, 500], [2000, 0, 500], [3000, 0, 2500], [6000, 0, 2500]));
+        Ok(Rohr(p, "RO-U", "DN 20", [1000, -1000, 1500], [1000, 1000, 1500], [5000, 1000, 1500], [5000, -1000, 1500]));
+        static bool Gefuellt(Grafikteil t, double x) => t.Primitive.Any(q => q.Art == "polygon" && Polygone.Innen(q.Punkte, x, 0));
+        var e = Teil(p, "RO-E"); var u = Teil(p, "RO-U");
+        Assert.False(Gefuellt(e, 1000)); Assert.True(Gefuellt(e, 5000));
+        Assert.True(Gefuellt(u, 1000)); Assert.False(Gefuellt(u, 5000));
+        // grob: unterbrochen ist je die tiefere Linie
+        Aendern(p, "AN-EG", new JsonObject { ["detailgrad"] = "grob" });
+        static bool Durch(Grafikteil t, double x) => t.Primitive.Any(q => q.Art == "polylinie" && q.Punkte.Zip(q.Punkte.Skip(1)).Any(s =>
+            Math.Min(s.First[1], s.Second[1]) <= 0 && Math.Max(s.First[1], s.Second[1]) >= 0 && Math.Min(s.First[0], s.Second[0]) <= x && Math.Max(s.First[0], s.Second[0]) >= x));
+        e = Teil(p, "RO-E"); u = Teil(p, "RO-U");
+        Assert.False(Durch(e, 1000)); Assert.True(Durch(e, 5000));
+        Assert.True(Durch(u, 1000)); Assert.False(Durch(u, 5000));
+    }
+
+    [Fact]
     public void Verdeckt_Daemmkanten_InRohrfarbeFein()
     {
         // Christian 12.11.2026: «die aussenkontur in Rohrfarbe jedoch wesentlich feiner» – auch die gestrichelten Kanten unter dem Geschossboden

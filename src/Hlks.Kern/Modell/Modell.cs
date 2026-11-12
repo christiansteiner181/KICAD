@@ -61,8 +61,40 @@ public sealed class Modell
     public Verbindung? FindeVerbindung(string id) => verbindungen.GetValueOrDefault(id);
     public Verbindung? VerbindungAn(string element, string anschluss) =>
         anAnschluss.TryGetValue(Schluessel(element, anschluss), out var vid) ? verbindungen[vid] : null;
-    public IEnumerable<Verbindung> VerbindungenVon(string element) =>
-        verbindungen.Values.Where(v => v.Von.Element == element || v.Nach.Element == element);
+    /// <summary>Alle Verbindungen eines Elements über den Index <see cref="vonElement"/> (vorher: Durchsuchen aller Verbindungen je Aufruf).
+    /// Wird erst beim Durchlaufen ausgewertet; wer dabei trennt oder verbindet, nimmt wie bisher zuerst eine Liste (ToList).</summary>
+    public IEnumerable<Verbindung> VerbindungenVon(string element)
+    {
+        if (!vonElement.TryGetValue(element, out var liste)) yield break;
+        foreach (var v in liste) yield return v;
+    }
+
+    // Index Element-Id → seine Verbindungen. Nachgeführt an denselben Stellen wie anAnschluss (Anwenden, Kopie, Laden) – Verbindungen ändern sich
+    // nur dort. Der Schlüssel ist die Element-Id der Verbindung, unabhängig davon, ob es das Element (noch) gibt – wie beim bisherigen Durchsuchen.
+    readonly Dictionary<string, List<Verbindung>> vonElement = new(StringComparer.Ordinal);
+
+    void IndexDazu(Verbindung v)
+    {
+        Dazu(v.Von.Element);
+        if (v.Nach.Element != v.Von.Element) Dazu(v.Nach.Element);
+        void Dazu(string el)
+        {
+            if (!vonElement.TryGetValue(el, out var l)) vonElement[el] = l = [];
+            l.Add(v);
+        }
+    }
+
+    void IndexWeg(Verbindung v)
+    {
+        Weg(v.Von.Element);
+        if (v.Nach.Element != v.Von.Element) Weg(v.Nach.Element);
+        void Weg(string el)
+        {
+            if (!vonElement.TryGetValue(el, out var l)) return;
+            l.RemoveAll(x => x.Id == v.Id);
+            if (l.Count == 0) vonElement.Remove(el);
+        }
+    }
 
     public IEnumerable<Element> Kinder(string id) => elemente.Values.Where(e => e.TeilVon == id);
     public IEnumerable<Element> DerKlasse(string klasse) => elemente.Values.Where(e => e.Klasse == klasse);
@@ -143,12 +175,13 @@ public sealed class Modell
                         konflikte.Add(new(op.Id, op.Art, op.Basis, vorhanden, $"Verbindung {op.Id}: erwartet Version {op.Basis}, vorhanden {vorhanden} – {(gewinnt ? "neuere Änderung übernommen" : "ältere Änderung verworfen")}"));
                         if (!gewinnt) break;
                     }
-                    if (alt is not null) { anAnschluss.Remove(Schluessel(alt.Von.Element, alt.Von.Anschluss)); anAnschluss.Remove(Schluessel(alt.Nach.Element, alt.Nach.Anschluss)); }
+                    if (alt is not null) { anAnschluss.Remove(Schluessel(alt.Von.Element, alt.Von.Anschluss)); anAnschluss.Remove(Schluessel(alt.Nach.Element, alt.Nach.Anschluss)); IndexWeg(alt); }
                     var v = neu.Kopie();
                     v.Id = op.Id;
                     v.Version = vorhanden + 1;
                     if (paketId is not null) v.Paket = paketId;
                     verbindungen[op.Id] = v;
+                    IndexDazu(v);
                     anAnschluss[Schluessel(v.Von.Element, v.Von.Anschluss)] = v.Id;
                     anAnschluss[Schluessel(v.Nach.Element, v.Nach.Anschluss)] = v.Id;
                     geloeschteVerbindungen.Remove(op.Id);
@@ -169,6 +202,7 @@ public sealed class Modell
                         if (!gewinnt) break;
                     }
                     verbindungen.Remove(op.Id);
+                    IndexWeg(alt);
                     anAnschluss.Remove(Schluessel(alt.Von.Element, alt.Von.Anschluss));
                     anAnschluss.Remove(Schluessel(alt.Nach.Element, alt.Nach.Anschluss));
                     if (paketId is not null) geloeschteVerbindungen[op.Id] = paketId;
@@ -187,7 +221,7 @@ public sealed class Modell
         foreach (var e in elemente.Values) { var k = e.Kopie(); m.elemente[k.Id] = k; m.nachKennzeichen[k.Kennzeichen] = k.Id; }
         foreach (var v in verbindungen.Values)
         {
-            var k = v.Kopie(); m.verbindungen[k.Id] = k;
+            var k = v.Kopie(); m.verbindungen[k.Id] = k; m.IndexDazu(k);
             m.anAnschluss[Schluessel(k.Von.Element, k.Von.Anschluss)] = k.Id;
             m.anAnschluss[Schluessel(k.Nach.Element, k.Nach.Anschluss)] = k.Id;
         }
@@ -201,12 +235,12 @@ public sealed class Modell
     public void Laden(StandAbbild stand)
     {
         Aenderungszaehler++;
-        elemente.Clear(); verbindungen.Clear(); nachKennzeichen.Clear(); anAnschluss.Clear();
+        elemente.Clear(); verbindungen.Clear(); nachKennzeichen.Clear(); anAnschluss.Clear(); vonElement.Clear();
         geloeschteElemente.Clear(); geloeschteVerbindungen.Clear();
         foreach (var e in stand.Elemente) { var k = e.Kopie(); Umschreiben(k); elemente[k.Id] = k; nachKennzeichen[k.Kennzeichen] = k.Id; }
         foreach (var v in stand.Verbindungen)
         {
-            var k = v.Kopie(); verbindungen[k.Id] = k;
+            var k = v.Kopie(); verbindungen[k.Id] = k; IndexDazu(k);
             anAnschluss[Schluessel(k.Von.Element, k.Von.Anschluss)] = k.Id;
             anAnschluss[Schluessel(k.Nach.Element, k.Nach.Anschluss)] = k.Id;
         }
