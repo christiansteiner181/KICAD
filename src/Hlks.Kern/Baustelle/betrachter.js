@@ -79,7 +79,8 @@
     const doks = e.eig && e.eig.dokumente && Array.isArray(e.eig.dokumente.wert) ? e.eig.dokumente.wert : [];
     if (doks.length) {
       a.append(el('h4', { textContent: 'Dokumente' }));
-      for (const d of doks) { const ziel = d.url || d.datei; a.append(el('div', {}, ziel ? el('a', { href: ziel, target: '_blank', textContent: d.titel || ziel }) : (d.titel || ''), d.rolle ? ` (${d.rolle})` : '')); }
+      // Verweise aus dem Modell: nur Adressen und Dateien, kein Skript (javascript:, data:)
+      for (const d of doks) { const roh = String(d.url || d.datei || '').trim(); const ziel = /^(javascript|data|vbscript):/i.test(roh) ? '' : roh; a.append(el('div', {}, ziel ? el('a', { href: ziel, target: '_blank', textContent: d.titel || ziel }) : (d.titel || ''), d.rolle ? ` (${d.rolle})` : '')); }
     }
     const eig = Object.entries(e.eig || {}).filter(([n]) => !['dokumente', 'montagestatus'].includes(n));
     if (eig.length) {

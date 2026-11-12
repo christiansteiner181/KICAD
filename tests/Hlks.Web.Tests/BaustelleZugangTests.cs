@@ -71,6 +71,18 @@ public class BaustelleZugangTests
     }
 
     [Fact]
+    public void Monteur_SiehtKeineBauleitungsseite_AuchWennDerProjektnameMonteurEnthaelt()
+    {
+        // Dateiname des Exports: <Projekt>_<rolle>_<Zeit>.html – die letzte Rollenangabe zählt
+        var monteur = new BaustelleZugaenge.Zugang("M", BaustelleZugaenge.Monteur, "mmmmmmmm2222");
+        Assert.True(BaustelleZugaenge.DarfSehen(monteur, "MFH_Musterweg_monteur_20261112-0930.html"));
+        Assert.False(BaustelleZugaenge.DarfSehen(monteur, "MFH_Musterweg_bauleitung_20261112-0930.html"));
+        Assert.False(BaustelleZugaenge.DarfSehen(monteur, "Halle_Monteur_Nord_bauleitung_20261112-0930.html"));
+        Assert.True(BaustelleZugaenge.DarfSehen(monteur, "Buero_Bauleitung_Sued_monteur_20261112-0930.html"));
+        Assert.True(BaustelleZugaenge.DarfSehen(new BaustelleZugaenge.Zugang("P", BaustelleZugaenge.Projektleiter, "pppppppp3333"), "Halle_Monteur_Nord_bauleitung_20261112-0930.html"));
+    }
+
+    [Fact]
     public async Task Zugaenge_PersoenlicherLink_MonteurSiehtNurMonteurseiten_RueckmeldungMitSeinemNamen()
     {
         // Christian 12.11.2026: Monteur und Projektleiter des Unternehmers, Anmeldung über persönlichen Link, Projektleiter auch Arbeitsstand, je Projekt
@@ -140,6 +152,16 @@ public class BaustelleZugangTests
             Assert.Equal(HttpStatusCode.OK, (await http.DeleteAsync("/api/baustelle/zugaenge/" + s)).StatusCode);
             Assert.Equal(403, (await Netz("GET", "/baustelle/z/" + s)).Response.StatusCode);
             Assert.Equal(404, (await Netz("GET", "/api/baustelle/zugaenge")).Response.StatusCode);   // nicht über den Baustellen-Port
+            // zwei Meldungen derselben Person unmittelbar nacheinander: beide bleiben (keine überschreibt die andere)
+            Assert.Equal(200, (await Netz("POST", "/baustelle/rueckmeldung", "pppppppp3333", r)).Response.StatusCode);
+            Assert.Equal(200, (await Netz("POST", "/baustelle/rueckmeldung", "pppppppp3333", r)).Response.StatusCode);
+            Assert.Equal(3, JsonNode.Parse(await http.GetStringAsync("/api/baustelle/eingang"))!["dateien"]!.AsArray().Count);
+            // unlesbare zugaenge.json: der Zugang bleibt gesperrt (nicht «offen wie ohne Datei») und sagt es
+            File.WriteAllText(Path.Combine(ordner, "baustelle", "zugaenge.json"), "{ \"zugaenge\": [");
+            var kaputt = Text(await Netz("GET", "/baustelle/", "mmmmmmmm2222"));
+            Assert.Contains("nicht lesbar", kaputt);
+            Assert.DoesNotContain("MFH_monteur_test", kaputt);
+            Assert.Equal(400, (await Netz("GET", "/baustelle/seite/MFH_monteur_test.html", "mmmmmmmm2222")).Response.StatusCode);
             await http.PostAsync("/api/projekt/schliessen", Json(new { }));
         }
         finally

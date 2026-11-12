@@ -84,9 +84,16 @@ public static class BaustelleZugaenge
     public static Zugang? Angemeldet(HttpRequest r, List<Zugang> liste) =>
         r.Cookies.TryGetValue(Keks, out var k) && !string.IsNullOrEmpty(k) ? liste.FirstOrDefault(z => z.Schluessel == k) : null;
 
-    /// <summary>Darf der Zugang diese Webseite sehen? Monteur nur Monteur-Seiten (Dateiname «…_monteur_…»), Projektleiter alle.</summary>
-    public static bool DarfSehen(Zugang z, string datei) =>
-        z.Rolle == Projektleiter || Path.GetFileName(datei).Contains("_monteur_", StringComparison.OrdinalIgnoreCase);
+    /// <summary>Darf der Zugang diese Webseite sehen? Monteur nur Monteur-Seiten, Projektleiter alle. Der Export nennt die Datei
+    /// «&lt;Projekt&gt;_&lt;rolle&gt;_&lt;Zeit&gt;.html»; massgebend ist darum die LETZTE Rollenangabe im Namen – ein Projekt, das «…_Monteur_…» im
+    /// Namen trägt, macht aus einer Bauleitungs-Webseite (Arbeitsstand) keine Monteur-Seite.</summary>
+    public static bool DarfSehen(Zugang z, string datei)
+    {
+        if (z.Rolle == Projektleiter) return true;
+        var name = Path.GetFileName(datei);
+        int monteur = name.LastIndexOf("_monteur_", StringComparison.OrdinalIgnoreCase);
+        return monteur >= 0 && monteur > name.LastIndexOf("_bauleitung_", StringComparison.OrdinalIgnoreCase);
+    }
 
     public static string RollenText(string rolle) => rolle == Projektleiter ? "Projektleiter" : "Monteur";
 }

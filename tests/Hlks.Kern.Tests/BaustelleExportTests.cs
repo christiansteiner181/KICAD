@@ -41,6 +41,15 @@ public class BaustelleExportTests
         var b = raum["box3d"]!.AsArray().Select(v => v!.GetValue<double>()).ToArray();
         Assert.Equal(6, b.Length);
         Assert.True(b[0] < b[3] && b[1] < b[4] && b[2] < b[5]);
+        // von Hand nachgerechnet (gx = x, gy = z, gz = −y, Meter, Bezugspunkt 0): Grundriss-Begrenzung des Raums, unten die Geschosskote,
+        // oben mindestens die Oberkante des Geschosses (Leitungen über der lichten Höhe bleiben im Raumschnitt sichtbar)
+        var re = p.Modell.Finde(raum["id"]!.GetValue<string>())!;
+        var gs = p.Modell.Finde(re.Geschoss)!;
+        var pts = re.Geometrie!.Punkte;
+        double kote = gs.Zahl("kote") ?? 0, oben = kote + Math.Max(Raumgrenzen.Raumhoehe(p.Modell, re), gs.Zahl("hoehe") ?? 0);
+        double[] soll = [pts.Min(q => q[0]) / 1000, kote / 1000, -pts.Max(q => q[1]) / 1000, pts.Max(q => q[0]) / 1000, oben / 1000, -pts.Min(q => q[1]) / 1000];
+        for (int i = 0; i < 6; i++) Assert.Equal(soll[i], b[i], 3);
+        Assert.True(b[4] - b[1] >= (gs.Zahl("hoehe") ?? 0) / 1000 - 0.001);
         // three.js im selben Modul, ohne Import-Zeilen (läuft von file://)
         Assert.DoesNotContain("from 'three'", html);
         Assert.Contains("class OrbitControls", html);

@@ -20,7 +20,13 @@ public static class FamilienGrundbestand
         var ort = FamilienBibliothekDienst.Ort(p.Katalog);
         if (!ort.Aktiv) return new(0, 0, [ort.Sperre ?? "Familienbibliothek nicht eingestellt"]);
         List<BibIndexEintrag> frei;
-        try { frei = (FamilienBibliothekDienst.Lesen(ort).Index?.Familien ?? []).Where(f => f.Status == "freigegeben").ToList(); }
+        try
+        {
+            var gelesen = FamilienBibliothekDienst.Lesen(ort);
+            frei = (gelesen.Index?.Familien ?? []).Where(f => f.Status == "freigegeben").ToList();
+            // Bibliothek nicht erreichbar und kein gemerkter Stand: das Projekt bleibt ohne Familien – das sagen, nicht still leer anlegen
+            if (gelesen.Offline && frei.Count == 0) return new(0, 0, [gelesen.Hinweis ?? $"Familienbibliothek nicht erreichbar ({ort.Pfad})"]);
+        }
         catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or HlksFehler)
         { return new(0, 0, [$"Familienbibliothek nicht lesbar: {ex.Message}"]); }
 

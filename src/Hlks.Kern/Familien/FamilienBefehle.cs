@@ -403,6 +403,13 @@ public sealed class FamilieLaden : IBefehl
         var bisher = k.Arbeit.DerKlasse(Familien.Klasse).FirstOrDefault(f => id is not null && Familien.DefinitionsId(f) == id)
             ?? (id is null ? k.Arbeit.DerKlasse(Familien.Klasse).FirstOrDefault(f => string.Equals(f.Name?.Trim(), name, StringComparison.OrdinalIgnoreCase)) : null);
         var status = def["status"] is JsonValue sv && sv.TryGetValue<string>(out var st) ? st : "entwurf";
+        // Freigabe nur durch einen Menschen (entwurf/modul-2.md, FamilienFreigabe): eine Datei ausserhalb der mitgelieferten Bibliothek, die sich selbst
+        // «freigegeben» nennt, macht für eine KI (bzw. Import, Beispiel) keine freigegebene Familie – sie kommt als Entwurf, ein Mensch gibt sie frei.
+        if (status == "freigegeben" && !inKatalog && k.Herkunft.Art != "mensch")
+        {
+            status = "entwurf";
+            k.Hinweise.Add($"Die Datei nennt die Familie «freigegeben» – geladen als Entwurf: freigeben darf nur ein Mensch (familie_freigeben), der Akteur «{k.Herkunft.Akteur}» hat die Herkunft «{k.Herkunft.Art}».");
+        }
         if (bisher is not null) NurNeueFuerKi(k, bisher);
         if (bisher is not null && bisher.Eigenschaft("definition")?.Inhalt is JsonObject alt && FamilienBefehle.Inhalt(alt) == FamilienBefehle.Inhalt(def)
             && bisher.Text("status") == status && (bisher.Eigenschaft("bibliothek")?.Inhalt as JsonObject)?["pruefsumme"]?.ToString() == pruefsumme)
