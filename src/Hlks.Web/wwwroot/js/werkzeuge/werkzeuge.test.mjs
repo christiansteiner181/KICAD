@@ -623,6 +623,15 @@ test('Vorwand: nach Anfangs- und Endpunkt greift der nächste Klick die Tiefe ab
   assert.equal(p.aussenkante, 'rechts');
 });
 
+test('Montageelement: die Vorschau hat die Breite des Elementtyps und bleibt wie im Kern innerhalb der Vorwand', async () => {
+  const { elementVorschau } = await import('./vorwand.js');
+  const vw = { a: [0, 0], b: [2000, 0], tiefe: 200, mitte: [100, 0] };   // Maus 100 mm vom Anfang, Element 424 mm breit
+  const xs = elementVorschau(vw, 424).map((p) => p[0]);
+  assert.deepEqual([Math.min(...xs), Math.max(...xs)], [0, 424]);         // Mitte auf 212 begrenzt (Kern: Clamp(s, B/2, L − B/2))
+  const mitte = elementVorschau({ ...vw, mitte: [1000, 0] }, 424);
+  assert.deepEqual(mitte, [[788, 100], [1212, 100], [1212, -100], [788, -100]]);
+});
+
 test('Dämmdicke nach MuKEn 2014 Anhang 4 aus der DN (Christian 09.11.2026: «dämmdicken gem. energiegesetzt»)', async () => {
   const fs = await import('node:fs');
   const kat = JSON.parse(fs.readFileSync(new URL('../../../../../kataloge/daemmung.json', import.meta.url), 'utf8'));

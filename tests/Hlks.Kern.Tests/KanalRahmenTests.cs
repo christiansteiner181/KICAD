@@ -36,4 +36,14 @@ public class KanalRahmenTests
         var k = Grafik.QuelleFuer(p.Katalog, kanal)!.Koerper(p, kanal)!;
         Assert.Equal(4, k.Teile.Count(t => t.Art == "quader" && t.Masse![1] == 422 && t.Masse[2] == 222));
     }
+
+    /// <summary>Gesamtprüfung 13.11.2026: liegt ein Stoss weniger als zwei Profiltiefen vor dem Kanalende, überlappten Stoss- und Endrahmen
+    /// (M20, Normkanal 1770: Kanal 1800 → Stoss 1750–1790 und Endrahmen 1780–1800). Jetzt entfällt dieser Stoss.</summary>
+    [Fact]
+    public void Rahmen_UeberlappenNichtAmKanalende()
+    {
+        var m20 = new KanalRahmenProfil("M20", 1000, 11, 20, 1770);
+        Assert.Equal([(0, 20), (1780, 1800)], KanalRahmen.Lagen(1800, m20));
+        Assert.Equal([(0, 20), (1750, 1790), (1980, 2000)], KanalRahmen.Lagen(2000, m20));
+    }
 }

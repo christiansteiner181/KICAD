@@ -10,6 +10,7 @@ import { element } from '../zustand.js';
 import { abstand, naechsterAufStrecke } from './fangen.js';
 import { vorwandParameter, WerkzeugFehler } from './parameter.js';
 import * as S from './schicht.js';
+import { elementBreite } from './vorwand-typen.js';
 
 /** Vorwand unter dem Mauspunkt aus den Fangkanten der Ansicht: { id, kennzeichen, a, b, tiefe, mitte } oder null. */
 export function vorwandUnterMaus(maus, daten, radius) {
@@ -129,11 +130,20 @@ export function montageelementWerkzeug() {
     },
     zeichne(z, fang, ctx) {
       if (!z.vw) return '';
-      const { a, b, mitte } = z.vw;
-      const l = abstand(a, b) || 1, u = [(b[0] - a[0]) / l, (b[1] - a[1]) / l], n = [-u[1], u[0]];
-      const h = z.vw.tiefe / 2, w = 250;
-      const P = (s, q) => [mitte[0] + u[0] * s + n[0] * q, mitte[1] + u[1] * s + n[1] * q];
-      return S.polylinie([P(-w, h), P(w, h), P(w, -h), P(-w, -h)], 'wz-oeffnung', true) + S.text(mitte, z.vw.kennzeichen, ctx.s(), { versatzPx: [12, 12], klasse: 'wz-text wz-fangtext' });
+      return S.polylinie(elementVorschau(z.vw, elementBreite(ctx.opt?.element)), 'wz-oeffnung', true)
+        + S.text(z.vw.mitte, z.vw.kennzeichen, ctx.s(), { versatzPx: [12, 12], klasse: 'wz-text wz-fangtext' });
     },
   };
+}
+
+/** Vorschau des Montageelements in der Vorwand vw ({ a, b, tiefe, mitte }): Rechteck in der Breite des Elementtyps über die Vorwandtiefe, die
+ *  Mitte wie im Kern (montageelement_setzen) so begrenzt, dass das Element nicht über das Ende der Vorwand ragt. Vorher zeigte die Vorschau fest
+ *  500 mm um den Mauspunkt – bei schmalen bzw. breiten Elementen und an den Enden wich sie vom Ergebnis ab (Gesamtprüfung 13.11.2026). */
+export function elementVorschau(vw, breite = 500) {
+  const { a, b, mitte } = vw;
+  const l = abstand(a, b) || 1, u = [(b[0] - a[0]) / l, (b[1] - a[1]) / l], n = [-u[1], u[0]];
+  const w = (breite > 0 ? breite : 500) / 2, h = vw.tiefe / 2;
+  const s = Math.min(Math.max((mitte[0] - a[0]) * u[0] + (mitte[1] - a[1]) * u[1], w), Math.max(w, l - w));
+  const P = (ds, q) => [a[0] + u[0] * (s + ds) + n[0] * q, a[1] + u[1] * (s + ds) + n[1] * q];
+  return [P(-w, h), P(w, h), P(w, -h), P(-w, -h)];
 }

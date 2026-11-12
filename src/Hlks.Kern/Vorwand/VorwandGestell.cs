@@ -199,6 +199,7 @@ public static class VorwandGestell
         double obenOk = v.Raumhoch ? v.Okff + v.Hoehe : v.Okff + v.Hoehe - d;   // Oberkante des obersten Profils
         string? ann = sys.Annahme("profil");
         double vz0 = v.Rohboden, vz1 = obenOk;
+        if (v.Laenge < 2 * Rand + pb) v.Befunde.Add($"Vorwand {v.Laenge:0} mm ist kürzer als ein Profil mit Randabstand ({2 * Rand + pb:0} mm) – kein baubares Gestell.");
         // Vorgefertigt: Segmente, die sich einbringen lassen; sonst ein Stück über die ganze Länge
         var segmente = v.Vorgefertigt ? Segmentieren(v, sys, vz1 - vz0, q1) : [(0, v.Laenge)];
 
@@ -260,7 +261,7 @@ public static class VorwandGestell
 
         // Montagewinkel am Boden (und raumhoch an der Decke): erster 10 cm von der angrenzenden Wand, dann höchstens Abstand
         double abst = v.Vorwand.Text("bauwerk") == "trockenbau" ? sys.MontagewinkelAbstandTrockenbau : sys.MontagewinkelAbstandMassiv;
-        foreach (var s in AusserhalbElemente(Teilung(sys.AbstandAngrenzendeWand, v.Laenge - sys.AbstandAngrenzendeWand, abst), v.Elemente, sys.MontagewinkelBreite / 2 + 1))
+        foreach (var s in AusserhalbElemente(Teilung(Math.Min(sys.AbstandAngrenzendeWand, v.Laenge / 2), Math.Max(v.Laenge / 2, v.Laenge - sys.AbstandAngrenzendeWand), abst), v.Elemente, sys.MontagewinkelBreite / 2 + 1))
         {
             // Montagewinkel 13 × 13 cm (461.185.00.1, Entscheid Christian 04.11.2026): Schenkel am Profil, gezeichnet als stehender Schenkel
             double mw = sys.MontagewinkelBreite / 2, ms = sys.MontagewinkelSchenkel;
@@ -285,6 +286,7 @@ public static class VorwandGestell
         double tb = qs.Breite, th = qs.Hoehe;
         double q1 = v.Tiefe - d, q0 = q1 - sb;
         double obenOk = v.Raumhoch ? v.Okff + v.Hoehe : v.Okff + v.Hoehe - d;
+        if (v.Laenge < tb) v.Befunde.Add($"Vorwand {v.Laenge:0} mm ist kürzer als ein Ständer ({tb:0} mm) – kein baubares Gestell.");
         v.Teile.Add(new VorwandTeil("schiene", "Duofix Systemschiene (Boden)", 0, v.Laenge, q0, q1, v.Rohboden, v.Rohboden + sh, sys.SchieneArtikel, Math.Round(v.Laenge), sys.Annahme("schiene")));
         // Obere Schiene nie durch ein Element: unterbrochen, wo ein Rahmen bis in ihre Höhe reicht (Christian 04.11.2026, auch bei Duofix)
         {
@@ -312,7 +314,7 @@ public static class VorwandGestell
                 v.Raumhoch ? sys.Annahme("staender") : sys.Annahme("staenderTeilhoch")));
 
         // Befestigung der Schiene am Baukörper: höchstens 50 cm (S. 191, 196), erste 10 cm vom Ende (Annahme wie GIS)
-        foreach (var s in Teilung(100, v.Laenge - 100, sys.SchienenbefestigungAbstand))
+        foreach (var s in Teilung(Math.Min(100, v.Laenge / 2), Math.Max(v.Laenge / 2, v.Laenge - 100), sys.SchienenbefestigungAbstand))   // kurze Vorwand: in der Mitte statt ausserhalb
         {
             v.Teile.Add(new VorwandTeil("befestigung", "Befestigung Schiene (Boden)", s - 10, s + 10, q0 + sb / 2 - 10, q0 + sb / 2 + 10, v.Rohboden - 60, v.Rohboden + sh, null, null,
                 "Erste Befestigung 10 cm vom Ende angenommen."));
@@ -470,6 +472,8 @@ public static class VorwandGestell
     /// <summary>Lagen (Unterkante s, Breite w), die in einem Montageelement lägen, an dessen nächste Kante schieben; Doppelte fallen weg.</summary>
     static List<double> Ausweichen(List<double> lagen, List<VorwandElementLage> el, double w, double min, double max)
     {
+        // Gesamtprüfung 13.11.2026: eine Vorwand kürzer als ein Profil (max < min) warf in Math.Clamp – jede Ansicht mit dieser Vorwand brach ab
+        max = Math.Max(min, max);
         var aus = new List<double>();
         foreach (var s0 in lagen)
         {

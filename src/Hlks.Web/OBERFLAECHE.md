@@ -4227,6 +4227,10 @@ Vorwand; Stückliste: Segmente mit Länge und Elementen, massgebende Grenze. Feh
 
 **Einbauten und Höhen** (Christian 04.11.2026: «nicht durch die spühlkasten», «prüfe das auch bei duofix», «das untere profil muss durchlaufen», «Rahmen auf Rohboden, WC höhe vorgegeben ab Fertigboden», «es fehlen nach mir noch vertikal streben neben den einbauten», «es muss auch möglich sein raumhohe und teilraumhohe elemente zu erstellen»): Horizontalprofile (GIS) und die obere Duofix-Schiene enden an jedem Einbau, dessen Rahmen auf ihrer Höhe liegt; das unterste GIS-Profil und die Duofix-Bodenschiene laufen durch. Darüber laufen die Profile durch, das Element hängt mit Befestigung T1–T3 nach Wandtiefe an den Profilenden und am Profil darüber (MA 970.704 S. 3). Vertikale Streben bzw. Ständer stehen beidseits jedes Einbaus, dazwischen ≤ 55 cm (Duofix) bzw. ≤ 250 cm (GIS). Rahmen ab Rohboden bis OKFF + Rahmenhöhe, Anschlusshöhen ab OKFF; Bodenaufbau über dem zulässigen des Elements (GIS-WC 20 cm, Duofix-WC 25 cm) → Befund. Ausführung teilhoch/raumhoch (Optionsleiste, Eigenschaft ausfuehrung): raumhoch ohne Höhe = Raumhöhe (lichteHoehe › Geometriehöhe › Geschosshöhe). Wandanker enden an der Rückseite des Elementrahmens. Test Gestell_NieDurchEinElement prüft beide Systeme.
 
+**Gesamtprüfung 13.11.2026:** Spiegeln (`elemente_spiegeln`) stellt `rueckseite` um – die Rohbauwandseite bleibt an der Wand. Eine Vorwand kürzer als ein
+Profil (GIS 62 mm) bzw. Ständer wird gezeichnet und meldet den Befund «kein baubares Gestell» (vorher brach die Ansicht ab). Die Vorschau des Werkzeugs
+Montageelement hat die Breite des gewählten Elementtyps und bleibt wie das Ergebnis innerhalb der Vorwand (`vorwand.js › elementVorschau`).
+
 **Tests:** `dotnet test tests/Hlks.Kern.Tests --filter "FullyQualifiedName~VorwandTests"`.
 
 ## Heizkörperfarbe (04.11.2026)

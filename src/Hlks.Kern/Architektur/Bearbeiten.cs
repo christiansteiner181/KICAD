@@ -270,6 +270,10 @@ public sealed class ElementeSpiegeln : IBefehl
                 if (w > 90 && w <= 270) w = Bearbeitung.Norm(w - 180);
                 eig = new JsonObject { ["winkel"] = w };
             }
+            // Vorwand: «rueckseite» zählt links/rechts in Zeichenrichtung – beim Spiegeln kehrt der Drehsinn um, die Rohbauwand läge sonst
+            // auf der Raumseite (Gesamtprüfung 13.11.2026)
+            if (k.Katalog.IstArt(e, "Vorwand") && e.Text("rueckseite") is "links" or "rechts")
+                eig = new JsonObject { ["rueckseite"] = e.Text("rueckseite") == "links" ? "rechts" : "links" };
             Bearbeitung.Setzen(k, e, Bearbeitung.Abbilden(e.Geometrie!, Punkt), Bearbeitung.Mitgefuehrt(e, Punkt, true, eig));
         }
 
