@@ -30,6 +30,9 @@ Tests nach dem Zusammenführen (gefiltert): Kern 169 + 86 grün, Web 5 grün, No
 | Bereich | Korrekturen | Bericht |
 |---|---|---|
 | Restliste | 7 (Start an Anschluss übernimmt zuerst Dimension/Höhe/Medium, dann Pflichtfelder; Kanalumriss und Fliesspfeil an Kreuzungen; Lücke grob ab Strichrand; Gewinde 5/4" = 1 1/4"; IFC-Achsensystem x ∥ z; Meldung ohne Familienbibliothek; Hinweis Dämmdialog bei gemischten DN; Baustellen-Webseite startet trotz kaputter Adresse) | restliste.md |
+| Rechenkerne | 7 (Kanal-Druckverlust: Weg endet am Gerät statt durchs andere Netz – ZD-1 2.08 statt 2.30 Pa, kein Abbruch ohne Volumenstrom, Rohre im Luftnetz mit Innendurchmesser, «Kunststoff» nur als eigenes Wort; Summen nennen Leitungen ohne Druckverlust; Heizlast und Heizkörper ohne Division durch null). Norm-, Tabellen- und Stoffwerte unberührt; Diff vom Hauptlauf gelesen | rechenkerne.md |
+
+Browser (Hauptlauf 18:13): Rohr am freien Leitungsende mit leerer Höhe begonnen – Höhe und Grösse des Anschlusses übernommen, Zug angelegt.
 
 ## Fragen an Christian (gesammelt)
 
@@ -57,6 +60,11 @@ Tests nach dem Zusammenführen (gefiltert): Kern 169 + 86 grün, Web 5 grün, No
 18. **Aussparungsvorschlag am Formteil im Bauteil**: endet die Leitung im Bauteil an einem Bogen, wird über die ganze Bauteildicke
     ausgespart (gemeint war das T-Stück im Deckenbereich). Nur T-Stücke so behandeln?
 19. **raum_erkennen** zieht freistehende Wände im Raum nicht ab (der IFC-Weg kann es) – angleichen?
+20. **Massenstrom im Heizungsrohrnetz** (hoch): kommt aus der Normleistung (75/65/20) mit der Spreizung der Gruppe statt aus dem Bedarf –
+    Heizkörper 1000 W Norm, Bedarf 400 W bei 55/45 ergibt 86 statt 34 kg/h, Reibungsdruckverlust grob fünfmal zu gross. heizkoerper_auslegung
+    rechnet aus dem Bedarf. Entscheid 02.11.2026 stammt aus der Zeit vor Teil B – auf Bedarf umstellen?
+21. **Hauptleitungen ausserhalb einer Heizgruppe** (Erzeuger bis Verteiler) haben keine Temperatur und damit keinen Druckverlust; in Maschen
+    trägt jeder parallele Weg den vollen Strom. Mit welcher Temperatur dort rechnen?
 7. **λ-Werte der Dämmarten**: welche Produkte verwendet ihr (dann λ mit Quelle eintragen)?
 
 **Prüfung Hauptlauf im Browser (18:00):** Rohr mit drei raschen Klicks und Esc wird vollständig angelegt (Klick-Reihe), Weiterzeichnen mit Bogen am Leitungsende kürzt die bestehende Leitung. Nebenbefund: Start an einem Anschluss verlangt zuerst Produktlinie und Höhe, obwohl der Anschluss beides vorgibt (pflichtPruefen vor dem Anschluss) – kleine Korrektur für Runde 3.
