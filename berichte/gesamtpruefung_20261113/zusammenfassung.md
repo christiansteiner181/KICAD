@@ -48,6 +48,7 @@ Tests nach dem Zusammenführen (gefiltert): Kern 169 + 86 grün, Web 5 grün, No
 | KI-Schnittstelle | 2 Sicherheitsfehler (rueckmeldung_lesen nahm jeden Dateipfad der KI, auch fremde Netzpfade; rueckmeldung_uebernehmen liess eine KI über HTTP durch) und Abgleich vor 8 MCP-Fachabfragen (KI bekam sonst den alten Stand) | ki_schnittstelle.md |
 | Unterlagen, 2D-Zeichnung | 3 (Kalibrieren: Verschiebung zu den gerundet gespeicherten Werten – bei LV95 vorher 20 mm Versatz; DWG ausrichten aus den wirklichen Winkeln – 12.4° statt 12.0°, 43 mm an der Ecke; verdrehtes Ansichtsfenster im Layout lag ausserhalb) | unterlagen_zeichnung.md |
 | Datenhaltung, Abgleich | 5 (Paket mit unbrauchbarem Inhalt wurde halb angewandt und blockierte Öffnen/Abgleich; OneDrive-Konfliktkopie eines Pakets wurde doppelt angewandt; Ablage fällt beim Öffnen weg → Meldung statt still Teilstand; atomares Schreiben wiederholt; kein Modellkopieren je Takt während ein Standabbild geschrieben wird) | datenhaltung.md |
+| HKAP, Hülle, Lagen | 4 (λ-Quelle in der Herkunft von R nur einmal; Lagemanager liest «12cm» als 120 mm, ein Minus lässt keine Lage wegfallen; Nordwinkel der Raumgrenzen aus derselben Projektinformation wie HKAP; Lagen der Optionsleiste folgen dem Modell). HKAP-Drei-Wege-Abgleich ohne Fehlerbefund | hkap_huelle.md |
 
 Browser (Hauptlauf 18:13): Rohr am freien Leitungsende mit leerer Höhe begonnen – Höhe und Grösse des Anschlusses übernommen, Zug angelegt.
 
@@ -122,6 +123,11 @@ Browser (Hauptlauf 18:13): Rohr am freien Leitungsende mit leerer Höhe begonnen
     selten, Reservierungen) oder auch in OneDrive-Ordnern (dann dringend)? Umbau: Version aus dem gewinnenden Paket ableiten.
 42. **Reservierungen**: nach Absturz/VPN-Abbruch bis 2 h gesperrt – Knopf «Reservierung übernehmen» oder kürzere Dauer? Alte Pakete in
     Monatsordner verschieben (Ordner aenderungen wächst unbegrenzt)? Projekte eines neueren Programmstands ablehnen oder nur lesend öffnen?
+43. **U-Wert unabhängig von der Angrenzung** (hoch, Normentscheid): die Gruppe «erdreich» bzw. «unbeheizt» wird nie angewendet – Wände
+    gegen Erdreich/unbeheizt und Decken als Boden rechnen mit Rsi/Rse nach Art des Aufbaus, das geht so in die Heizlast. Welche
+    Rsi/Rse je Angrenzung gelten (mit Quelle)?
+44. **HKAP-Antwort** kann bei fehlender Id dem Datensatz an derselben Stelle zugeordnet werden; die HKAP-Adresse ist frei wählbar. Absichern?
+45. **Lagemanager**: «−12cm» gilt jetzt als 120 mm unter UK roh Decke – oder nur Zahlen in mm?
 7. **λ-Werte der Dämmarten**: welche Produkte verwendet ihr (dann λ mit Quelle eintragen)?
 
 **Prüfung Hauptlauf im Browser (18:00):** Rohr mit drei raschen Klicks und Esc wird vollständig angelegt (Klick-Reihe), Weiterzeichnen mit Bogen am Leitungsende kürzt die bestehende Leitung. Nebenbefund: Start an einem Anschluss verlangt zuerst Produktlinie und Höhe, obwohl der Anschluss beides vorgibt (pflichtPruefen vor dem Anschluss) – kleine Korrektur für Runde 3.
