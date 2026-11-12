@@ -102,7 +102,8 @@ function fuellung(stil) {
   // Dunkles Design (Christian 09.11.2026: «die darstellung der transparenten flächen wird im dunklen modeu abgedunkelt. das ist nicht gewollt»): eine
   // transparente Farbfläche wird mit Weiss vorgemischt (wie auf weissem Papier) und fast deckend gezeichnet, statt mit dem dunklen Grund zu mischen
   // mindestens 60 % der Farbe, damit sie erkennbar bleibt (Christian 09.11.2026: «ablaufrohre werden grau hinterlegt. dies muss braun sein»)
-  const hell = (f) => (dunkel() && deck ? { klasse: '', attr: ` fill="${mitWeiss(f, dunkelAnteil(d))}" fill-opacity="${zahl(DUNKEL_DECKKRAFT)}"` } : { klasse: '', attr: ` fill="${f}"${deck}` });
+  // Deckkraft 0 (unsichtbare Trefferflächen, z. B. Dämmung je Leitung) bleibt auch im dunklen Design unsichtbar
+  const hell = (f) => (dunkel() && deck && d > 0 ? { klasse: '', attr: ` fill="${mitWeiss(f, dunkelAnteil(d))}" fill-opacity="${zahl(DUNKEL_DECKKRAFT)}"` } : { klasse: '', attr: ` fill="${f}"${deck}` });
   switch (stil?.fuellung) {
     case undefined: case null: case '': return { klasse: '', attr: ' fill="none"' };
     case 'schnitt': { const f = hex(stil.farbe); return f ? hell(f) : { klasse: 'pf', attr: deck }; }

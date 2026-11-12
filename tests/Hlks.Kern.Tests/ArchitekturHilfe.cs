@@ -100,5 +100,12 @@ static class ArchitekturHilfe
         g.Teile.Where(t => t.Id is null && t.Ebene == "wand").SelectMany(t => t.Primitive).Where(x => x.Stil.Stift == Stifte.Dick).ToList();
 
     public static Grafikteil Teil(Plangrafik g, Projekt p, string kz) =>
-        g.Teile.Single(t => t.Id == Hole(p, kz).Id);
+        g.Teile.Single(t => t.Id == Hole(p, kz).Id && t.Teil != DaemmGrafik.Kennung);
+
+    /// <summary>Alle Dämm-Grafikteile (vereinigte Fläche ohne Id und Ränder je Element) zusammen, ohne Trefferflächen; null ohne Dämmung.</summary>
+    public static Grafikteil? DaemmTeil(Plangrafik g)
+    {
+        var teile = g.Teile.Where(t => t.Teil == DaemmGrafik.Kennung).ToList();
+        return teile.Count == 0 ? null : new Grafikteil { Teil = DaemmGrafik.Kennung, Primitive = teile.SelectMany(t => t.Primitive).Where(x => !x.Stil.NurBildschirm).ToList() };
+    }
 }

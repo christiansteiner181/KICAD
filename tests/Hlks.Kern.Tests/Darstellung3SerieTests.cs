@@ -11,10 +11,10 @@ namespace Hlks.Kern.Tests;
 public class Darstellung3SerieTests
 {
     static Grafikteil Teil(Projekt p, string kz, string ansicht = "AN-EG") =>
-        Grafik.Plan(p, ansicht).Teile.Single(t => t.Id == Hole(p, kz).Id);
+        Grafik.Plan(p, ansicht).Teile.Single(t => t.Id == Hole(p, kz).Id && t.Teil != DaemmGrafik.Kennung);
 
     /// <summary>Vereinigte Dämmfläche des Grundrisses (DaemmGrafik, 09.11.2026) oder null.</summary>
-    static Grafikteil? Daemmung(Projekt p, string ansicht = "AN-EG") => Grafik.Plan(p, ansicht).Teile.SingleOrDefault(t => t.Id == "daemmung");
+    static Grafikteil? Daemmung(Projekt p, string ansicht = "AN-EG") => DaemmTeil(Grafik.Plan(p, ansicht));
     static (double Breite, double Hoehe) Ausdehnung(Primitiv x) => (x.Punkte.Max(q => q[0]) - x.Punkte.Min(q => q[0]), x.Punkte.Max(q => q[1]) - x.Punkte.Min(q => q[1]));
 
     static void Aendern(Projekt p, string kz, JsonObject eig) =>
@@ -116,14 +116,17 @@ public class Darstellung3SerieTests
         Aendern(p, "RO-1", new JsonObject { ["daemmdicke"] = 20 });
         // Handrechnung: 25 + 2 · 20 = 65 mm Dämmbreite; eine vereinigte Fläche mit dünnem schwarzem Rand, vor den Leitungen gezeichnet (darunter)
         var plan = Grafik.Plan(p, "AN-EG");
-        var dm = plan.Teile.Single(x => x.Id == "daemmung");
+        var dm = DaemmTeil(plan)!;
+        // einzeln wählbar (12.11.2026): die gemeinsame Fläche ohne Id, Ränder und Trefferfläche mit der Id der Leitung
+        Assert.Single(plan.Teile, x => x.Teil == DaemmGrafik.Kennung && x.Id is null);
+        Assert.Single(plan.Teile, x => x.Teil == DaemmGrafik.Kennung && x.Id == Hole(p, "RO-1").Id);
         var b = Flaeche(dm);
         var rohrFarbe = HlksEinordnung.Farbe(HlksEinordnung.Medium(p, Hole(p, "RO-1")));
         Assert.Equal(HlksGrafik.DaemmDeckkraft, b.Stil.Deckkraft);
         Assert.Null(b.Stil.Stift);   // Fläche ohne Rand; die Ränder sind dünne schwarze Linien
         Assert.All(dm.Primitive.Where(x => x.Art == "polylinie"), x => { Assert.Equal(rohrFarbe, x.Stil.Farbe); Assert.Equal(Stifte.Fein, x.Stil.Stift); Assert.Equal("voll", x.Stil.Linie); });   // Rand in Rohrfarbe, fein (12.11.2026)
         Assert.Equal((3000.0, 65.0), Ausdehnung(b));
-        Assert.True(plan.Teile.IndexOf(dm) < plan.Teile.FindIndex(x => x.Id == Hole(p, "RO-1").Id));   // hinter dem Rohr
+        Assert.True(plan.Teile.FindIndex(x => x.Id is null && x.Teil == DaemmGrafik.Kennung) < plan.Teile.FindIndex(x => x.Id == Hole(p, "RO-1").Id && x.Teil is null));   // hinter dem Rohr
         var t = Teil(p, "RO-1");
         Assert.DoesNotContain(t.Primitive, x => x.Stil.Fuellung == HlksGrafik.DaemmGelb);
         var rohr = t.Primitive.First(x => x.Art == "polygon");

@@ -404,11 +404,11 @@ public class AbwasserSerieTests
         var boegen = p.Modell.DerKlasse("Bogen").ToList();   // 90° = 2 × 45°
         Assert.Equal(2, boegen.Count);
         // eine vereinigte Fläche über Rohre und Bögen (DaemmGrafik): reicht bis zum Ende des zweiten Rohrs, ohne Lücke an den Bögen
-        var dm = Grafik.Plan(p, "AN-EG").Teile.Single(x => x.Id == "daemmung");
+        var dm = DaemmTeil(Grafik.Plan(p, "AN-EG"))!;
         var b = Assert.Single(dm.Primitive, x => x.Art == "polygon");
         Assert.True(b.Punkte.Max(q => q[1]) > 1900);
         Ok(p.Ausfuehren("element_aendern", new JsonObject { ["element"] = "AN-EG", ["eigenschaften"] = new JsonObject { ["detailgrad"] = "grob" } }));
-        Assert.DoesNotContain(Grafik.Plan(p, "AN-EG").Teile, x => x.Id == "daemmung");
+        Assert.Null(DaemmTeil(Grafik.Plan(p, "AN-EG")));
     }
 
     /// <summary>Christian 09.11.2026: «Ablaufleitungen werden immer mit der Rohr Sole ab Decke beschriftet. immer am höchsten gefällspunkt.»</summary>

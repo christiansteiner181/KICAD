@@ -1,4 +1,5 @@
 using System.Text.Json.Nodes;
+using static Hlks.Kern.Tests.ArchitekturHilfe;
 
 namespace Hlks.Kern.Tests;
 
@@ -42,7 +43,7 @@ public class LeitungsbezeichnungTests
     });
 
     static string? Text(Projekt p, string ansicht, Element e) =>
-        Grafik.Plan(p, ansicht).Teile.Single(t => t.Id == e.Id).Primitive.SingleOrDefault(x => x.Art == "text")?.Text;
+        Grafik.Plan(p, ansicht).Teile.Single(t => t.Id == e.Id && t.Teil != DaemmGrafik.Kennung).Primitive.SingleOrDefault(x => x.Art == "text")?.Text;
 
     [Fact]
     public void Rohr_ZeigtNwAlsVorgabe_DnNurAufEinstellung()
@@ -75,8 +76,8 @@ public class LeitungsbezeichnungTests
     {
         var p = Neu();
         var k = Leitung(p, "Kanal", "KA-1", "S-ZUL", new JsonObject { ["breite"] = 400, ["hoehe"] = 200, ["daemmdicke"] = 50 });
-        List<Primitiv> Prims() => Grafik.Plan(p, "AN-L").Teile.Single(x => x.Id == k.Id).Primitive;
-        var dm = Grafik.Plan(p, "AN-L").Teile.Single(x => x.Id == "daemmung");   // vereinigte Fläche (DaemmGrafik)
+        List<Primitiv> Prims() => Grafik.Plan(p, "AN-L").Teile.Single(x => x.Id == k.Id && x.Teil != DaemmGrafik.Kennung).Primitive;
+        var dm = DaemmTeil(Grafik.Plan(p, "AN-L"))!;   // vereinigte Fläche (DaemmGrafik)
         var fl = Assert.Single(dm.Primitive, x => x.Art == "polygon");   // Fläche ohne Rand, Ränder als dünne schwarze Linien
         Assert.Equal(HlksGrafik.DaemmFuellung(HlksEinordnung.Farbe(HlksEinordnung.Medium(p, k))), fl.Stil.Fuellung);   // Rohrfarbe (12.11.2026)
         Assert.NotEqual(HlksGrafik.DaemmGelb, fl.Stil.Fuellung); Assert.Equal(HlksGrafik.DaemmDeckkraft, fl.Stil.Deckkraft);
@@ -84,7 +85,7 @@ public class LeitungsbezeichnungTests
         Assert.True(p.Ausfuehren("element_aendern", new JsonObject { ["element"] = "AN-L", ["eigenschaften"] = new JsonObject { ["detailgrad"] = "grob" } }).Angenommen);
         var grob = Prims();
         Assert.Single(grob, x => x.Art == "kreis" && x.Stil.Fuellung == HlksGrafik.DaemmGelb);
-        Assert.DoesNotContain(Grafik.Plan(p, "AN-L").Teile, x => x.Id == "daemmung");
+        Assert.Null(DaemmTeil(Grafik.Plan(p, "AN-L")));
     }
 
     /// <summary>Christian 09.11.2026: Lüftung ohne Lagen, Bezeichnung «Achse = -XYmm UKD» (Rohre) bzw. «OK = -XYmm UKD» (Kanäle).</summary>
@@ -96,7 +97,7 @@ public class LeitungsbezeichnungTests
         var rechteck = Leitung(p, "Kanal", "KA-1", "S-ZUL", new JsonObject { ["breite"] = 400, ["hoehe"] = 200 });   // Achse 2500 → OK 2600
         var rund = Leitung(p, "Kanal", "KA-2", "S-ZUL", new JsonObject { ["durchmesser"] = 250 });
         var rohr = Leitung(p, "Rohr", "ZUL-1", "S-ZUL", new JsonObject { ["dn"] = 160 });
-        string[] Texte(Element e) => Grafik.Plan(p, "AN-L").Teile.Single(t => t.Id == e.Id).Primitive.Where(x => x.Art == "text").Select(x => x.Text!).ToArray();
+        string[] Texte(Element e) => Grafik.Plan(p, "AN-L").Teile.Single(t => t.Id == e.Id && t.Teil != DaemmGrafik.Kennung).Primitive.Where(x => x.Art == "text").Select(x => x.Text!).ToArray();
         Assert.Equal(["400×200", "OK = −100mm UKD"], Texte(rechteck));
         Assert.Equal(["Ø 250", "Achse = −200mm UKD"], Texte(rund));
         Assert.Equal(["Ø 160", "Achse = −200mm UKD"], Texte(rohr));
@@ -109,7 +110,7 @@ public class LeitungsbezeichnungTests
     {
         var p = Neu();
         var k = Leitung(p, "Kanal", "KA-1", "S-ZUL", new JsonObject { ["breite"] = 400, ["hoehe"] = 200 });
-        var poly = Grafik.Plan(p, "AN-L").Teile.Single(t => t.Id == k.Id).Primitive.First(x => x.Art == "polygon");
+        var poly = Grafik.Plan(p, "AN-L").Teile.Single(t => t.Id == k.Id && t.Teil != DaemmGrafik.Kennung).Primitive.First(x => x.Art == "polygon");
         var breite = Math.Abs(poly.Punkte[0][1] - poly.Punkte[3][1]);    // erstes Segment liegt auf der x-Achse
         Assert.Equal(400, breite, 1);
         Assert.Equal("#d0312d", poly.Stil.Farbe);                           // Zuluft rot (SIA 410/1, Katalog)

@@ -26,6 +26,8 @@ public static class DaemmGrafik
         public PathsD Flaeche = [];
         /// <summary>Rohrfarbe (Medienfarbe) der Leitung bzw. der angeschlossenen Leitung; null = Planfarbe.</summary>
         public string? Farbe;
+        /// <summary>Element (Leitung bzw. Formteil), zu dem die Dämmung gehört – ein Klick wählt nur dieses (Christian 12.11.2026).</summary>
+        public string ElementId = "";
         public double ZMin = double.MaxValue, ZMax = double.MinValue;
         public bool Senkrecht;
         public RectD Box;
@@ -68,7 +70,7 @@ public static class DaemmGrafik
                 if (HlksLinien.Laenge(pts.Select(q => new[] { q[0], q[1] }).ToList()) < 1)
                 {
                     // Steig- bzw. Fallleitung: Ring bzw. Rechteck der Dämmung
-                    var t = new Teil { Senkrecht = true, Farbe = Farbe(e) };
+                    var t = new Teil { Senkrecht = true, Farbe = Farbe(e), ElementId = e.Id };
                     foreach (var q in pts) t.Z(q.Length > 2 ? q[2] : 0);
                     var c = new PointD(pts[0][0], pts[0][1]);
                     if (ms.Rechteck)
@@ -82,7 +84,7 @@ public static class DaemmGrafik
                 }
                 // waagrechte bzw. flache Stücke als Züge im Grundriss (senkrechte Stücke einer Polylinie: Ring in HlksGrafik)
                 var zug = new List<double[]>();
-                var tz = new Teil { Farbe = Farbe(e) };
+                var tz = new Teil { Farbe = Farbe(e), ElementId = e.Id };
                 void ZugFertig() { Band(tz, zug, ms.DaemmBreite); zug = []; }
                 for (int i = 1; i < pts.Count; i++)
                 {
@@ -106,7 +108,7 @@ public static class DaemmGrafik
                     .Where(n => kat.IstArt(n, "Leitung")).Select(n => (El: n, Ms: Mass(n))).Where(x => x.Ms is { Daemmdicke: > 0 })
                     .OrderByDescending(x => x.Ms!.DaemmBreite).FirstOrDefault();
                 if (nachbar.Ms is null) continue;
-                var t = new Teil { Farbe = Farbe(nachbar.El) };
+                var t = new Teil { Farbe = Farbe(nachbar.El), ElementId = e.Id };
                 foreach (var achse in a.Achsen)
                 {
                     foreach (var p in achse) t.Z(lage.Welt(p)[2]);
@@ -117,7 +119,10 @@ public static class DaemmGrafik
         }
         if (teile.Count == 0) yield break;
 
-        var teil = new Grafikteil { Id = "daemmung", Ebene = "leitung" };
+        // Die vereinigte Fläche ist nicht anklickbar (Id null); Ränder und eine unsichtbare Trefferfläche je Element tragen dessen Id, damit ein Klick
+        // auf die Dämmung nur diese Leitung bzw. dieses Formteil wählt und nur deren Dämmung markiert wird (Christian 12.11.2026: «wird eine dämmung
+        // angeklickt werden alle dämmungen markiert. dies muss einzel möglich sein.»)
+        var teil = new Grafikteil { Id = null, Teil = Kennung, Ebene = "leitung" };
         // Fläche: je Rohrfarbe alles vereinigt, ohne Rand, transparent in der Rohrfarbe (Christian 12.11.2026)
         foreach (var gruppe in teile.GroupBy(t => t.Farbe))
             foreach (var f in Polygone.Flaechen(Clipper.Union(new PathsD(gruppe.SelectMany(t => t.Flaeche)), FillRule.NonZero)))
@@ -126,9 +131,19 @@ public static class DaemmGrafik
                     Art = "polygon", Punkte = f.Aussen, Loecher = f.Loecher.Count > 0 ? f.Loecher : null,
                     Stil = new Stil { Stift = null, Fuellung = HlksGrafik.DaemmFuellung(gruppe.Key), Deckkraft = HlksGrafik.DaemmDeckkraft },
                 });
-        // Ränder je Teil: innen (gleich hoch) weg, unter einem höheren Teil gestrichelt, sonst ausgezogen
+        yield return teil;
+        // Ränder je Teil: innen (gleich hoch) weg, unter einem höheren Teil gestrichelt, sonst ausgezogen – je Element ein eigenes Grafikteil
+        var jeElement = new Dictionary<string, Grafikteil>(StringComparer.Ordinal);
         foreach (var p in teile)
         {
+            if (!jeElement.TryGetValue(p.ElementId, out var et)) jeElement[p.ElementId] = et = new Grafikteil { Id = p.ElementId, Teil = Kennung, Ebene = "leitung" };
+            // unsichtbare Trefferfläche (nur Bildschirm): die ganze Dämmfläche dieses Elements ist anklickbar
+            foreach (var f in Polygone.Flaechen(p.Flaeche))
+                et.Primitive.Add(new Primitiv
+                {
+                    Art = "polygon", Punkte = f.Aussen, Loecher = f.Loecher.Count > 0 ? f.Loecher : null,
+                    Stil = new Stil { Stift = null, Fuellung = HlksGrafik.DaemmFuellung(p.Farbe), Deckkraft = 0, NurBildschirm = true },
+                });
             var gleich = new PathsD(); var hoeher = new PathsD();
             foreach (var q in teile)
             {
@@ -142,14 +157,17 @@ public static class DaemmGrafik
             var sichtbar = hoeher.Count > 0 ? Offen(rand, hoeher, ClipType.Difference) : rand;
             foreach (var (pfade, linie) in new[] { (sichtbar, "voll"), (verdeckt, Verdeckt) })
                 foreach (var r in pfade.Where(r => r.Count >= 2))
-                    teil.Primitive.Add(new Primitiv
+                    et.Primitive.Add(new Primitiv
                     {
                         Art = "polylinie", Punkte = r.Select(q => new[] { q.x, q.y }).ToList(),
                         Stil = new Stil { Stift = Stifte.Fein, Linie = linie, Farbe = HlksGrafik.DaemmRand(p.Farbe) },
                     });
         }
-        yield return teil;
+        foreach (var et in jeElement.Values) yield return et;
     }
+
+    /// <summary>Kennung der Dämm-Grafikteile (Grafikteil.Teil): die gemeinsame Fläche (Id null) und die Ränder je Element (Id des Elements).</summary>
+    public const string Kennung = "daemmung";
 
     static bool Ueberlappt(RectD a, RectD b) => a.left <= b.right && b.left <= a.right && a.top <= b.bottom && b.top <= a.bottom;
 
