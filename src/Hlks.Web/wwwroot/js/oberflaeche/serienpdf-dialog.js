@@ -377,21 +377,25 @@ export async function serienPdfDialog(opt = {}) {
     }
     laeuft = true;
     const stopp = laufZeigen(s, st);
-    try {
-      const a = await abfrage('plansatz_pdf', { ...par, ueberschreiben });
-      stopp();
-      fertigZeigen(a, s);
-      laeuft = false;
-      // der Satz ist jetzt angelegt bzw. gespeichert: neu laden; die Eingaben sind nun gespeichert
-      zust.delete(s.schluessel);
-      await nachladen(a.plansatz);
-      linksZeichnen();
-      ctrl.fehler(null);
-    } catch (e) {
+    let a;
+    try { a = await abfrage('plansatz_pdf', { ...par, ueberschreiben }); }
+    catch (e) {
       stopp();
       laeuft = false;
       fehlerZeigen(e);
+      return;
     }
+    stopp();
+    fertigZeigen(a, s);
+    laeuft = false;
+    ctrl.fehler(null);
+    // der Satz ist jetzt angelegt bzw. gespeichert: neu laden; die Eingaben sind nun gespeichert. Scheitert nur das Neuladen, bleibt «Fertig» stehen –
+    // die PDFs sind geschrieben (vorher stand dann «Nicht geschrieben» über einem gelungenen Export)
+    try {
+      zust.delete(s.schluessel);
+      await nachladen(a.plansatz);
+      linksZeichnen();
+    } catch (e) { console.error(e); ctrl.fehler(`Die Liste der Plansätze liess sich nicht neu laden: ${T.fehlerText(e)}`); }
   }
 
   alleZeichnen();

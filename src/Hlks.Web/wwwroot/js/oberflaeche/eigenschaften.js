@@ -215,12 +215,14 @@ async function mehrfachZeigen(mein, mehr) {
       const werte = mehr.map((e) => JSON.stringify(e.werte?.[d.name] ?? null));
       const gleich = werte.every((w) => w === werte[0]);
       let feld = eigenschaftsFeld(d, gleich ? mehr[0].werte?.[d.name] : undefined);
-      if (!gleich) feld = feld.replace('<input ', '<input placeholder="verschieden" ');
+      // verschiedene Werte: Textfeld leer mit «verschieden», Auswahl zeigt «verschieden», Häkchen unbestimmt (sonst sähe es nach «aus» bzw. «–» für alle aus)
+      if (!gleich) feld = feld.replace('<input ', '<input placeholder="verschieden" data-verschieden="1" ').replace('<option value="">–</option>', '<option value="" selected>verschieden</option>');
       ez.push(zeile(eigenschaftTitel(d.name), feld, { titel: [d.name, d.beschreibung, gleich ? '' : 'Werte sind verschieden – eine Eingabe gilt für alle'].filter(Boolean).join('\n') }));
     }
     h += gruppe('Eigenschaften', ez);
   } else h += `<div class="ep-leer">Verschiedene Klassen – Eigenschaften gemeinsam ändern geht nur für eine Klasse (Ändern › Auswahl › Filter).</div>`;
   inhalt.innerHTML = h;
+  for (const c of inhalt.querySelectorAll('input[type=checkbox][data-verschieden]')) { c.checked = false; c.indeterminate = true; }
 }
 
 /** Daten der Familie zu einem Element: Familie selbst (Abfrage familie) und bei einem platzierten Element die Anschlusslagen. */
@@ -637,7 +639,9 @@ async function beiAenderung(e) {
   try { wert = wertLesen(feld); }
   catch (err) { if (!err.still) fehlerAnzeigen(feld, err.message); return; }   // still: Zeile der Tabelle noch unvollständig, Hinweis steht schon an der Tabelle
 
-  const param = { element: gerade.kz };
+  // Kennzeichen jetzt festhalten: bis die Rückfragen und Trockenläufe unten beantwortet sind, kann die Palette schon ein anderes Element zeigen
+  const kz = gerade.kz, id = gerade.id;
+  const param = { element: kz };
   if (ziel === 'kz') {
     if (wert === null) { fehlerAnzeigen(feld, 'Das Kennzeichen darf nicht leer sein.'); return; }
     param.kennzeichen = wert;
@@ -645,7 +649,7 @@ async function beiAenderung(e) {
   else if (ziel.startsWith('zu:')) param[ziel.slice(3)] = wert;
   else if (ziel.startsWith('eig:')) param.eigenschaften = { [ziel.slice(4)]: wert };
   else if (ziel.startsWith('geo:')) {   // Dicke bzw. Höhe: Geometrie mit dem neuen Wert ersetzen
-    const g = element(gerade.id)?.geometrie;
+    const g = element(id)?.geometrie;
     if (!g || wert === null || !(wert > 0)) { fehlerAnzeigen(feld, 'Bitte eine Zahl grösser als 0 in mm eingeben.'); return; }
     param.geometrie = { ...g, [ziel.slice(4)]: wert };
   }
@@ -657,19 +661,19 @@ async function beiAenderung(e) {
   // System an einem Leitungsbauteil: nach Rückfrage an alle angeschlossenen Teile weitergeben (Christian 04.11.2026); der Trockenlauf zählt sie
   let befehlName = 'element_aendern';
   if (ziel === 'zu:system') {
-    const vor = await sende('system_vererben', { element: gerade.kz, system: wert }, { trockenlauf: true });
-    const n = vor.angenommen ? (vor.aenderungen ?? []).filter((a) => a.kennzeichen !== gerade.kz).length : 0;
+    const vor = await sende('system_vererben', { element: kz, system: wert }, { trockenlauf: true });
+    const n = vor.angenommen ? (vor.aenderungen ?? []).filter((a) => a.kennzeichen !== kz).length : 0;
     if (n > 0 && await bestaetigen(`Das System auch an ${n} angeschlossene Leitungen, Formteile und Armaturen weitergeben?\nGeräte und Teile eines anderen Mediums bleiben unverändert.`,
       { titel: 'System weitergeben', ja: `An ${n} Teile weitergeben`, nein: 'Nur dieses Bauteil' })) befehlName = 'system_vererben';
   }
-  const r = await sende(befehlName, befehlName === 'system_vererben' ? { element: gerade.kz, system: wert } : param);
+  const r = await sende(befehlName, befehlName === 'system_vererben' ? { element: kz, system: wert } : param);
   if (!r.angenommen) {
     fehlerAnzeigen(feld, r.fehler || r.meldung || 'Die Änderung wurde abgelehnt.', r.vorschlag);
     return;
   }
   // Hinweise des Kerns zu einem angenommenen Befehl (z. B. «Kennwerte ohne Quelle … gelten in der Rechnung als fehlend») zeigt die Palette in einem Kasten oben
   const texte = paletteHinweise(r.hinweise);
-  if (texte.length > 0 && gerade) hinweise = { id: gerade.id, texte };
+  if (texte.length > 0 && gerade?.id === id) hinweise = { id, texte };
   // Bei «Keine Änderung» kommt kein Ereignis; Anzeige trotzdem auf den Stand bringen (z. B. «5,0» → «5»); mit Hinweisen sicherheitshalber ebenfalls
   if ((r.aenderungen ?? []).length === 0 || texte.length > 0) zeichnen();
 }
