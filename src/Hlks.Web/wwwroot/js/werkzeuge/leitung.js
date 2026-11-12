@@ -438,8 +438,11 @@ export function leitungWerkzeug(kategorie = 'Rohr', variante = null) {
         // Abwasser immer Silent mit 2 % Gefälle (Christian 12.11.2026: «Abwasser leitungen sind immer Silent mit 2% Gefälle»); die Optionen teilen
         // Rohr und Abwasser, darum gilt das Gefälle bei den anderen Rohren nicht weiter
         if (variante === 'abwasser') {
-          const silent = D.serienListe(kategorie).find((s) => /silent/i.test(s.name ?? ''));
-          if (silent && ctx.opt.serie !== silent.kz) setze(id, 'serie', silent.kz);
+          // eine schon gewählte bzw. gemerkte Silent-Produktlinie bleibt (mehrere Silent-Linien im Projekt), sonst die erste
+          const istSilent = (s) => /silent/i.test(s?.name ?? '');
+          const linien = D.serienListe(kategorie);
+          const silent = istSilent(linien.find((s) => s.kz === ctx.opt.serie)) ? null : linien.find(istSilent);
+          if (silent) setze(id, 'serie', silent.kz);
           setze(id, 'gefaelle', 2);
         } else if (kategorie === 'Rohr') {
           setze(id, 'gefaelle', '');
