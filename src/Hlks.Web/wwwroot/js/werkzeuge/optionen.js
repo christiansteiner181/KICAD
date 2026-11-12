@@ -410,7 +410,9 @@ function leitungFelder(wid, kategorie) {
     { id: 'hoehe', get titel() { return kategorie === 'Kanal' ? 'Achshöhe' : 'Höhe'; }, art: 'zahl', einheit: 'mm', pflicht: true, platzhalter: 'ab OK Geschoss', breite: 12,
       sichtbar: () => kategorie !== 'Rohr' || !wert(wid, 'lage'),
       beiAenderung: () => { if (kategorie === 'Kanal') setze(wid, 'unterUkd', null); leitungHaken.hoeheGeaendert?.(); } },
-    { id: 'gefaelle', titel: 'Gefälle', art: 'zahl', einheit: '%', platzhalter: 'kein', breite: 4, fluechtig: true, ort: 'palette' },
+    // Gefälle bei Abwasser in der Optionsleiste (Christian 12.11.2026: «Gefälle im gelben bereich einstellbar»), sonst im Eigenschaftsfenster
+    { id: 'gefaelle', titel: 'Gefälle', art: 'zahl', einheit: '%', platzhalter: 'kein', breite: 4, fluechtig: true,
+      get ort() { return kategorie === 'Rohr' && istAbwasser(aktuelleSerie()) ? undefined : 'palette'; } },
     { id: 'system', titel: 'System', art: 'auswahl', ort: 'palette', get werte() { return systemOptionen(); }, leer: '–',
       beiAenderung(el) {
         el?.blur?.();

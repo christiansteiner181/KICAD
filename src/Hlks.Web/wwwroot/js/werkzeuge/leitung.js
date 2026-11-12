@@ -435,6 +435,18 @@ export function leitungWerkzeug(kategorie = 'Rohr', variante = null) {
       (async () => {
         await familienLaden();
         if (ctx.lauf.fertig) return;                                          // inzwischen beendet
+        // Abwasser immer Silent mit 2 % Gefälle (Christian 12.11.2026: «Abwasser leitungen sind immer Silent mit 2% Gefälle»); die Optionen teilen
+        // Rohr und Abwasser, darum gilt das Gefälle bei den anderen Rohren nicht weiter
+        if (variante === 'abwasser') {
+          const silent = D.serienListe(kategorie).find((s) => /silent/i.test(s.name ?? ''));
+          if (silent && ctx.opt.serie !== silent.kz) setze(id, 'serie', silent.kz);
+          setze(id, 'gefaelle', 2);
+        } else if (kategorie === 'Rohr') {
+          setze(id, 'gefaelle', '');
+          // eine Abwasser-Produktlinie vom Abwasser-Werkzeug nicht ins Rohr bzw. die Versorgungsleitung übernehmen
+          if (ctx.opt.serie) { await D.serieLaden(ctx.opt.serie); if (ctx.lauf.fertig) return; }
+          if (F.istAbwasser(D.serieDef(ctx.opt.serie))) { setze(id, 'serie', ''); setze(id, 'groesse', ''); }
+        }
         const o = ctx.opt;
         const k = L.optionenZustand({ serien: D.serienListe(kategorie), serie: o.serie, serieDef: D.serieDef(o.serie), groesse: o.groesse, systemKz: o.system, strangKz: o.strang, straenge: [] });
         for (const [feld, wert] of Object.entries(k.korrektur)) if (feld !== 'strang') setze(id, feld, wert);
