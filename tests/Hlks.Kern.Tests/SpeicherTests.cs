@@ -697,4 +697,90 @@ public sealed class SpeicherTests : IDisposable
         }
         Assert.Empty(Directory.GetFiles(Unterordner("sperren"), ".*"));
     }
+
+    // ---------------------------------------------------------------- 15. Gesamtprüfung 13.11.2026: unbrauchbare Pakete, Kopien, Ablage fällt weg
+
+    [Fact]
+    public void PaketMitUnbekannterOperationWirdGanzUebergangen()
+    {
+        var a = NeuesProjekt("A", "pc-a");
+        Ok(GebaeudeAnlegen(a, "GEB-X"));
+        // gültiges JSON, erste Operation anwendbar, zweite von einer «neueren Programmversion»
+        var halb = a.Modell.Finde("GEB-X")!.Kopie();
+        halb.Id = "halb-1"; halb.Kennzeichen = "GEB-HALB";
+        const string unbrauchbar = "20000101T000000000Z_pc-x_X_000001";
+        var paket = TestPaket(unbrauchbar);
+        paket.Operationen = [new() { Art = "element.setzen", Id = halb.Id, Element = halb }, new() { Art = "element.zukunft", Id = "z-1" }];
+        new OrdnerSpeicher(ordner).PaketSchreiben(paket);
+        File.WriteAllText(Path.Combine(Unterordner("aenderungen"), "20000101T000000000Z_pc-x_X_000002.json"), "{}");
+        Ok(GebaeudeAnlegen(a, "GEB-Z"));
+
+        var b = Oeffnen("B", "pc-b");                              // bis 13.11.2026: InvalidOperationException, GEB-HALB halb angewandt
+        Assert.Null(b.Modell.Finde("GEB-HALB"));
+        Assert.NotNull(b.Modell.Finde("GEB-Z"));                   // spätere Pakete kommen trotzdem
+        var fehler = b.Synchronisieren().Fehler;
+        Assert.Contains(fehler, f => f.Contains(unbrauchbar) && f.Contains("element.zukunft"));
+        Assert.Contains(fehler, f => f.Contains("_000002") && f.Contains("ohne Id"));
+        Assert.Equal(a.Modell.Pruefsumme(), b.Modell.Pruefsumme());
+    }
+
+    [Fact]
+    public void KopieEinesPaketsWirdNichtZweimalAngewandt()
+    {
+        var a = NeuesProjekt("A", "pc-a");
+        Ok(GebaeudeAnlegen(a, "GEB-X"));
+        var b = Oeffnen("B", "pc-b");
+        var id = Ok(Umbenennen(a, "GEB-X", "von A")).PaketId!;
+        var datei = Path.Combine(Unterordner("aenderungen"), id + ".json");
+        File.Copy(datei, Path.Combine(Unterordner("aenderungen"), id + "-PC2.json"));   // Konfliktkopie, wie OneDrive sie anlegt
+
+        var sync = b.Synchronisieren();
+        Assert.Equal(1, sync.NeuePakete);
+        Assert.Empty(sync.Konflikte);                              // vorher: Scheinkonflikt «ältere Änderung verworfen»
+        Assert.Contains(sync.Fehler, f => f.Contains("Kopie"));
+        Assert.Single(b.Verlauf, p => p.Id == id);
+        var danach = b.Synchronisieren();
+        Assert.Equal(0, danach.NeuePakete);
+        Assert.Empty(danach.Fehler);                               // nur einmal gemeldet
+
+        // Nur die Kopie ist da (Original noch nicht synchronisiert): sie gilt als das Paket, das Original kommt später nicht doppelt
+        File.Move(datei, datei + ".weg");
+        var c = Oeffnen("C", "pc-c");
+        Assert.Equal("von A", c.Modell.Finde("GEB-X")!.Name);
+        File.Move(datei + ".weg", datei);
+        var spaeter = c.Synchronisieren();
+        Assert.Equal(0, spaeter.NeuePakete);
+        Assert.Empty(spaeter.Konflikte);
+    }
+
+    [Fact]
+    public void AblageFaelltBeimLesenDerPaketeWeg_OeffnenMeldetNichtErreichbar()
+    {
+        var a = NeuesProjekt("A", "pc-a");
+        Ok(GebaeudeAnlegen(a, "GEB-X"));
+        Ok(GebaeudeAnlegen(a, "GEB-Y"));
+        var weg = new FaelltWeg(new OrdnerSpeicher(ordner));
+
+        var f = Assert.Throws<HlksFehler>(() => Projekt.Oeffnen(Kat, weg, "B", "pc-b"));   // vorher: öffnete still mit leerem Teilstand
+        Assert.StartsWith("Projektablage nicht erreichbar", f.Message);
+        Assert.Equal(1, weg.PaketeVersucht);                       // nicht jedes weitere Paket einzeln durchprobiert
+    }
+
+    /// <summary>Ablage, die nach der ersten Paketliste wegfällt (VPN getrennt): Lesen und weitere Listen scheitern.</summary>
+    sealed class FaelltWeg(IProjektSpeicher innen) : IProjektSpeicher
+    {
+        int listen;
+        public int PaketeVersucht { get; private set; }
+        public string Ort => innen.Ort;
+        public ProjektKopf? KopfLesen() => innen.KopfLesen();
+        public void KopfSchreiben(ProjektKopf kopf) => innen.KopfSchreiben(kopf);
+        public StandAbbild? StandLesen() => null;
+        public void StandSchreiben(StandAbbild stand) => innen.StandSchreiben(stand);
+        public IReadOnlyList<string> PaketListe() => listen++ == 0 ? innen.PaketListe() : throw new IOException("Der Netzwerkname ist nicht mehr verfügbar.");
+        public Paket PaketLesen(string id) { PaketeVersucht++; throw new IOException("Der Netzwerkname ist nicht mehr verfügbar."); }
+        public void PaketSchreiben(Paket paket) => innen.PaketSchreiben(paket);
+        public IReadOnlyList<Reservierung> Reservieren(IEnumerable<string> elementIds, string akteur, string geraet) => innen.Reservieren(elementIds, akteur, geraet);
+        public void Freigeben(string akteur, string geraet, IEnumerable<string>? elementIds = null) => innen.Freigeben(akteur, geraet, elementIds);
+        public IReadOnlyList<Reservierung> Reservierungen() => innen.Reservierungen();
+    }
 }

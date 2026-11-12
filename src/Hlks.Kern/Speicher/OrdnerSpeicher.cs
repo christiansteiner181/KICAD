@@ -387,8 +387,17 @@ public sealed class OrdnerSpeicher : IProjektSpeicher
         try
         {
             DateiSchreiben(tmp, inhalt);
-            try { File.Move(tmp, ziel, overwrite: false); return true; }
-            catch (IOException) when (File.Exists(ziel)) { return false; }
+            for (int versuch = 0; ; versuch++)
+            {
+                try { File.Move(tmp, ziel, overwrite: false); return true; }
+                // Ziel da und Temp-Datei weg: das Umbenennen hat gewirkt, nur die Antwort ging verloren (SMB-Aussetzer) – das ist
+                // unsere Datei. Sonst hielte der Aufrufer das eigene Paket für ein fremdes und schriebe es ein zweites Mal.
+                catch (IOException) when (File.Exists(ziel)) { return !File.Exists(tmp); }
+                catch (Exception ex) when (ex is FileNotFoundException or DirectoryNotFoundException) { throw; }
+                // Temp-Datei kurz von Virenscanner oder Synchronisation gehalten: wie beim Ersetzen wiederholen
+                catch (Exception ex) when (ex is IOException or UnauthorizedAccessException && versuch < Wiederholungen) { }
+                Thread.Sleep(PauseMs * (versuch + 1));
+            }
         }
         finally { if (File.Exists(tmp)) Versuchen(() => File.Delete(tmp)); }
     }

@@ -108,8 +108,8 @@ public sealed class Projekt
                 p.bekannt.UnionWith(stand.EnthaltenePakete);
             }
             var s = p.Synchronisieren();
-            if (s.Fehler.Count > 0 && s.Fehler.Any(f => f.StartsWith("Projektablage")))
-                throw new HlksFehler(s.Fehler[0], "Netzwerk/VPN prüfen.");
+            if (s.Fehler.FirstOrDefault(f => f.StartsWith("Projektablage", StringComparison.Ordinal)) is { } ablageFehler)
+                throw new HlksFehler(ablageFehler, "Netzwerk/VPN prüfen.");
             return p;
         }
         catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
@@ -601,9 +601,28 @@ public sealed class Projekt
             try { p = Speicher.PaketLesen(id); }
             // ArgumentException: fremde Datei, deren Name keine zulässige Paket-Id ist – überspringen statt abbrechen
             catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or System.Text.Json.JsonException or ArgumentException)
-            { fehler.Add($"Paket {id} nicht lesbar: {ex.Message}"); continue; }
+            {
+                // Ablage mitten im Lesen weggefallen (VPN getrennt): abbrechen und es so melden, statt jedes weitere Paket einzeln
+                // (mit Wiederholungen) als «nicht lesbar» zu führen und mit einem Teilstand weiterzuarbeiten
+                if (ex is IOException or UnauthorizedAccessException && !AblageErreichbar(out var grund))
+                {
+                    fehler.Insert(0, $"Projektablage nicht erreichbar ({Speicher.Ort}): {grund}");
+                    break;
+                }
+                fehler.Add($"Paket {id} nicht lesbar: {ex.Message}");
+                continue;
+            }
+            // Gültiges JSON, aber kein anwendbares Paket: wie unlesbar behandeln (nichts halb anwenden, die übrigen nicht aufhalten)
+            if (p.Mangel() is { } mangel) { fehler.Add($"Paket {id} nicht lesbar: {mangel}"); continue; }
+            // Datei heisst anders als das Paket darin: Kopie eines Pakets (z. B. Konfliktkopie von OneDrive «…-PC2.json»). Ein Paket wird
+            // nur einmal angewandt – sonst gäbe es Scheinkonflikte und doppelte Einträge im Verlauf.
+            if (!string.Equals(p.Id, id, StringComparison.Ordinal))
+            {
+                bekannt.Add(id);
+                if (bekannt.Contains(p.Id)) { fehler.Add($"Datei {id}.json ist eine Kopie des Pakets {p.Id} – übergangen."); continue; }
+            }
             konflikte.AddRange(Modell.Anwenden(p.Operationen, p.Id));
-            bekannt.Add(id);
+            bekannt.Add(p.Id);
             verlauf.Add(p);
             angewandt++;
             var ids = p.BetroffeneIds().ToList();
@@ -611,6 +630,13 @@ public sealed class Projekt
             Geaendert?.Invoke(new ModellAenderung(p.Id, p.Akteur, p.AkteurArt, "fremd", ids));
         }
         return new(angewandt, konflikte, betroffen.Distinct().ToList(), fehler);
+    }
+
+    bool AblageErreichbar(out string grund)
+    {
+        grund = "";
+        try { Speicher!.PaketListe(); return true; }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException) { grund = ex.Message; return false; }
     }
 
     /// <summary>Schreibt ein Standabbild (beschleunigt das nächste Öffnen).</summary>
