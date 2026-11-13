@@ -515,11 +515,32 @@ public sealed class IfcExportTests(Xunit.Abstractions.ITestOutputHelper aus) : I
     {
         static double[] Rund(double[] v) => v.Select(x => Math.Round(x, 9) + 0.0).ToArray();
         var q = new IfcExportGeometrie.Querschnitt(true, 400, 200, 30, "Test", false);
-        var (leitung, daemmung) = IfcExportGeometrie.LeitungsKoerper([[0, 0, 0], [0, 0, 3000], [2000, 0, 3000]], q, 90);
+        // je gerades Stück (ein Knick gäbe seit Frage 28 Gehrungskörper als Netz)
+        var (leitung, daemmung) = IfcExportGeometrie.LeitungsKoerper([[0, 0, 0], [0, 0, 3000]], q, 90);
         Assert.Equal([0.0, 1.0, 0.0], Rund(Assert.IsType<IfcExQuader>(leitung[0]).RefX));    // senkrecht: b = 400 in y
         Assert.Equal([0.0, 1.0, 0.0], Rund(Assert.IsType<IfcExQuader>(daemmung[0]).RefX));
-        Assert.Equal([0.0, 1.0, 0.0], Rund(Assert.IsType<IfcExQuader>(leitung[1]).RefX));    // waagrecht in x: quer = z × Achse = y, unabhängig von querDrehung
+        var waagrecht = IfcExportGeometrie.LeitungsKoerper([[0, 0, 3000], [2000, 0, 3000]], q, 90).Leitung[0];
+        Assert.Equal([0.0, 1.0, 0.0], Rund(Assert.IsType<IfcExQuader>(waagrecht).RefX));    // waagrecht in x: quer = z × Achse = y, unabhängig von querDrehung
         var ohne = IfcExportGeometrie.LeitungsKoerper([[0, 0, 0], [0, 0, 3000]], q).Leitung[0];
         Assert.Equal([1.0, 0.0, 0.0], Rund(Assert.IsType<IfcExQuader>(ohne).RefX));          // ohne querDrehung wie bisher b in x
+    }
+
+    /// <summary>Entscheid Christian 13.11.2026 (Frage 28): eckige Kanäle schliessen am Knick mit Gehrung. Kanal 400 × 200 von (0, 0) nach (2000, 0)
+    /// und (2000, 2000): beide Stücke enden in der Ebene der Winkelhalbierenden – die Aussenecke (2200, −200) gehört beiden, nichts ragt darüber.</summary>
+    [Fact]
+    public void Kanal_Knick_MitGehrungGeschlossen()
+    {
+        var q = new IfcExportGeometrie.Querschnitt(true, 400, 200, 30, "Test", false);
+        var (leitung, daemmung) = IfcExportGeometrie.LeitungsKoerper([[0, 0, 0], [2000, 0, 0], [2000, 2000, 0]], q);
+        Assert.Equal(2, leitung.Count);
+        var netze = leitung.Select(k => Assert.IsType<IfcExNetz>(k)).ToList();
+        foreach (var n in netze)
+        {
+            Assert.Contains(n.Ecken, e => Math.Abs(e[0] - 2200) < 1e-6 && Math.Abs(e[1] + 200) < 1e-6);   // Aussenecke
+            Assert.Contains(n.Ecken, e => Math.Abs(e[0] - 1800) < 1e-6 && Math.Abs(e[1] - 200) < 1e-6);   // Innenecke
+            Assert.True(n.Ecken.Max(e => e[0]) <= 2200 + 1e-6 && n.Ecken.Min(e => e[1]) >= -200 - 1e-6);
+            Assert.Equal(12, n.Dreiecke.Count);
+        }
+        Assert.All(daemmung, k => Assert.Equal(32, Assert.IsType<IfcExNetz>(k).Dreiecke.Count));   // Hohlprofil: 4 + 4 Mantel, 2 × 4 Stirnring
     }
 }

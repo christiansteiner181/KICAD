@@ -495,12 +495,12 @@ public static class FamilienKoerper
         double la = (pa - pi).Laenge, lb = (pb - pi).Laenge;
         double ablenkung = Math.PI - Math.Acos(Math.Clamp((pa - pi).Einheit().Mal((pb - pi).Einheit()), -1, 1));
         if (ablenkung < 1e-3) return;
-        double? radiusParameter = null;
-        foreach (var n in (string[])["biegeradius", "radius", "r", "R"])
-            if (a.Werte.GetValueOrDefault(n) is { IstText: false } wr && wr.Zahl > 0) { radiusParameter = wr.Zahl; break; }
+        // nur der Parameter «biegeradius» (Entscheid Christian 13.11.2026, Frage 25) – «r» bzw. «radius» ist oft der Rohrradius
+        double? radiusParameter = a.Werte.GetValueOrDefault("biegeradius") is { IstText: false } wr && wr.Zahl > 0 ? wr.Zahl : null;
         double rMax = Math.Min(la, lb) / Math.Tan(ablenkung / 2) * 0.999;
-        double R = Math.Min(radiusParameter ?? rMax, rMax);
         double profil = zyl.Max(k => k.Teil!.Radius ?? 0);
+        // R ≥ Profilradius, sonst faltet sich der Bogen innen (Frage 25); begrenzt durch die Schenkel
+        double R = Math.Min(Math.Max(radiusParameter ?? rMax, profil), rMax);
         if (profil <= 0 || R <= 0) return;
         // Einsteckmuffen (Christian 30.10.2026: «rohrbogen sind meist ein rotierter kreis mit einsteckmuffen»): der Bogen reicht vom
         // Achsschnittpunkt bis zum Rohrende (Anschluss, Mass z); bis zum Fittingende (Ende der Schenkelzylinder, Mass L) bleibt ein gerades Stück
@@ -598,9 +598,8 @@ public static class FamilienKoerper
         double ablenkung = Math.PI - Math.Acos(Math.Clamp((pa - pi).Einheit().Mal((pb - pi).Einheit()), -1, 1));
         if (ablenkung < 1e-3) return null;
         if (gehrung || eckig) return [pa.Feld(), pi.Feld(), pb.Feld()];
-        double? radiusParameter = null;
-        foreach (var n in (string[])["biegeradius", "radius", "r", "R"])
-            if (a.Werte.GetValueOrDefault(n) is { IstText: false } wr && wr.Zahl > 0) { radiusParameter = wr.Zahl; break; }
+        // nur der Parameter «biegeradius» (Entscheid Christian 13.11.2026, Frage 25) – «r» bzw. «radius» ist oft der Rohrradius
+        double? radiusParameter = a.Werte.GetValueOrDefault("biegeradius") is { IstText: false } wr && wr.Zahl > 0 ? wr.Zahl : null;
         double R = Math.Min(radiusParameter ?? double.MaxValue, Math.Min(la, lb) / Math.Tan(ablenkung / 2) * 0.999);
         if (R <= 0) return [pa.Feld(), pi.Feld(), pb.Feld()];
         var ua = (pa - pi).Einheit(); var ub = (pb - pi).Einheit();

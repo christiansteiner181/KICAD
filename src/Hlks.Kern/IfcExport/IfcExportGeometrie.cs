@@ -88,8 +88,20 @@ public static class IfcExportGeometrie
             {
                 // senkrecht (Grundrisslänge < 0.001 mm, dieselbe Grenze wie das 3D): b in x, um querDrehung gedreht
                 double[] refx = Math.Sqrt(d[0] * d[0] + d[1] * d[1]) < 1e-3 ? [Math.Cos(wq), Math.Sin(wq), 0] : Quer(achse);
-                leitung.Add(new IfcExQuader(lage, achse, refx, q.B, q.H, l));
-                if (q.Daemmdicke > 0) daemmung.Add(new IfcExQuader(lage, achse, refx, q.B + 2 * q.Daemmdicke, q.H + 2 * q.Daemmdicke, l, q.Daemmdicke));
+                // an inneren Knicken auf Gehrung geschnitten (Entscheid Christian 13.11.2026, Frage 28): Endfläche in der Ebene der Winkelhalbierenden
+                var m0 = i > 1 ? Gehrung(punkte[i - 2], punkte[i - 1], punkte[i]) : null;
+                var m1 = i < punkte.Count - 1 ? Gehrung(punkte[i - 1], punkte[i], punkte[i + 1]) : null;
+                if (m0 is null && m1 is null)
+                {
+                    leitung.Add(new IfcExQuader(lage, achse, refx, q.B, q.H, l));
+                    if (q.Daemmdicke > 0) daemmung.Add(new IfcExQuader(lage, achse, refx, q.B + 2 * q.Daemmdicke, q.H + 2 * q.Daemmdicke, l, q.Daemmdicke));
+                }
+                else
+                {
+                    var a = lage; var b = Minus(punkte[i], o);
+                    leitung.Add(GehrungsKoerper(a, b, achse, refx, q.B, q.H, 0, 0, m0, m1));
+                    if (q.Daemmdicke > 0) daemmung.Add(GehrungsKoerper(a, b, achse, refx, q.B + 2 * q.Daemmdicke, q.H + 2 * q.Daemmdicke, q.B, q.H, m0, m1));
+                }
             }
             else
             {
@@ -98,6 +110,52 @@ public static class IfcExportGeometrie
             }
         }
         return (leitung, daemmung);
+    }
+
+    /// <summary>Normale der Gehrungsebene am Knick k (Winkelhalbierende zwischen p → k und k → n); null ohne Knick bzw. bei fast umkehrender Richtung.</summary>
+    static double[]? Gehrung(double[] p, double[] k, double[] n)
+    {
+        var d1 = Einheit(Minus(k, p)); var d2 = Einheit(Minus(n, k));
+        double c = d1[0] * d2[0] + d1[1] * d2[1] + d1[2] * d2[2];
+        if (c > 1 - 1e-9 || c < -0.94) return null;   // gerade bzw. > 160° Ablenkung: stumpf lassen
+        return Einheit([d1[0] + d2[0], d1[1] + d2[1], d1[2] + d2[2]]);
+    }
+
+    /// <summary>Rechteckprofil b × h von a nach b entlang der Achse, Enden in den Gehrungsebenen (Normale m0 durch a, m1 durch b; null = rechtwinklig),
+    /// als geschlossenes Netz; mit bi × hi > 0 als Hohlprofil (Dämmung: aussen b × h, innen bi × hi).</summary>
+    static IfcExNetz GehrungsKoerper(double[] a, double[] b, double[] achse, double[] refx, double B, double H, double bi, double hi, double[]? m0, double[]? m1)
+    {
+        double[] hy = [achse[1] * refx[2] - achse[2] * refx[1], achse[2] * refx[0] - achse[0] * refx[2], achse[0] * refx[1] - achse[1] * refx[0]];
+        double Dot(double[] u, double[] v) => u[0] * v[0] + u[1] * v[1] + u[2] * v[2];
+        double[] Auf(double[] mitte, double[]? m, double sx, double sy, double bb, double hh)
+        {
+            double[] c = [mitte[0] + refx[0] * sx * bb / 2 + hy[0] * sy * hh / 2, mitte[1] + refx[1] * sx * bb / 2 + hy[1] * sy * hh / 2, mitte[2] + refx[2] * sx * bb / 2 + hy[2] * sy * hh / 2];
+            if (m is null) return c;
+            double t = Dot(Minus(mitte, c), m) / Dot(achse, m);   // entlang der Achse auf die Gehrungsebene durch mitte
+            return [c[0] + achse[0] * t, c[1] + achse[1] * t, c[2] + achse[2] * t];
+        }
+        var ecken = new List<double[]>(); var dreiecke = new List<int[]>();
+        (double, double)[] ring = [(-1, -1), (1, -1), (1, 1), (-1, 1)];
+        int Ring(double[] mitte, double[]? m, double bb, double hh) { int s0 = ecken.Count; foreach (var (sx, sy) in ring) ecken.Add(Auf(mitte, m, sx, sy, bb, hh)); return s0; }
+        void Viereck(int p, int q, int r, int t) { dreiecke.Add([p, q, r]); dreiecke.Add([p, r, t]); }
+        int oa = Ring(a, m0, B, H), ob = Ring(b, m1, B, H);
+        for (int j = 0; j < 4; j++) Viereck(oa + j, oa + (j + 1) % 4, ob + (j + 1) % 4, ob + j);   // Mantel aussen
+        if (bi > 0 && hi > 0)
+        {
+            int ia = Ring(a, m0, bi, hi), ib = Ring(b, m1, bi, hi);
+            for (int j = 0; j < 4; j++)
+            {
+                Viereck(ia + j, ib + j, ib + (j + 1) % 4, ia + (j + 1) % 4);   // Mantel innen (umgekehrt)
+                Viereck(oa + j, ia + j, ia + (j + 1) % 4, oa + (j + 1) % 4);   // Stirnring a
+                Viereck(ob + j, ob + (j + 1) % 4, ib + (j + 1) % 4, ib + j);   // Stirnring b
+            }
+        }
+        else
+        {
+            Viereck(oa + 3, oa + 2, oa + 1, oa);   // Stirn a
+            Viereck(ob, ob + 1, ob + 2, ob + 3);   // Stirn b
+        }
+        return new IfcExNetz(ecken, dreiecke);
     }
 
     // ------------------------------------------------------------------ Körper der 3D-Darstellung

@@ -32,8 +32,10 @@
 //     Öffnung enthält oder beidseits umgibt – WirtInDerLage), gekennzeichnet mit Pruefoeffnung.WirtAusLage.
 //
 // ANNAHMEN (Prüfliste):
-//   - Kapsel: an freien Enden ragt die Halbkugel um r über den Endpunkt hinaus (Kontakt.AmEnde zeigt, wenn ein Befund nur
-//     dort liegt). An Knicken schliessen die Halbkugeln wie die Kugeln der Darstellung.
+//   - Kapsel: an Knicken schliessen die Halbkugeln wie die Kugeln der Darstellung. An freien Leitungsenden ist das Rohr eben
+//     (Entscheid Christian 13.11.2026, Frage 34; vorher ragte die Halbkugel um r über den Endpunkt hinaus – ein Rohr d 110, 40 mm vor
+//     der Wand, galt als Schnitt mit 15 mm Tiefe): liegt ein Befund hinter einem ebenen Ende, rechnet die Schmalphase dort mit einem
+//     Zylinder bis zur Endebene (Achskoerper.FlachA/FlachB).
 //   - Rechteckkanal: an inneren Knicken wird jeder Quader um max(b, h)/2 über den Knick verlängert, damit die Aussenecke
 //     geschlossen ist (die Darstellung setzt dort einen achsparallelen Quader b × b × h). Geneigte Teilstücke liegen genau
 //     um die Achse (die Darstellung nähert sie waagrecht an).
@@ -76,6 +78,9 @@ public sealed class Achskoerper
     public V3 Richtung { get; }
     public double Laenge { get; }
     public Huelle3 Huelle { get; }
+    /// <summary>Rund: das Ende bei A bzw. B ist eben (freies Leitungsende, Frage 34) – keine Halbkugel über die Endebene hinaus.</summary>
+    public bool FlachA { get; init; }
+    public bool FlachB { get; init; }
 
     Achskoerper(V3 a, V3 b, Querschnittsform form, double radius, double breite, double hoehe, V3 rb, V3 rh)
     {
@@ -96,6 +101,9 @@ public sealed class Achskoerper
             Huelle = h;
         }
     }
+
+    /// <summary>Dieselbe Kapsel mit ebenen Enden an A bzw. B.</summary>
+    public Achskoerper MitEbenenEnden(bool a, bool b) => new(A, B, Form, Radius, Breite, Hoehe, RichtungB, RichtungH) { FlachA = a, FlachB = b };
 
     /// <summary>Kapsel um die Strecke a–b mit Radius r.</summary>
     public static Achskoerper Kapsel(V3 a, V3 b, double radius)
@@ -129,7 +137,7 @@ public sealed class Achskoerper
 
     /// <summary>Derselbe Körper, ringsum um <paramref name="zuschlag"/> grösser (Dämmung, Spiel): Radius + z, b + 2z, h + 2z.</summary>
     public Achskoerper Aufgeblasen(double zuschlag) => zuschlag == 0 ? this : Form == Querschnittsform.Rund
-        ? new(A, B, Form, Radius + zuschlag, 2 * (Radius + zuschlag), 2 * (Radius + zuschlag), RichtungB, RichtungH)
+        ? new(A, B, Form, Radius + zuschlag, 2 * (Radius + zuschlag), 2 * (Radius + zuschlag), RichtungB, RichtungH) { FlachA = FlachA, FlachB = FlachB }
         : new(A, B, Form, Math.Sqrt(Math.Pow(Breite + 2 * zuschlag, 2) + Math.Pow(Hoehe + 2 * zuschlag, 2)) / 2, Breite + 2 * zuschlag, Hoehe + 2 * zuschlag, RichtungB, RichtungH);
 
     /// <summary>Halbe Ausdehnung des Querschnitts in Richtung n (Einheitsvektor): rund r, rechteckig |n·b|·B/2 + |n·h|·H/2.</summary>
@@ -768,7 +776,13 @@ public static class Pruefkoerperbau
         {
             double? da = mass is null && e.Zahl("da") is double d0 && d0 > 0 ? d0 : null;   // ohne Serie: Aussendurchmesser wie das 3D (z. B. aus dem IFC)
             double durchmesser = mass?.Durchmesser ?? da ?? Math.Max(HlksEinordnung.Dn(e) ?? 0, HlksKoerper.MinDurchmesser);
-            for (int i = 1; i < punkte.Count; i++) achsen.Add(Achskoerper.Kapsel(punkte[i - 1], punkte[i], durchmesser / 2));
+            // freie Enden (nicht verbunden) eben, Frage 34
+            bool freiA = p.Modell.VerbindungAn(e.Id, "anfang") is null, freiB = p.Modell.VerbindungAn(e.Id, "ende") is null;
+            for (int i = 1; i < punkte.Count; i++)
+            {
+                var kap = Achskoerper.Kapsel(punkte[i - 1], punkte[i], durchmesser / 2);
+                achsen.Add(i == 1 && freiA || i == punkte.Count - 1 && freiB ? kap.MitEbenenEnden(i == 1 && freiA, i == punkte.Count - 1 && freiB) : kap);
+            }
             massquelle = mass?.Serie is { } s ? $"Produktlinie {s.SerieName}, {s.Typ}: Ø {Z(durchmesser)} mm"
                 : mass is not null ? $"Eigenschaft durchmesser: Ø {Z(durchmesser)} mm"
                 : da is not null ? $"Eigenschaft da: Ø {Z(durchmesser)} mm"

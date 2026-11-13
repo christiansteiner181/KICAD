@@ -126,6 +126,38 @@ public static class Schmalphase
     /// mit einem Quader über dessen Netz.</summary>
     public static Kontakt Pruefen(Achskoerper a, Achskoerper b, double maxAbstand = 0)
     {
+        var c = PruefenKapseln(a, b, maxAbstand);
+        // ebene Enden (Frage 34): liegt der Befund hinter einem ebenen Ende, mit dem Zylinder bis zur Endebene neu rechnen
+        if (c.AmEnde && c.Art != Kontaktart.Getrennt && (HatEbenesEnde(a) || HatEbenesEnde(b)))
+        {
+            if (HatEbenesEnde(a)) c = Eben(a, k => PruefenKapseln(k, b, maxAbstand), n => Pruefen(b, n, maxAbstand).Gespiegelt(), maxAbstand);
+            if (c.AmEnde && c.Art != Kontaktart.Getrennt && HatEbenesEnde(b))
+                c = Eben(b, k => PruefenKapseln(a, k, maxAbstand).Gespiegelt(), n => Pruefen(a, n, maxAbstand), maxAbstand).Gespiegelt();
+        }
+        return c;
+    }
+
+    static bool HatEbenesEnde(Achskoerper k) => k.Form == Querschnittsform.Rund && (k.FlachA || k.FlachB);
+
+    /// <summary>Kontakt eines runden Achskörpers mit ebenen Enden: die innere Kapsel (an ebenen Enden um r gekürzt, liegt ganz im Zylinder) und
+    /// je ebenes Ende der Zylinder der letzten r (als Netz) – das Schlimmere gilt; ohne Treffer getrennt.</summary>
+    static Kontakt Eben(Achskoerper k, Func<Achskoerper, Kontakt> kapsel, Func<Pruefnetz, Kontakt> netz, double maxAbstand)
+    {
+        double r = k.Radius, l = k.Laenge;
+        var a = k.FlachA ? k.A + k.Richtung * Math.Min(r, l / 2) : k.A;
+        var b = k.FlachB ? k.B - k.Richtung * Math.Min(r, l / 2) : k.B;
+        var teile = new List<Kontakt>();
+        if ((b - a).Laenge > 1e-6) teile.Add(kapsel(Achskoerper.Kapsel(a, b, r)));
+        if (k.FlachA && (a - k.A).Laenge > 1e-6) teile.Add(netz(Pruefnetz.Aus(NetzBau.Kegel(k.A.Feld(), a.Feld(), r, r))));
+        if (k.FlachB && (k.B - b).Laenge > 1e-6) teile.Add(netz(Pruefnetz.Aus(NetzBau.Kegel(b.Feld(), k.B.Feld(), r, r))));
+        Kontakt? best = null;
+        foreach (var t in teile)
+            if (best is null || (t.Hart && (!best.Hart || t.Eindringtiefe > best.Eindringtiefe)) || (!t.Hart && !best.Hart && t.Abstand < best.Abstand)) best = t;
+        return best is null || (!best.Hart && best.Abstand > maxAbstand) ? Kontakt.Fern : best with { AmEnde = true };
+    }
+
+    static Kontakt PruefenKapseln(Achskoerper a, Achskoerper b, double maxAbstand)
+    {
         if (!a.Huelle.Schneidet(b.Huelle, maxAbstand + Tol)) return Kontakt.Fern;
         if (b.Form == Querschnittsform.Rechteck) return Pruefen(a, b.AlsNetz(), maxAbstand);
         if (a.Form == Querschnittsform.Rechteck) return Pruefen(b, a.AlsNetz(), maxAbstand).Gespiegelt();
@@ -157,6 +189,14 @@ public static class Schmalphase
 
     /// <summary>Kapsel bzw. Quader gegen ein Netz.</summary>
     public static Kontakt Pruefen(Achskoerper k, Pruefnetz n, double maxAbstand = 0)
+    {
+        var c = PruefenKoerperNetz(k, n, maxAbstand);
+        if (c.AmEnde && c.Art != Kontaktart.Getrennt && HatEbenesEnde(k))
+            c = Eben(k, x => PruefenKoerperNetz(x, n, maxAbstand), z => Pruefen(z, n, maxAbstand), maxAbstand);
+        return c;
+    }
+
+    static Kontakt PruefenKoerperNetz(Achskoerper k, Pruefnetz n, double maxAbstand)
     {
         double reich = maxAbstand + Tol;
         if (!k.Huelle.Schneidet(n.Huelle, reich)) return Kontakt.Fern;

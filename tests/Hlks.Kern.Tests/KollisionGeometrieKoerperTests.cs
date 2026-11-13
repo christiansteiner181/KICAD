@@ -140,6 +140,12 @@ public class KollisionGeometrieKoerperTests
         Assert.Equal(Kontaktart.Schnitt, e.Art);
         Assert.Equal(2.5, e.Eindringtiefe, 9);
         Assert.True(e.AmEnde);
+        // ebenes freies Ende (Entscheid Christian 13.11.2026, Frage 34): 10 mm vor der Fläche keine Kollision, 10 mm hinein ein Schnitt
+        var eben = Achskoerper.Kapsel(new V3(-500, 500, 500), new V3(-10, 500, 500), 12.5).MitEbenenEnden(false, true);
+        Assert.False(Schmalphase.Pruefen(eben, Wuerfel()).Hart);
+        var hinein = Schmalphase.Pruefen(Achskoerper.Kapsel(new V3(-500, 500, 500), new V3(10, 500, 500), 12.5).MitEbenenEnden(false, true), Wuerfel());
+        Assert.True(hinein.Hart);
+        Assert.True(hinein.Eindringtiefe >= 9, $"Tiefe {hinein.Eindringtiefe}");
     }
 
     // ------------------------------------------------------------------ Quader (Kanal) gegen Quadernetz
