@@ -7,7 +7,8 @@
 //     wandert das dort angeschlossene Formteil bzw. die Armatur (Rolle «leitung», mit Familie) um dieselbe Strecke mit, sofern es noch an
 //     der alten Stelle sass; direkt aneinander hängende Formteile folgen einander ebenso. Hängt dort direkt eine andere Gerade (ohne Formteil),
 //     folgt ihr Ende wie an einem Formteil (Befund B5, 03.11.2026). Geräte folgen nicht.
-//   - Ändert eine nachgeführte Gerade ihre Richtung um mehr als Routing.WinkelToleranz: anderes Ende frei → die ganze Gerade verschiebt
+//   - Weicht eine nachgeführte Gerade mehr als 1° (Gefälleleitung: atan(Gefälle) + 1°) von der Achse des Anschlusses ab (Entscheid Christian
+//     13.11.2026, Frage 12; bis dahin gegen ihre bisherige Richtung gemessen): anderes Ende frei → die ganze Gerade verschiebt
 //     sich mit; anderes Ende verbunden und Gerade mit Serie → Versatz mit zwei Bögen der Serie (Routing, wie leitung_aufteilen); sonst
 //     (Altbestand ohne Serie) wie bisher drehen mit Hinweis (P13/P15 melden die Abweichung).
 // ANNAHMEN (Prüfliste): Versatzwinkel 45°, wenn die Serie ihn hat, sonst 90°, sonst der grösste erlaubte unter 90° (frei: 45°); der
@@ -104,10 +105,13 @@ public sealed class LeitungenNachfuehren : INachfuehrung
         var altI = pts[i];
         var richtungVorher = (V3.Aus(pts[i]) - V3.Aus(pts[j])).Einheit();
         var richtungNachher = (V3.Aus(neu) - V3.Aus(pts[j])).Einheit();
-        var drehung = Winkel(richtungVorher, richtungNachher);
+        // Entscheid Christian 13.11.2026 (Frage 12): die Schieflage wird gegen die Achse des Anschlusses gemessen, nicht gegen die bisherige
+        // Richtung der Geraden – sonst summieren sich kleine Schritte unbegrenzt. Gefälleleitungen: Toleranz atan(Gefälle) + 1° (Frage 1).
+        var drehung = stelle.Richtung is { } ra ? Winkel(-V3.Aus(ra), richtungNachher) : Winkel(richtungVorher, richtungNachher);
+        double toleranz = Anschlusslagen.WinkelMaxFuer(l.Zahl("gefaelle"));
         var anderer = amAnfang ? "ende" : "anfang";
         var partner = m.VerbindungAn(l.Id, anderer)?.Gegenueber(l.Id, anderer);
-        if (nurVerschoben && drehung > Routing.WinkelToleranz && pts.Count == 2)
+        if (nurVerschoben && drehung > toleranz && pts.Count == 2)
         {
             if (partner is null)
             {

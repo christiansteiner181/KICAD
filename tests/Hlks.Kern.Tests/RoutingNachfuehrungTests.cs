@@ -39,6 +39,21 @@ public class RoutingNachfuehrungTests
     }
 
     [Fact]
+    public void KleineSchritte_SchieflageGegenAnschlussachse_DannVersatz()
+    {
+        // Entscheid Christian 13.11.2026 (Frage 12): gemessen wird gegen die Achse des Anschlusses. RO-2 (900 mm) an BO-1: 10 mm quer = 0.64°
+        // bleibt schief; nach dem zweiten Schritt (zusammen 45 mm = 2.9°) wird gegen die Achse gemessen → Versatz (bisher gegen die schon schiefe
+        // Lage, die Schieflage wuchs unbegrenzt). Ein Versatz unter rund 30 mm passt mit DN-20-Bögen 45° nicht (Mindestlänge) und wird abgelehnt.
+        var p = ZZug();
+        var e1 = Ok(p.Ausfuehren("elemente_verschieben", new JsonObject { ["elemente"] = new JsonArray("BO-1"), ["dx"] = 10 }));
+        Assert.DoesNotContain(e1.Hinweise, h => h.StartsWith("RO-2: Versatz"));
+        // zweiter Schritt 10 mm: 1.27° gegen die Achse – Versatz nötig, aber zu klein für zwei Bögen → abgelehnt (bisher still 1.27° schief)
+        Assert.Contains("versetzt werden", Nein(p.Ausfuehren("elemente_verschieben", new JsonObject { ["elemente"] = new JsonArray("BO-1"), ["dx"] = 10 })).Fehler);
+        var e2 = Ok(p.Ausfuehren("elemente_verschieben", new JsonObject { ["elemente"] = new JsonArray("BO-1"), ["dx"] = 35 }));
+        Assert.Contains(e2.Hinweise, h => h.StartsWith("RO-2: Versatz"));
+    }
+
+    [Fact]
     public void GeradeQuerVerschoben_FormteileFolgen_NachbarnDehnenSich()
     {
         var p = ZZug();
@@ -271,22 +286,23 @@ public class RoutingNachfuehrungTests
         var k = new Kontext(p, p.Modell.Kopie(), new Herkunft { Art = "mensch", Akteur = "T", Zeit = DateTimeOffset.Now });
         k.Setzen(k.Arbeit.Hole("RO-1").Kopie());
         var regel = new Endlos(pendel: true);
-        Nachfuehrungen.Ausfuehren(k, [regel], 500);
+        // Entscheid Christian 13.11.2026 (Frage 24): abgelehnt statt Hinweis
+        var f = Assert.Throws<HlksFehler>(() => Nachfuehrungen.Ausfuehren(k, [regel], 500));
         Assert.Equal(4, regel.Aufrufe);
-        Assert.Contains(k.Hinweise, h => h.Contains("abgebrochen") && h.Contains("pendeln") && h.Contains("RO-1"));
+        Assert.True(f.Message.Contains("abgebrochen") && f.Message.Contains("pendeln") && f.Message.Contains("RO-1"), f.Message);
     }
 
     [Fact]
-    public void Rundengrenze_EndlosRegel_HoertAufUndMeldetEs()
+    public void Rundengrenze_EndlosRegel_HoertAufUndLehntAb()
     {
         var p = MitSerie();
         Ok(Modul3Hilfe.Rohr(p, "RO-1", "DN 25", [0, 0, 0], [1000, 0, 0]));
         var k = new Kontext(p, p.Modell.Kopie(), new Herkunft { Art = "mensch", Akteur = "T", Zeit = DateTimeOffset.Now });
         k.Setzen(k.Arbeit.Hole("RO-1").Kopie());
         var regel = new Endlos();
-        Nachfuehrungen.Ausfuehren(k, [regel], 12);
+        var f = Assert.Throws<HlksFehler>(() => Nachfuehrungen.Ausfuehren(k, [regel], 12));   // Frage 24: abgelehnt
         Assert.Equal(12, regel.Aufrufe);
-        Assert.Contains(k.Hinweise, h => h.StartsWith("Nachführung nach 12 Runden abgebrochen") && h.Contains("RO-1"));
+        Assert.True(f.Message.StartsWith("Nachführung nach 12 Runden abgebrochen") && f.Message.Contains("RO-1"), f.Message);
         Assert.Equal(8, Nachfuehrungen.Rundengrenze(0));
         Assert.Equal(502, Nachfuehrungen.Rundengrenze(500));
         Assert.Equal(2000, Nachfuehrungen.Rundengrenze(100000));

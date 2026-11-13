@@ -37,7 +37,7 @@ public static class Nachfuehrungen
 
     public static void Ausfuehren(Kontext k) => Ausfuehren(k, Liste, Rundengrenze(k.Arbeit.Elemente.Count));
 
-    /// <summary>Regeln anwenden, bis keine mehr etwas ändert. Greift die Grenze vorher, steht es in den Hinweisen (nie still aufhören).</summary>
+    /// <summary>Regeln anwenden, bis keine mehr etwas ändert. Greift die Grenze vorher bzw. pendeln die Regeln, wird der Befehl abgelehnt (nie still aufhören).</summary>
     public static void Ausfuehren(Kontext k, IReadOnlyList<INachfuehrung> regeln, int grenze)
     {
         int bearbeitet = 0;
@@ -54,11 +54,12 @@ public static class Nachfuehrungen
                     ?? neu.Last(o => o.Id == id).ElementVorher?.Kennzeichen ?? id).Distinct().Order(StringComparer.Ordinal).ToList();
                 return $"{string.Join(", ", offen.Take(5))}{(offen.Count > 5 ? " …" : "")}";
             }
-            const string Ausweg = "Was an diesen Elementen hängt, ist nicht mehr nachgeführt – Prüfbefunde ansehen (P13 nennt Anschlüsse, die auseinanderliegen) oder den Befehl rückgängig machen.";
+            // Entscheid Christian 13.11.2026 (Frage 24): an der Grenze bzw. beim Pendeln wird der Befehl abgelehnt (bis dahin nur ein Hinweis) –
+            // sonst bliebe ein Netz, dessen Folgeänderungen nicht fertig nachgeführt sind.
+            const string Ausweg = "Der Befehl wurde nicht ausgeführt. In kleineren Schritten ändern bzw. die Kette an diesen Elementen prüfen (trennen, Formteile ersetzen).";
             if (runde >= grenze)
             {
-                k.Hinweise.Add($"Nachführung nach {grenze} Runden abgebrochen: die Folgeänderungen lösen einander weiter aus (zuletzt geändert: {Offen()}). {Ausweg}");
-                return;
+                throw new HlksFehler($"Nachführung nach {grenze} Runden abgebrochen: die Folgeänderungen lösen einander weiter aus (zuletzt geändert: {Offen()}).", Ausweg);
             }
             // Pendeln (Gegenprüfung B9): Setzt eine Runde der Regeln dieselben Elemente vom selben Stand auf denselben Inhalt wie eine frühere,
             // wiederholt sich der Ablauf – sofort aufhören und es sagen, statt bis zur Grenze (bis 2000 Runden) weiterzurechnen.
@@ -68,8 +69,7 @@ public static class Nachfuehrungen
                 var abdruck = Fingerabdruck(neu);
                 if (frueher.TryGetValue(abdruck, out int gleich))
                 {
-                    k.Hinweise.Add($"Nachführung nach {runde} Runden abgebrochen: die Folgeänderungen pendeln (Runde {runde} setzt dasselbe wie Runde {gleich}: {Offen()}). {Ausweg}");
-                    return;
+                    throw new HlksFehler($"Nachführung nach {runde} Runden abgebrochen: die Folgeänderungen pendeln (Runde {runde} setzt dasselbe wie Runde {gleich}: {Offen()}).", Ausweg);
                 }
                 frueher[abdruck] = runde;
             }
