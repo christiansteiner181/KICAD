@@ -575,6 +575,20 @@ public sealed class ElementLoeschen : IBefehl
             && x.Bezuege.GetValueOrDefault("wand") == e.Id && x.Bezuege.Count(b => b.Value == e.Id) == 1
             && x.TeilVon != e.Id && x.Geschoss != e.Id && x.Raum != e.Id && x.System != e.Id)
             || WaermebrueckenNachfuehren.Mitgeloescht(k.Katalog, x, e.Id);
+        // Ansicht löschen (Entscheid Christian 13.11.2026, Frage 48): Beschriftungen, die nur an dieser Ansicht hängen (bezuege.ansicht), werden im
+        // selben Paket mitgelöscht, mit Hinweis – vorher wurde abgelehnt, bis jede Masskette einzeln gelöscht war
+        if (k.Katalog.IstArt(e, "Ansicht"))
+        {
+            var beschriftungen = k.Arbeit.Elemente.Where(x => x.Id != e.Id && k.Katalog.IstArt(x, "Beschriftung") && x.Bezuege.GetValueOrDefault("ansicht") == e.Id
+                && x.Bezuege.Count(b => b.Value == e.Id) == 1 && x.TeilVon != e.Id).ToList();
+            var ids = beschriftungen.Select(x => x.Id).ToHashSet();
+            // nur, wenn sonst nichts auf die Beschriftungen verweist
+            if (beschriftungen.Count > 0 && !k.Arbeit.Elemente.Any(x => !ids.Contains(x.Id) && x.Id != e.Id && (x.Bezuege.Values.Any(ids.Contains) || (x.TeilVon is { } t && ids.Contains(t)))))
+            {
+                foreach (var x in beschriftungen) k.Loeschen(x);
+                k.Hinweise.Add($"{beschriftungen.Count} Beschriftung(en) von {e.Kennzeichen} mitgelöscht.");
+            }
+        }
         var abhaengig = k.Arbeit.Elemente.Where(x => x.Id != e.Id && !Mitgeloescht(x) &&
             (x.TeilVon == e.Id || x.Geschoss == e.Id || x.Raum == e.Id || x.System == e.Id || x.Bezuege.ContainsValue(e.Id))).ToList();
         if (abhaengig.Count > 0)

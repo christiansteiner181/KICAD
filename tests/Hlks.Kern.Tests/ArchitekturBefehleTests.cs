@@ -427,6 +427,24 @@ public class ArchitekturBefehleTests
     }
 
     [Fact]
+    public void AnsichtLoeschen_BeschriftungenWerdenMitgeloescht()
+    {
+        // Entscheid Christian 13.11.2026 (Frage 48): mitlöschen im selben Paket mit Hinweis, statt abzulehnen; Rückgängig bringt alles zurück
+        var p = Rechteck();
+        Ok(p.Ausfuehren("element_anlegen", new JsonObject
+        {
+            ["klasse"] = "Textnotiz", ["kennzeichen"] = "TX-1", ["eigenschaften"] = new JsonObject { ["inhalt"] = "Notiz" },
+            ["geometrie"] = new JsonObject { ["art"] = "punkt", ["punkte"] = Pts([1000, 0]) }, ["bezuege"] = new JsonObject { ["ansicht"] = "AN-EG" },
+        }));
+        var e = Ok(p.Ausfuehren("element_loeschen", new JsonObject { ["element"] = "AN-EG" }));
+        Assert.Contains(e.Hinweise, h => h.StartsWith("1 Beschriftung(en) von AN-EG mitgelöscht"));
+        Assert.Null(p.Modell.Finde("TX-1"));
+        Ok(p.Rueckgaengig());
+        Assert.NotNull(p.Modell.Finde("TX-1"));
+        Assert.NotNull(p.Modell.Finde("AN-EG"));
+    }
+
+    [Fact]
     public void Drehen_WaendeMitTuer_TuerFolgtTextDrehtMit()
     {
         var p = Rechteck();
