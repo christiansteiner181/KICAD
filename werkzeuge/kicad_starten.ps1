@@ -130,7 +130,9 @@ function AbnahmeserverSichern {
     if (Test-Path $s) { Start-Process -FilePath 'powershell.exe' -ArgumentList @('-NoProfile', '-ExecutionPolicy', 'Bypass', '-WindowStyle', 'Hidden', '-File', "`"$s`"") -WindowStyle Hidden | Out-Null }
   } catch { Log "Abnahmeserver: $($_.Exception.Message)" }
 }
-AbnahmeserverSichern
+# Seit 13.11.2026 nicht mehr mitgestartet (Christian: "wir muessen alle testprojekte entfernen und ein neues musterprojekt eroeffnen"):
+# die Abnahmeprojekte 5150-5153 sind entfernt. Bei Bedarf von Hand: werkzeugeabnahmeserver_starten.ps1
+# AbnahmeserverSichern
 
 # ------------------------------------------------------------------ Stand bestimmen
 $ohneGeprueft = $false
