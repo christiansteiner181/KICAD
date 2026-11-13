@@ -122,8 +122,10 @@ api.MapPost("/projekt/anlegen", (HttpRequest r) => Sicher(async () =>
     var p = await Koerper(r);
     // beispiel: true = MFH Musterweg, "klein" = Musterhaus 4 Räume (06.11.2026)
     bool klein = p["beispiel"] is JsonValue bv && bv.TryGetValue<string>(out var bs) && bs == "klein";
+    // "muster" = Musterprojekt mit allen Bauteilen und Systemen (Christian 13.11.2026), auf der normalen Grundausstattung
+    bool muster = p["beispiel"] is JsonValue bm && bm.TryGetValue<string>(out var ms) && ms == "muster";
     bool beispiel = klein || p["beispiel"] is JsonValue bb && bb.TryGetValue<bool>(out var b) && b;
-    return JsonAntwort(await dienst.Anlegen(Param.Text(p, "ordner", true)!, Param.Text(p, "name") ?? "Neues Projekt", beispiel, klein));
+    return JsonAntwort(await dienst.Anlegen(Param.Text(p, "ordner", true)!, muster ? Hlks.Kern.Musterprojekt.Name : Param.Text(p, "name") ?? "Neues Projekt", beispiel, klein, muster));
 }));
 api.MapPost("/projekt/schliessen", () => Sicher(async () => { await dienst.Schliessen(); return JsonAntwort(await dienst.Status()); }));
 

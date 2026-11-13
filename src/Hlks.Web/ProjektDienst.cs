@@ -184,10 +184,11 @@ public sealed class ProjektDienst(Einstellungen einstellungen, ILogger<ProjektDi
         return await Status();
     }
 
-    public async Task<JsonObject> Anlegen(string ordner, string name, bool beispiel, bool klein = false)
+    public async Task<JsonObject> Anlegen(string ordner, string name, bool beispiel, bool klein = false, bool muster = false)
     {
         ordner = OrdnerPruefen(ordner);
         string? familienHinweis = null;
+        List<string>? musterBericht = null;
         var (p, sp) = await Task.Run(() =>
         {
             if (beispiel)
@@ -207,6 +208,8 @@ public sealed class ProjektDienst(Einstellungen einstellungen, ILogger<ProjektDi
             // Hauptanlage je Gewerk und Präfixe (Christian 09.11.2026: «es braucht auch eine main-anlage für alle gewerke»)
             try { neu.Ausfuehren("system_praefixe_setzen", new JsonObject { ["alle_hauptanlagen"] = true }); }
             catch (HlksFehler) { }
+            // Musterprojekt (Christian 13.11.2026): Gebäude, je Familientyp ein Exemplar, alle Produktlinien und Grössen, Anschlüsse verbunden
+            if (muster) musterBericht = Kern.Musterprojekt.Ausstatten(neu);
             // Die Grundausstattung gehört zum Anlegen, nicht zur Arbeit des Benutzers: neu öffnen wie beim Beispiel, damit «Rückgängig» im frischen
             // Projekt nicht die Hauptanlagen, Mustersysteme oder Familien wieder entfernt (der Stapel gilt je Sitzung des Projekts).
             neu.Freigeben();
@@ -217,6 +220,7 @@ public sealed class ProjektDienst(Einstellungen einstellungen, ILogger<ProjektDi
         if (Einstellungen.ZuletztMerken) Zuletzt.Merken(ordner, p.Kopf.Name);
         var status = await Status();
         if (familienHinweis is not null) status["familienHinweis"] = familienHinweis;
+        if (musterBericht is not null) status["musterBericht"] = new JsonArray(musterBericht.Select(x => (JsonNode)x).ToArray());
         return status;
     }
 
