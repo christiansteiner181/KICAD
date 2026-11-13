@@ -579,9 +579,10 @@ public class RoutingAbzweigwinkelTests
     }
 
     /// <summary>Rechtwinkliges T-Stück (Testrohrserie, 90°) am senkrechten Rohr ohne Gefälle gesetzt: c waagrecht. Eine Leitung mit 2 %
-    /// weicht um arctan(0.02) = 1.15° von der Achse ab (verbunden bis 1°) → abgelehnt mit Vorschlag zum Abzweigwinkel.</summary>
+    /// weicht um arctan(0.02) = 1.15° von der Achse ab – seit dem Entscheid Christian 13.11.2026 (Frage 1) gilt für Gefälleleitungen
+    /// atan(Gefälle) + 1° = 2.15°: verbunden. Mit 4 % gezeichnet, aber nur 2 % verlangt, bleibt es bei der Ablehnung mit Vorschlag.</summary>
     [Fact]
-    public void Zeichnen_NachWaagrechtemC_MitGefaelle_AbgelehntMitVorschlag()
+    public void Zeichnen_NachWaagrechtemC_MitGefaelle_Verbunden()
     {
         var p = MitSerie();
         MitSystem(p, "SW", "Schmutzwasser");
@@ -589,10 +590,9 @@ public class RoutingAbzweigwinkelTests
         Ok(Abzweigen(p, new JsonObject { ["leitung"] = "RO-1", ["punkt"] = new JsonArray(0, 0, 1500), ["richtung"] = new JsonArray(1, 0, 0) }));
         var c = Stelle(p, "TS-1", "c");
         Etwa([55, 0, 1500], c.Lage);   // lc = da = 55 (DN 50)
-        var nein = Nein(Zeichnen(p, "DN 50", [[2000, 0, 1500]], new JsonObject { ["nach"] = "TS-1.c", ["gefaelle"] = 2 }, system: "SW"));
-        Assert.Contains("unter 1.1°", nein.Fehler);
-        Assert.Contains("Mit 2 % Gefälle weicht die Gerade um 1.15°", nein.Vorschlag);
-        Assert.Contains("Abzweigwinkel", nein.Vorschlag);
+        var e = Ok(Zeichnen(p, "DN 50", [[2000, 0, 1500]], new JsonObject { ["nach"] = "TS-1.c", ["gefaelle"] = 2 }, system: "SW"));
+        IstVerbunden(p, Assert.Single(Angelegt(e, "Rohr")), "ende", "TS-1", "c");
+        Sauber(p);
     }
 
     // ------------------------------------------------------------------ P15 Abzweigwinkel

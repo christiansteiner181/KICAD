@@ -74,13 +74,15 @@ public static class Leitungspruefungen
                 if (ab.Abstand > Anschlusslagen.AbstandMax)
                     b.Add(new("P13", "warnung", e1.Kennzeichen, $"{paar} sind verbunden, liegen aber {Z(ab.Abstand)} mm auseinander (erlaubt {Z(Anschlusslagen.AbstandMax)} mm)",
                         "Element verschieben (element_aendern geometrie) bzw. die Leitung neu führen (leitung_zeichnen), oder trennen und neu verbinden (trennen, verbinden); anschlusslagen zeigt die Lagen"));
-                if (ab.Winkel > Anschlusslagen.WinkelMax)
+                // Gefälleleitung: Toleranz atan(Gefälle) + 1° (Entscheid Christian 13.11.2026), sonst 1°
+                double wMax = Anschlusslagen.WinkelMaxFuer(new[] { ea.Zahl("gefaelle"), eb.Zahl("gefaelle") }.Max());
+                if (ab.Winkel > wMax)
                 {
                     if (IstLeitung(e1) && IstLeitung(e2))
                         b.Add(new("P15", "fehler", e1.Kennzeichen, $"Knick von {Z(ab.Winkel)}° zwischen {e1.Kennzeichen} und {e2.Kennzeichen} ohne Formteil",
                             "Bogen setzen: trennen, Bogen der Produktlinie platzieren (familie_platzieren mit ausrichtung) und beide Leitungen an ihn verbinden – leitung_zeichnen setzt Bögen selbst"));
                     else
-                        b.Add(new("P13", "warnung", e1.Kennzeichen, $"{paar} sind verbunden, zeigen aber nicht gegeneinander (Abweichung {Z(ab.Winkel)}°, erlaubt {Z(Anschlusslagen.WinkelMax)}°)",
+                        b.Add(new("P13", "warnung", e1.Kennzeichen, $"{paar} sind verbunden, zeigen aber nicht gegeneinander (Abweichung {Z(ab.Winkel)}°, erlaubt {Z(Math.Round(wMax, 2))}°)",
                             "Element drehen bzw. ausrichten (element_aendern drehung bzw. ausrichtung), die Leitung neu führen (leitung_zeichnen) oder ein Formteil setzen; anschlusslagen zeigt die Richtungen"));
                 }
             }

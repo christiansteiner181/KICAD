@@ -68,8 +68,8 @@ public sealed class LeitungGefaelle : IBefehl
         {
             if (grenze is not { HatLage: true } || grenze.Stelle.Richtung is null || neu.Count < 2) continue;
             var w = Math.Acos(Math.Clamp(grenze.Richtung.Mal((neu[b] - neu[a]).Einheit()), -1, 1)) * 180 / Math.PI;
-            if (w > Anschlusslagen.WinkelMax)
-                hinweise.Add($"Am Anschluss {grenze.Text} weicht die Neigung um {Z(Math.Round(w, 2))}° von seiner Achse ab (erlaubt {Z(Anschlusslagen.WinkelMax)}°) – P13 meldet es. " +
+            if (w > Anschlusslagen.WinkelMaxFuer(g))
+                hinweise.Add($"Am Anschluss {grenze.Text} weicht die Neigung um {Z(Math.Round(w, 2))}° von seiner Achse ab (erlaubt {Z(Math.Round(Anschlusslagen.WinkelMaxFuer(g), 2))}°) – P13 meldet es. " +
                     "Das Formteil passend neigen bzw. den Abzweig mit leitung_abzweigen und gefaelle neu zeichnen.");
         }
         return neu;

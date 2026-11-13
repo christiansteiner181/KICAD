@@ -48,11 +48,11 @@ public class GefaelleHoeheTests
         Assert.False(e.Angenommen);
         Assert.Contains("am Anfang an", e.Fehler);
         Assert.Equal(vorher, Inhalt(p));
-        // Vorgabe: Fixpunkt am T-Stück; 1.5 % = 0.86° passt noch an den waagrechten Abzweig (Toleranz 1°), 2 % nicht mehr (Hinweis, P13)
-        Ok(p.Ausfuehren("leitung_gefaelle", new JsonObject { ["leitung"] = ast1, ["gefaelle"] = 1.5 }));
-        Sauber(p);
+        // Vorgabe: Fixpunkt am T-Stück; seit dem Entscheid Christian 13.11.2026 (Frage 1) passt auch 2 % (1.15°) an den waagrechten
+        // Abzweig – Toleranz für Gefälleleitungen atan(Gefälle) + 1°
         var steil = Ok(p.Ausfuehren("leitung_gefaelle", new JsonObject { ["leitung"] = ast1, ["gefaelle"] = 2 }));
-        Assert.Contains(steil.Hinweise, h => h.StartsWith("Am Anschluss TS-1.c weicht die Neigung um 1.15°"));
+        Assert.DoesNotContain(steil.Hinweise, h => h.StartsWith("Am Anschluss TS-1.c weicht"));
+        Sauber(p);
     }
 
     [Fact]

@@ -181,7 +181,7 @@ public static class Routing
             folge = anfang ? paar[1] : paar[0];
         }
         var u = (folge - K).Einheit();
-        if (Grad(u, r) <= Anschlusslagen.WinkelMax) return ende;
+        if (Grad(u, r) <= Anschlusslagen.WinkelMaxFuer(gefaelle)) return ende;
         var andere = V3.Aus(gp[ende.Anschluss == "anfang" ? 1 : 0]);
 
         // Probe: Gerade bis zum Knick, dann weit in die gezeichnete Richtung (nur der Bogen am Knick zählt)
@@ -258,15 +258,35 @@ public static class Routing
         if (gefaelle is double gf)
         {
             if (!double.IsFinite(gf) || gf < 0) throw new HlksFehler($"gefaelle {Z(gf, 3)} % ist ungültig.", "Gefälle in % ≥ 0 angeben (in Fliessrichtung fallend), z. B. 2.");
-            pkt = MitGefaelle(pkt, gf, vomEnde: nach is { HatLage: true } && von is not { HatLage: true },
-                anfangNeigung: AchsNeigungFuerGefaelle(von, gf), endeNeigung: AchsNeigungFuerGefaelle(nach, gf));
-            if (von is { HatLage: true } && nach is { HatLage: true } && Math.Abs(pkt[^1].Z - nach.Lage.Z) > Anschlusslagen.AbstandMax)
+            var flach = pkt;
+            List<V3> Geneigt(double g) => MitGefaelle(flach, g, vomEnde: nach is { HatLage: true } && von is not { HatLage: true },
+                anfangNeigung: AchsNeigungFuerGefaelle(von, g), endeNeigung: AchsNeigungFuerGefaelle(nach, g));
+            pkt = Geneigt(gf);
+            double gEff = gf;
+            if (von is { HatLage: true } && nach is { HatLage: true })
             {
+                // Zwei gebundene Enden (Entscheid Christian 13.11.2026, Frage 3): das Gefälle ergibt sich aus den beiden Höhen – gleichmässig
+                // über alle geneigten Stücke (senkrechte und Fallstrecken ≥ 45° behalten ihre Höhe). Liegt es unter dem gewählten, wird
+                // abgelehnt (mit Vorschlag), sonst gilt das tatsächliche Gefälle mit Hinweis.
                 double diff = nach.Lage.Z - pkt[^1].Z;
-                throw new HlksFehler($"Mit {Z(gf, 3)} % Gefälle ab {von.Text} liegt das Ende bei z = {Z(pkt[^1].Z)} mm, der Anschluss {nach.Text} bei z = {Z(nach.Lage.Z)} mm (Unterschied {Z(diff)} mm).",
-                    $"Den Anfang auf z = {Z(pkt[0].Z + diff)} mm legen, einen senkrechten Abschnitt mit passender Länge einplanen (senkrechte Stücke behalten ihre Länge) oder nur ein Ende an einen Anschluss binden (gerechnet wird dann vom gebundenen Ende aus).");
+                double hSumme = 0, fest = 0;
+                bool Fest(int i) { double h = Waagrecht(flach[i], flach[i + 1]); return h <= Anschlusslagen.AbstandMax || Math.Abs(flach[i + 1].Z - flach[i].Z) >= h; }
+                for (int i = 0; i + 1 < flach.Count; i++)
+                    if (Fest(i)) fest += flach[i + 1].Z - flach[i].Z; else hSumme += Waagrecht(flach[i], flach[i + 1]);
+                double gi = hSumme > 0 ? Math.Round((flach[0].Z + fest - nach.Lage.Z) / hSumme * 100, 4) : double.NaN;
+                if (!(gi >= gf - 1e-6))
+                    throw new HlksFehler(gi > 0
+                            ? $"Zwischen {von.Text} (z = {Z(flach[0].Z)} mm) und {nach.Text} (z = {Z(nach.Lage.Z)} mm) sind nur {Z(gi, 2)} % Gefälle möglich, verlangt sind {Z(gf, 3)} %."
+                            : $"{nach.Text} liegt mit z = {Z(nach.Lage.Z)} mm zu hoch: von {von.Text} (z = {Z(flach[0].Z)} mm) aus ist kein Gefälle möglich (Gegengefälle).",
+                        $"Den Anfang auf z = {Z(pkt[0].Z + diff)} mm legen, einen senkrechten Abschnitt mit passender Länge einplanen (senkrechte Stücke behalten ihre Länge) oder nur ein Ende an einen Anschluss binden (gerechnet wird dann vom gebundenen Ende aus).");
+                pkt = flach.ToList();
+                for (int i = 0; i + 1 < flach.Count; i++)
+                    pkt[i + 1] = new V3(flach[i + 1].X, flach[i + 1].Y, pkt[i].Z + (Fest(i) ? flach[i + 1].Z - flach[i].Z : -gi / 100 * Waagrecht(flach[i], flach[i + 1])));
+                pkt[^1] = nach.Lage;
+                gEff = gi;
+                if (gi > gf + 0.005) hinweise.Add($"Gefälle aus den Höhen der beiden Anschlüsse: {Z(gi, 2)} % (verlangt mindestens {Z(gf, 3)} %).");
             }
-            hinweise.Add($"Gefälle {Z(gf, 3)} %: z von {Z(pkt[0].Z)} bis {Z(pkt[^1].Z)} mm.");
+            hinweise.Add($"Gefälle {Z(gEff, 3)} %: z von {Z(pkt[0].Z)} bis {Z(pkt[^1].Z)} mm.");
         }
 
         OhneGeradePunkte(pkt, hinweise);
@@ -274,8 +294,8 @@ public static class Routing
         {
             var d0 = (pkt[1] - pkt[0]).Einheit();
             var abw = Grad(d0, von.Richtung);
-            if (abw > Anschlusslagen.WinkelMax)
-                throw new HlksFehler($"Der Verlauf verlässt {von.Text} unter {Z(abw)}° zur Achse des Anschlusses (Richtung {P(von.Richtung)}); verbunden wird nur bis {Z(Anschlusslagen.WinkelMax)}°.",
+            if (abw > Anschlusslagen.WinkelMaxFuer(gefaelle))
+                throw new HlksFehler($"Der Verlauf verlässt {von.Text} unter {Z(abw)}° zur Achse des Anschlusses (Richtung {P(von.Richtung)}); verbunden wird nur bis {Z(Anschlusslagen.WinkelMaxFuer(gefaelle), 2)}°.",
                     GefaelleVorschlag(pkt[0], pkt[1], von, gefaelle, abw)
                     ?? $"Den nächsten Punkt auf die Achse des Anschlusses legen, z. B. {P(von.Lage + von.Richtung * (pkt[1] - pkt[0]).Laenge)} – an einem Anschluss setzt leitung_zeichnen keinen Bogen.");
         }
@@ -283,8 +303,8 @@ public static class Routing
         {
             var dl = (pkt[^1] - pkt[^2]).Einheit();
             var abw = Grad(dl, -nach.Richtung);
-            if (abw > Anschlusslagen.WinkelMax)
-                throw new HlksFehler($"Der Verlauf kommt unter {Z(abw)}° zur Achse des Anschlusses {nach.Text} an (Richtung {P(nach.Richtung)}); verbunden wird nur bis {Z(Anschlusslagen.WinkelMax)}°.",
+            if (abw > Anschlusslagen.WinkelMaxFuer(gefaelle))
+                throw new HlksFehler($"Der Verlauf kommt unter {Z(abw)}° zur Achse des Anschlusses {nach.Text} an (Richtung {P(nach.Richtung)}); verbunden wird nur bis {Z(Anschlusslagen.WinkelMaxFuer(gefaelle), 2)}°.",
                     GefaelleVorschlag(pkt[^2], pkt[^1], nach, gefaelle, abw)
                     ?? $"Den vorletzten Punkt auf die Achse des Anschlusses legen, z. B. {P(nach.Lage + nach.Richtung * (pkt[^1] - pkt[^2]).Laenge)} – an einem Anschluss setzt leitung_zeichnen keinen Bogen.");
         }

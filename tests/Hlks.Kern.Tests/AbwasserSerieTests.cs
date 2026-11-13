@@ -366,10 +366,13 @@ public class AbwasserSerieTests
         var prim = Grafik.Plan(p, "AN-EG").Teile.Single(x => x.Id == rohre[0].Id).Primitive;
         Assert.Contains(prim, x => x.Art == "polylinie" && x.Stil.Stift == Stifte.Hilf);
         Assert.DoesNotContain(prim, x => x.Stil.Stift == Stifte.Kontur);
+        double hoch = Z(rohre[0], 0), tief = Z(rohre[0], 1);
         Ok(p.Ausfuehren("fliessrichtung_umkehren", new JsonObject { ["leitung"] = rohre[0].Kennzeichen }));
         var a = p.Modell.Finde(rohre[0].Id)!.Geometrie!.Punkte;
         Assert.Equal(3000, a[0][0], 1);   // Anfang jetzt am anderen Ende
-        Assert.True(a[0][2] > a[^1][2] + 1);   // und fällt wieder in (neuer) Fliessrichtung
+        // Hoch- und Tiefpunkt getauscht (Entscheid Christian 13.11.2026, Frage 2): der neue Anfang liegt auf dem alten Hochpunkt
+        Assert.Equal(hoch, a[0][2], 1);
+        Assert.Equal(tief, a[^1][2], 1);
     }
 
     /// <summary>Christian 09.11.2026: «bei dämmung auch bogenradien zeichnen» – der Bogen trägt das Dämmband der angeschlossenen Leitung entlang seiner Achse.</summary>

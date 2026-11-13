@@ -137,12 +137,27 @@ public sealed class FliessrichtungUmkehren : IBefehl
                 }
                 if (gef is not null) break;
             }
+        double ZMax() => glieder.SelectMany(x => m.Finde(x.Id)?.Geometrie?.Punkte ?? []).Select(q => q.Length > 2 ? q[2] : 0).DefaultIfEmpty(0).Max();
+        double zHochVorher = ZMax();
         foreach (var x in glieder) FliessrichtungAusQuelle.Umkehren(k, m.Finde(x.Id)!);
         k.Hinweise.Add($"Fliessrichtung umgekehrt: {string.Join(", ", glieder.Select(x => x.Kennzeichen))}.");
         if (zug && gef is double g && g > 0)
         {
             new LeitungGefaelle().Ausfuehren(k, new JsonObject { ["leitung"] = e.Id, ["gefaelle"] = g, ["zug"] = true });
             k.Hinweise.Add($"Gefälle {g:0.##} % in die neue Fliessrichtung gelegt.");
+            // Hoch- und Tiefpunkt tauschen (Entscheid Christian 13.11.2026, Frage 2): der neue Anfang liegt auf der Höhe des alten
+            // Hochpunkts, die Leitung kippt statt abzusinken. Geht das nicht (gebundene Enden), bleibt die Lage mit Hinweis.
+            double dz = zHochVorher - ZMax();
+            if (Math.Abs(dz) > Anschlusslagen.AbstandMax)
+                try
+                {
+                    new LeitungHoehe().Ausfuehren(k, new JsonObject { ["leitung"] = e.Id, ["dz"] = Math.Round(dz, 3), ["zug"] = true });
+                    k.Hinweise.Add($"Hoch- und Tiefpunkt getauscht: Hochpunkt wieder auf z = {zHochVorher:0.#} mm.");
+                }
+                catch (HlksFehler f)
+                {
+                    k.Hinweise.Add($"Hoch- und Tiefpunkt nicht getauscht ({f.Message}) – der Zug liegt {dz:0.#} mm tiefer; Höhe mit leitung_hoehe bzw. Gefälle neu setzen.");
+                }
         }
     }
 }

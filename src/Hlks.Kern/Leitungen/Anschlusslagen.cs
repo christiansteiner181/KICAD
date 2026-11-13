@@ -32,6 +32,11 @@ public static class Anschlusslagen
     /// <summary>Höchste Abweichung der Richtungen von gegenläufig (Grad).</summary>
     public const double WinkelMax = 1.0;
 
+    /// <summary>Winkeltoleranz für Gefälleleitungen (Entscheid Christian 13.11.2026, Frage 1): WinkelMax + arctan(Gefälle) –
+    /// 2 % → 2.15°, damit eine Gerade mit Gefälle an eine waagrechte Achse passt. Ohne Gefälle (Druckleitungen) bleibt es bei 1°.</summary>
+    public static double WinkelMaxFuer(double? gefaelle) =>
+        gefaelle is double g && double.IsFinite(g) && g > 0 ? WinkelMax + Math.Atan(g / 100) * 180 / Math.PI : WinkelMax;
+
     /// <summary>Alle Anschlüsse eines Elements (Reihenfolge wie am Element). Scheitert nie.</summary>
     public static List<AnschlussStelle> Von(Modell m, Katalog k, Element e)
     {

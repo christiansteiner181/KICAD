@@ -637,8 +637,10 @@ public sealed class Verbinden : IBefehl
                 throw new HlksFehler($"{paar} liegen {Z(ab.Abstand)} mm auseinander – verbunden wird nur, was bis {Z(Anschlusslagen.AbstandMax)} mm aufeinander liegt " +
                     $"({a.Kennzeichen}.{pa.Name} bei {Punkt(sa.Lage!)}, {b.Kennzeichen}.{pb.Name} bei {Punkt(sb.Lage!)}).",
                     "Element verschieben (element_aendern geometrie), die Leitung mit leitung_zeichnen bis an den Anschluss führen oder ein Formteil setzen; anschlusslagen zeigt Lage und Richtung.");
-            if (ab.Winkel > Anschlusslagen.WinkelMax)
-                throw new HlksFehler($"{paar} zeigen nicht gegeneinander: Abweichung {Z(ab.Winkel)}° von gegenläufig (erlaubt {Z(Anschlusslagen.WinkelMax)}°; " +
+            // Gefälleleitung: Toleranz atan(Gefälle) + 1° (Entscheid Christian 13.11.2026, Frage 1)
+            double wMax = Anschlusslagen.WinkelMaxFuer(new[] { a.Zahl("gefaelle"), b.Zahl("gefaelle") }.Max());
+            if (ab.Winkel > wMax)
+                throw new HlksFehler($"{paar} zeigen nicht gegeneinander: Abweichung {Z(ab.Winkel)}° von gegenläufig (erlaubt {Z(wMax)}°; " +
                     $"Richtung {Punkt(sa.Richtung!, 3)} bzw. {Punkt(sb.Richtung!, 3)}).",
                     "Element drehen bzw. ausrichten (element_aendern drehung bzw. ausrichtung), einen Bogen setzen (Formteil) oder die Leitung mit leitung_zeichnen führen; anschlusslagen zeigt die Richtungen.");
         }

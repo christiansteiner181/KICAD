@@ -123,6 +123,30 @@ public class RoutingZeichnenTests
     }
 
     [Fact]
+    public void Gefaelle_AnWaagrechterLeitung_ToleranzUndZweiGebundeneEnden()
+    {
+        // Entscheid Christian 13.11.2026, Frage 1: Toleranz für Gefälleleitungen atan(2 %) + 1° = 2.15° – 2 % an einer waagrechten Leitung geht
+        var p = MitSerie();
+        MitSystem(p, "SW", "Schmutzwasser");
+        Ok(Zeichnen(p, "DN 50", [[0, 0, 1000], [3000, 0, 1000]], system: "SW"));
+        Ok(Zeichnen(p, "DN 50", [[7000, 0, 950], [9000, 0, 950]], system: "SW"));
+        Ok(Zeichnen(p, "DN 50", [[0, 2000, 1000], [3000, 2000, 1000]], system: "SW"));
+        var e = Ok(Zeichnen(p, "DN 50", [[3000, 2000, 1000], [5000, 2000, 1000]], new JsonObject { ["gefaelle"] = 2, ["von"] = "RO-3.ende" }, system: "SW"));
+        Assert.Empty(Angelegt(e, "Bogen"));
+        Gerade(p, "RO-4", [3000, 2000, 1000], [5000, 2000, 960]);
+        IstVerbunden(p, "RO-3", "ende", "RO-4", "anfang");
+        // Frage 3: zwei gebundene Enden – Gefälle aus den Höhen (1000 → 950 auf 4000 mm = 1.25 % < 2 %) wird abgelehnt …
+        var nein = Nein(Zeichnen(p, "DN 50", [[3000, 0, 1000], [7000, 0, 950]], new JsonObject { ["gefaelle"] = 2, ["von"] = "RO-1.ende", ["nach"] = "RO-2.anfang" }, system: "SW"));
+        Assert.Contains("nur 1.25 % Gefälle möglich", nein.Fehler);
+        // … ab dem gewählten Gefälle gilt das tatsächliche (1000 → 950 auf 4000 mm mit 1 % verlangt → 1.25 %)
+        e = Ok(Zeichnen(p, "DN 50", [[3000, 0, 1000], [7000, 0, 950]], new JsonObject { ["gefaelle"] = 1, ["von"] = "RO-1.ende", ["nach"] = "RO-2.anfang" }, system: "SW"));
+        Assert.Contains(e.Hinweise, h => h.Contains("Gefälle aus den Höhen der beiden Anschlüsse: 1.25 %"));
+        Gerade(p, "RO-5", [3000, 0, 1000], [7000, 0, 950]);
+        IstVerbunden(p, "RO-5", "ende", "RO-2", "anfang");
+        Sauber(p);
+    }
+
+    [Fact]
     public void Steigleitung_ZweiBoegen_VollAusgerichtet()
     {
         var p = MitSerie();
