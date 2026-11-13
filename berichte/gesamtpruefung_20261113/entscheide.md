@@ -116,3 +116,5 @@ swisspor führt für Rohre nur PIR-Schalen «swissporKISODUR» (Heizung, Kälte,
 - **13.11.2026 Paket Leitungen/Geometrie** (geprueft-20261113-1534, f1f327e): 1, 2, 3 (07fa027) · 5, 13, N12 (a67fb6f) · 12, 24 (4ccc7ce) ·
   14, N2, N3, N37 (8b55bcf) · 25, 34, 28 (6284f14) · N1, N22, N23 (459ad94). N10, N11 waren schon so.
   Offen aus diesem Paket: 11 (Parallele oben/unten mit Gehrung in 3D), N5 (echte Spitze an Wandecken), N6 (Wandstoss endet an der zugewandten Fläche).
+- **13.11.2026 Nachtrag Geometrie:** 11 (Parallele oben/unten mit Gehrung in 3D), N5 (spitze Wandecken als Spitze), N6 (T-Stoss endet an der
+  zugewandten Fläche, Achse auf Achse gezeichnet → gekürzt) umgesetzt.

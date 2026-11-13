@@ -68,12 +68,29 @@ public class ArchitekturGrafikTests
         // Innenwand von der Südwand zur Nordwand bei x = 3000: Enden in den Achsen der Aussenwände
         Ok(p.Ausfuehren("wand_zeichnen", new JsonObject { ["geschoss"] = "EG", ["punkte"] = Pts([3000, 0], [3000, 4000]), ["dicke"] = 100 }));
         var w5 = Wandgeometrie.MitVerlaengerung(p.Modell, p.Katalog, Hole(p, "W-5"))!;
-        Assert.Equal(100, w5.VerlAnfang);                        // halbe Dicke der Südwand
-        Assert.Equal(100, w5.VerlEnde);
+        // T-Stoss (Entscheid Christian 13.11.2026, N6): die Innenwand endet an der zugewandten Fläche der Aussenwand – Achse auf der Achse
+        // gezeichnet, also um die halbe Dicke der Südwand gekürzt (vorher bis zur Achse verlängert); der Umriss bleibt gleich
+        Assert.Equal(-100, w5.VerlAnfang);
+        Assert.Equal(-100, w5.VerlEnde);
         var poly = Assert.Single(Umriss(Grafik.Plan(p, "AN-EG")));
         Assert.Equal(2, poly.Loecher!.Count);                    // zwei Räume
         Assert.All(poly.Loecher!, l => Assert.Equal(4, l.Count));
         Assert.Contains(poly.Loecher!, l => Box(l).Zip(new[] { 100.0, 100, 2950, 3900 }).All(z => Math.Abs(z.First - z.Second) < 1e-3));
+    }
+
+    [Fact]
+    public void SpitzeEcke_WirdAlsSpitzeGeschlossen()
+    {
+        // Entscheid Christian 13.11.2026 (N5): zwei 200-mm-Wände unter 60° – das Ende von W-1 liegt auf der Gehrung von der Innenecke
+        // (2826.8, 100) zur Aussenecke (3173.2, −100); Handrechnung: 100 / tan 30° = 173.2 mm (vorher stumpf mit Fase)
+        var p = Neu();
+        Ok(p.Ausfuehren("wand_zeichnen", new JsonObject { ["geschoss"] = "EG", ["punkte"] = Pts([0, 0], [3000, 0], [1500, 2598.0762]), ["dicke"] = 200 }));
+        var w1 = Wandgeometrie.MitVerlaengerung(p.Modell, p.Katalog, Hole(p, "W-1"))!;
+        var g = Assert.NotNull(w1.GehrungEnde);
+        double t = 100 / Math.Tan(Math.PI / 6);
+        Assert.Equal(3000 - t, g.Links, 2);
+        Assert.Equal(3000 + t, g.Rechts, 2);
+        Assert.Contains(w1.Band(), q => Math.Abs(q.x - 3173.205) < 0.01 && Math.Abs(q.y + 100) < 0.01);
     }
 
     [Fact]

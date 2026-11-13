@@ -50,6 +50,23 @@ public class ParalleleLeitungenTests
     }
 
     [Fact]
+    public void Oben_ZugMitSteigstueck_GehrungIn3D_UeberallGleicherAbstand()
+    {
+        // Entscheid Christian 13.11.2026 (Frage 11): das Steigstück der Parallele liegt 300 mm daneben (Aussenseite der Knicke), nicht deckungsgleich
+        // Knoten (0, 0, 300) – (1700, 0, 300) – (1700, 0, 3300) – (4000, 0, 3300)
+        var p = MitSerie();
+        Ok(Zeichnen(p, "DN 20", [[0, 0, 0], [2000, 0, 0], [2000, 0, 3000], [4000, 0, 3000]]));
+        var e = Ok(p.Ausfuehren("parallele_leitungen", new JsonObject { ["leitung"] = "RO-1", ["abstand"] = 300, ["lage"] = "oben" }));
+        var neu = Angelegt(e, "Rohr").Select(kz => Pkt(p, kz)).ToList();
+        Assert.Equal(3, neu.Count);
+        var steig = Assert.Single(neu, q => Math.Abs(q[0][0] - q[1][0]) < 1e-6 && Math.Abs(q[0][1] - q[1][1]) < 1e-6);
+        Assert.Equal(1700, steig[0][0], 3);
+        Assert.Contains(neu, q => Math.Abs(q[0][2] - 300) < 1e-6 && Math.Abs(q[1][2] - 300) < 1e-6);     // unteres Stück 300 höher
+        Assert.Contains(neu, q => Math.Abs(q[0][2] - 3300) < 1e-6 && Math.Abs(q[1][2] - 3300) < 1e-6);   // oberes Stück 300 höher
+        Sauber(p);
+    }
+
+    [Fact]
     public void ZugMitReduktion_Abgelehnt()
     {
         var p = MitSerie();

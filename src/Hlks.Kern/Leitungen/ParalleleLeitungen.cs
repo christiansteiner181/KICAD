@@ -2,7 +2,10 @@
 // Leitungszug (bzw. nur der Geraden) entstehen die Knoten (Anfang, Achsschnittpunkte der Bögen, Ende); jede Parallele bekommt die versetzten
 // Knoten und wird mit leitung_zeichnen gezeichnet (Serie, Grösse, Bögen der Serie; Enden frei).
 // Waagrecht: Knoten im Grundriss um k · abstand zur Seite versetzt, an Knicken auf der Winkelhalbierenden (Gehrung), Höhe bleibt.
-// Oben/unten: Knoten um k · abstand höher bzw. tiefer.
+// Oben/unten (Entscheid Christian 13.11.2026, Frage 11: Gehrung in 3D, überall derselbe Abstand): je Stück wird lotrecht zur Achse in der senkrechten
+//   Ebene des Stücks versetzt (waagrechtes Stück: nach oben; geneigtes: schräg nach oben; Steigstück: waagrecht in der Ebene des vorangehenden bzw.
+//   folgenden Stücks, zur Aussenseite des Knicks), Knoten auf der Winkelhalbierenden mit (n_a + n_b) · d / (1 + n_a·n_b). Vorher wurden alle
+//   Knoten nur in z versetzt – ein Steigstück lag dann deckungsgleich auf dem Original.
 // ANNAHMEN (Prüfliste): Züge mit Reduktion lehnt B2 ab (eine Grösse je Parallele); waagrecht nur Züge ohne senkrechte Stücke; Bögen gleicher
 //   Art (nicht konzentrisch); System ohne Angabe bei einer Parallele das Gegenstück des Systempaars (bezuege.gegenstueck), sonst das der Leitung.
 
@@ -53,7 +56,7 @@ public sealed class ParalleleLeitungen : IBefehl
         var neu = new List<string>();
         for (int i = 1; i <= anzahl; i++)
         {
-            var pkt = lage == "waagrecht" ? Waagrecht(l, knoten, i * abstand, seite!.Value) : knoten.Select(q => q + new V3(0, 0, (lage == "oben" ? 1 : -1) * i * abstand)).ToList();
+            var pkt = lage == "waagrecht" ? Waagrecht(l, knoten, i * abstand, seite!.Value) : ObenUnten(l, knoten, (lage == "oben" ? 1 : -1) * i * abstand);
             var par = new JsonObject
             {
                 ["serie"] = s.Familie.Id, ["groesse"] = sg.Frei ? FreieGroesse(sg.Groesse) : sg.Typ,
@@ -146,6 +149,41 @@ public sealed class ParalleleLeitungen : IBefehl
             aus.Add(pkt[j] + (a + b) * (s0 * d / c));
         }
         aus.Add(pkt[^1] + n[^1] * (s0 * d));
+        return aus;
+    }
+
+    /// <summary>Knoten um d (positiv = oben) lotrecht zu jedem Stück in seiner senkrechten Ebene versetzt, an Knicken auf der Winkelhalbierenden
+    /// (Gehrung in 3D, siehe Dateikopf).</summary>
+    static List<V3> ObenUnten(Element l, List<V3> pkt, double d)
+    {
+        int n = pkt.Count - 1;
+        var richt = new V3[n]; var waag = new V3?[n];
+        for (int i = 0; i < n; i++)
+        {
+            richt[i] = (pkt[i + 1] - pkt[i]).Einheit();
+            var h = new V3(richt[i].X, richt[i].Y, 0);
+            waag[i] = h.Laenge > 1e-6 ? h.Einheit() : null;
+        }
+        if (waag.All(x => x is null))
+            throw new HlksFehler($"Der Zug von {l.Kennzeichen} ist nur senkrecht – oben bzw. unten gibt es dort nicht.", "Steigleitungen nebeneinander mit steigleitung_platzieren (Reihe) zeichnen.");
+        var normale = new V3[n];
+        for (int i = 0; i < n; i++)
+        {
+            // Bezugsrichtung im Grundriss: das Stück selbst, bei einem Steigstück das vorangehende bzw. folgende nicht senkrechte Stück
+            V3 h = waag[i] ?? Enumerable.Range(1, n).SelectMany(j => new[] { i - j, i + j }).Where(j => j >= 0 && j < n && waag[j] is not null)
+                .Select(j => waag[j]!.Value).First();
+            double ds = richt[i].X * h.X + richt[i].Y * h.Y, dz = richt[i].Z;
+            normale[i] = (h * (-dz) + new V3(0, 0, ds)).Einheit();   // links der Richtung in der Ebene (h, z): waagrecht → oben
+        }
+        var aus = new List<V3> { pkt[0] + normale[0] * d };
+        for (int j = 1; j < n; j++)
+        {
+            var a = normale[j - 1]; var b = normale[j];
+            double c = 1 + a.Mal(b);
+            if (c < 1e-6) throw new HlksFehler($"Der Zug von {l.Kennzeichen} kehrt um – dort gibt es keine Parallele.", "zug = false wählen.");
+            aus.Add(pkt[j] + (a + b) * (d / c));
+        }
+        aus.Add(pkt[^1] + normale[^1] * d);
         return aus;
     }
 

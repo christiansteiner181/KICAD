@@ -5,6 +5,10 @@
 // Wand höchstens deren halbe Dicke + 1 mm), wird um die halbe Dicke der anderen Wand verlängert; die Vereinigung der
 // Wandflächen bereinigt dann die Ecke (Spezifikation Modul 1a, Auftrag B1). Schräge Ecken: Verlängerung nach dem Winkel
 // (Eckverlaengerung), damit das Wandende nicht über die Fläche der anderen Wand vorsteht.
+// Entscheide Christian 13.11.2026: N5 – spitze Ecken (zwei Wandenden unter 90°) werden als echte Spitze geschlossen: das Wandende liegt auf der
+// Gehrung von der Aussen- zur Innenecke der Wandflächen (GehrungAnfang/GehrungEnde, Band() als Viereck), vorher stumpf mit Fase.
+// N6 – stösst ein Wandende rechtwinklig an die Fläche einer durchlaufenden Wand (T-Stoss, kein Eckpunkt der anderen Wand), endet die Wand an
+// der zugewandten Fläche der anderen (vorher bis zu deren Achse verlängert, Spezifikation Modul 1a); liegt das Ende auf der Achse, wird gekürzt.
 
 using Clipper2Lib;
 
@@ -32,9 +36,12 @@ public sealed class Wandlage
     /// <summary>OK Boden über der Wandunterkante: Bezug von Brüstung und Türunterkante. IFC-Wände beginnen oft unter dem
     /// Boden (Rohdecke, UK Decke darunter); Befund B1 vom 17.10.2026 – vorher galt die Brüstung ab Wandunterkante.</summary>
     public double Boden => (Geschosskote ?? Unterkante) - Unterkante;
-    /// <summary>Verlängerung über den Anfang bzw. das Ende hinaus (halbe Dicke der berührten Wand), mm.</summary>
+    /// <summary>Verlängerung über den Anfang bzw. das Ende hinaus (halbe Dicke der berührten Wand), mm; negativ = gekürzt (T-Stoss, N6).</summary>
     public double VerlAnfang { get; set; }
     public double VerlEnde { get; set; }
+    /// <summary>Spitze Ecke (N5): Lage s des Wandendes auf der linken (q = +Dicke/2) bzw. rechten Fläche; null = rechtwinkliges Ende.</summary>
+    public (double Links, double Rechts)? GehrungAnfang { get; set; }
+    public (double Links, double Rechts)? GehrungEnde { get; set; }
 
     /// <summary>Normale nach links (in Wandrichtung).</summary>
     public double Nx => -Uy;
@@ -43,8 +50,8 @@ public sealed class Wandlage
     public double Von => -VerlAnfang;
     public double Bis => Laenge + VerlEnde;
     /// <summary>Freie Länge für Öffnungen: ohne die Bereiche, die in einer anschliessenden Wand liegen.</summary>
-    public double FreiVon => VerlAnfang;
-    public double FreiBis => Laenge - VerlEnde;
+    public double FreiVon => Math.Max(Math.Abs(VerlAnfang), GehrungAnfang is { } g ? Math.Max(g.Links, g.Rechts) : 0);
+    public double FreiBis => Math.Min(Laenge - Math.Abs(VerlEnde), GehrungEnde is { } g ? Math.Min(g.Links, g.Rechts) : double.MaxValue);
     /// <summary>Richtung der Achse in Grad, Gegenuhrzeigersinn ab +x.</summary>
     public double Winkel => Math.Atan2(Uy, Ux) * 180 / Math.PI;
     public string Id => Wand.Id;
@@ -66,7 +73,14 @@ public sealed class Wandlage
     }
 
     /// <summary>Wandfläche samt Verlängerungen (ohne Öffnungen).</summary>
-    public PathD Band() => Rechteck(Von, Bis, Dicke / 2);
+    public PathD Band()
+    {
+        if (GehrungAnfang is null && GehrungEnde is null) return Rechteck(Von, Bis, Dicke / 2);
+        double q = Dicke / 2;
+        var (a0, a1) = GehrungAnfang ?? (Von, Von); var (e0, e1) = GehrungEnde ?? (Bis, Bis);
+        var pkt = new[] { Punkt(a1, -q), Punkt(e1, -q), Punkt(e0, q), Punkt(a0, q) };
+        return Polygone.Ccw(new PathD(pkt.Select(p => new PointD(p[0], p[1]))));
+    }
 }
 
 /// <summary>Tür oder Fenster in einer Wand: Lage entlang der Achse, Breite, Höhenbereich relativ zur Wandunterkante.</summary>
@@ -176,8 +190,15 @@ public static class Wandgeometrie
         foreach (var w in waende)
         {
             // aus dem IFC festgehaltene Enden (verlAnfang/verlEnde, 02.11.2026: deckungsgleich mit dem IFC) gelten vor der Regel
-            w.VerlAnfang = w.Wand.Zahl("verlAnfang") ?? Verlaengerung(w, w.Ax, w.Ay, -1, zellen is null ? waende : zellen.GetValueOrDefault((Zelle(w.Ax), Zelle(w.Ay))) ?? []);
-            w.VerlEnde = w.Wand.Zahl("verlEnde") ?? Verlaengerung(w, w.Bx, w.By, 1, zellen is null ? waende : zellen.GetValueOrDefault((Zelle(w.Bx), Zelle(w.By))) ?? []);
+            var na = zellen is null ? waende : zellen.GetValueOrDefault((Zelle(w.Ax), Zelle(w.Ay))) ?? [];
+            var nb = zellen is null ? waende : zellen.GetValueOrDefault((Zelle(w.Bx), Zelle(w.By))) ?? [];
+            w.GehrungAnfang = w.GehrungEnde = null;
+            if (w.Wand.Zahl("verlAnfang") is double va) w.VerlAnfang = va;
+            else if (Spitze(w, w.Ax, w.Ay, -1, na) is { } ga) { w.GehrungAnfang = ga; w.VerlAnfang = -Math.Min(ga.Links, ga.Rechts); }
+            else w.VerlAnfang = Verlaengerung(w, w.Ax, w.Ay, -1, na);
+            if (w.Wand.Zahl("verlEnde") is double ve) w.VerlEnde = ve;
+            else if (Spitze(w, w.Bx, w.By, 1, nb) is { } ge) { w.GehrungEnde = ge; w.VerlEnde = Math.Max(ge.Links, ge.Rechts) - w.Laenge; }
+            else w.VerlEnde = Verlaengerung(w, w.Bx, w.By, 1, nb);
         }
     }
 
@@ -202,9 +223,45 @@ public static class Wandgeometrie
     }
 
     /// <summary>richtung: +1 am Wandende, −1 am Wandanfang (Richtung, in die das Ende verlängert wird).</summary>
+    /// <summary>Spitze Ecke (N5): das Wandende trifft ein Ende einer anderen Wand unter weniger als 90° (Innenwinkel). Ergebnis: s der Gehrung auf
+    /// der linken und rechten Fläche – von der Aussenecke (Schnitt der äusseren Flächen) zur Innenecke (Schnitt der inneren); null sonst.</summary>
+    static (double Links, double Rechts)? Spitze(Wandlage w, double px, double py, double richtung, List<Wandlage> waende)
+    {
+        if (w.Dicke <= 0) return null;
+        foreach (var o in waende)
+        {
+            if (o.Id == w.Id || o.Dicke <= 0) continue;
+            double sin = w.Ux * o.Uy - w.Uy * o.Ux;
+            if (Math.Abs(sin) < Parallel) continue;
+            // wie Verlaengerung: das Ende berührt die andere Wand (bis Dicke/2 + 1 mm von deren Achse) – damit gilt dasselbe Raster
+            if (Polygone.AbstandZurStrecke(px, py, o.Ax, o.Ay, o.Bx, o.By) > o.Dicke / 2 + 1) continue;
+            double grenze = (o.Dicke + w.Dicke) / 2 + 1;
+            double dA = Math.Sqrt(Math.Pow(px - o.Ax, 2) + Math.Pow(py - o.Ay, 2)), dB = Math.Sqrt(Math.Pow(px - o.Bx, 2) + Math.Pow(py - o.By, 2));
+            if (Math.Min(dA, dB) > grenze) continue;
+            // Richtungen von der Ecke weg: w zurück zu seinem anderen Ende, o zu seinem anderen Ende
+            double awx = -richtung * w.Ux, awy = -richtung * w.Uy;
+            double aox = dA <= dB ? o.Ux : -o.Ux, aoy = dA <= dB ? o.Uy : -o.Uy;
+            if (awx * aox + awy * aoy <= 1e-6) continue;   // 90° und mehr: wie bisher (Verlängerung, stumpfe Ecken auf Gehrung)
+            // s auf der Fläche q = qw von w, wo sie die Fläche q = qo von o schneidet
+            double S(double qw, double qo)
+            {
+                double x0 = w.Ax + w.Nx * qw, y0 = w.Ay + w.Ny * qw;
+                return ((o.Ax + o.Nx * qo - x0) * o.Uy - (o.Ay + o.Ny * qo - y0) * o.Ux) / (w.Ux * o.Uy - w.Uy * o.Ux);
+            }
+            double hw = w.Dicke / 2, ho = o.Dicke / 2;
+            var kand = new[] { (q: hw, s: S(hw, ho)), (q: hw, s: S(hw, -ho)), (q: -hw, s: S(-hw, ho)), (q: -hw, s: S(-hw, -ho)) };
+            var aussen = richtung > 0 ? kand.MaxBy(x => x.s) : kand.MinBy(x => x.s);
+            var innen = richtung > 0 ? kand.MinBy(x => x.s) : kand.MaxBy(x => x.s);
+            if (aussen.q == innen.q || !double.IsFinite(aussen.s) || !double.IsFinite(innen.s)) continue;
+            return aussen.q > 0 ? (aussen.s, innen.s) : (innen.s, aussen.s);
+        }
+        return null;
+    }
+
     static double Verlaengerung(Wandlage w, double px, double py, double richtung, List<Wandlage> waende)
     {
         double e = 0;
+        double? tStoss = null;
         foreach (var o in waende)
         {
             if (o.Id == w.Id || o.Dicke <= 0) continue;
@@ -215,9 +272,14 @@ public static class Wandgeometrie
             // Weg quer zur anderen Wand, der dem Wandende bis zu deren Achse noch fehlt (negativ: das Ende liegt schon dahinter)
             double quer = (px - o.Ax) * o.Nx + (py - o.Ay) * o.Ny;
             double fehlt = richtung * (w.Ux * o.Nx + w.Uy * o.Ny) >= 0 ? -quer : quer;
-            e = Math.Max(e, Eckverlaengerung(w.Dicke, o.Dicke, sin, Math.Abs(w.Ux * o.Ux + w.Uy * o.Uy), fehlt));
+            double cos = Math.Abs(w.Ux * o.Ux + w.Uy * o.Uy);
+            // T-Stoss rechtwinklig an eine durchlaufende Wand (kein Ende von o in der Nähe, N6): Ende an der zugewandten Fläche von o
+            double grenze = (o.Dicke + w.Dicke) / 2 + 1;
+            bool anEnde = Math.Sqrt(Math.Pow(px - o.Ax, 2) + Math.Pow(py - o.Ay, 2)) <= grenze || Math.Sqrt(Math.Pow(px - o.Bx, 2) + Math.Pow(py - o.By, 2)) <= grenze;
+            if (cos < 1e-9 && !anEnde) { tStoss = Math.Min(tStoss ?? double.MaxValue, fehlt - o.Dicke / 2); continue; }
+            e = Math.Max(e, Eckverlaengerung(w.Dicke, o.Dicke, sin, cos, fehlt));
         }
-        return e;
+        return e > 0 || tStoss is null ? e : tStoss.Value;
     }
 
     /// <summary>Verlängerung eines Wandendes an einer anderen Wand: so weit, dass die vordere Ecke des Wandendes genau auf der
