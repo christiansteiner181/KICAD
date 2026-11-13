@@ -18,6 +18,7 @@ public static class Nachfuehrungen
     public static readonly IReadOnlyList<INachfuehrung> Liste = [new WaermebrueckenNachfuehren(), new OeffnungenNachfuehren(), new HuelleNachfuehren(), new DeckenNachfuehren(),
         new FormteilGroessenNachfuehren(),   // Modul 3 (Nachtrag 21.10.2026): Formteile freier Serien tragen ihre Grösse selbst (vor der Familie)
         new FamilienNachfuehren(),   // Modul 2 (B1): Anschlüsse und Kennwerte aus der Familie
+        new VorwandNachfuehren(),      // Entscheide 31, N17 (13.11.2026): Montageelemente folgen ihrer Vorwand bzw. werden mitgelöscht
         new LeitungenNachfuehren(),    // Modul 3 (B2): Leitungsenden folgen verschobenen Anschlüssen
         new SanitaerNachfuehren(),     // Modul 4 Teil A: Eingaben der Sanitär-Zusammenstellung prüfen (abflusskennzahl, spezialinstallationen)
         new HeizungNachfuehren(),      // Modul 5 Teil A-D: Mischventil-Anschlüsse nach art, Systempaar beidseitig, Heizgruppen-Angaben prüfen

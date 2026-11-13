@@ -574,7 +574,10 @@ public sealed class ElementLoeschen : IBefehl
         bool Mitgeloescht(Element x) => ((k.Katalog.IstArt(x, "Tuer") || k.Katalog.IstArt(x, "Fenster"))
             && x.Bezuege.GetValueOrDefault("wand") == e.Id && x.Bezuege.Count(b => b.Value == e.Id) == 1
             && x.TeilVon != e.Id && x.Geschoss != e.Id && x.Raum != e.Id && x.System != e.Id)
-            || WaermebrueckenNachfuehren.Mitgeloescht(k.Katalog, x, e.Id);
+            || WaermebrueckenNachfuehren.Mitgeloescht(k.Katalog, x, e.Id)
+            // Montageelemente einer Vorwand löscht VorwandNachfuehren mit (Entscheid N17)
+            || (k.Katalog.IstArt(e, "Vorwand") && x.TeilVon == e.Id && k.Katalog.IstArt(x, "Montageelement") && !x.Bezuege.ContainsValue(e.Id)
+                && x.Geschoss != e.Id && x.Raum != e.Id && x.System != e.Id);
         // Ansicht löschen (Entscheid Christian 13.11.2026, Frage 48): Beschriftungen, die nur an dieser Ansicht hängen (bezuege.ansicht), werden im
         // selben Paket mitgelöscht, mit Hinweis – vorher wurde abgelehnt, bis jede Masskette einzeln gelöscht war
         if (k.Katalog.IstArt(e, "Ansicht"))

@@ -210,9 +210,12 @@ public static class VorwandGestell
         ok = ok.Where(z => z <= obenOk - ph - 1).ToList();
         ok.Add(obenOk);
         var lagen = new List<double>();
+        double ersteA = segmente.Min(x => x.Item1), letzteB = segmente.Max(x => x.Item2);
         foreach (var (a, b) in segmente)
         {
-            double s0 = a + Rand, s1 = b - Rand, zuschnitt = Math.Round(s1 - s0);
+            // am Stoss zweier vorgefertigter Segmente stehen die Profile Rücken an Rücken (Entscheid Christian 13.11.2026, N14) – der Abzug gilt nur an
+            // den Enden der Vorwand (vorher je Segment 15 mm, am Stoss also 30 mm Fuge)
+            double s0 = a + (a <= ersteA + 1e-6 ? Rand : 0), s1 = b - (b >= letzteB - 1e-6 ? Rand : 0), zuschnitt = Math.Round(s1 - s0);
             var elHier = v.Elemente.Where(e => e.S1 > a && e.S0 < b).ToList();
             foreach (var z in ok)
             {
@@ -261,7 +264,7 @@ public static class VorwandGestell
 
         // Montagewinkel am Boden (und raumhoch an der Decke): erster 10 cm von der angrenzenden Wand, dann höchstens Abstand
         double abst = v.Vorwand.Text("bauwerk") == "trockenbau" ? sys.MontagewinkelAbstandTrockenbau : sys.MontagewinkelAbstandMassiv;
-        foreach (var s in AusserhalbElemente(Teilung(Math.Min(sys.AbstandAngrenzendeWand, v.Laenge / 2), Math.Max(v.Laenge / 2, v.Laenge - sys.AbstandAngrenzendeWand), abst), v.Elemente, sys.MontagewinkelBreite / 2 + 1))
+        foreach (var s in Winkellagen(Math.Min(sys.AbstandAngrenzendeWand, v.Laenge / 2), Math.Max(v.Laenge / 2, v.Laenge - sys.AbstandAngrenzendeWand), abst, v.Elemente, sys.MontagewinkelBreite / 2 + 1))
         {
             // Montagewinkel 13 × 13 cm (461.185.00.1, Entscheid Christian 04.11.2026): Schenkel am Profil, gezeichnet als stehender Schenkel
             double mw = sys.MontagewinkelBreite / 2, ms = sys.MontagewinkelSchenkel;
@@ -453,6 +456,28 @@ public static class VorwandGestell
             i += n - 1;
         }
         return aus;
+    }
+
+    /// <summary>Lagen der Montagewinkel zwischen min und max: höchstens abst auseinander, nie unter einem Montageelement; beidseits jedes Elements
+    /// je ein Winkel (Entscheid Christian 13.11.2026, N13 – vorher wurde der Winkel unter einem Element nur an dessen Kante geschoben und die Lücke
+    /// nicht nachgeteilt: 1133 statt höchstens 1000 mm). Zu grosse Lücken werden gleichmässig nachgeteilt.</summary>
+    static List<double> Winkellagen(double min, double max, double abst, List<VorwandElementLage> el, double w)
+    {
+        var l = AusserhalbElemente(Teilung(min, max, abst), el, w);
+        foreach (var e in el)
+            foreach (var s in new[] { e.S0 - w, e.S1 + w })
+                if (s >= min - 1e-6 && s <= max + 1e-6 && l.All(x => Math.Abs(x - s) > 2 * w)) l.Add(s);
+        l.Sort();
+        for (int i = 0; i + 1 < l.Count; i++)
+        {
+            double luecke = l[i + 1] - l[i];
+            if (luecke <= abst + 1e-6) continue;
+            int n = (int)Math.Ceiling(luecke / abst);
+            var neu = AusserhalbElemente(Enumerable.Range(1, n - 1).Select(j => l[i] + luecke * j / n).ToList(), el, w).Where(x => x > l[i] + 2 * w && x < l[i + 1] - 2 * w).ToList();
+            if (neu.Count == 0) continue;
+            l.InsertRange(i + 1, neu);
+        }
+        return l;
     }
 
     /// <summary>Mittelpunkte, die unter einem Montageelement lägen (halbe Breite w), an die nächste Elementkante schieben; Doppelte fallen weg.</summary>

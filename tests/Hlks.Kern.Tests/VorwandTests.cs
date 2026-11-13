@@ -43,6 +43,34 @@ public class VorwandTests
         Assert.Contains(e.Hinweise, h => h.Contains("1 Montageelement(e) auf duofix umgestellt"));
     }
 
+/// <summary>Entscheide Christian 13.11.2026: 31 – Montageelemente gehen beim Verschieben der Vorwand mit; N17 – Löschen der Vorwand löscht sie mit.</summary>
+    [Fact]
+    public void VorwandVerschieben_ElementGehtMit_LoeschenNimmtEsMit()
+    {
+        var p = Rechteck();
+        Ok(p.Ausfuehren("element_anlegen", new JsonObject
+        {
+            ["klasse"] = "WC", ["kennzeichen"] = "WC-1", ["geschoss"] = "EG",
+            ["geometrie"] = new JsonObject { ["art"] = "punkt", ["punkte"] = new JsonArray(new JsonArray(1100, 600, 0)) },
+        }));
+        Ok(p.Ausfuehren("vorwand_zeichnen", new JsonObject
+        {
+            ["geschoss"] = "EG", ["punkte"] = Pts([100, 300], [2100, 300]), ["aussenkante"] = "rechts", ["system"] = "gis", ["tiefe"] = 200, ["hoehe"] = 1140, ["bestuecken"] = true,
+        }));
+        double x0 = Hole(p, "ME-1").Geometrie!.Punkte[0][0];
+        // entlang der Vorwand um 500 und quer um 200 verschoben: das Element geht mit (gleiche Lage s an der Vorwand)
+        var e = Ok(p.Ausfuehren("elemente_verschieben", new JsonObject { ["elemente"] = new JsonArray("VW-1"), ["dx"] = 500, ["dy"] = 200 }));
+        Assert.Equal(x0 + 500, Hole(p, "ME-1").Geometrie!.Punkte[0][0], 3);
+        Assert.Equal(500, Hole(p, "ME-1").Geometrie!.Punkte[0][1], 3);
+        Assert.Contains(e.Hinweise, h => h.Contains("1 Montageelement(e) folgen VW-1"));
+        // gemeinsam gewählt: nicht doppelt
+        Ok(p.Ausfuehren("elemente_verschieben", new JsonObject { ["elemente"] = new JsonArray("VW-1", "ME-1"), ["dx"] = 100 }));
+        Assert.Equal(x0 + 600, Hole(p, "ME-1").Geometrie!.Punkte[0][0], 3);
+        var l = Ok(p.Ausfuehren("element_loeschen", new JsonObject { ["element"] = "VW-1" }));
+        Assert.Null(p.Modell.Finde("ME-1"));
+        Assert.Contains(l.Hinweise, h => h.Contains("1 Montageelement(e) mit VW-1 mitgelöscht"));
+    }
+
     /// <summary>Christian 06.11.2026 mit der Masskizze MA 970.704 S. 2: «das WC muss so ausgerichtet sein, dass der Anschluss +23 … ab Fertig Boden liegt»;
     /// GIS-Rahmen 100 cm hoch, Oberkante 104.5 cm über OKFF, ohne Füsse. Bodenaufbau 100 mm, OKFF = Geschosskote 0.</summary>
     [Theory]
@@ -107,8 +135,9 @@ public class VorwandTests
         // Vertikalprofile an den Enden und beidseits des Elements (Abstand ≤ 250 cm)
         var vert = auf.Teile.Where(t => t.Titel == "GIS Profil vertikal").Select(t => t.S0).Order().ToList();
         Assert.Equal([15, 756, 1212, 1953], vert);   // Profil 32 mm (Datenblatt 461.000.25.1), WC 424 mm breit (Datenblatt 461.313.00.6)
-        // Montagewinkel am Boden: erster 10 cm von der Wand, höchstens 100 cm auseinander
-        Assert.Equal([100, 1233, 1900], auf.Teile.Where(t => t.Titel == "GIS Montagewinkel (Boden)").Select(t => (t.S0 + t.S1) / 2).Order().ToList());
+        // Montagewinkel am Boden: erster 10 cm von der Wand, höchstens 100 cm auseinander, beidseits des WC (788–1212) je einer (Entscheid N13;
+        // vorher 100, 1233, 1900 – Abstand 1133 > 1000)
+        Assert.Equal([100, 767, 1233, 1900], auf.Teile.Where(t => t.Titel == "GIS Montagewinkel (Boden)").Select(t => (t.S0 + t.S1) / 2).Order().ToList());
         Assert.All(auf.Teile.Where(t => t.Titel == "GIS Montagewinkel (Boden)"), t => Assert.Equal("461.185.00.1", t.Artikel));   // Entscheid Christian 04.11.2026
         Assert.Equal(8, Anzahl(sl, "GIS Wandanbindung (Verbindungsstück)"));
         Assert.Contains(sl["zeilen"]!.AsArray().OfType<JsonObject>(), z => (string?)z["artikel"] == "461.313.00.6" && (int)z["anzahl"]! == 1);
@@ -166,6 +195,11 @@ public class VorwandTests
         Assert.Contains(auf.Segmente, x => x.S0 <= wc.S0 && wc.S1 <= x.S1);   // Stoss nie durch das Element
         Assert.Contains("Tür", auf.Einbringgrenze);
         Assert.NotEmpty(auf.Teile.Where(t => t.Titel == "GIS Verbindungslasche (Stoss)"));
+        // am Stoss stehen die Vertikalprofile Rücken an Rücken (Entscheid Christian 13.11.2026, N14; vorher 30 mm Fuge)
+        var stoss = auf.Segmente[0].S1;
+        var vertikal = auf.Teile.Where(t => t.Titel == "GIS Profil vertikal").ToList();
+        Assert.Contains(vertikal, t => Math.Abs(t.S1 - stoss) < 1e-6);
+        Assert.Contains(vertikal, t => Math.Abs(t.S0 - stoss) < 1e-6);
         Assert.Equal(3 * 7 + 1, auf.Teile.Count(t => t.Titel == "GIS Profil horizontal"));   // je Segment 5, 65, 130, 135, 200, 265 cm und Decke; 65 cm am WC unterbrochen (+1 Stück)
         Assert.Empty(auf.Befunde);
         // Duofix bleibt vor Ort gebaut: nicht geteilt
