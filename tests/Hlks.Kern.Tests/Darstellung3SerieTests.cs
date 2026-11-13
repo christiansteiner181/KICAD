@@ -408,6 +408,25 @@ public class Darstellung3SerieTests
     }
 
     [Fact]
+    public void Kreuzung_SteigleitungVerdecktMitIhremOberenEnde()
+    {
+        // Entscheid Christian 13.11.2026 (Fragen 5 und 13): Steigleitungen verdecken ebenfalls, massgebend ist ihr oberes Ende. Steigleitung
+        // 20 mm neben RO-1 (z 500), Dämmung 20 mm: Ring r 32.5 mm überlappt das Band von RO-1 (12.5 mm)
+        var p = MitSerie(false);
+        Ok(Rohr(p, "RO-1", "DN 20", [0, 0, 500], [3000, 0, 500]));
+        Ok(Rohr(p, "RO-2", "DN 20", [1500, 20, 0], [1500, 20, 3000]));   // reicht bis 3000 über RO-1 hinaus
+        Aendern(p, "RO-2", new JsonObject { ["daemmdicke"] = 20 });
+        static bool Bei(Primitiv x) => x.Punkte.Any(q => Math.Abs(q[0] - 1500) < 40);
+        Assert.Contains(Teil(p, "RO-1").Primitive, x => x.Art == "polylinie" && x.Stil.Linie == "strich" && Bei(x));
+        // endet unter RO-1 (oberes Ende 400 < 500): verdeckt nicht
+        var q = MitSerie(false);
+        Ok(Rohr(q, "RO-1", "DN 20", [0, 0, 500], [3000, 0, 500]));
+        Ok(Rohr(q, "RO-2", "DN 20", [1500, 20, 0], [1500, 20, 400]));
+        Aendern(q, "RO-2", new JsonObject { ["daemmdicke"] = 20 });
+        Assert.DoesNotContain(Teil(q, "RO-1").Primitive, x => x.Art == "polylinie" && x.Stil.Linie == "strich" && Bei(x));
+    }
+
+    [Fact]
     public void Kreuzung_KanalMitKontur_UmrissBleibtAusserhalbDerDeckflaeche()
     {
         // Gesamtprüfung 13.11.2026 (Restliste): Kanal 400 × 200 (Kontur 0.5 mm) von x = 0 bis 2000 bei y = 1000, ein höheres Rohr kreuzt bei

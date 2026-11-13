@@ -5,7 +5,9 @@
 //   grob: die tiefere Linie ist an der Deckfläche unterbrochen.
 // Höher = an der Kreuzung höher (Kreuzungshoehe, Gesamtprüfung 13.11.2026): je waagrechtes Teilstück wird die Achshöhe dort verglichen, wo die
 // Bänder im Grundriss überlappen (+1 mm); gleich hohe bzw. sich dort schneidende Höhen verdecken einander nicht. Eine Abwasserleitung mit Gefälle
-// verdeckt also am hohen Ende und ist am tiefen Ende verdeckt. Senkrechte Stücke (Steigleitungen) und Formteile verdecken hier nicht.
+// verdeckt also am hohen Ende und ist am tiefen Ende verdeckt. Steig- bzw. Fallleitungen und Formteile verdecken ebenfalls, mit Dämmung (Entscheid
+// Christian 13.11.2026, Frage 13): eine senkrechte Leitung zählt mit ihrem oberen Ende (Frage 5), ein Formteil mit seiner ganzen Höhenspanne
+// (gleiche Lage wie die angeschlossene Leitung). Deckfläche des Formteils = Band entlang seiner Achsen mit der Breite der angeschlossenen Leitung.
 // ANNAHME Hauptlauf (Gestaltung): Lücke in grob je Seite 0.5 mm Papier, gemessen ab dem Rand des gezeichneten Strichs (Stift der Linie).
 // Polygone mit Kontur (Kanalband, Kanalrahmen, Fliesspfeil): die Füllung wird ausgespart, der Umriss bleibt ausserhalb der Deckfläche mit dem
 // eigenen Stift stehen (Gesamtprüfung 13.11.2026, Restliste) – je Polygon, nicht mehr als Ersatzränder über den ganzen Zug.
@@ -40,27 +42,80 @@ public static class LeitungVerdeckung
         return zuege.Count == 0 ? null : (zuege, stuecke);
     }
 
+    /// <summary>Breite der Deckfläche einer Leitung: Band bzw. Dämmung (die breitere), in grob die Strichbreite plus Lücke.</summary>
+    static double Breite(GrafikKontext c, Element e, LeitungsMass? mass)
+    {
+        // grob: gezeichnet wird die Linie mit dem Stift der Strichbreite (0.25 mm → «mittel» 0.35 mm), die Lücke zählt ab dessen Rand
+        double strich = HlksEinordnung.Strichbreite(c.Detailgrad, HlksEinordnung.Dn(e), c.Massstab);
+        return c.Detailgrad == "grob"
+            ? Stifte.Mm(HlksEinordnung.Stift(strich / c.Massstab)) * c.Massstab + 2 * LueckeGrob * c.Massstab
+            : mass is null ? strich
+            : Math.Max(Math.Max(mass.Breite, 0.18 * c.Massstab), mass.Daemmdicke > 0 ? mass.DaemmBreite : 0);
+    }
+
     static Plan Decken(GrafikKontext ctx) => decken.GetValue(ctx, c =>
     {
         var l = new List<Decke>();
         bool grob = c.Detailgrad == "grob";
-        foreach (var e in c.Modell.Elemente)
+        var m = c.Modell; var kat = c.Katalog;
+        void Neu(string id, PathsD flaeche, double breite, List<Achsstueck> stuecke)
         {
-            if (!c.Katalog.IstArt(e, "Leitung") || !Grafik.Sichtbar(c, e)) continue;
-            var pts = HlksEinordnung.Punkte(e);
-            if (pts.Count < 2 || Waagrecht(pts) is not { } w) continue;
-            var mass = HlksMasse.Von(c.Projekt, e);
-            // grob: gezeichnet wird die Linie mit dem Stift der Strichbreite (0.25 mm → «mittel» 0.35 mm), die Lücke zählt ab dessen Rand
-            double strich = HlksEinordnung.Strichbreite(c.Detailgrad, HlksEinordnung.Dn(e), c.Massstab);
-            double breite = grob
-                ? Stifte.Mm(HlksEinordnung.Stift(strich / c.Massstab)) * c.Massstab + 2 * LueckeGrob * c.Massstab
-                : mass is null ? strich
-                : Math.Max(Math.Max(mass.Breite, 0.18 * c.Massstab), mass.Daemmdicke > 0 ? mass.DaemmBreite : 0);
-            var flaeche = new PathsD();
-            foreach (var zug in w.Zuege)
-                flaeche.AddRange(Clipper.InflatePaths(new PathsD { new PathD(zug.Select(q => new PointD(q[0], q[1]))) }, breite / 2, JoinType.Round, EndType.Butt, 2, 2));
             var u = Clipper.Union(flaeche, FillRule.NonZero);
-            if (u.Count > 0) l.Add(new Decke(e.Id, u, breite, w.Stuecke, Clipper.GetBounds(u)));
+            if (u.Count > 0) l.Add(new Decke(id, u, breite, stuecke, Clipper.GetBounds(u)));
+        }
+        foreach (var e in m.Elemente)
+        {
+            if (!Grafik.Sichtbar(c, e)) continue;
+            if (kat.IstArt(e, "Leitung"))
+            {
+                var pts = HlksEinordnung.Punkte(e);
+                if (pts.Count < 2) continue;
+                var mass = HlksMasse.Von(c.Projekt, e);
+                double breite = Breite(c, e, mass);
+                var flaeche = new PathsD(); var stuecke = new List<Achsstueck>();
+                if (Waagrecht(pts) is { } w)
+                {
+                    foreach (var zug in w.Zuege)
+                        flaeche.AddRange(Clipper.InflatePaths(new PathsD { new PathD(zug.Select(q => new PointD(q[0], q[1]))) }, breite / 2, JoinType.Round, EndType.Butt, 2, 2));
+                    stuecke.AddRange(w.Stuecke);
+                }
+                // senkrechte Stücke (Steig- bzw. Fallleitung): Kreis mit der Breite, Höhe = oberes Ende (Fragen 5 und 13); in grob der Kreis des
+                // Symbols (effektiver Durchmesser) plus Lücke
+                for (int i = 1; i < pts.Count; i++)
+                {
+                    var a = pts[i - 1]; var b = pts[i];
+                    if (Math.Abs(b[0] - a[0]) + Math.Abs(b[1] - a[1]) > 1) continue;
+                    double za = a.Length > 2 ? a[2] : 0, zb = b.Length > 2 ? b[2] : 0;
+                    if (Math.Abs(zb - za) <= 1) continue;
+                    double r = grob ? Math.Max(breite / 2, HlksGrafik.EinlinigRadius(mass, HlksEinordnung.Dn(e), c.Massstab) + LueckeGrob * c.Massstab) : breite / 2;
+                    flaeche.Add(Clipper.Ellipse(new PointD(a[0], a[1]), r, r, 48));
+                    double oben = Math.Max(za, zb);
+                    stuecke.Add(new(a[0], a[1], oben, a[0], a[1], oben));
+                }
+                if (stuecke.Count > 0) Neu(e.Id, flaeche, breite, stuecke);
+            }
+            else if (kat.IstArt(e, "Formteil") && Familien.Einbaulage(e) is { } lage && Familien.Aufloesung(m, kat, e, out _) is { } fa)
+            {
+                // Breite der angeschlossenen Leitung (die breiteste); Höhe = ganze Spanne des Formteils
+                var nachbar = m.VerbindungenVon(e.Id).Select(v => m.Finde(v.Von.Element == e.Id ? v.Nach.Element : v.Von.Element)).OfType<Element>()
+                    .Where(n => kat.IstArt(n, "Leitung")).Select(n => (El: n, B: Breite(c, n, HlksMasse.Von(c.Projekt, n)))).OrderByDescending(x => x.B).FirstOrDefault();
+                if (nachbar.El is null) continue;
+                var flaeche = new PathsD(); var achsen = new List<List<double[]>>();
+                double zMin = double.MaxValue, zMax = double.MinValue;
+                foreach (var achse in fa.Achsen)
+                {
+                    foreach (var p in achse) { double z = lage.Welt(p)[2]; zMin = Math.Min(zMin, z); zMax = Math.Max(zMax, z); }
+                    var xy = achse.Select(p => FamilienGrafik.W2(p, lage)).ToList();
+                    if (xy.Count < 2 || HlksLinien.Laenge(xy) < 1) continue;
+                    achsen.Add(xy);
+                    flaeche.AddRange(Clipper.InflatePaths(new PathsD { new PathD(xy.Select(q => new PointD(q[0], q[1]))) }, nachbar.B / 2, JoinType.Round, EndType.Butt, 2, 2));
+                }
+                var stuecke = new List<Achsstueck>();
+                foreach (var xy in achsen)
+                    for (int i = 1; i < xy.Count; i++)
+                        stuecke.Add(new(xy[i - 1][0], xy[i - 1][1], zMin, xy[i][0], xy[i][1], zMax, Spanne: true));
+                if (stuecke.Count > 0) Neu(e.Id, flaeche, nachbar.B, stuecke);
+            }
         }
         return new Plan(l, l.ToDictionary(d => d.Id, StringComparer.Ordinal));
     });
@@ -76,9 +131,18 @@ public static class LeitungVerdeckung
         var deck = new PathsD();
         var plan = Decken(ctx);
         double eigeneBreite = plan.NachId.TryGetValue(e.Id, out var ich) ? ich.Breite : 0;
+        // direkt oder über ein Formteil angeschlossene Elemente verdecken nicht (Bogen zur eigenen Steigleitung, T-Stück am Abzweig)
+        var m = ctx.Modell;
+        var nah = new HashSet<string>(StringComparer.Ordinal) { e.Id };
+        foreach (var v in m.VerbindungenVon(e.Id))
+        {
+            var n = v.Von.Element == e.Id ? v.Nach.Element : v.Von.Element;
+            if (!nah.Add(n) || m.Finde(n) is not { } ne || !ctx.Katalog.IstArt(ne, "Formteil")) continue;
+            foreach (var v2 in m.VerbindungenVon(n)) nah.Add(v2.Von.Element == n ? v2.Nach.Element : v2.Von.Element);
+        }
         foreach (var d in plan.Alle)
         {
-            if (d.Id == e.Id || !Ueberlappt(d.Box, eigene)) continue;
+            if (nah.Contains(d.Id) || !Ueberlappt(d.Box, eigene)) continue;
             // Höhe je Teilstück an der Kreuzung (Kreuzungshoehe); überlappen sich die Bänder nirgends, gibt es kein Paar
             var paare = Kreuzungshoehe.Paare(w.Stuecke, d.Stuecke, (eigeneBreite + d.Breite) / 2);
             if (!paare.Any(x => x.Lage > 0)) continue;

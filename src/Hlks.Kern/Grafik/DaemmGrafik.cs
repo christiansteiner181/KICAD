@@ -39,8 +39,11 @@ public static class DaemmGrafik
         public void Z(double z) { ZMin = Math.Min(ZMin, z); ZMax = Math.Max(ZMax, z); }
     }
 
-    /// <summary>Liegt q über p (verdeckt q die Ränder von p)? Nur mit einer Steig- bzw. Fallleitung (Ring); waagrechte Teile: Kreuzungshoehe.</summary>
-    static bool Ueber(Teil q, Teil p) => q.Mitte > p.Mitte + Eps;
+    /// <summary>Liegt q über p (verdeckt q die Ränder von p)? Nur mit einer Steig- bzw. Fallleitung (Ring); waagrechte Teile: Kreuzungshoehe.
+    /// Eine Steig- bzw. Fallleitung zählt mit ihrem oberen Ende (Entscheid Christian 13.11.2026, Fragen 5 und N12): von oben gesehen liegt sie über
+    /// einer waagrechten Leitung, sobald sie über diese hinausläuft.</summary>
+    static bool Ueber(Teil q, Teil p) => Oben(q) > Oben(p) + Eps;
+    static double Oben(Teil t) => t.Senkrecht ? t.ZMax : t.Mitte;
 
     public static IEnumerable<Grafikteil> Teile(GrafikKontext ctx)
     {
