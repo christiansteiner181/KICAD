@@ -43,7 +43,28 @@ public class VorwandTests
         Assert.Contains(e.Hinweise, h => h.Contains("1 Montageelement(e) auf duofix umgestellt"));
     }
 
-/// <summary>Entscheid Christian 13.11.2026 (N15): über Eck läuft die zuerst gezeichnete Vorwand durch, die folgende schliesst stumpf an.
+/// <summary>Entscheid Christian 13.11.2026 (Frage 29): Familie platzieren «an Wand» (Rückseite an der Fläche, Vorderseite zum Raum) und mit
+    /// Höhe über OK fertig Boden. Südwand Achse y = 0, Dicke 200: Fläche bei y = 100; Klick bei y = 600 → Drehung 180° (Vorderseite nach Norden).</summary>
+    [Fact]
+    public void FamiliePlatzieren_AnWand_HoeheUeberOkfb()
+    {
+        var p = Rechteck();
+        Ok(p.Ausfuehren("familie_laden", new JsonObject { ["datei"] = Modul3Hilfe.Datei("test_heizkoerper") }));
+        var def = Familien.Definition(p.Modell.DerKlasse(Familien.Klasse).Single(), p.Katalog);
+        var e = Ok(p.Ausfuehren("familie_platzieren", new JsonObject
+        {
+            ["familie"] = "FAM-1", ["typ"] = def.Typen[0].Name, ["punkt"] = new JsonArray(3000, 600), ["geschoss"] = "EG", ["an_wand"] = true, ["hoehe"] = 150,
+        }));
+        var el = p.Modell.Elemente.Last(x => x.Bezuege.ContainsKey(Familien.Bezug));
+        Assert.Equal(180, el.Zahl("drehung") ?? 0, 6);
+        var pt = el.Geometrie!.Punkte[0];
+        Assert.Equal(3000, pt[0], 3);
+        Assert.True(pt[1] >= 100 - 1e-6, $"y = {pt[1]}");   // Rückseite an der Fläche, nicht in der Wand
+        Assert.Equal(150, pt[2], 3);
+        Assert.Contains(e.Hinweise, h => h.StartsWith("An W-1 gesetzt"));
+    }
+
+    /// <summary>Entscheid Christian 13.11.2026 (N15): über Eck läuft die zuerst gezeichnete Vorwand durch, die folgende schliesst stumpf an.
     /// Achse (0, 0) – (2000, 0) – (2000, 2000), Tiefe 200, frei stehend: VW-1 bis x = 2100, VW-2 ab y = 100.</summary>
     [Fact]
     public void UeberEck_ErsteLaeuftDurch_ZweiteStumpf()

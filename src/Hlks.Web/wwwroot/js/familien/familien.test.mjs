@@ -534,15 +534,15 @@ const famAntwort = {
 
 test('Felder der Optionsleiste: Typ, Drehung, dann die Exemplarparameter der gewählten Familie (ohne Formelparameter)', () => {
   const ohne = Q.familieFelder('', null, liste);
-  assert.deepEqual(ohne.map((f) => f.id), ['typ', 'drehung']);
+  assert.deepEqual(ohne.map((f) => f.id), ['typ', 'drehung', 'anWand', 'hoehe', 'hoehenbezug']);   // Wand- und Höhenbezug (Frage 29)
   assert.equal(ohne[1].einheit, '°'); assert.equal(ohne[1].vorgabe, 0);
   assert.deepEqual(ohne[0].werte.map(([v]) => v), ['FAM-1|22-600-1000', 'FAM-1|22-600-1400', 'FAM-2|DN15', 'FAM-2|DN20']);
   const mit = Q.familieFelder('FAM-1|22-600-1000', famAntwort, liste);
-  assert.deepEqual(mit.map((f) => f.id), ['typ', 'drehung', 'p_bodenabstand'], 'oberkante hat eine Formel und ist nicht einstellbar');
-  const b = mit[2];
+  assert.deepEqual(mit.map((f) => f.id), ['typ', 'drehung', 'anWand', 'hoehe', 'hoehenbezug', 'p_bodenabstand'], 'oberkante hat eine Formel und ist nicht einstellbar');
+  const b = mit[5];
   assert.equal(b.art, 'zahl'); assert.equal(b.einheit, 'mm'); assert.equal(b.fluechtig, true); assert.equal(b.param, 'bodenabstand');
   // gewählte Familie passt nicht zur geladenen Definition: keine Exemplarfelder
-  assert.deepEqual(Q.familieFelder('FAM-2|DN15', famAntwort, liste).map((f) => f.id), ['typ', 'drehung']);
+  assert.deepEqual(Q.familieFelder('FAM-2|DN15', famAntwort, liste).map((f) => f.id), ['typ', 'drehung', 'anWand', 'hoehe', 'hoehenbezug']);
   // alle Felder genügen den Regeln von optionen.js (Art, eindeutige Ids)
   for (const f of mit) assert.ok(['zahl', 'text', 'auswahl', 'bool'].includes(f.art));
   assert.equal(new Set(mit.map((f) => f.id)).size, mit.length);

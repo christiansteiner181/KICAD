@@ -318,7 +318,8 @@ public sealed class FamilieDef
     public static readonly string[] Ansichten = ["vorne", "hinten", "links", "rechts", "oben", "unten"];
     static readonly string[] KopfFelder = ["format", "id", "name", "kategorie", "hersteller", "produkt", "beschreibung", "version", "status",
         "parameter", "typen", "koerper", "anschluesse", "leitung", "masse", "sinnbild", "schemasymbol", "unterlagen", "konflikte", "abdeckung", "bericht",
-        "regeltechnik", "antriebe", "anbau", "kaesten"];   // Herstellerbibliothek H1 (kaesten: Verteiler, 02.11.2026)
+        "regeltechnik", "antriebe", "anbau", "kaesten",   // Herstellerbibliothek H1 (kaesten: Verteiler, 02.11.2026)
+        "montage"];   // Vorgabe-Montagehöhe { hoehe, bezug: okfb | ukd } (Entscheid Christian 13.11.2026, Frage 29)
     static readonly Regex NamensMuster = new("^[A-Za-zÄÖÜäöü_][A-Za-zÄÖÜäöü0-9_]*$");
     static readonly Regex BefundMuster = new("^[0-9a-f]{12}#[0-9]+$");
 
@@ -340,6 +341,8 @@ public sealed class FamilieDef
     public List<FamZeichnung>? Schemasymbol { get; private set; }
     /// <summary>Block «leitung» (Modul 3): gesetzt bei Leitungsserien (Kategorie Rohr bzw. Kanal), sonst null.</summary>
     public FamLeitung? Leitung { get; private set; }
+    /// <summary>Vorgabe-Montagehöhe beim Platzieren (Frage 29): Höhe in mm über OK fertig Boden (okfb) bzw. unter UK roh Decke (ukd); null = keine.</summary>
+    public (double Hoehe, string Bezug)? Montage { get; private set; }
     /// <summary>Abschnitte «regeltechnik», «antriebe», «anbau» (Herstellerbibliothek, FamilienRegeltechnik.cs) oder null.</summary>
     public FamRegeltechnik? Regeltechnik { get; private set; }
     /// <summary>Die Familie ist eine Leitungsserie (Kategorie IstArt Leitung bzw. ohne Katalog: Block «leitung» vorhanden).</summary>
@@ -382,6 +385,13 @@ public sealed class FamilieDef
             if (!KopfFelder.Contains(feld))
                 Fehl(feld, $"Unbekanntes Feld «{feld}»", "Erlaubt: " + string.Join(", ", KopfFelder));
         if (Json.Zahl(d["format"]) != 1) Fehl("format", "format muss 1 sein", "\"format\": 1 angeben.");
+        if (d["montage"] is { } mo)
+        {
+            if (mo is not JsonObject mj || Json.Zahl(mj["hoehe"]) is not double mh || !double.IsFinite(mh)
+                || mj.Any(x => x.Key is not ("hoehe" or "bezug")) || Text(mj["bezug"]) is { } mb && mb is not ("okfb" or "ukd"))
+                Fehl("montage", "montage ist ungültig", "{ \"hoehe\": mm, \"bezug\": \"okfb\" (Vorgabe) oder \"ukd\" } – Vorgabe-Montagehöhe der Familie");
+            else Montage = (mh, Text(mj["bezug"]) ?? "okfb");
+        }
         Name = Text(d["name"])?.Trim() ?? "";
         if (Name.Length == 0) Fehl("name", "Name der Familie fehlt", "\"name\" angeben, z. B. Hersteller und Produkt.");
         Id = Text(d["id"]);

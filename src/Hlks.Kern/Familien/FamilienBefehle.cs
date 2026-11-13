@@ -141,6 +141,32 @@ public sealed class FamilieAendern : IBefehl
         "anschluss_setzen", "anschluss_loeschen", "sinnbild_setzen", "leitung_setzen", "kopf_setzen"];
     static readonly string[] KopfFelder = ["name", "kategorie", "hersteller", "produkt", "beschreibung", "bericht"];
 
+    /// <summary>Nächste Wand- bzw. Vorwandfläche (bis 1000 mm) im Geschoss: Punkt so, dass die Rückseite der Familie (lokal +y, Vorderseite −y) an der
+    /// Fläche liegt, Drehung mit der Vorderseite zum Raum (zum gegebenen Punkt hin).</summary>
+    internal static (double[] Punkt, double Drehung, string An) AnWand(Kontext k, Element? geschoss, double[] punkt, FamAufloesung a)
+    {
+        double bestD = 1000; (double[] P, double Dreh, string An)? best = null;
+        foreach (var w in k.Arbeit.Elemente.Where(e => (k.Katalog.IstArt(e, "Wand") || k.Katalog.IstArt(e, "Vorwand")) && (geschoss is null || e.Geschoss == geschoss.Id)))
+        {
+            if (w.Geometrie?.Punkte is not { Count: 2 } wp || w.Geometrie.Dicke is not double dicke || dicke <= 0) continue;
+            double ax = wp[0][0], ay = wp[0][1], ux = wp[1][0] - ax, uy = wp[1][1] - ay, l = Math.Sqrt(ux * ux + uy * uy);
+            if (l < 1) continue;
+            ux /= l; uy /= l;
+            double s = Math.Clamp((punkt[0] - ax) * ux + (punkt[1] - ay) * uy, 0, l);
+            double qn = (punkt[0] - ax) * -uy + (punkt[1] - ay) * ux;   // Abstand zur Achse, links positiv
+            double seite = qn >= 0 ? 1 : -1, nx = -uy * seite, ny = ux * seite;   // Normale von der Achse zum Punkt (Raumseite)
+            double d = Math.Abs(qn) - dicke / 2;
+            if (d < -dicke / 2 - 1 || Math.Abs(d) >= bestD) continue;
+            // Rückseite der Familie: grösstes lokales y der Körper (Vorderseite zeigt nach −y, 0° = Süden)
+            double hinten = a.Koerper.Where(x => x.Teil?.Ecken is { Count: > 0 }).SelectMany(x => x.Teil!.Ecken!).Select(e => e[1]).DefaultIfEmpty(0).Max();
+            double fx = ax + ux * s + nx * (dicke / 2 + hinten), fy = ay + uy * s + ny * (dicke / 2 + hinten);
+            double dreh = Math.Atan2(ny, nx) * 180 / Math.PI + 90;   // Vorderseite (0, −1) gedreht auf die Normale
+            dreh = Math.Round(((dreh % 360) + 360) % 360, 6);
+            bestD = Math.Abs(d); best = ([fx, fy], dreh, w.Kennzeichen);
+        }
+        return best ?? throw new HlksFehler("Keine Wand bzw. Vorwand bis 1000 mm neben dem Punkt.", "Näher an der Wand klicken oder an_wand weglassen.");
+    }
+
     public void Ausfuehren(Kontext k, JsonObject p)
     {
         var fam = Familien.Hole(k.Arbeit, Param.Text(p, "familie", true));
@@ -440,6 +466,9 @@ public sealed class FamiliePlatzieren : IBefehl
         new("geschoss", "text", false, "Geschoss (Kennzeichen oder Id)"),
         new("raum", "text", false, "Raum (Kennzeichen oder Id)"),
         new("system", "text", false, "System (Kennzeichen oder Id)"),
+        new("hoehe", "zahl", false, "Montagehöhe in mm (Einfügepunkt) über OK fertig Boden bzw. unter UK roh Decke (hoehenbezug); ohne Angabe die Vorgabe der Familie (montage), sonst z des Punkts bzw. die Geschosskote"),
+        new("hoehenbezug", "text", false, "okfb (Vorgabe: über OK fertig Boden = Geschosskote) oder ukd (unter UK roh Decke, Geschoss.ukRohdecke)"),
+        new("an_wand", "bool", false, "An die nächste Wand- bzw. Vorwandfläche (bis 1000 mm): Rückseite an die Fläche, Drehung parallel, Vorderseite zum Raum"),
     ];
 
     public void Ausfuehren(Kontext k, JsonObject p)
@@ -472,7 +501,29 @@ public sealed class FamiliePlatzieren : IBefehl
             : throw new HlksFehler("punkt: eine Koordinate ist keine Zahl.", "Einfügepunkt als [x, y] oder [x, y, z] in mm angeben.")).ToArray();
 
         var ausrichtung = Familien.AusrichtungLesen(p["ausrichtung"]);   // Modul 3: geprüft vor dem Anlegen (Fehler mit Vorschlag)
-        var eig = new JsonObject { ["familientyp"] = typ, ["drehung"] = Param.Zahl(p, "drehung") ?? 0 };
+        double drehung = Param.Zahl(p, "drehung") ?? 0;
+        // Wand- und Höhenbezug (Entscheid Christian 13.11.2026, Frage 29)
+        var geschossEl = Param.Text(p, "geschoss") is { } gk ? k.Arbeit.Hole(gk) : null;
+        if (Param.Bool(p, "an_wand"))
+        {
+            var (q, dreh, an) = FamilieAendern.AnWand(k, geschossEl, punkt, a);   // gemeinsame Hilfe (steht in FamilieAendern)
+            punkt = punkt.Length > 2 ? [q[0], q[1], punkt[2]] : [q[0], q[1]];
+            drehung = dreh;
+            k.Hinweise.Add($"An {an} gesetzt: Rückseite an der Fläche, Drehung {Grafik.Format(drehung, 1)}°.");
+        }
+        double? hoehe = Param.Zahl(p, "hoehe") ?? def.Montage?.Hoehe;
+        string bezug = Param.Text(p, "hoehenbezug") is { Length: > 0 } hb ? ArchParam.Auswahl(hb, ["okfb", "ukd"], "hoehenbezug") : def.Montage?.Bezug ?? "okfb";
+        if (hoehe is double hz)
+        {
+            if (geschossEl is null) throw new HlksFehler("Für die Montagehöhe fehlt das Geschoss.", "geschoss angeben – die Höhe gilt über OK fertig Boden bzw. unter UK roh Decke des Geschosses.");
+            double kote = geschossEl.Zahl("kote") ?? 0;
+            double z = bezug == "ukd"
+                ? kote + (geschossEl.Zahl("ukRohdecke") ?? throw new HlksFehler($"{geschossEl.Kennzeichen} hat keine UK roh Decke (ukRohdecke).", "ukRohdecke am Geschoss setzen oder hoehenbezug okfb wählen.")) - hz
+                : kote + hz;
+            punkt = [punkt[0], punkt[1], z];
+            if (Param.Zahl(p, "hoehe") is null) k.Hinweise.Add($"Montagehöhe der Familie: {Grafik.Format(hz, 0)} mm {(bezug == "ukd" ? "unter UK roh Decke" : "über OK fertig Boden")}.");
+        }
+        var eig = new JsonObject { ["familientyp"] = typ, ["drehung"] = drehung };
         if (ausrichtung is not null) eig["ausrichtung"] = p["ausrichtung"]!.DeepClone();
         if (ex is { Count: > 0 }) eig["parameter"] = ex.DeepClone();
         var anlegen = new JsonObject

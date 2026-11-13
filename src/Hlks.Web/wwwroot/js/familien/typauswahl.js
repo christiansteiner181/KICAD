@@ -43,6 +43,11 @@ export function familieFelder(typ, fam, liste = familienListe()) {
   const felder = [
     { id: 'typ', titel: 'Typ', art: 'auswahl', get werte() { return typOptionen(liste); }, leer: 'wählen …', fluechtig: true, beiAenderung(el) { el?.blur?.(); haken.typGewaehlt?.(); } },
     { id: 'drehung', titel: 'Drehung', art: 'zahl', einheit: '°', vorgabe: 0, breite: 5, fluechtig: true },
+    // Wand- und Höhenbezug (Entscheid Christian 13.11.2026, Frage 29): an die nächste Wand/Vorwand, Höhe über OKFB bzw. unter UK roh Decke;
+    // leere Höhe = Vorgabe der Familie (montage)
+    { id: 'anWand', titel: 'An Wand', art: 'bool', vorgabe: false },
+    { id: 'hoehe', titel: 'Höhe', art: 'zahl', einheit: 'mm', platzhalter: '(Familie)', breite: 5 },
+    { id: 'hoehenbezug', titel: '', art: 'auswahl', werte: [['okfb', 'über OKFB'], ['ukd', 'unter UK roh Decke']], vorgabe: 'okfb' },
   ];
   const t = typTeile(typ);
   if (t && fam && fam.kennzeichen === t.familie) felder.push(...exemplarFeldDefs(fam));
@@ -70,6 +75,10 @@ export function platzierParameter(opt, punkt, fam, geschoss) {
   const ex = fam ? exemplarWerte(fam, opt) : {};
   if (Object.keys(ex).length) p.parameter = ex;
   if (geschoss) p.geschoss = geschoss;
+  if (opt?.anWand === true || opt?.anWand === 'true') p.an_wand = true;
+  const h = typeof opt?.hoehe === 'number' ? opt.hoehe : zahlLesen(opt?.hoehe ?? '');
+  if (h !== null && Number.isFinite(h)) p.hoehe = h;
+  if (opt?.hoehenbezug === 'ukd') p.hoehenbezug = 'ukd';
   return p;
 }
 

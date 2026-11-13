@@ -346,6 +346,11 @@
         "fuer": { "type": "array", "items": { "type": "string" }, "description": "Typen dieser Familie; leer = alle" },
         "quellen": { "$ref": "#/$defs/quellen" } } }
     },
+    "montage": {
+      "type": "object", "required": ["hoehe"], "additionalProperties": false,
+      "description": "Vorgabe-Montagehöhe beim Platzieren (Entscheid Christian 13.11.2026, Frage 29), überschreibbar mit familie_platzieren hoehe",
+      "properties": { "hoehe": { "type": "number", "description": "mm (Einfügepunkt)" }, "bezug": { "enum": ["okfb", "ukd"], "description": "über OK fertig Boden (Vorgabe) bzw. unter UK roh Decke" } }
+    },
     "kaesten": {
       "type": "array", "description": "Nur Verteiler (Entscheid Christian 02.11.2026): passende Verteilerkästen (Familie der Kategorie Verteilerkasten) und ihre Typen je Typ dieses Verteilers (Abgangszahl)",
       "items": { "type": "object", "required": ["familie"], "additionalProperties": false, "properties": {

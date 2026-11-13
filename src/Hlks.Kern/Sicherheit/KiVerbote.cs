@@ -14,7 +14,7 @@ public static class KiVerbote
         ["konflikt_entscheiden"] = "Konflikte einer Familie entscheidet nur ein Mensch.",
         ["wert_bestaetigen"] = "Einen Wert ohne Quelle anzunehmen ist eine Freigabe – nur ein Mensch.",
         ["familie_speichern"] = "Schreibt in die Bürobibliothek bzw. eine Datei – nur ein Mensch.",
-        ["familie_in_bibliothek"] = "Schreibt in die projektübergreifende Bürobibliothek – entscheidet ein Mensch.",
+        // familie_in_bibliothek nicht hier: KI-Aufträge schreiben Entwürfe in die Bibliothek; «als aktuell» lehnt der Befehl selbst für die KI ab
         ["familie_aktualisieren"] = "Übernimmt eine Bibliotheksfassung ins Projekt – nie automatisch.",
         ["mustersystem_speichern"] = "Schreibt in die projektübergreifende Systembibliothek – entscheidet ein Mensch.",
         ["familienauswahl_setzen"] = "Die Auswahl der Bibliotheksfamilien gilt für alle am Projekt – entscheidet ein Mensch.",

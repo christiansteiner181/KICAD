@@ -242,8 +242,9 @@ public sealed partial class Werkzeuge(Projekt projekt)
     public string ElementeAendernWerkzeug(
         [Description("Kennzeichen oder Ids")] JsonElement elemente,
         [Description("{ name: wert | { wert, einheit, quelle } | null }")] JsonElement eigenschaften,
+        [Description("{ Kennzeichen oder Id: { name: wert } } – ersetzt für dieses Element einzelne Eigenschaften (z. B. die Dämmdicke je Leitung nach Regel)")] JsonElement? je_element = null,
         [Description("Nur prüfen, nichts ändern")] bool trockenlauf = false) =>
-        Befehl("elemente_aendern", Parameter(("elemente", elemente), ("eigenschaften", eigenschaften)), trockenlauf);
+        Befehl("elemente_aendern", Parameter(("elemente", elemente), ("eigenschaften", eigenschaften), ("je_element", je_element)), trockenlauf);
 
     [McpServerTool(Name = "element_aendern"), Description("Ändert ein Element: Kennzeichen, Name, Zuordnung, Eigenschaften (null entfernt), Geometrie, Bezüge.")]
     public string ElementAendern(

@@ -109,7 +109,10 @@ public sealed partial class Werkzeuge
         [Description("Geschoss (Kennzeichen oder Id)")] string? geschoss = null,
         [Description("Raum (Kennzeichen oder Id)")] string? raum = null,
         [Description("System (Kennzeichen oder Id)")] string? system = null,
+        [Description("Montagehöhe in mm (Einfügepunkt) über OK fertig Boden bzw. unter UK roh Decke (hoehenbezug); ohne Angabe die Vorgabe der Familie (montage), sonst z des Punkts bzw. die Geschosskote")] double? hoehe = null,
+        [Description("okfb (Vorgabe: über OK fertig Boden = Geschosskote) oder ukd (unter UK roh Decke, Geschoss.ukRohdecke)")] string? hoehenbezug = null,
+        [Description("An die nächste Wand- bzw. Vorwandfläche (bis 1000 mm): Rückseite an die Fläche, Drehung parallel, Vorderseite zum Raum")] bool an_wand = false,
         [Description("Nur prüfen, nichts ändern")] bool trockenlauf = false) =>
         Befehl("familie_platzieren", Parameter(("familie", familie), ("typ", typ), ("punkt", punkt), ("drehung", drehung), ("ausrichtung", ausrichtung), ("parameter", parameter),
-            ("kennzeichen", kennzeichen), ("geschoss", geschoss), ("raum", raum), ("system", system)), trockenlauf);
+            ("kennzeichen", kennzeichen), ("geschoss", geschoss), ("raum", raum), ("system", system), ("hoehe", hoehe), ("hoehenbezug", hoehenbezug), ("an_wand", an_wand)), trockenlauf);
 }

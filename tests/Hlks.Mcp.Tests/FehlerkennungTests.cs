@@ -140,7 +140,7 @@ public class FehlerkennungTests(ITestOutputHelper aus)
             {
                 var e = ergebnisse.Single(x => x.Name == w);
                 Assert.True(e.IsError, w);
-                Assert.Contains(KiPfade.Meldung, e.Text);
+                Assert.Contains("nicht erlaubt", e.Text);   // Pfadgrenze bzw. seit Frage 37 die Liste «nur Mensch» (z. B. bcf_import)
             }
             // 4. Erfolgreiche Abfragen bleiben ohne Kennzeichen, auch mit verschachteltem «fehler» (projekt_ueberblick: befunde.fehler = Anzahl)
             foreach (var w in new[] { "projekt_ueberblick", "faehigkeiten", "katalog", "kontext_bild", "synchronisieren" })
