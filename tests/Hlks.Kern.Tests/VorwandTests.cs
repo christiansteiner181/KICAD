@@ -43,7 +43,42 @@ public class VorwandTests
         Assert.Contains(e.Hinweise, h => h.Contains("1 Montageelement(e) auf duofix umgestellt"));
     }
 
-/// <summary>Entscheide Christian 13.11.2026: 31 – Montageelemente gehen beim Verschieben der Vorwand mit; N17 – Löschen der Vorwand löscht sie mit.</summary>
+/// <summary>Entscheid Christian 13.11.2026 (N15): über Eck läuft die zuerst gezeichnete Vorwand durch, die folgende schliesst stumpf an.
+    /// Achse (0, 0) – (2000, 0) – (2000, 2000), Tiefe 200, frei stehend: VW-1 bis x = 2100, VW-2 ab y = 100.</summary>
+    [Fact]
+    public void UeberEck_ErsteLaeuftDurch_ZweiteStumpf()
+    {
+        var p = Rechteck();
+        Ok(p.Ausfuehren("vorwand_zeichnen", new JsonObject
+        {
+            ["geschoss"] = "EG", ["punkte"] = Pts([500, 1000], [2500, 1000], [2500, 3000]), ["bezugslinie"] = "mitte", ["system"] = "duofix", ["tiefe"] = 200, ["hoehe"] = 1120,
+        }));
+        var a = Hole(p, "VW-1").Geometrie!.Punkte; var b = Hole(p, "VW-2").Geometrie!.Punkte;
+        Assert.Equal(2600, a[1][0], 3);
+        Assert.Equal(1100, b[0][1], 3);
+        Assert.Equal(2500, b[0][0], 3);
+    }
+
+    /// <summary>Entscheid Christian 13.11.2026 (N16): ein Apparat in der Vorwand (an der Rohbauwand gesetzt) wird vor die Vorwand geschoben und bestückt.</summary>
+    [Fact]
+    public void Bestuecken_ApparatInDerVorwand_WirdVorgeschoben()
+    {
+        var p = Rechteck();
+        Ok(p.Ausfuehren("element_anlegen", new JsonObject
+        {
+            ["klasse"] = "WC", ["kennzeichen"] = "WC-1", ["geschoss"] = "EG",
+            ["geometrie"] = new JsonObject { ["art"] = "punkt", ["punkte"] = new JsonArray(new JsonArray(1100, 150, 0)) },
+        }));
+        var e = Ok(p.Ausfuehren("vorwand_zeichnen", new JsonObject
+        {
+            ["geschoss"] = "EG", ["punkte"] = Pts([100, 300], [2100, 300]), ["aussenkante"] = "rechts", ["system"] = "gis", ["tiefe"] = 200, ["hoehe"] = 1140, ["bestuecken"] = true,
+        }));
+        Assert.Equal(300, Hole(p, "WC-1").Geometrie!.Punkte[0][1], 3);
+        Assert.NotNull(p.Modell.Finde("ME-1"));
+        Assert.Contains(e.Hinweise, h => h.StartsWith("Vor die Vorwand geschoben: WC-1"));
+    }
+
+    /// <summary>Entscheide Christian 13.11.2026: 31 – Montageelemente gehen beim Verschieben der Vorwand mit; N17 – Löschen der Vorwand löscht sie mit.</summary>
     [Fact]
     public void VorwandVerschieben_ElementGehtMit_LoeschenNimmtEsMit()
     {

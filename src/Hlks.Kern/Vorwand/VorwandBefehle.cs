@@ -76,8 +76,42 @@ public sealed class VorwandZeichnen : IBefehl
         for (int i = 1; i < pts.Count; i++)
             if (Geometrie.Abstand(pts[i - 1], pts[i]) < 1) throw new HlksFehler($"Punkte {i} und {i + 1} fallen zusammen.", "Doppelte Punkte entfernen.");
         var achse = WandZeichnen.Versetzen(pts, q, false);
+        // Ecken (Entscheid Christian 13.11.2026, N15): die zuerst gezeichnete Vorwand läuft durch, die neue schliesst stumpf an. Im Zug: das
+        // frühere Stück bis zur Aussenfläche des folgenden verlängert, das folgende beginnt an der Fläche des früheren. Vorher endeten beide auf
+        // der Gehrung der Achse (aussen fehlte ein Viereck, innen überlappten sie). Ebenso endet ein neuer Zug stumpf an einer bestehenden Vorwand.
+        var stuecke = new List<(double[] A, double[] B)>();
+        for (int i = 0; i + 1 < achse.Count; i++) stuecke.Add((achse[i], achse[i + 1]));
+        static double[] Richtung(double[] a, double[] b) { double l = Math.Sqrt(Math.Pow(b[0] - a[0], 2) + Math.Pow(b[1] - a[1], 2)); return [(b[0] - a[0]) / l, (b[1] - a[1]) / l]; }
+        static double Sin(double[] u, double[] v) => Math.Max(0.2, Math.Abs(u[0] * v[1] - u[1] * v[0]));
+        for (int i = 0; i + 1 < stuecke.Count; i++)
+        {
+            var u = Richtung(stuecke[i].A, stuecke[i].B); var v = Richtung(stuecke[i + 1].A, stuecke[i + 1].B);
+            double sin = Sin(u, v), cos = Math.Abs(u[0] * v[0] + u[1] * v[1]), h = tiefe / 2;
+            double verl = h / sin + h * cos / sin, kurz = h / sin;
+            var b = stuecke[i].B; var a2 = stuecke[i + 1].A;
+            stuecke[i] = (stuecke[i].A, [b[0] + u[0] * verl, b[1] + u[1] * verl, b[2]]);
+            stuecke[i + 1] = ([a2[0] + v[0] * kurz, a2[1] + v[1] * kurz, a2[2]], stuecke[i + 1].B);
+        }
+        // Anfang bzw. Ende an einer bestehenden Vorwand desselben Geschosses: stumpf an deren Fläche
+        var bestehende = k.Arbeit.Elemente.Where(e => k.Katalog.IstArt(e, "Vorwand") && e.Geschoss == geschoss.Id && e.Geometrie?.Punkte is { Count: 2 }).ToList();
+        foreach (var amAnfang in new[] { true, false })
+        {
+            int i = amAnfang ? 0 : stuecke.Count - 1;
+            var ende = amAnfang ? stuecke[i].A : stuecke[i].B;
+            foreach (var o in bestehende)
+            {
+                var oa = o.Geometrie!.Punkte[0]; var ob = o.Geometrie.Punkte[1]; double ot = o.Geometrie.Dicke ?? 0;
+                if (ot <= 0 || Polygone.AbstandZurStrecke(ende[0], ende[1], oa[0], oa[1], ob[0], ob[1]) > ot / 2 + 1) continue;
+                var u = Richtung(stuecke[i].A, stuecke[i].B); var w = Richtung(oa, ob);
+                double kurz = (ot / 2) / Sin(u, w);
+                ende = amAnfang ? [ende[0] + u[0] * kurz, ende[1] + u[1] * kurz, ende[2]] : [ende[0] - u[0] * kurz, ende[1] - u[1] * kurz, ende[2]];
+                stuecke[i] = amAnfang ? (ende, stuecke[i].B) : (stuecke[i].A, ende);
+                k.Hinweise.Add($"{(amAnfang ? "Anfang" : "Ende")} stumpf an {o.Kennzeichen} (läuft durch).");
+                break;
+            }
+        }
         var kz = new List<string>();
-        for (int i = 0; i + 1 < achse.Count; i++)
+        for (int i = 0; i < stuecke.Count; i++)
         {
             var eig = new JsonObject { ["system"] = system, ["rueckseite"] = bezug == "mitte" ? "keine" : bezug, ["bauwerk"] = bauwerk };
             if (ausfuehrung is not null) eig["ausfuehrung"] = ausfuehrung;
@@ -88,7 +122,7 @@ public sealed class VorwandZeichnen : IBefehl
                 ["klasse"] = "Vorwand", ["geschoss"] = geschoss.Id, ["name"] = $"Vorwand {sys.Titel}", ["eigenschaften"] = eig,
                 ["geometrie"] = new JsonObject
                 {
-                    ["art"] = "linie", ["punkte"] = new JsonArray(ArchParam.Json3(achse[i]), ArchParam.Json3(achse[i + 1])), ["dicke"] = tiefe, ["hoehe"] = hoehe,
+                    ["art"] = "linie", ["punkte"] = new JsonArray(ArchParam.Json3(stuecke[i].A), ArchParam.Json3(stuecke[i].B)), ["dicke"] = tiefe, ["hoehe"] = hoehe,
                 },
             });
             kz.Add(k.Arbeit.Finde(k.Operationen[^1].Id)!.Kennzeichen);
@@ -175,11 +209,20 @@ public sealed class VorwandBestuecken : IBefehl
             .Select(e => e.Bezuege["apparat"]).ToHashSet(StringComparer.Ordinal);
         int n = 0;
         var ohne = new List<string>();
+        var verschoben = new List<string>();
         foreach (var ap in k.Arbeit.Elemente.Where(e => k.Katalog.IstArt(e, "Apparat") && e.Geschoss == vorwand.Geschoss).OrderBy(e => e.Kennzeichen, StringComparer.Ordinal).ToList())
         {
             if (ap.Geometrie?.Punkte is not [var pt, ..] || schon.Contains(ap.Id)) continue;
             var (s, q) = auf.Oertlich(pt[0], pt[1]);
-            if (s < 0 || s > auf.Laenge || q < auf.Tiefe - 1 || q > auf.Tiefe + reichweite) continue;
+            if (s < 0 || s > auf.Laenge || q < -1 || q > auf.Tiefe + reichweite) continue;
+            // Apparat in der Vorwand (zuerst an die Rohbauwand gesetzt, Vorwand danach gezeichnet): vor die Vorwand schieben (Entscheid Christian
+            // 13.11.2026, N16 – vorher hiess es «kein Apparat vor der Vorwand»)
+            if (q < auf.Tiefe - 1)
+            {
+                var vorne = auf.Punkt(s, auf.Tiefe); var hier = auf.Punkt(s, q);
+                new ElementeVerschieben().Ausfuehren(k, new JsonObject { ["elemente"] = new JsonArray(ap.Id), ["dx"] = Math.Round(vorne[0] - hier[0], 3), ["dy"] = Math.Round(vorne[1] - hier[1], 3) });
+                verschoben.Add(ap.Kennzeichen);
+            }
             var typ = kat.FuerApparat(k.Katalog, ap, auf.System);
             if (typ is null) { ohne.Add($"{ap.Kennzeichen} ({ap.Klasse})"); continue; }
             s = Math.Clamp(s, typ.Breite / 2, Math.Max(typ.Breite / 2, auf.Laenge - typ.Breite / 2));
@@ -188,6 +231,7 @@ public sealed class VorwandBestuecken : IBefehl
         }
         k.Hinweise.Add(n == 0 ? $"{vorwand.Kennzeichen}: kein Apparat vor der Vorwand ohne Montageelement." : $"{vorwand.Kennzeichen}: {n} Montageelement(e) gesetzt.");
         if (ohne.Count > 0) k.Hinweise.Add($"Ohne passendes Element im Katalog: {string.Join(", ", ohne)}");
+        if (verschoben.Count > 0) k.Hinweise.Add($"Vor die Vorwand geschoben: {string.Join(", ", verschoben)}.");
     }
 }
 
