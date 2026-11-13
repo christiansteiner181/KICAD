@@ -120,3 +120,6 @@ swisspor führt für Rohre nur PIR-Schalen «swissporKISODUR» (Heizung, Kälte,
   zugewandten Fläche, Achse auf Achse gezeichnet → gekürzt) umgesetzt.
 - **13.11.2026 weitere:** 48 (Ansicht löschen mit Beschriftungen, 58805d9), 37 (Liste «nur Mensch» zentral im Kern, KiVerbote.cs), 38 (Pfadgrenze
   nach Art des Aufrufs, Projekt.AkteurArtJetzt), 51 (zeichnung_* für die KI freigegeben) umgesetzt.
+- **13.11.2026 Paket Familien/Vorwand:** 31, N17 (Montageelemente folgen bzw. mitgelöscht, 586fc6c), N13, N14 (Winkel beidseits, GIS-Stoss 0 mm),
+  N16, N15 (894bd3c), 29 (an Wand, Höhe mit Bezug, Vorgabe «montage» je Familie, d7295c6) umgesetzt. Offen: 30 (Montageelemente als Familien).
+  Korrektur zu 37: familie_in_bibliothek nicht in der zentralen Sperrliste (KI-Aufträge schreiben Entwürfe; «als aktuell» sperrt der Befehl).
