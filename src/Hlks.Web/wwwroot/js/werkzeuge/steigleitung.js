@@ -1,8 +1,9 @@
 // Werkzeuge «Steigleitung» und «Steigleitung Lüftung» (Christian 06.11.2026: «weiteres modul "steigleitung" in gleicher Art für KW, WW, Zirk, VL, RL es
 // soll gewählt werden können welche leitungen in der steigleitung enthalten sind», «es soll auch steigleitung lüftung geben AUL, FOL, ZUL, ABL rund und
 // Eckig», «bei allen steigleitungen soll eine Steigzonen Grösse angegeben werden können. die Rohrabstände sollen daraus berechnet werden»):
-// in der Optionsleiste die Leitungen anhaken, je Serie und Grösse, dazu die Steigzone (Breite × Tiefe; die Abstände rechnet der Kern: gleiche lichte
-// Abstände) oder ein Achsabstand. 1. Klick = Anfang der Steigzone bzw. erste Leitung, 2. Klick = Richtung der Reihe (eine Leitung ohne Steigzone:
+// in der Optionsleiste die Leitungen anhaken, je Serie und Grösse, dazu die Steigzone (Breite × Tiefe; die Abstände rechnet der Kern: Rohre mit gleichen
+// Achsabständen – Entscheid Christian 13.11.2026, Frage N2 –, mit eckigen Kanälen gleiche lichte Abstände) oder ein Achsabstand. Eckige Kanäle: b oder h
+// entlang der Reihe (Frage N3). 1. Klick = Anfang der Steigzone bzw. erste Leitung, 2. Klick = Richtung der Reihe (eine Leitung ohne Steigzone:
 // ein Klick) → steigleitung_platzieren. Lüftung: Lage der Zentrale bestimmt die Fliessrichtung. Entwurf: Steigzone und je Leitung ein Kreis.
 
 import { WerkzeugFehler } from './parameter.js';
@@ -38,31 +39,35 @@ export function steigleitungParameter({ opt, punkt, richtung = null, wid = 'stei
     }),
   };
   if (zone) { p.steigzone_breite = opt.zoneB; if (opt.zoneT > 0) p.steigzone_tiefe = opt.zoneT; } else p.abstand = opt.abstand > 0 ? opt.abstand : 0;
+  if (opt.kanalLage === 'h') p.kanal_lage = 'h';
   if (richtung) p.richtung = richtung;
   return p;
 }
 
-/** Breite entlang der Reihe für den Entwurf (wie der Kern: Aussendurchmesser, d, b, DN). */
-function breite(x) {
-  const g = (D.serieDef(x.serie)?.groessen ?? []).find((y) => y.typ === x.groesse);
-  const zahl = (t) => Number(String(t ?? '').match(/\d+(\.\d+)?/)?.[0]) || null;
-  return g?.aussen ?? g?.d ?? g?.b ?? zahl(x.groesse) ?? 30;
-}
-
-/** Querschnitt für den Entwurf: eckig { b, h } (b entlang der Reihe, wie der Kern) oder rund { d }. */
-function querschnitt(x) {
+/** Querschnitt für den Entwurf: eckig { b, h } (b bzw. mit kanalLage = h die Höhe entlang der Reihe, wie der Kern) oder rund { d }. */
+function querschnitt(x, hEntlang = false) {
   const g = (D.serieDef(x.serie)?.groessen ?? []).find((y) => y.typ === x.groesse);
   const m = String(x.groesse ?? '').match(/(\d+(?:\.\d+)?)\s*[x×]\s*(\d+(?:\.\d+)?)/);
-  if (g?.b > 0 && g?.h > 0) return { b: g.b, h: g.h };
-  if (m) return { b: Number(m[1]), h: Number(m[2]) };
-  return { d: breite(x) };
+  const q = g?.b > 0 && g?.h > 0 ? { b: g.b, h: g.h } : m ? { b: Number(m[1]), h: Number(m[2]) } : null;
+  if (q) return hEntlang ? { b: q.h, h: q.b } : q;
+  const zahl = (t) => Number(String(t ?? '').match(/\d+(\.\d+)?/)?.[0]) || null;
+  return { d: g?.aussen ?? g?.d ?? zahl(x.groesse) ?? 30 };
 }
 
-/** Lage der Leitungen entlang der Reihe (gleiche lichte Abstände in der Steigzone bzw. Achsabstand) und quer (Mitte der Tiefe). */
+/** Breite entlang der Reihe für den Entwurf (wie der Kern: Aussendurchmesser, d, b bzw. h, DN). */
+const breite = (x, hEntlang) => { const q = querschnitt(x, hEntlang); return q.d ?? q.b; };
+
+/** Lage der Leitungen entlang der Reihe und quer (Mitte der Tiefe): in der Steigzone Rohre mit gleichen Achsabständen (auch zum Rand, Frage N2),
+ *  mit eckigen Kanälen gleiche lichte Abstände; sonst der Achsabstand. */
 export function lagen(opt, l) {
   const quer = opt.zoneT > 0 ? opt.zoneT / 2 : 0;
+  const hEntlang = opt.kanalLage === 'h';
   if (opt.zoneB > 0) {
-    const b = l.map(breite), licht = (opt.zoneB - b.reduce((a, c) => a + c, 0)) / (l.length + 1);
+    if (l.every((x) => querschnitt(x).d != null)) {
+      const a = opt.zoneB / (l.length + 1);
+      return { quer, licht: null, achse: a, s: l.map((_, i) => a * (i + 1)) };
+    }
+    const b = l.map((x) => breite(x, hEntlang)), licht = (opt.zoneB - b.reduce((a, c) => a + c, 0)) / (l.length + 1);
     let s0 = 0;
     return { quer, licht, s: b.map((bi) => { s0 += licht; const m = s0 + bi / 2; s0 += bi; return m; }) };
   }
@@ -105,7 +110,7 @@ export function steigleitungWerkzeug(wid = 'steigleitung') {
       if (ctx.opt.zoneB > 0) { const t = ctx.opt.zoneT > 0 ? ctx.opt.zoneT : 0; h += S.polylinie([P(0, 0), P(ctx.opt.zoneB, 0), P(ctx.opt.zoneB, t), P(0, t)], 'wz-band', true); }
       l.forEach((x, i) => {
         const p = P(lage[i], quer);
-        const q = querschnitt(x);   // eckige Kanäle als Rechteck (Christian 06.11.2026 «Ja, anpassen»)
+        const q = querschnitt(x, ctx.opt.kanalLage === 'h');   // eckige Kanäle als Rechteck (Christian 06.11.2026 «Ja, anpassen»)
         h += q.d ? S.kreis(p, q.d / 2, 'wz-band')
           : S.polylinie([[-1, -1], [1, -1], [1, 1], [-1, 1]].map(([i, j]) => [p[0] + u[0] * i * q.b / 2 + n[0] * j * q.h / 2, p[1] + u[1] * i * q.b / 2 + n[1] * j * q.h / 2]), 'wz-band', true);
         h += S.text(p, x.kurz, s, { versatzPx: [6, -8], groessePx: 10, klasse: 'wz-text wz-fangtext' });

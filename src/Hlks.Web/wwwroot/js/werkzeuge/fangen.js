@@ -7,7 +7,7 @@
 // Annahmen (nicht aus einer Norm, Bedienvorgabe): Fangradius 10 px, Raster 100 mm – beides wird vom Aufrufer vorgegeben.
 
 export const FANGARTEN = ['endpunkt', 'schnittpunkt', 'mitte', 'lot', 'naechster', 'raster'];
-export const FANGNAMEN = { endpunkt: 'Endpunkt', schnittpunkt: 'Schnittpunkt', mitte: 'Mitte', lot: 'Lot', naechster: 'Nächster', raster: 'Raster', anschluss: 'Anschluss', polar: 'Polar', frei: '' };
+export const FANGNAMEN = { endpunkt: 'Endpunkt', schnittpunkt: 'Schnittpunkt', mitte: 'Mitte', lot: 'Lot', naechster: 'Nächster', raster: 'Raster', anschluss: 'Anschluss', flucht: 'Flucht', polar: 'Polar', frei: '' };
 export const FANGRADIUS_PX = 10;     // Annahme
 export const RASTER_MM = 100;        // Annahme
 const EPS = 1e-9;
@@ -228,8 +228,8 @@ export function fangenPolar({ punkt, kanten = [], radius, letzter, raster = 0, e
     }
     if (best) return treffer('schnittpunkt', best.p);
   }
-  // Länge auf das Raster; gäbe die Rundung 0 (näher als ein halber Rasterschritt am letzten Punkt), bleibt die Länge ungerundet
-  const sr = erlaubt.has('raster') && raster > 0 ? Math.round(s / raster) * raster : 0;
+  // Länge auf das Raster; gäbe die Rundung 0 (näher als ein halber Rasterschritt am letzten Punkt), gilt ein Rasterschritt (Frage N37)
+  const sr = erlaubt.has('raster') && raster > 0 && s > 0 ? Math.max(raster, Math.round(s / raster) * raster) : 0;
   return treffer('polar', sr > 0 ? auf(sr) : wunsch);
 }
 
@@ -322,7 +322,9 @@ function fangenOrtho({ punkt, punkte, kanten, radius, letzter, raster, erlaubt, 
       const dist = abstand(auf(q.p), wunsch);
       if (dist <= radius && besser(best, dist)) best = { abst: dist, q };
     }
-    if (best) return treffer('anschluss', auf(best.q.p), { anschluss: best.q.daten });
+    // Entscheid Christian 13.11.2026 (Frage 14): der Anschluss gewinnt in seiner echten Lage – Shift verschiebt ihn nicht (sonst sässe die
+    // Leitung neben dem Stutzen)
+    if (best) return treffer('anschluss', [best.q.p[0], best.q.p[1]], { anschluss: best.q.daten, ortho: false });
   }
   if (erlaubt.has('endpunkt')) {
     let best = null;
@@ -333,7 +335,8 @@ function fangenOrtho({ punkt, punkte, kanten, radius, letzter, raster, erlaubt, 
     };
     for (const q of punkte) pruefe(q.p, q.id);
     for (const k of kanten) { pruefe(k.a, k.id ?? null); pruefe(k.b, k.id ?? null); }
-    if (best) return treffer('endpunkt', best.p, { id: best.id ?? undefined });
+    // Endpunkt neben der Linie: auf die Linie gelegt und «Flucht» genannt, ohne Daten des Punkts (Frage 14) – er ist nicht der Endpunkt selbst
+    if (best) return treffer('flucht', best.p);
   }
   if (erlaubt.has('schnittpunkt')) {
     let best = null;
@@ -359,9 +362,11 @@ function fangenOrtho({ punkt, punkte, kanten, radius, letzter, raster, erlaubt, 
   if (erlaubt.has('raster') && raster > 0) {
     const s = waagrecht ? punkt[0] - letzter[0] : punkt[1] - letzter[1];
     const sr = Math.round(s / raster) * raster;
-    // Näher als ein halber Rasterschritt am letzten Punkt gäbe die Rundung die Länge 0 (Punkt = letzter Punkt, Klick ohne Wirkung): dann ungerundet
-    if (sr === 0) return treffer('frei', wunsch);
-    return treffer('raster',waagrecht ? [letzter[0] + sr, letzter[1]] : [letzter[0], letzter[1] + sr]);
+    // Näher als ein halber Rasterschritt am letzten Punkt gäbe die Rundung die Länge 0 (Punkt = letzter Punkt, Klick ohne Wirkung): dann mindestens
+    // ein Rasterschritt in Richtung der Maus (Entscheid Christian 13.11.2026, Frage N37; vorher ungerundet)
+    if (s === 0) return treffer('frei', wunsch);
+    const sm = sr === 0 ? Math.sign(s) * raster : sr;
+    return treffer('raster', waagrecht ? [letzter[0] + sm, letzter[1]] : [letzter[0], letzter[1] + sm]);
   }
   return treffer('frei', wunsch);
 }

@@ -116,10 +116,18 @@ public class FallleitungTests
         // Reihe in y: die Breite des eckigen Kanals liegt entlang der Reihe (querDrehung 90), bei der Reihe in x bleibt sie ohne Drehung
         Assert.All(oben, x => Assert.Equal(90, x.Zahl("querDrehung") ?? 0, 3));
         Assert.All(zul, x => Assert.Null(x.Zahl("querDrehung")));
+        // kanal_lage = h (Entscheid Christian 13.11.2026, Frage N3): die Höhe liegt entlang der Reihe in x → querDrehung 90
+        Ok(p.Ausfuehren("steigleitung_platzieren", new JsonObject
+        {
+            ["punkt"] = new JsonArray(9000, 1500), ["kanal_lage"] = "h", ["leitungen"] = new JsonArray(
+                new JsonObject { ["medium"] = "ZUL", ["serie"] = "fam-test-kanalserie", ["groesse"] = "400x200" }),
+        }));
+        Assert.All(p.Modell.Elemente.Where(x => x.Klasse == "Kanal" && x.Geometrie!.Punkte[0][0] > 8500), x => Assert.Equal(90, x.Zahl("querDrehung") ?? 0, 3));
     }
 
     /// <summary>Christian 06.11.2026: «bei allen seteigleitungen soll eine Steigzonen Grösse angegeben werden können. die Rohrabstände sollen daraus
-    /// berechnet werden»: KW und WW DN 20 (Testrohrserie da = 25) in einer Steigzone 300 × 200 → lichter Abstand (300 − 50) / 3 = 83.333 mm.</summary>
+    /// berechnet werden»: KW und WW DN 20 (Testrohrserie da = 25) in einer Steigzone 300 × 200. Seit dem Entscheid Christian 13.11.2026 (Frage N2)
+    /// gelten bei Rohren gleiche Achsabstände, auch zum Rand: 300 / 3 = 100 mm (vorher lichter Abstand 83.3 mm).</summary>
     [Fact]
     public void Steigleitung_AbstaendeAusDerSteigzone()
     {
@@ -132,11 +140,11 @@ public class FallleitungTests
         }));
         double x(string sys) => p.Modell.DerKlasse("Rohr").First(r => r.System == Hole(p, sys).Id).Geometrie!.Punkte[0][0];
         double y(string sys) => p.Modell.DerKlasse("Rohr").First(r => r.System == Hole(p, sys).Id).Geometrie!.Punkte[0][1];
-        Assert.Equal(5000 + 83.333333 + 12.5, x("KW"), 3);
-        Assert.Equal(5000 + 2 * 83.333333 + 25 + 12.5, x("WW"), 3);
+        Assert.Equal(5100, x("KW"), 3);
+        Assert.Equal(5200, x("WW"), 3);
         Assert.Equal(2100, y("KW"), 3);   // Mitte der Tiefe, links der Reihe (Richtung +x)
-        Assert.Contains(e.Hinweise, h => h.Contains("lichter Abstand 83 mm"));
+        Assert.Contains(e.Hinweise, h => h.Contains("Achsabstand 100 mm"));
         var nein = Nein(p.Ausfuehren("steigleitung_platzieren", new JsonObject { ["punkt"] = new JsonArray(7000, 2000), ["steigzone_breite"] = 40, ["leitungen"] = new JsonArray(L("KW"), L("WW")) }));
-        Assert.Contains("passen nicht in die Steigzone", nein.Fehler);
+        Assert.Contains("zu eng für die Rohre", nein.Fehler);
     }
 }

@@ -97,23 +97,30 @@ test('Fangen: Shift = orthogonal, Länge auf das Raster', () => {
   assert.deepEqual(v.punkt, [0, 2500]);
 });
 
-test('Fangen: Raster rundet die Länge bei Shift und Polar nie auf 0 (näher als ein halber Rasterschritt: ungerundet)', () => {
+test('Fangen: Raster bei Shift und Polar – nah am letzten Punkt mindestens ein Rasterschritt (Entscheid N37)', () => {
   const leer = { punkte: [], kanten: [] };
   const f = F.fangen({ punkt: [1030, 504], daten: leer, radius: 10, letzter: [1000, 500], ortho: true, raster: 100 });
-  assert.deepEqual(f.punkt, [1030, 500]);
-  assert.equal(f.art, 'frei');
+  assert.deepEqual(f.punkt, [1100, 500]);
+  assert.equal(f.art, 'raster');
+  const l = F.fangen({ punkt: [970, 504], daten: leer, radius: 10, letzter: [1000, 500], ortho: true, raster: 100 });
+  assert.deepEqual(l.punkt, [900, 500]);           // in Richtung der Maus
   const p = F.fangen({ punkt: [1040, 501], daten: leer, radius: 10, letzter: [1000, 500], raster: 100, polar: 15, arten: ['raster'] });
   assert.equal(p.art, 'polar');
-  punktGleich(p.punkt, [1040, 500]);
+  punktGleich(p.punkt, [1100, 500]);
 });
 
-test('Fangen: Shift fängt Endpunkte nur auf der waagrechten/senkrechten Linie', () => {
+test('Fangen: Shift neben einem Endpunkt gibt «Flucht» auf der Linie, ein Anschluss gewinnt in echter Lage (Entscheid 14)', () => {
   const d = { punkte: [{ p: [3000, 4], id: 'a' }, { p: [3000, 900], id: 'b' }], kanten: [] };
   const f = F.fangen({ punkt: [3002, 150], daten: d, radius: 10, letzter: [0, 0], ortho: true, raster: 0 });
-  assert.equal(f.art, 'endpunkt');
-  assert.deepEqual(f.punkt, [3000, 0]);          // auf die Linie gelegt, nicht der Punkt bei y = 4 verfälscht
+  assert.equal(f.art, 'flucht');
+  assert.deepEqual(f.punkt, [3000, 0]);          // auf die Linie gelegt, ohne Daten des Endpunkts
+  assert.equal(f.id, undefined);
   const g = F.fangen({ punkt: [3002, 150], daten: { punkte: [{ p: [3000, 900], id: 'b' }], kanten: [] }, radius: 10, letzter: [0, 0], ortho: true, raster: 0 });
-  assert.notEqual(g.art, 'endpunkt');
+  assert.notEqual(g.art, 'flucht');
+  const a = F.fangen({ punkt: [3002, 150], daten: { punkte: [], kanten: [] }, extraPunkte: [{ art: 'anschluss', p: [3000, 8], daten: { element: 'X', anschluss: 'a' } }],
+    radius: 10, letzter: [0, 0], ortho: true, raster: 0 });
+  assert.equal(a.art, 'anschluss');
+  assert.deepEqual(a.punkt, [3000, 8]);          // echte Lage, nicht auf die Linie verschoben
 });
 
 test('Fangen: Shift fängt den Schnittpunkt einer Kante mit der Linie', () => {

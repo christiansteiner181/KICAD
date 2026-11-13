@@ -117,7 +117,8 @@ public sealed class SteigleitungPlatzieren : IBefehl
     public const string ParPunkt = "Lage der ersten Leitung [x, y] in mm";
     public const string ParRichtung = "Richtung der Reihe [dx, dy] im Grundriss (Vorgabe [1, 0])";
     public const string ParAbstand = "Achsabstand der Leitungen in mm (statt steigzone_breite)";
-    public const string ParZoneBreite = "Breite der Steigzone in mm entlang der Reihe: die Leitungen werden mit gleichen lichten Abständen verteilt (Aussenmasse eingerechnet), punkt = Anfang der Steigzone";
+    public const string ParZoneBreite = "Breite der Steigzone in mm entlang der Reihe: Rohre mit gleichen Achsabständen (auch zum Rand), sobald ein eckiger Kanal dabei ist mit gleichen lichten Abständen (Aussenmasse eingerechnet); punkt = Anfang der Steigzone";
+    public const string ParKanalLage = "Eckige Kanäle: welche Seite entlang der Reihe liegt – b (Vorgabe) oder h";
     public const string ParZoneTiefe = "Tiefe der Steigzone in mm quer zur Reihe (links in Richtung der Reihe): die Leitungen stehen in ihrer Mitte";
     public const string ParLeitungen = "Liste der Leitungen in der Reihenfolge der Reihe: [{ medium (z. B. KW, WW, ZIR, HZ-VL, HZ-RL; Lüftung AUL, FOL, ZUL, ABL mit Kanal-Produktlinie rund oder eckig), serie, groesse, system?, richtung? (auf | ab = Fliessrichtung; fehlt: Zirkulation, Rückläufe, Abluft und Aussenluft fallen, die übrigen steigen – Lüftung mit Zentrale unten) }]";
     public string Beschreibung => Text;
@@ -128,6 +129,7 @@ public sealed class SteigleitungPlatzieren : IBefehl
         new("abstand", "zahl", false, ParAbstand),
         new("steigzone_breite", "zahl", false, ParZoneBreite),
         new("steigzone_tiefe", "zahl", false, ParZoneTiefe),
+        new("kanal_lage", "text", false, ParKanalLage),
         new("richtung", "liste", false, ParRichtung),
         new("von_geschoss", "text", false, Senkrechte.ParVon),
         new("bis_geschoss", "text", false, Senkrechte.ParBis),
@@ -138,12 +140,14 @@ public sealed class SteigleitungPlatzieren : IBefehl
     public static bool Faellt(string medium) => medium.ToUpperInvariant() is "ZIR" or "ABL" or "AUL" || medium.EndsWith("-RL", StringComparison.OrdinalIgnoreCase)
         || medium.Contains("-RL-", StringComparison.OrdinalIgnoreCase);
 
-    /// <summary>Breite einer Leitung entlang der Reihe aus ihrer Serie: Aussendurchmesser, sonst d bzw. b (eckige Kanäle mit b entlang der Reihe, ANNAHME), sonst DN.</summary>
-    static double Breite(Kontext k, JsonObject l, int i)
+    /// <summary>Breite einer Leitung entlang der Reihe aus ihrer Serie: Aussendurchmesser, sonst d bzw. b (eckige Kanäle: b entlang der Reihe,
+    /// mit kanal_lage = h die Höhe – Entscheid Christian 13.11.2026, Frage N3), sonst DN. Eckig: ein Kanal mit b × h.</summary>
+    static (double Breite, bool Eckig) Breite(Kontext k, JsonObject l, int i, bool hEntlang)
     {
         var s = Leitungsserie.Hole(k.Arbeit, k.Katalog, Param.Text(l, "serie") ?? throw new HlksFehler($"leitungen[{i}]: serie fehlt."));
         var g = RoutingBefehle.Groesse(s, l["groesse"]);
-        return g.Aussen ?? g.Groesse.D ?? g.Groesse.B ?? g.Groesse.Dn ?? throw new HlksFehler($"leitungen[{i}]: die Breite der Grösse {g.Typ} ist unbekannt.");
+        if (g.Groesse.B is double b) return (hEntlang && g.Groesse.H is double h ? h : b, true);
+        return (g.Aussen ?? g.Groesse.D ?? g.Groesse.Dn ?? throw new HlksFehler($"leitungen[{i}]: die Breite der Grösse {g.Typ} ist unbekannt."), false);
     }
 
     public void Ausfuehren(Kontext k, JsonObject p)
@@ -159,18 +163,35 @@ public sealed class SteigleitungPlatzieren : IBefehl
         if (rl < 1e-9) throw new HlksFehler("Die Richtung der Reihe ist null.", "richtung: [dx, dy]");
         double ux = r[0] / rl, uy = r[1] / rl;
         var (alle, iu, io) = Senkrechte.Geschosse(k, p);
+        bool hEntlang = Param.Text(p, "kanal_lage") is { Length: > 0 } kl && ArchParam.Auswahl(kl, ["b", "h"], "kanal_lage") == "h";
         // Lage entlang der Reihe: fester Achsabstand oder aus der Steigzone (Christian 06.11.2026: «bei allen steigleitungen soll eine Steigzonen Grösse
         // angegeben werden können. die Rohrabstände sollen daraus berechnet werden») – gleiche lichte Abstände zwischen den Leitungen und zum Rand
         var lage = new double[liste.Count];
         double quer = zoneT is double tz && tz > 0 ? tz / 2 : 0;
         if (zoneB is double zb)
         {
-            var breiten = liste.Select((n, i) => n is JsonObject l ? Breite(k, l, i) : throw new HlksFehler($"leitungen[{i}] ist kein Objekt.")).ToList();
-            double licht = (zb - breiten.Sum()) / (liste.Count + 1);
-            if (licht < 0) throw new HlksFehler($"Die Leitungen ({breiten.Sum():0} mm breit) passen nicht in die Steigzone von {zb:0} mm.", "Steigzone breiter wählen oder kleinere Leitungen.");
-            double s0 = 0;
-            for (int i = 0; i < liste.Count; i++) { s0 += licht; lage[i] = s0 + breiten[i] / 2; s0 += breiten[i]; }
-            k.Hinweise.Add($"Steigzone {zb:0}{(zoneT is double t2 ? $" × {t2:0}" : "")} mm: lichter Abstand {licht:0} mm.");
+            var mass = liste.Select((n, i) => n is JsonObject l ? Breite(k, l, i, hEntlang) : throw new HlksFehler($"leitungen[{i}] ist kein Objekt.")).ToList();
+            var breiten = mass.Select(x => x.Breite).ToList();
+            string zone = $"Steigzone {zb:0}{(zoneT is double t2 ? $" × {t2:0}" : "")} mm";
+            if (mass.All(x => !x.Eckig))
+            {
+                // Rohre: gleiche Achsabstände, auch vom Rand zur ersten bzw. letzten Achse (Entscheid Christian 13.11.2026, Frage N2: «Abstand bei
+                // Rohren immer auf die Achse beziehen» – mit Dämmung wären lichte Abstände sonst ungleich)
+                double a = zb / (liste.Count + 1);
+                for (int i = 0; i < liste.Count; i++) lage[i] = a * (i + 1);
+                double eng = Math.Min(a - breiten[0] / 2, a - breiten[^1] / 2);
+                for (int i = 1; i < liste.Count; i++) eng = Math.Min(eng, a - (breiten[i - 1] + breiten[i]) / 2);
+                if (eng < 0) throw new HlksFehler($"Mit {liste.Count} Rohren in der Steigzone von {zb:0} mm wäre der Achsabstand {a:0} mm – zu eng für die Rohre (bis {breiten.Max():0} mm).", "Steigzone breiter wählen oder kleinere Leitungen.");
+                k.Hinweise.Add($"{zone}: Achsabstand {a:0} mm.");
+            }
+            else
+            {
+                double licht = (zb - breiten.Sum()) / (liste.Count + 1);
+                if (licht < 0) throw new HlksFehler($"Die Leitungen ({breiten.Sum():0} mm breit) passen nicht in die Steigzone von {zb:0} mm.", "Steigzone breiter wählen oder kleinere Leitungen.");
+                double s0 = 0;
+                for (int i = 0; i < liste.Count; i++) { s0 += licht; lage[i] = s0 + breiten[i] / 2; s0 += breiten[i]; }
+                k.Hinweise.Add($"{zone}: lichter Abstand {licht:0} mm.");
+            }
         }
         else for (int i = 0; i < liste.Count; i++) lage[i] = abstand * i;
         var berichte = new List<string>();
@@ -190,7 +211,7 @@ public sealed class SteigleitungPlatzieren : IBefehl
             var rohre = Senkrechte.Zeichnen(k, q, l["serie"], l["groesse"], systemKz, null, alle, iu, io, faellt);
             // Eckige Kanäle stehen mit der Breite entlang der Reihe (wie Breite() und der Entwurf der Oberfläche): ohne querDrehung läge b immer in x,
             // bei einer Reihe in anderer Richtung also quer zur Steigzone (Gesamtprüfung 13.11.2026)
-            double dreh = Math.Atan2(uy, ux) * 180 / Math.PI;
+            double dreh = Math.Atan2(uy, ux) * 180 / Math.PI + (hEntlang ? 90 : 0);   // kanal_lage = h: h entlang der Reihe (Frage N3)
             if (Math.Abs(dreh) >= 0.5)
                 foreach (var kz in rohre)
                     if (k.Arbeit.Finde(kz) is { } ka && k.Katalog.IstArt(ka, "Kanal") && Anschlusslagen.LeitungGroesse(k.Arbeit, k.Katalog, ka).B is not null)

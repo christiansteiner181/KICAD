@@ -145,7 +145,9 @@ die Auswahl auf; Strg+Z/Strg+Y. Kürzel-Liste im Dialog KS anzeigen (änderbar s
 **Werkzeuge (Modul 1a):** Ein aktives Werkzeug zeigt in der Optionsleiste seine Eingaben (Modus `werkzeug`,
 `js/werkzeuge/optionsleiste.js`): Wand Dicke/Höhe/Bezugslinie/Kette/Material, Öffnung Breite/Höhe/Brüstung/Seite/Band,
 Bemassung Richtung/Kette, Schnitt Tiefe, Raster. Fangen (`js/werkzeuge/fangen.js`): Endpunkt (Quadrat) > Schnittpunkt
-(X) > Mitte (Dreieck) > Lot (⊥) > Nächster (Sanduhr) > Raster, Fangradius 10 px; Shift = orthogonal; Ziffern = Länge in
+(X) > Mitte (Dreieck) > Lot (⊥) > Nächster (Sanduhr) > Raster, Fangradius 10 px; Shift = orthogonal (Entscheide 13.11.2026: ein Anschluss
+gewinnt in seiner echten Lage; ein Endpunkt neben der Linie wird auf sie gelegt und heisst «Flucht» – leises Quadrat, ohne Daten des Punkts; mit
+Raster gilt nah am letzten Punkt mindestens ein Rasterschritt); Ziffern = Länge in
 mm (Drehen: Grad); Enter schliesst ab. Esc und Rechtsklick in Stufen (04.11.2026, alle Werkzeuge): zuerst die Längeneingabe
 leeren, dann den angefangenen Zug verwerfen (erster Punkt, Bezug, Basispunkt), erst dann das Werkzeug beenden – der Rechtsklick
 öffnet dabei kein Menü und startet kein Werkzeug neu. Rückschritt nimmt den letzten Punkt zurück. Lehnt der Kern ab, bleiben die
@@ -4349,7 +4351,8 @@ jedes neue Projekt erhält alle Mustersysteme.
   tiefere in mittel und fein ausgespart mit gestrichelten Rändern und Achse, in grob unterbrochen (Lücke je Seite 0.5 mm). Höher heisst: an der
   Kreuzung höher (seit 13.11.2026 je Teilstück dort verglichen, wo die Bänder im Grundriss überlappen, mehr als 1 mm) – eine Leitung mit Gefälle
   oder Etage verdeckt am hohen Teil und ist am tiefen verdeckt; dieselbe Regel gilt für die gestrichelten Dämmkanten. An der Kreuzung gleich hohe
-  Leitungen verdecken einander nicht; Steigleitungen und Formteile verdecken hier noch nicht. Seit 13.11.2026 (Restliste): die Lücke in grob
+  Leitungen verdecken einander nicht. Seit 13.11.2026 (Entscheide 5, 13): Steig- bzw. Fallleitungen verdecken mit ihrem oberen Ende, Formteile
+  mit ihrer Höhenspanne (Breite der angeschlossenen Leitung samt Dämmung); direkt bzw. über ein Formteil angeschlossene Elemente verdecken nicht. Seit 13.11.2026 (Restliste): die Lücke in grob
   zählt ab dem Rand des gezeichneten Strichs (0.35 mm, Unterbruch 1.35 mm Papier); Kanäle, Kanalrahmen und Fliesspfeil behalten ausserhalb der
   Deckfläche ihren Umriss samt Stirnkanten.
 - **Leitung an Anschluss bzw. Leitung beginnen** (Christian 02.11.2026: «wird ab einem Punkt weiter konstruiert, wird die Dimension und höhe sowie

@@ -69,6 +69,8 @@ export function fangsymbol(fang, s) {
   let g = '';
   switch (fang.art) {
     case 'endpunkt': g = `<rect class="wz-fang" x="${f(x - h)}" y="${f(y - h)}" width="${f(2 * h)}" height="${f(2 * h)}"/>`; break;
+    // Flucht (Shift neben einem Endpunkt, Frage 14): Quadrat leise – auf der Linie, nicht der Endpunkt selbst
+    case 'flucht': g = `<rect class="wz-fang wz-fang-leise" x="${f(x - h)}" y="${f(y - h)}" width="${f(2 * h)}" height="${f(2 * h)}"/>`; break;
     case 'mitte': g = `<polygon class="wz-fang" points="${xy([x - h, y - h])} ${xy([x + h, y - h])} ${xy([x, y + h])}"/>`; break;
     case 'schnittpunkt': g = `<path class="wz-fang" d="M${xy([x - h, y - h])} L${xy([x + h, y + h])} M${xy([x - h, y + h])} L${xy([x + h, y - h])}"/>`; break;
     case 'lot': g = `<path class="wz-fang" d="M${xy([x - h, y - h])} L${xy([x + h, y - h])} M${xy([x, y - h])} L${xy([x, y + h])}"/>`; break;

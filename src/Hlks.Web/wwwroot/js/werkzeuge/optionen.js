@@ -278,7 +278,9 @@ function steigFelder(wid) {
     { id: 'zoneT', titel: '', art: 'zahl', einheit: 'mm', platzhalter: 'Tiefe', breite: 5 },
     { id: 'abstand', titel: 'oder Achsabstand', art: 'zahl', einheit: 'mm', platzhalter: '–', breite: 5, sichtbar: () => !(wert(wid, 'zoneB') > 0) },
   ];
-  if (lueftung) felder.push({ id: 'zentrale', titel: 'Zentrale', art: 'auswahl', werte: [['unten', 'unten'], ['oben', 'oben']], vorgabe: 'unten' });
+  if (lueftung) felder.push({ id: 'zentrale', titel: 'Zentrale', art: 'auswahl', werte: [['unten', 'unten'], ['oben', 'oben']], vorgabe: 'unten' },
+    // eckige Kanäle: b oder h entlang der Reihe (Entscheid Christian 13.11.2026, Frage N3; Vorgabe b)
+    { id: 'kanalLage', titel: 'Entlang Reihe', art: 'auswahl', werte: [['b', 'Breite b'], ['h', 'Höhe h']], vorgabe: 'b', beiAenderung: () => leitungHaken.optionenNeu?.() });
   for (const [m, kurz, an] of steigListe(wid)) {
     const id = steigId(m);
     felder.push(
