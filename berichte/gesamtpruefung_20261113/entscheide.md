@@ -110,3 +110,9 @@ swisspor führt für Rohre nur PIR-Schalen «swissporKISODUR» (Heizung, Kälte,
 | N39 | Hinweis «nicht kleiner als zufliessend» (leistung §4.2) | Eine der gleich grossen nennen (kleinstes Kennzeichen), Rechnung in einem Durchgang |
 | N41 | Schwellen automatisches Ausrichten (unterlagen §5.3) | So lassen, an echtem Plan (Bernstrasse) justieren |
 | N12 | Steigleitung neben waagrechter Leitung (grafik §5.3) | Oberes Ende zählt auch für die Darstellung (wie 5): waagrechte im Überlappungsbereich verdeckt |
+
+## Umsetzung
+
+- **13.11.2026 Paket Leitungen/Geometrie** (geprueft-20261113-1534, f1f327e): 1, 2, 3 (07fa027) · 5, 13, N12 (a67fb6f) · 12, 24 (4ccc7ce) ·
+  14, N2, N3, N37 (8b55bcf) · 25, 34, 28 (6284f14) · N1, N22, N23 (459ad94). N10, N11 waren schon so.
+  Offen aus diesem Paket: 11 (Parallele oben/unten mit Gehrung in 3D), N5 (echte Spitze an Wandecken), N6 (Wandstoss endet an der zugewandten Fläche).
