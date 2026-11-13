@@ -224,7 +224,7 @@ public sealed class HlksGrafik : IGrafikquelle
                 // Dämmung hinter dem Rohr (Christian 09.11.2026: «darstellung dämmung … schwarze linien, gelb transparent hinterlegt», «auch auf mittel anwenden»)
                 // die Fläche zeichnet DaemmGrafik vereinigt für alle Leitungen und Formteile (09.11.2026); verdeckt nur die gestrichelten Ränder
                 if (mass.Daemmdicke > 0 && lauf.Verdeckt)
-                    teil.Primitive.AddRange(Raender(lauf.Xy, mass.DaemmBreite, DaemmRand(farbe), "strich", Stifte.Fein));   // Rohrfarbe, fein wie die sichtbaren Dämmkanten (Christian 12.11.2026)
+                    teil.Primitive.AddRange(Raender(lauf.Xy, mass.DaemmBreite, DaemmRand(farbe), DaemmGrafik.Verdeckt, Stifte.Fein));   // einheitlich strichfein (Frage N23)   // Rohrfarbe, fein wie die sichtbaren Dämmkanten (Christian 12.11.2026)
                 if (lauf.Verdeckt)
                     teil.Primitive.AddRange(Raender(lauf.Xy, breite, farbe, "strich"));
                 else if (abwasser)
@@ -285,7 +285,7 @@ public sealed class HlksGrafik : IGrafikquelle
 
         // Dämmung im Detailgrad grob: ein gelber Punkt auf der Leitungslinie (Christian 09.11.2026: «bei grob, gibt es nur einen gelben punkt auf der leitungslinie»)
         if (e.Zahl("daemmdicke") is double dg && dg > 0 && xy.Count >= 2 && HlksLinien.PunktBeiLaenge(xy, HlksLinien.Laenge(xy) / 2) is { } mp)
-            teil.Primitive.Add(new Primitiv { Art = "kreis", Punkte = [[mp.X, mp.Y]], Radius = DaemmPunktRadius * M, Stil = new Stil { Stift = Stifte.Duenn, Farbe = DaemmLinie, Fuellung = DaemmGelb } });
+            teil.Primitive.Add(new Primitiv { Art = "kreis", Punkte = [[mp.X, mp.Y]], Radius = DaemmPunktRadius * M, Stil = new Stil { Stift = Stifte.Duenn, Farbe = null, Fuellung = DaemmGelb } });   // Rand in Planfarbe (Frage N23)
         teil.Primitive.AddRange(Lagen.Zeichen(ctx.Projekt, e, xy, M));   // Lagezeichen (Lagemanager, 05.11.2026)
         LeitungsText(ctx, e, xy, w, teil);
         teil.Fangpunkte = xy.Select(q => new[] { q[0], q[1] }).ToList();
@@ -352,7 +352,6 @@ public sealed class HlksGrafik : IGrafikquelle
     /// <summary>Dämmung (Christian 09.11.2026: «schwarze linien, gelb transparent hinterlegt»). ANNAHME Gestaltung: Gelb #ffd400, Deckkraft 0.35;
     /// Punkt im Detailgrad grob Radius 0.8 mm Papier.</summary>
     internal const string DaemmGelb = "#ffd400";
-    internal const string DaemmLinie = "#000000";
     internal const double DaemmDeckkraft = 0.15;   // bis 12.11.2026 0.35 (Christian 12.11.2026: «dämmung noch etwas mehr transparenz»)
     internal const double DaemmPunktRadius = 0.8;
 
@@ -365,7 +364,7 @@ public sealed class HlksGrafik : IGrafikquelle
     internal static string? DaemmRand(string? farbe) => farbe;
 
     static Stil DaemmStil(bool verdeckt, string? farbe) => verdeckt
-        ? new Stil { Stift = Stifte.Fein, Linie = "strich", Farbe = DaemmRand(farbe) }
+        ? new Stil { Stift = Stifte.Fein, Linie = DaemmGrafik.Verdeckt, Farbe = DaemmRand(farbe) }   // verdeckte Dämmkanten einheitlich strichfein (Frage N23)
         : new Stil { Stift = Stifte.Fein, Linie = "voll", Farbe = DaemmRand(farbe), Fuellung = DaemmFuellung(farbe), Deckkraft = DaemmDeckkraft };
 
     /// <summary>Dämmung als Band der Dämmbreite: dünne schwarze Ränder, gelbe transparente Füllung, ohne eigene Achse.</summary>

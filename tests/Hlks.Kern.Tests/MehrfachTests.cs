@@ -42,5 +42,11 @@ public class MehrfachTests
         Ok(p.Ausfuehren("elemente_aendern", new JsonObject { ["elemente"] = new JsonArray("RO-1", "RO-2"), ["eigenschaften"] = new JsonObject { ["daemmdicke"] = 20 } }));
         Assert.Equal(20, Hole(p, "RO-1").Zahl("daemmdicke"));
         Assert.Equal(20, Hole(p, "RO-2").Zahl("daemmdicke"));
+        // je_element (Entscheid Christian 13.11.2026, Frage N1: Dämmdicke je Leitung nach Regel) – im selben Paket
+        Ok(p.Ausfuehren("elemente_aendern", new JsonObject { ["elemente"] = new JsonArray("RO-1", "RO-2"), ["eigenschaften"] = new JsonObject { ["daemmdicke"] = 30, ["daemmung"] = "PIR" },
+            ["je_element"] = new JsonObject { ["RO-2"] = new JsonObject { ["daemmdicke"] = 40 } } }));
+        Assert.Equal(30, Hole(p, "RO-1").Zahl("daemmdicke"));
+        Assert.Equal(40, Hole(p, "RO-2").Zahl("daemmdicke"));
+        Assert.Equal("PIR", Hole(p, "RO-2").Text("daemmung"));
     }
 }

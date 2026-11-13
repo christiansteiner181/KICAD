@@ -69,11 +69,13 @@ const gewaehlteLeitungen = () => auswahlElemente().filter((e) => ['Rohr', 'Kanal
 const dicke = (e) => Number(e.werte?.daemmdicke) || 0;
 const gedaemmt = () => gewaehlteLeitungen().some((e) => dicke(e) > 0);
 
-async function daemmungSetzen(leitungen, eig) {
+async function daemmungSetzen(leitungen, eig, jeElement = null) {
   const kz = leitungen.map((e) => e.kennzeichen);
-  const r = kz.length === 1 ? await sende('element_aendern', { element: kz[0], eigenschaften: eig })
-    : await sende('elemente_aendern', { elemente: kz, eigenschaften: eig });
-  ergebnisMelden(r, eig.daemmdicke ? `Dämmung ${eig.daemmdicke} mm an ${kz.length} Leitung(en).` : `Dämmung an ${kz.length} Leitung(en) entfernt.`);
+  const p = { elemente: kz, eigenschaften: eig };
+  if (jeElement) p.je_element = jeElement;
+  const r = kz.length === 1 && !jeElement ? await sende('element_aendern', { element: kz[0], eigenschaften: eig }) : await sende('elemente_aendern', p);
+  const dicken = jeElement ? [...new Set(Object.values(jeElement).map((x) => x.daemmdicke))].sort((a, b) => a - b).join(' / ') : eig.daemmdicke;
+  ergebnisMelden(r, eig.daemmdicke ? `Dämmung ${dicken} mm an ${kz.length} Leitung(en)${jeElement ? ' (je nach Regel und DN)' : ''}.` : `Dämmung an ${kz.length} Leitung(en) entfernt.`);
 }
 
 /** Dialog «Dämmung hinzufügen» bzw. «Dämmung bearbeiten» (wie Revit): Art bzw. Produkt und Dicke. Vorgabe: Werte der ersten gedämmten Leitung,
@@ -104,10 +106,13 @@ async function daemmungDialog(bearbeiten) {
   // Dicke vorschlagen: Regel der Dämmart (λ-Klasse), sonst die des Systems, mit der DN der ersten Leitung
   const dnVon = (e) => Number(e.werte?.dn) || Number(/DN\s*(\d+)/i.exec(String(e.werte?.familientyp ?? ''))?.[1]) || 0;
   const dn = dnVon(muster);
-  // Mehrfachauswahl mit verschiedenen Grössen: die eine Dicke gilt für alle, der Vorschlag nur für die erste – das sagen (Gesamtprüfung 13.11.2026)
+  // Mehrfachauswahl mit verschiedenen Grössen (Entscheid Christian 13.11.2026, Frage N1): jede Leitung bekommt die Dicke nach Regel und ihrer DN;
+  // nur eine Dicke, die von Hand eingetragen wird, gilt einheitlich für alle
   const dns = [...new Set(l.map(dnVon))].sort((a, b) => a - b);
+  let vonHand = false;
   const gemischt = dns.length > 1
-    ? ` Achtung: Die gewählten Leitungen haben verschiedene Grössen (${dns.map((x) => (x ? `DN ${x}` : 'ohne DN')).join(', ')}) – die eingetragene Dicke gilt für alle${dn ? `, der Vorschlag ist für DN ${dn} gerechnet` : ''}.` : '';
+    ? ` Verschiedene Grössen (${dns.map((x) => (x ? `DN ${x}` : 'ohne DN')).join(', ')}): jede Leitung bekommt die Dicke nach Regel und ihrer DN – eine von Hand eingetragene Dicke gilt für alle.` : '';
+  let regelAktiv = null;
   const ohneDn = dn ? '' : ' Kein Vorschlag: die Grösse dieser Leitung nennt keine DN (z. B. Abwasser, Pressrohr, Kanal) – Dicke von Hand eintragen.';
   // beim Hinzufügen gleich die Dicke vorschlagen, beim Bearbeiten erst, wenn die Art gewechselt wird (die bisherige Dicke bleibt sonst)
   const vorschlag = (gewechselt = false) => {
@@ -116,11 +121,13 @@ async function daemmungDialog(bearbeiten) {
     const regeln = zustand.katalog?.daemmregeln ?? [];
     const regel = regeln.find((r) => r.name === art?.regel) ?? regeln.find((r) => r.name === sys?.werte?.daemmregel);
     const d = regel ? daemmDicke(regel, dn) : null;
+    regelAktiv = regel;
     w.querySelector('.d-regel').textContent = (art && !art.regel ? `λ-Klasse der Dämmart offen (Herstellerangabe fehlt)${regel ? ' – es gilt die Regel des Systems.' : '.'}`
       : regel ? `Regel: ${regel.name}${d ? `, DN ${dn} → ${d} mm` : ''}.` : '') + (regel ? ohneDn : '') + gemischt;
     if (d && (!bearbeiten || gewechselt)) w.querySelector('.d-dicke').value = String(d);
   };
-  wahl.addEventListener('change', () => vorschlag(true));
+  wahl.addEventListener('change', () => { vonHand = false; vorschlag(true); });
+  w.querySelector('.d-dicke').addEventListener('input', () => { vonHand = true; });
   vorschlag();
   const ok = await zeigen({
     titel: bearbeiten ? 'Dämmung bearbeiten' : 'Dämmung hinzufügen', inhalt: w, breite: 440,
@@ -129,7 +136,11 @@ async function daemmungDialog(bearbeiten) {
   });
   if (ok !== true) return;
   const art = daemmartAusWahl(wahl.value, w.querySelector('.d-art').value);
-  await daemmungSetzen(l, { daemmdicke: Math.round(Number(w.querySelector('.d-dicke').value.replace(',', '.'))), daemmung: art });
+  const einheitlich = Math.round(Number(w.querySelector('.d-dicke').value.replace(',', '.')));
+  // je Leitung nach Regel und DN (ohne DN bzw. ohne Regelwert: die eingetragene Dicke), ausser die Dicke wurde von Hand gesetzt
+  const je = dns.length > 1 && !vonHand && regelAktiv
+    ? Object.fromEntries(l.map((e) => [e.kennzeichen, { daemmdicke: (dnVon(e) && daemmDicke(regelAktiv, dnVon(e))) || einheitlich }])) : null;
+  await daemmungSetzen(l, { daemmdicke: einheitlich, daemmung: art }, je);
 }
 
 registrieren({

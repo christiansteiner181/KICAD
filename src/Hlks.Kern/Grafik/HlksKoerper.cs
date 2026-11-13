@@ -31,7 +31,7 @@ public static class HlksKoerper
                     // Modul 3 (B4): mit Serie exakt Aussendurchmesser/2 bzw. Kanalmass der Grösse (ohne den Mindestdurchmesser 30 mm);
                     // Kanäle und Lüftungsrohre ohne Serie wie bisher aus dem Querschnitt; sonst DN-gerecht.
                     var mass = HlksMasse.Von(p, e);
-                    bool daemmung = detail == "fein" && mass is { Daemmdicke: > 0 };
+                    bool daemmung = detail is "mittel" or "fein" && mass is { Daemmdicke: > 0 };   // ab mittel wie der Grundriss (Frage N22)
                     if (mass is { Rechteck: true })
                     {
                         Kanal(k, pts, mass.Breite, mass.Hoehe, farbe, e.Zahl("querDrehung") ?? 0);   // Rechteckkanal in echter Grösse
@@ -205,9 +205,9 @@ public static class HlksKoerper
         }
     }
 
-    /// <summary>Dämmung eines Rohrs (Modul 3, B4; nur im Detailgrad fein): zweiter, hellerer und durchscheinender Körper mit dem
-    /// Radius aussen/2 + daemmdicke. ANNAHME (Prüfliste): Deckkraft 0.35, Farbe 60 % zu Weiss aufgehellt, im Schnitt und in
-    /// der Ansicht nicht geschnitten (NichtSchneiden), Material «rohr».</summary>
+    /// <summary>Dämmung eines Rohrs (Modul 3, B4): zweiter, durchscheinender Körper mit dem Radius aussen/2 + daemmdicke – seit dem Entscheid
+    /// Christian 13.11.2026 (Frage N22) wie im Grundriss in der Rohrfarbe und ab Detailgrad mittel (vorher nur fein, 60 % aufgehellt). Deckkraft 0.35
+    /// (im 3D höher als im Plan 0.15, damit sie vor den Rohren sichtbar bleibt), im Schnitt und in der Ansicht nicht geschnitten (NichtSchneiden).</summary>
     static void DaemmungRohr(Koerper k, List<double[]> pts, double radius, double dicke, string? farbe)
     {
         var teile = new Koerper();
@@ -220,7 +220,7 @@ public static class HlksKoerper
     /// der angeschlossenen Leitung mit der grössten Dämmbreite, entlang der Achsen des Formteils; Detailgrad fein wie bei den Leitungen.</summary>
     internal static void DaemmungFormteil(Projekt p, Koerper k, Element e, FamAufloesung a, Einbaulage lage, string detail)
     {
-        if (detail != "fein") return;
+        if (detail is not ("mittel" or "fein")) return;
         var m = p.Modell; var kat = p.Katalog;
         var n = m.VerbindungenVon(e.Id).Select(v => m.Finde(v.Von.Element == e.Id ? v.Nach.Element : v.Von.Element)).OfType<Element>()
             .Where(x => kat.IstArt(x, "Leitung")).Select(x => (El: x, Ms: HlksMasse.Von(p, x))).Where(x => x.Ms is { Daemmdicke: > 0 })
@@ -255,8 +255,11 @@ public static class HlksKoerper
         }
     }
 
+    /// <summary>Farbe der Dämmung im 3D: die Rohrfarbe (Frage N22); ohne Medienfarbe ein helles Beige.</summary>
+    static string Daemmfarbe(string? farbe) => farbe is { Length: 7 } && farbe[0] == '#' ? farbe : Aufgehellt(null);
+
     /// <summary>Medienfarbe (#rrggbb) 60 % zu Weiss aufgehellt; ohne Medienfarbe ein helles Beige.</summary>
-    static string Daemmfarbe(string? farbe)
+    static string Aufgehellt(string? farbe)
     {
         if (farbe is { Length: 7 } && farbe[0] == '#'
             && int.TryParse(farbe.AsSpan(1, 2), System.Globalization.NumberStyles.HexNumber, null, out var r)

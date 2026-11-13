@@ -4344,6 +4344,9 @@ jedes neue Projekt erhält alle Mustersysteme.
   die Dämmarten aus `kataloge/daemmung.json` (arten) zur Auswahl, «andere …» für eine freie Angabe; in der Eigenschaftspalette als Vorschlagsliste.
   Ohne bisherige Art ist «– keine Angabe –» vorgewählt (Gegenprüfung 13.11.2026: vorher die erste Katalogart, die mitgespeichert wurde, auch wenn nur
   die Dicke geändert wurde).
+  Mehrfachauswahl mit verschiedenen DN (Entscheid 13.11.2026, N1): jede Leitung bekommt die Dicke nach der Regel und ihrer DN (ein Paket,
+   mit ); nur eine von Hand eingetragene Dicke gilt für alle. Im 3D erscheint die Dämmung seit N22 wie im Grundriss
+  in der Rohrfarbe und ab Detailgrad mittel; der Dämmpunkt in grob hat den Rand in Planfarbe, verdeckte Dämmkanten sind einheitlich «strichfein» (N23).
   Jede Art kann eine λ-Klasse (MuKEn-Spalte) tragen – nur mit λ und Quelle aus der Herstellerunterlage; dann schlägt der Dialog die Dicke nach DN
   vor, sonst gilt die Dämmregel des Systems. Heute sind alle λ-Klassen offen (keine Werte aus dem Gedächtnis).
 - **Kreuzende Leitungen verdeckt** (Christian 12.11.2026: «leitungen die in einem Grundriss unter einer anderen Leitung durchlaufen (inkl. Dämmung)

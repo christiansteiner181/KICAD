@@ -561,7 +561,7 @@ public class Darstellung3SerieTests
     }
 
     [Fact]
-    public void Koerper_Daemmung_ZweiterHellerKoerperNurImDetailgradFein()
+    public void Koerper_Daemmung_ZweiterKoerperInRohrfarbe_AbDetailgradMittel()
     {
         var p = MitSerie(false);
         Ok(Rohr(p, "RO-1", "DN 20", [0, 0, 500], [3000, 0, 500]));
@@ -574,15 +574,11 @@ public class Darstellung3SerieTests
         Assert.Equal(0.35, d.Deckkraft);
         Assert.True(d.NichtSchneiden);                                       // nicht im Schnitt
         Assert.NotNull(k.Teile[0].Achse); Assert.Null(d.Achse);              // eine Achslinie je Leitung, nicht noch eine für die Dämmung
-        Assert.NotNull(d.Farbe);
-        Assert.NotEqual(k.Teile[0].Farbe, d.Farbe);
-        // mittel: nur das Rohr
+        // Entscheid Christian 13.11.2026 (Frage N22): wie im Grundriss in der Rohrfarbe und ab mittel (vorher nur fein, aufgehellt)
+        Assert.Equal(k.Teile[0].Farbe, d.Farbe);
         var e = Hole(p, "RO-1");
-        Assert.Single(new HlksGrafik().Koerper(p, e, "mittel")!.Teile);
-        Assert.Equal(2, new HlksGrafik().Koerper(p, e, "fein")!.Teile.Count);
-        // heller als die Medienfarbe: jeder Kanal näher an Weiss
-        static int Summe(string f) => Convert.ToInt32(f[1..3], 16) + Convert.ToInt32(f[3..5], 16) + Convert.ToInt32(f[5..7], 16);
-        Assert.True(Summe(d.Farbe!) > Summe(k.Teile[0].Farbe!));
+        Assert.Equal(2, new HlksGrafik().Koerper(p, e, "mittel")!.Teile.Count);
+        Assert.Single(new HlksGrafik().Koerper(p, e, "grob")!.Teile);
     }
 
     [Fact]

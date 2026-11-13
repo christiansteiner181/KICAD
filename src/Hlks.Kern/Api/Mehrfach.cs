@@ -43,15 +43,21 @@ public sealed class ElementeAendern : IBefehl
     [
         new("elemente", "liste", true, "Kennzeichen oder Ids"),
         new("eigenschaften", "objekt", true, "{ name: wert | { wert, einheit, quelle } | null }"),
+        new("je_element", "objekt", false, "{ Kennzeichen oder Id: { name: wert } } – ersetzt für dieses Element einzelne Eigenschaften (z. B. die Dämmdicke je Leitung nach Regel)"),
     ];
 
     public void Ausfuehren(Kontext k, JsonObject p)
     {
         var liste = ArchParam.Elemente(k, p);
         if (p["eigenschaften"] is not JsonObject eig || eig.Count == 0) throw new HlksFehler("eigenschaften fehlt.", "{ name: wert } angeben.");
+        var je = p["je_element"] as JsonObject;
         foreach (var e in liste)
         {
-            try { new ElementAendern().Ausfuehren(k, new JsonObject { ["element"] = e.Id, ["eigenschaften"] = eig.DeepClone() }); }
+            var eigE = (JsonObject)eig.DeepClone();
+            // Werte je Element (Entscheid Christian 13.11.2026, Frage N1: Dämmdicke je Leitung nach Regel und DN, in einem Paket)
+            if (je is not null && (je[e.Kennzeichen] ?? je[e.Id]) is JsonObject eigen)
+                foreach (var (n, w) in eigen) eigE[n] = w?.DeepClone();
+            try { new ElementAendern().Ausfuehren(k, new JsonObject { ["element"] = e.Id, ["eigenschaften"] = eigE }); }
             catch (HlksFehler f) { throw new HlksFehler($"{e.Kennzeichen}: {f.Message}", f.Vorschlag); }
         }
         k.Hinweise.Insert(0, $"{liste.Count} Element(e) geändert: {string.Join(", ", eig.Select(x => x.Key))}.");
