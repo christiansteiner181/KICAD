@@ -43,7 +43,8 @@ public static class KiPfade
     public const string Meldung = "Pfad für die KI nicht erlaubt";
 
     /// <summary>Ist der Akteur des Projekts eine KI (Akteur-Art «ki»)?</summary>
-    public static bool IstKi(Projekt p) => string.Equals(p.AkteurArt, "ki", StringComparison.OrdinalIgnoreCase);
+    // nach der Art des Aufrufs, nicht des Projekts (Entscheid Christian 13.11.2026, Frage 38): eine KI über HTTP mit X-Hlks-Akteur-Art: ki bleibt im Projektordner
+    public static bool IstKi(Projekt p) => string.Equals(p.AkteurArtJetzt, "ki", StringComparison.OrdinalIgnoreCase);
 
     /// <summary>Ein blosser Name ohne Ordner und Laufwerk (kein «\», «/», «:»)? Solche Angaben meinen eine Unterlage bzw. Familie, keinen Pfad.</summary>
     public static bool IstName(string? s)

@@ -230,8 +230,8 @@ public class KiSicherheitTests
     {
         using var t = new KiProjekt();
         var aussen = Path.Combine(t.Aussen, "rueckmeldung.bcf");
-        Assert.StartsWith(KiPfade.Meldung, Assert.Throws<HlksFehler>(() => Tuer.Abfrage(t.Ki, "bcf_lesen", new JsonObject { ["datei"] = aussen })).Message);
-        Assert.StartsWith(KiPfade.Meldung, Nein(t.Ki.Ausfuehren("bcf_import", new JsonObject { ["datei"] = aussen }, trockenlauf: true)).Fehler);
+        Assert.Contains("nicht erlaubt", Assert.Throws<HlksFehler>(() => Tuer.Abfrage(t.Ki, "bcf_lesen", new JsonObject { ["datei"] = aussen })).Message);
+        Assert.Contains("nicht erlaubt", Nein(t.Ki.Ausfuehren("bcf_import", new JsonObject { ["datei"] = aussen }, trockenlauf: true)).Fehler);
         // im Projektordner: die Prüfung lässt durch, der Leser meldet die fehlende Datei
         var innen = Path.Combine(t.Ablage, "bcf", "rueckmeldung.bcf");
         Assert.Contains("gibt es nicht", Assert.Throws<HlksFehler>(() => Tuer.Abfrage(t.Ki, "bcf_lesen", new JsonObject { ["datei"] = innen })).Message);
@@ -256,6 +256,20 @@ public class KiSicherheitTests
         Assert.True(t.Mensch.Ausfuehren("rueckmeldung_uebernehmen", par.DeepClone().AsObject(), true).Angenommen);
     }
 
+    /// <summary>Entscheid Christian 13.11.2026 (Frage 37): Befehle «nur Mensch» sperrt der Kern zentral für die Art des Aufrufs «ki» – auch am Projekt
+    /// eines Menschen (HTTP mit X-Hlks-Akteur-Art: ki) und für hkap_*-Abfragen; der Mensch bleibt frei.</summary>
+    [Fact]
+    public void NurMensch_ZentralImKern_FuerKiAbgelehnt()
+    {
+        using var t = new KiProjekt();
+        foreach (var befehl in new[] { "plansatz_setzen", "kollision_status", "montagestatus_setzen" })
+            Assert.Contains("ist der KI nicht erlaubt", Nein(t.Mensch.Ausfuehren(befehl, new JsonObject(), true, "ki")).Fehler);
+        Assert.Contains("ist der KI nicht erlaubt", Nein(t.Ki.Ausfuehren("aussparung_status", new JsonObject(), true)).Fehler);
+        Assert.DoesNotContain("ist der KI nicht erlaubt", t.Mensch.Ausfuehren("plansatz_setzen", new JsonObject(), true).Fehler ?? "");
+        Assert.True(KiVerbote.IstGesperrt("hkap_abgleich"));
+        Assert.Contains("ist der KI nicht erlaubt", Assert.Throws<HlksFehler>(() => Tuer.Abfrage(t.Ki, "hkap_verbindung")).Message);
+    }
+
     [Fact]
     public void Ausgaben_Ki_BcfExport_AussparungenIfc_PlanPdf_NurUnterDenWurzeln()
     {
@@ -272,7 +286,7 @@ public class KiSicherheitTests
                  })
         {
             var f = Assert.Throws<HlksFehler>(() => Tuer.Abfrage(t.Ki, abfrage, par));
-            Assert.StartsWith(KiPfade.Meldung, f.Message);
+            Assert.Contains("nicht erlaubt", f.Message);
             Assert.Contains(abfrage, f.Message);
         }
         Assert.Empty(Directory.GetFiles(t.Aussen));
@@ -291,13 +305,13 @@ public class KiSicherheitTests
         {
             var aussen = Path.Combine(t.Wurzel, "aussen");
             var f = Assert.Throws<HlksFehler>(() => Tuer.Abfrage(ki, "plansatz_pdf", new JsonObject { ["plansatz"] = "auto:sanitaer", ["ordner"] = aussen, ["pruefen"] = true }));
-            Assert.StartsWith(KiPfade.Meldung, f.Message);
+            Assert.Contains("nicht erlaubt", f.Message);
             Assert.False(Directory.Exists(aussen));
             var n = Nein(ki.Ausfuehren("plansatz_setzen", new JsonObject { ["plansatz"] = "auto:sanitaer", ["ausgabe"] = new JsonObject { ["ordner"] = @"\\203.0.113.5\ausgang" } }));
-            Assert.StartsWith(KiPfade.Meldung, n.Fehler);
-            Assert.Contains("ausgabe.ordner", n.Fehler);
+            Assert.Contains("nicht erlaubt", n.Fehler);
+            // seit Frage 37 ist plansatz_setzen für die KI ganz gesperrt (Liste «nur Mensch» im Kern)
             // unter dem Projektordner geht es
-            Ok(ki.Ausfuehren("plansatz_setzen", new JsonObject { ["plansatz"] = "auto:sanitaer", ["ausgabe"] = new JsonObject { ["ordner"] = Path.Combine(t.Ablage, "ausgang") } }, trockenlauf: true));
+            Nein(ki.Ausfuehren("plansatz_setzen", new JsonObject { ["plansatz"] = "auto:sanitaer", ["ausgabe"] = new JsonObject { ["ordner"] = Path.Combine(t.Ablage, "ausgang") } }, trockenlauf: true));
         }
         finally { ki.Freigeben(); }
     }

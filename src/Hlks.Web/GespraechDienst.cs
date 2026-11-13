@@ -129,8 +129,8 @@ public sealed class GespraechDienst
     static readonly TimeSpan TextAbstand = TimeSpan.FromMilliseconds(120);
 
     /// <summary>Die Werkzeuge des 2D-CAD «Zeichnung» (Hlks.Mcp, ZeichnungWerkzeuge) – als feste Liste, damit ein neues Zeichnungswerkzeug wie jedes andere
-    /// als «nicht eingeordnet» auffällt. Steht vor Verbote (Reihenfolge der statischen Felder).</summary>
-    static readonly string[] ZeichnungWerkzeugeNamen =
+    /// als «nicht eingeordnet» auffällt. Seit 13.11.2026 (Frage 51) in KiEinordnung erlaubt.</summary>
+    public static readonly string[] ZeichnungWerkzeugeNamen =
         ["zeichnungen", "zeichnung_oeffnen", "zeichnung_neu", "zeichnung_schliessen", "zeichnung_layer", "zeichnung_layer_setzen", "zeichnung_layer_anlegen",
          "zeichnung_objekte", "zeichnung_messen", "zeichnung_bild", "zeichnung_pdf", "zeichnung_plotstile", "zeichnung_bloecke", "zeichnung_bemassungsstil",
          "zeichnung_zeichnen", "zeichnung_aendern", "zeichnung_rueckgaengig", "zeichnung_wiederholen", "zeichnung_speichern"];
@@ -183,11 +183,7 @@ public sealed class GespraechDienst
         new("revision_hinzufuegen", "Setzt Revisionsindex und -datum im Plankopf – Dokumentenlenkung gegenüber Dritten wie Freigabe/Versand, das will ein Mensch (B5)."),
         new("plansatz_revision_hinzufuegen", "Setzt eine Revision auf allen Plänen eines Plansatzes – Dokumentenlenkung, nur der Mensch (B5)."),
         new("plansatz_setzen", "Kann mit ausgabe.ordner das Ziel des nächsten Serien-PDF auf einen beliebigen Ort setzen – Planausgabe richtet der Mensch ein (B5)."),
-        // 2D-CAD «Zeichnung» (10.11.2026): läuft als eigener Server (Hlks.Mcp --zeichnungen <Ordner>) mit eigenen Dateien ausserhalb des Projekts. Die
-        // KI-Palette gibt dem Server keine Zeichnungsordner mit; bis Christian entscheidet, ob und welche Zeichnungswerkzeuge die Palette bekommt, sind
-        // alle verboten (Einordnung der Gesamtprüfung 13.11.2026, zur Bestätigung – vorher waren sie nicht eingeordnet und damit ebenfalls nicht verfügbar).
-        .. ZeichnungWerkzeugeNamen.Select(w => new Verbot(w, "2D-CAD «Zeichnung»: liest bzw. schreibt DWG/DXF-Dateien ausserhalb des Projekts (eigener Server mit " +
-            "--zeichnungen); in der KI-Palette nicht freigegeben, bis ein Mensch es einordnet.")),
+        // 2D-CAD «Zeichnung»: seit dem Entscheid Christian 13.11.2026 (Frage 51) alle freigegeben – eingeordnet in KiEinordnung (lesend und ändernd)
         // Internet nur auf Schalter
         new("unterlage_aus_url", "Abruf aus dem Internet – nur mit dem Schalter «Internet» der Frage (dann erlaubt und protokolliert)."),
     ];

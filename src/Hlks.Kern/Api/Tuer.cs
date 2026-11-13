@@ -12,6 +12,7 @@ public static class Tuer
     public static object Abfrage(Projekt p, string name, JsonObject? par = null)
     {
         par ??= new JsonObject();
+        KiVerbote.Pruefen(name, p.AkteurArtJetzt);   // hkap_* nach aussen nur durch den Menschen (Frage 37)
         var a = new Abfragen(p);
         string? T(string n, bool pflicht = false) => Param.Text(par, n, pflicht);
         int I(string n, int vorgabe) => Param.Zahl(par, n) is double d ? (int)d : vorgabe;

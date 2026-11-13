@@ -131,6 +131,8 @@ public sealed class Projekt
     // Akteur-Art des Servers, meist «mensch»); begruendung/prozessschritt landen im Paket. Gesetzt nur während Ausfuehren (unter der Sperre des Projekts).
     string? aufrufArt, aufrufBegruendung, aufrufSchritt;
     string ArtJetzt => aufrufArt ?? AkteurArt;
+    /// <summary>Art des laufenden Aufrufs (KI über HTTP meldet sich als «ki»), sonst die des Projekts – für Sperren und die Pfadgrenze (Frage 38).</summary>
+    public string AkteurArtJetzt => ArtJetzt;
 
     /// <summary>Wie Ausfuehren, aber als Akteur-Art «ki» bzw. einer anderen Art als der des Projekts (null = Art des Projekts).</summary>
     public BefehlsErgebnis Ausfuehren(string befehl, JsonObject? parameter, bool trockenlauf, string? akteurArt)
@@ -181,6 +183,9 @@ public sealed class Projekt
                 throw new HlksFehler($"Unbekannte Parameter: {string.Join(", ", fremd)}.",
                     b.Parameter.Count == 0 ? $"{b.Name} hat keine Parameter." : $"Gültig für {b.Name}: {string.Join(", ", b.Parameter.Select(d => d.Name))}.");
         }
+        catch (HlksFehler f) { return Abgelehnt(befehl, trockenlauf, f); }
+        // Befehle «nur Mensch» zentral (Frage 37): gilt für Palette, MCP und HTTP gleich
+        try { KiVerbote.Pruefen(b.Name, ArtJetzt); }
         catch (HlksFehler f) { return Abgelehnt(befehl, trockenlauf, f); }
         var k = new Kontext(this, Modell.Kopie(), NeueHerkunft(b.Name)) { Trockenlauf = trockenlauf };
         try

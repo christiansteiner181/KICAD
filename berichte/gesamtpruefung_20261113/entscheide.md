@@ -118,3 +118,5 @@ swisspor führt für Rohre nur PIR-Schalen «swissporKISODUR» (Heizung, Kälte,
   Offen aus diesem Paket: 11 (Parallele oben/unten mit Gehrung in 3D), N5 (echte Spitze an Wandecken), N6 (Wandstoss endet an der zugewandten Fläche).
 - **13.11.2026 Nachtrag Geometrie:** 11 (Parallele oben/unten mit Gehrung in 3D), N5 (spitze Wandecken als Spitze), N6 (T-Stoss endet an der
   zugewandten Fläche, Achse auf Achse gezeichnet → gekürzt) umgesetzt.
+- **13.11.2026 weitere:** 48 (Ansicht löschen mit Beschriftungen, 58805d9), 37 (Liste «nur Mensch» zentral im Kern, KiVerbote.cs), 38 (Pfadgrenze
+  nach Art des Aufrufs, Projekt.AkteurArtJetzt), 51 (zeichnung_* für die KI freigegeben) umgesetzt.
