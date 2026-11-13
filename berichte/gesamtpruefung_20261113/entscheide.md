@@ -64,3 +64,49 @@ swisspor führt für Rohre nur PIR-Schalen «swissporKISODUR» (Heizung, Kälte,
 | 50 | MSRL in der Oberfläche | Zusammen mit dem Neudenken von Schemas/Prinzipschemas und MSRL (vgl. 23) |
 | 51 | zeichnung_* in der KI-Palette | Alle freigeben (lesend und schreibend, mit Rückgängig) |
 | 52 | Grundausstattung nicht rückgängig | So recht |
+
+## Detailfragen aus den Einzelberichten (N1–N41, gesammelt 13.11.2026)
+
+| Nr. | Thema (Bericht) | Entscheid |
+|---|---|---|
+| N1 | Dämmen bei Mehrfachauswahl (leitungen2 §5.4) | Je Leitung nach Regel und DN; nur eine Handeingabe gilt einheitlich |
+| N2 | Steigzone gleiche Abstände (leitungen2 §5.3) | Abstand bei Rohren immer auf die Achse beziehen |
+| N4 | Vorgabe-Silent-Linie (leitungen §5.4) | Abwasser default Silent, wahlweise PE – mehr Linien gibt es nicht |
+| N3 | Eckige Steigkanäle in Reihe (leitungen2 §5.5) | Wahlfeld «b/h entlang Reihe», Standard b |
+| N6 | Rechtwinkliger Wandstoss (gegenpruefung §4.1, B1) | Wand schliesst auf der zugewandten Fläche der anderen Wand ab (keine Verlängerung) – Abweichung von Spezifikation Modul 1a |
+| N5 | Spitze Wandecken (architektur §4.3) | Echte Spitze (Gehrung) statt Fase – Umbau der Wandkontur |
+| N7 | Halbhohe Wände / Brüstung (hkap_huelle §4.2) | Heute zu hoch um überzählige Wandfläche × U_W (Christian). Wand mit wirklicher Höhe zählen; wo eine Wand übermessen wird, Fenster darin nur mit ΔU = U_F − U_W |
+| N8 | Bezugsmasse Raumgrenzen (architektur §4.4) | Nach SIA 384/2 bzw. SIA 384.201 – Ziffer bei Umsetzung nachlesen (im Normenordner liegt «Wegleitung 384.201.pdf»), bis dahin Innenmasse |
+| N9 | Akzeptierte Kollision nach Verschieben (kollision §5.3) | Neu beurteilen (wie heute) |
+| N10 | Kreuzung < 1 mm Höhenunterschied (verdeckung §4.3) | So lassen, Kollisionsprüfung meldet |
+| N11 | Massgebende Höhe an Kreuzungen (grafik §5.2) | Achshöhe an der Kreuzungsstelle |
+| N14 | Stoss GIS-Segmente (fachwerkzeuge §5.4) | Rücken an Rücken, 0 mm |
+| N13 | Montagewinkel beim Element (fachwerkzeuge §5.3) | Beidseits des Elements je ein Winkel, Höchstabstand eingehalten |
+| N15 | Vorwand über Eck (fachwerkzeuge §5.5) | Die zuerst gezeichnete läuft durch, die neue schliesst stumpf an |
+| N17 | Vorwand löschen (fachwerkzeuge §5.1) | Montageelemente mitlöschen, Hinweis «n Elemente mitgelöscht» |
+| N16 | Bestücken, Apparat in der Vorwand (fachwerkzeuge §5.7) | KICAD-Apparat vor die Vorwand schieben und bestücken, Hinweis nennt die verschobenen |
+| N18 | 180°-Umkehrbogen (familiengeometrie §4.2) | Nicht vorgesehen; Familie mit 180° wird gemeldet |
+| N19 | Anschluss zeigt nach innen (familiengeometrie §4.3) | Freigabe sperren |
+| N20 | Fremde freigegebene Familie laden (import §4.5) | Status übernehmen |
+| N21 | Referenzkegel, nur zwei Kegel (import §4.2) | Überdeckung mit dem bestehenden Modell entscheidet über die halbe Drehung; Toleranz 50 mm bleibt |
+| N22 | Dämmung im 3D (grafik §5.1) | An den Grundriss angleichen: Rohrfarbe, ab «mittel» |
+| N23 | Dämmpunkt grob / verdeckte Dämmkanten (grafik §5.4) | Rand in Planfarbe, verdeckte Kanten einheitlich «strichfein» (0.8/0.5 mm) |
+| N24 | Heizkörper ΔTn (rechenkerne §5.3) | Beides logarithmisch (bei Normbedingung f = 1.000); Abweichung vom Büroblatt |
+| N25 | Spitzendurchfluss unter Kurvenstart (rechenkerne §5.4) | Q_D = Q_T unter dem Kurvenstart, Zusammenstellung angleichen |
+| N26 | Rohrrauheit (rechenkerne §5.5) | Einen Standardwert übernehmen (statt Namensraten bzw. Herstellerwert je Linie); Wert mit Quelle bei Umsetzung |
+| N27 | ζ-Werte Einzelwiderstände (rechenkerne §5.6) | Aus den HFGT16-Unterlagen (OneDrive\HFGT16) übernehmen, Dokument und Seite als Quelle |
+| N28 | Luftschichten / Schichten mit R (hkap_huelle §4.3) | Feld «R» je Schicht, mit Quelle |
+| N29 | Betondecke erkennen (hkap_huelle §4.6) | Auch «Beton» im Aufbaunamen oder in einer Schicht zählt |
+| N30 | Materialliste am Systemübergang (ausgabe §4.4) | Formteil nur im eigenen System |
+| N31 | Abgesetzte Schnitte (dreid §4.3) | Echter abgesetzter Schnitt |
+| N32 | Gerät zwischen zwei Gewerken (msrl §4.1) | Gewerk der Geräteklasse |
+| N33 | Ansicht duplizieren (msrl §4.4) | Wahl beim Duplizieren: nur Ansicht oder mit Beschriftungen |
+| N34 | Detailgrad/Massstab im 3D (msrl §4.6) | Im 3D ausblenden (wie heute) |
+| N35 | Menüband nach dem Zeichnen (oberflaeche §4.1) | Im Gewerkeregister bleiben |
+| N36 | Netzbefehle bei Wand/Raum/Text (oberflaeche §4.4) | Ausblenden |
+| N37 | Fang nahe am letzten Punkt (oberflaeche2 §4.3) | Mindestens ein Rasterschritt |
+| N38 | Ja/Nein als Text (schema_api §5.5) | Annehmen und umwandeln («true», «ja», «1») |
+| N40 | Lagen im Lagemanager (gegenpruefung §4.2) | Je Lage ein eigenes Textfeld (statt Liste in einem Feld) |
+| N39 | Hinweis «nicht kleiner als zufliessend» (leistung §4.2) | Eine der gleich grossen nennen (kleinstes Kennzeichen), Rechnung in einem Durchgang |
+| N41 | Schwellen automatisches Ausrichten (unterlagen §5.3) | So lassen, an echtem Plan (Bernstrasse) justieren |
+| N12 | Steigleitung neben waagrechter Leitung (grafik §5.3) | Oberes Ende zählt auch für die Darstellung (wie 5): waagrechte im Überlappungsbereich verdeckt |
