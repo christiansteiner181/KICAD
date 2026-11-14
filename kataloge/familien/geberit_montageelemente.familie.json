@@ -110,6 +110,118 @@
       "beschreibung": "Seitlicher Versatz des Anschlusses WW ab Elementmitte (Katalog anschluesse.ww.s)"
     },
     {
+      "name": "ist_wc",
+      "art": "typ",
+      "datentyp": "zahl",
+      "gruppe": "sonstiges",
+      "wert": 0,
+      "beschreibung": "1 = WC-Element (Spülkasten, Abwasserbogen)"
+    },
+    {
+      "name": "mit_bolzen",
+      "art": "typ",
+      "datentyp": "zahl",
+      "gruppe": "sonstiges",
+      "wert": 0,
+      "beschreibung": "1 = Befestigung des Apparats mit zwei Gewindestangen"
+    },
+    {
+      "name": "profil",
+      "art": "typ",
+      "datentyp": "laenge",
+      "gruppe": "abmessung",
+      "wert": 40,
+      "beschreibung": "Querschnitt der Rahmenprofile (Darstellung)"
+    },
+    {
+      "name": "spk_b",
+      "art": "typ",
+      "datentyp": "laenge",
+      "gruppe": "abmessung",
+      "wert": 0,
+      "beschreibung": "Spülkasten Breite"
+    },
+    {
+      "name": "spk_h",
+      "art": "typ",
+      "datentyp": "laenge",
+      "gruppe": "abmessung",
+      "wert": 0,
+      "beschreibung": "Spülkasten Höhe"
+    },
+    {
+      "name": "spk_t",
+      "art": "typ",
+      "datentyp": "laenge",
+      "gruppe": "abmessung",
+      "wert": 0,
+      "beschreibung": "Spülkasten Tiefe"
+    },
+    {
+      "name": "spk_uk",
+      "art": "typ",
+      "datentyp": "laenge",
+      "gruppe": "abmessung",
+      "wert": 0,
+      "beschreibung": "Spülkasten Unterkante über OKFF"
+    },
+    {
+      "name": "bet_b",
+      "art": "typ",
+      "datentyp": "laenge",
+      "gruppe": "abmessung",
+      "wert": 0,
+      "beschreibung": "Betätigungsöffnung Breite"
+    },
+    {
+      "name": "bet_h",
+      "art": "typ",
+      "datentyp": "laenge",
+      "gruppe": "abmessung",
+      "wert": 0,
+      "beschreibung": "Betätigungsöffnung Höhe"
+    },
+    {
+      "name": "bet_mz",
+      "art": "typ",
+      "datentyp": "laenge",
+      "gruppe": "abmessung",
+      "wert": 0,
+      "beschreibung": "Betätigungsöffnung Mitte über OKFF"
+    },
+    {
+      "name": "bolzen_a",
+      "art": "typ",
+      "datentyp": "laenge",
+      "gruppe": "abmessung",
+      "wert": 0,
+      "beschreibung": "Abstand der Gewindestangen (Befestigung des Apparats)"
+    },
+    {
+      "name": "bolzen_z",
+      "art": "typ",
+      "datentyp": "laenge",
+      "gruppe": "abmessung",
+      "wert": 0,
+      "beschreibung": "Höhe der Gewindestangen über OKFF"
+    },
+    {
+      "name": "bolzen_l",
+      "art": "typ",
+      "datentyp": "laenge",
+      "gruppe": "abmessung",
+      "wert": 40,
+      "beschreibung": "Überstand der Gewindestangen vor die Beplankung (Darstellung)"
+    },
+    {
+      "name": "sw_r",
+      "art": "typ",
+      "datentyp": "laenge",
+      "gruppe": "abmessung",
+      "wert": 25,
+      "beschreibung": "Radius Abwasserbogen bzw. -stutzen (Darstellung; WC d 90 nach Planungshandbuch S. 178)"
+    },
+    {
       "name": "versatz",
       "art": "exemplar",
       "datentyp": "laenge",
@@ -134,7 +246,21 @@
         "kw_s": 0,
         "mit_ww": 0,
         "ww_z": 0,
-        "ww_s": 0
+        "ww_s": 0,
+        "ist_wc": 1,
+        "mit_bolzen": 1,
+        "profil": 40,
+        "spk_b": 380,
+        "spk_h": 500,
+        "spk_t": 100,
+        "spk_uk": 560,
+        "bet_b": 250,
+        "bet_h": 170,
+        "bet_mz": 810,
+        "bolzen_a": 180,
+        "bolzen_z": 330,
+        "bolzen_l": 40,
+        "sw_r": 45
       }
     },
     {
@@ -152,7 +278,21 @@
         "kw_s": 0,
         "mit_ww": 0,
         "ww_z": 0,
-        "ww_s": 0
+        "ww_s": 0,
+        "ist_wc": 1,
+        "mit_bolzen": 1,
+        "profil": 40,
+        "spk_b": 380,
+        "spk_h": 369,
+        "spk_t": 120,
+        "spk_uk": 391,
+        "bet_b": 250,
+        "bet_h": 170,
+        "bet_mz": 576,
+        "bolzen_a": 180,
+        "bolzen_z": 320,
+        "bolzen_l": 40,
+        "sw_r": 45
       }
     },
     {
@@ -170,7 +310,21 @@
         "kw_s": 0,
         "mit_ww": 0,
         "ww_z": 0,
-        "ww_s": 0
+        "ww_s": 0,
+        "ist_wc": 1,
+        "mit_bolzen": 1,
+        "profil": 40,
+        "spk_b": 380,
+        "spk_h": 441,
+        "spk_t": 120,
+        "spk_uk": 479,
+        "bet_b": 250,
+        "bet_h": 170,
+        "bet_mz": 700,
+        "bolzen_a": 180,
+        "bolzen_z": 330,
+        "bolzen_l": 40,
+        "sw_r": 45
       }
     },
     {
@@ -188,7 +342,21 @@
         "kw_s": 0,
         "mit_ww": 0,
         "ww_z": 0,
-        "ww_s": 0
+        "ww_s": 0,
+        "ist_wc": 1,
+        "mit_bolzen": 1,
+        "profil": 40,
+        "spk_b": 380,
+        "spk_h": 500,
+        "spk_t": 100,
+        "spk_uk": 560,
+        "bet_b": 250,
+        "bet_h": 170,
+        "bet_mz": 810,
+        "bolzen_a": 180,
+        "bolzen_z": 330,
+        "bolzen_l": 40,
+        "sw_r": 45
       }
     },
     {
@@ -206,7 +374,21 @@
         "kw_s": -76.5,
         "mit_ww": 1,
         "ww_z": 590,
-        "ww_s": 76.5
+        "ww_s": 76.5,
+        "ist_wc": 0,
+        "mit_bolzen": 1,
+        "profil": 40,
+        "spk_b": 0,
+        "spk_h": 0,
+        "spk_t": 0,
+        "spk_uk": 0,
+        "bet_b": 0,
+        "bet_h": 0,
+        "bet_mz": 0,
+        "bolzen_a": 180,
+        "bolzen_z": 820,
+        "bolzen_l": 40,
+        "sw_r": 25
       }
     },
     {
@@ -224,7 +406,21 @@
         "kw_s": 0,
         "mit_ww": 0,
         "ww_z": 0,
-        "ww_s": 0
+        "ww_s": 0,
+        "ist_wc": 0,
+        "mit_bolzen": 1,
+        "profil": 40,
+        "spk_b": 0,
+        "spk_h": 0,
+        "spk_t": 0,
+        "spk_uk": 0,
+        "bet_b": 0,
+        "bet_h": 0,
+        "bet_mz": 0,
+        "bolzen_a": 180,
+        "bolzen_z": 800,
+        "bolzen_l": 40,
+        "sw_r": 25
       }
     },
     {
@@ -242,7 +438,21 @@
         "kw_s": 0,
         "mit_ww": 0,
         "ww_z": 0,
-        "ww_s": 0
+        "ww_s": 0,
+        "ist_wc": 0,
+        "mit_bolzen": 0,
+        "profil": 40,
+        "spk_b": 0,
+        "spk_h": 0,
+        "spk_t": 0,
+        "spk_uk": 0,
+        "bet_b": 0,
+        "bet_h": 0,
+        "bet_mz": 0,
+        "bolzen_a": 0,
+        "bolzen_z": 0,
+        "bolzen_l": 40,
+        "sw_r": 25
       }
     },
     {
@@ -260,7 +470,21 @@
         "kw_s": 0,
         "mit_ww": 0,
         "ww_z": 0,
-        "ww_s": 0
+        "ww_s": 0,
+        "ist_wc": 1,
+        "mit_bolzen": 1,
+        "profil": 40,
+        "spk_b": 304,
+        "spk_h": 470,
+        "spk_t": 100,
+        "spk_uk": 560,
+        "bet_b": 250,
+        "bet_h": 170,
+        "bet_mz": 795,
+        "bolzen_a": 180,
+        "bolzen_z": 330,
+        "bolzen_l": 40,
+        "sw_r": 45
       }
     },
     {
@@ -278,7 +502,21 @@
         "kw_s": 0,
         "mit_ww": 0,
         "ww_z": 0,
-        "ww_s": 0
+        "ww_s": 0,
+        "ist_wc": 1,
+        "mit_bolzen": 1,
+        "profil": 40,
+        "spk_b": 304,
+        "spk_h": 455,
+        "spk_t": 100,
+        "spk_uk": 545,
+        "bet_b": 250,
+        "bet_h": 170,
+        "bet_mz": 773,
+        "bolzen_a": 180,
+        "bolzen_z": 330,
+        "bolzen_l": 40,
+        "sw_r": 45
       }
     },
     {
@@ -296,7 +534,21 @@
         "kw_s": 0,
         "mit_ww": 0,
         "ww_z": 0,
-        "ww_s": 0
+        "ww_s": 0,
+        "ist_wc": 1,
+        "mit_bolzen": 1,
+        "profil": 40,
+        "spk_b": 304,
+        "spk_h": 342,
+        "spk_t": 120,
+        "spk_uk": 391,
+        "bet_b": 250,
+        "bet_h": 170,
+        "bet_mz": 562,
+        "bolzen_a": 180,
+        "bolzen_z": 320,
+        "bolzen_l": 40,
+        "sw_r": 45
       }
     },
     {
@@ -314,7 +566,21 @@
         "kw_s": 0,
         "mit_ww": 0,
         "ww_z": 0,
-        "ww_s": 0
+        "ww_s": 0,
+        "ist_wc": 1,
+        "mit_bolzen": 1,
+        "profil": 40,
+        "spk_b": 304,
+        "spk_h": 403,
+        "spk_t": 120,
+        "spk_uk": 477,
+        "bet_b": 250,
+        "bet_h": 170,
+        "bet_mz": 679,
+        "bolzen_a": 180,
+        "bolzen_z": 330,
+        "bolzen_l": 40,
+        "sw_r": 45
       }
     },
     {
@@ -332,7 +598,21 @@
         "kw_s": -76.5,
         "mit_ww": 1,
         "ww_z": 600,
-        "ww_s": 76.5
+        "ww_s": 76.5,
+        "ist_wc": 0,
+        "mit_bolzen": 1,
+        "profil": 40,
+        "spk_b": 0,
+        "spk_h": 0,
+        "spk_t": 0,
+        "spk_uk": 0,
+        "bet_b": 0,
+        "bet_h": 0,
+        "bet_mz": 0,
+        "bolzen_a": 180,
+        "bolzen_z": 850,
+        "bolzen_l": 40,
+        "sw_r": 25
       }
     },
     {
@@ -350,14 +630,28 @@
         "kw_s": 0,
         "mit_ww": 0,
         "ww_z": 0,
-        "ww_s": 0
+        "ww_s": 0,
+        "ist_wc": 0,
+        "mit_bolzen": 1,
+        "profil": 40,
+        "spk_b": 0,
+        "spk_h": 0,
+        "spk_t": 0,
+        "spk_uk": 0,
+        "bet_b": 0,
+        "bet_h": 0,
+        "bet_mz": 0,
+        "bolzen_a": 180,
+        "bolzen_z": 800,
+        "bolzen_l": 40,
+        "sw_r": 25
       }
     }
   ],
   "koerper": [
     {
-      "id": "rahmen",
-      "name": "Rahmen",
+      "id": "staender_links",
+      "name": "Ständer links",
       "art": "quader",
       "material": "geraet",
       "von": [
@@ -366,10 +660,239 @@
         "rahmenunterkante"
       ],
       "bis": [
+        "-breite / 2 + profil",
+        "versatz + rahmentiefe",
+        "rahmenunterkante + rahmenhoehe"
+      ]
+    },
+    {
+      "id": "staender_rechts",
+      "name": "Ständer rechts",
+      "art": "quader",
+      "material": "geraet",
+      "von": [
+        "breite / 2 - profil",
+        "versatz",
+        "rahmenunterkante"
+      ],
+      "bis": [
         "breite / 2",
         "versatz + rahmentiefe",
         "rahmenunterkante + rahmenhoehe"
       ]
+    },
+    {
+      "id": "riegel_oben",
+      "name": "Riegel oben",
+      "art": "quader",
+      "material": "geraet",
+      "von": [
+        "-breite / 2 + profil",
+        "versatz",
+        "rahmenunterkante + rahmenhoehe - profil"
+      ],
+      "bis": [
+        "breite / 2 - profil",
+        "versatz + rahmentiefe",
+        "rahmenunterkante + rahmenhoehe"
+      ]
+    },
+    {
+      "id": "riegel_unten",
+      "name": "Riegel unten",
+      "art": "quader",
+      "material": "geraet",
+      "von": [
+        "-breite / 2 + profil",
+        "versatz",
+        "rahmenunterkante"
+      ],
+      "bis": [
+        "breite / 2 - profil",
+        "versatz + rahmentiefe",
+        "rahmenunterkante + profil"
+      ]
+    },
+    {
+      "id": "traverse",
+      "name": "Traverse (Befestigung)",
+      "art": "quader",
+      "material": "geraet",
+      "sichtbar": "mit_bolzen",
+      "von": [
+        "-breite / 2 + profil",
+        "versatz",
+        "bolzen_z - profil / 2"
+      ],
+      "bis": [
+        "breite / 2 - profil",
+        "versatz + profil",
+        "bolzen_z + profil / 2"
+      ]
+    },
+    {
+      "id": "spuelkasten",
+      "name": "Spülkasten",
+      "art": "quader",
+      "material": "geraet",
+      "sichtbar": "ist_wc",
+      "von": [
+        "-spk_b / 2",
+        "versatz + rahmentiefe - spk_t",
+        "spk_uk"
+      ],
+      "bis": [
+        "spk_b / 2",
+        "versatz + rahmentiefe",
+        "spk_uk + spk_h"
+      ]
+    },
+    {
+      "id": "betaetigung",
+      "name": "Betätigungsöffnung",
+      "art": "quader",
+      "material": "geraet",
+      "sichtbar": "ist_wc",
+      "detailgrad": [
+        "mittel",
+        "fein"
+      ],
+      "von": [
+        "-bet_b / 2",
+        -8,
+        "bet_mz - bet_h / 2"
+      ],
+      "bis": [
+        "bet_b / 2",
+        "versatz + rahmentiefe - spk_t",
+        "bet_mz + bet_h / 2"
+      ]
+    },
+    {
+      "id": "bolzen_links",
+      "name": "Gewindestange links",
+      "art": "zylinder",
+      "material": "geraet",
+      "sichtbar": "mit_bolzen",
+      "detailgrad": [
+        "mittel",
+        "fein"
+      ],
+      "von": [
+        "-bolzen_a / 2",
+        "versatz",
+        "bolzen_z"
+      ],
+      "nach": [
+        "-bolzen_a / 2",
+        "-bolzen_l",
+        "bolzen_z"
+      ],
+      "r": 6
+    },
+    {
+      "id": "bolzen_rechts",
+      "name": "Gewindestange rechts",
+      "art": "zylinder",
+      "material": "geraet",
+      "sichtbar": "mit_bolzen",
+      "detailgrad": [
+        "mittel",
+        "fein"
+      ],
+      "von": [
+        "bolzen_a / 2",
+        "versatz",
+        "bolzen_z"
+      ],
+      "nach": [
+        "bolzen_a / 2",
+        "-bolzen_l",
+        "bolzen_z"
+      ],
+      "r": 6
+    },
+    {
+      "id": "abwasserbogen",
+      "name": "Abwasserbogen",
+      "art": "sweep",
+      "material": "rohr",
+      "sichtbar": "ist_wc",
+      "profil": {
+        "kreis": "sw_r"
+      },
+      "pfad": [
+        [
+          "sw_s",
+          -5,
+          "sw_z"
+        ],
+        [
+          "sw_s",
+          "versatz + rahmentiefe - sw_r",
+          "sw_z"
+        ],
+        [
+          "sw_s",
+          "versatz + rahmentiefe - sw_r",
+          "rahmenunterkante"
+        ]
+      ],
+      "biegeradius": "sw_r"
+    },
+    {
+      "id": "abwasserstutzen",
+      "name": "Abwasserstutzen",
+      "art": "zylinder",
+      "material": "rohr",
+      "sichtbar": "mit_sw * (1 - ist_wc)",
+      "von": [
+        "sw_s",
+        -5,
+        "sw_z"
+      ],
+      "nach": [
+        "sw_s",
+        "versatz + rahmentiefe / 2",
+        "sw_z"
+      ],
+      "r": "sw_r"
+    },
+    {
+      "id": "stutzen_kw",
+      "name": "Anschluss KW",
+      "art": "zylinder",
+      "material": "rohr",
+      "sichtbar": "mit_kw",
+      "von": [
+        "kw_s",
+        -5,
+        "kw_z"
+      ],
+      "nach": [
+        "kw_s",
+        "versatz + profil",
+        "kw_z"
+      ],
+      "r": 10
+    },
+    {
+      "id": "stutzen_ww",
+      "name": "Anschluss WW",
+      "art": "zylinder",
+      "material": "rohr",
+      "sichtbar": "mit_ww",
+      "von": [
+        "ww_s",
+        -5,
+        "ww_z"
+      ],
+      "nach": [
+        "ww_s",
+        "versatz + profil",
+        "ww_z"
+      ],
+      "r": 10
     }
   ],
   "anschluesse": [

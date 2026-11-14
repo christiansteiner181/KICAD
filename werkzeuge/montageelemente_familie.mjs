@@ -25,6 +25,17 @@ const parameter = [
     p(`${a}_z`, 'typ', 'laenge', `Höhe des Anschlusses ${a.toUpperCase()} über OK fertig Boden (Katalog anschluesse.${a}.z)`, 0),
     p(`${a}_s`, 'typ', 'laenge', `Seitlicher Versatz des Anschlusses ${a.toUpperCase()} ab Elementmitte (Katalog anschluesse.${a}.s)`, 0),
   ]),
+  // Darstellung (14.11.2026, Christian: «die familien sind etwas unschön und nur wenig detailliert»): Werte aus elemente[].darstellung des Katalogs
+  // (mit Quelle bzw. Annahme dort), sonst die Vorgaben in «vorgabe» unten (Annahme Darstellung)
+  { name: 'ist_wc', art: 'typ', datentyp: 'zahl', gruppe: 'sonstiges', wert: 0, beschreibung: '1 = WC-Element (Spülkasten, Abwasserbogen)' },
+  { name: 'mit_bolzen', art: 'typ', datentyp: 'zahl', gruppe: 'sonstiges', wert: 0, beschreibung: '1 = Befestigung des Apparats mit zwei Gewindestangen' },
+  p('profil', 'typ', 'laenge', 'Querschnitt der Rahmenprofile (Darstellung)', 40),
+  p('spk_b', 'typ', 'laenge', 'Spülkasten Breite', 0), p('spk_h', 'typ', 'laenge', 'Spülkasten Höhe', 0), p('spk_t', 'typ', 'laenge', 'Spülkasten Tiefe', 0),
+  p('spk_uk', 'typ', 'laenge', 'Spülkasten Unterkante über OKFF', 0),
+  p('bet_b', 'typ', 'laenge', 'Betätigungsöffnung Breite', 0), p('bet_h', 'typ', 'laenge', 'Betätigungsöffnung Höhe', 0), p('bet_mz', 'typ', 'laenge', 'Betätigungsöffnung Mitte über OKFF', 0),
+  p('bolzen_a', 'typ', 'laenge', 'Abstand der Gewindestangen (Befestigung des Apparats)', 0), p('bolzen_z', 'typ', 'laenge', 'Höhe der Gewindestangen über OKFF', 0),
+  p('bolzen_l', 'typ', 'laenge', 'Überstand der Gewindestangen vor die Beplankung (Darstellung)', 40),
+  p('sw_r', 'typ', 'laenge', 'Radius Abwasserbogen bzw. -stutzen (Darstellung; WC d 90 nach Planungshandbuch S. 178)', 25),
   p('versatz', 'exemplar', 'laenge', 'Abstand Vorderseite Vorwand → Vorderkante Element (setzt der Kern beim Bestücken: Beplankung bzw. Beplankung + Profil)', 0),
 ];
 const medien = { sw: 'SW', kw: 'KW', ww: 'WW' };
@@ -37,6 +48,18 @@ const typen = elemente.map((e) => {
     w[`${a}_z`] = x?.z ?? 0;
     w[`${a}_s`] = x?.s ?? 0;
   }
+  const d = e.darstellung ?? {};
+  const app = e.apparate ?? [], wc = app.includes('WC'), rh = w.rahmenhoehe, ru = w.rahmenunterkante, b = w.breite;
+  const spkH = wc ? Math.min(500, Math.round(rh * 0.45)) : 0;
+  const vorgabe = {
+    ist_wc: wc ? 1 : 0, mit_bolzen: app.some((x) => ['WC', 'Waschtisch', 'Urinal'].includes(x)) ? 1 : 0, profil: 40,
+    spk_b: wc ? b - 2 * 40 - 40 : 0, spk_h: spkH, spk_t: wc ? Math.max(40, (e.rahmentiefe ?? 120) - 20) : 0, spk_uk: wc ? ru + rh - 60 - spkH : 0,
+    bet_b: wc ? 250 : 0, bet_h: wc ? 170 : 0, bet_mz: wc ? Math.round(ru + rh - 60 - spkH / 2) : 0,
+    bolzen_a: app.some((x) => ['WC', 'Waschtisch', 'Urinal'].includes(x)) ? 180 : 0,
+    bolzen_z: e.traverse ?? (wc ? 330 : e.anschluesse?.sw?.z ? e.anschluesse.sw.z + 300 : 0),
+    bolzen_l: 40, sw_r: wc ? 45 : 25,
+  };
+  for (const [k2, v] of Object.entries(vorgabe)) w[k2] = typeof d[k2] === 'number' ? d[k2] : v;
   return { name: e.titel, werte: w };
 });
 const familie = {
@@ -53,7 +76,25 @@ const familie = {
   parameter,
   typen,
   koerper: [
-    { id: 'rahmen', name: 'Rahmen', art: 'quader', material: 'geraet', von: ['-breite / 2', 'versatz', 'rahmenunterkante'], bis: ['breite / 2', 'versatz + rahmentiefe', 'rahmenunterkante + rahmenhoehe'] },
+    // Rahmen aus Profilen: zwei Ständer, oberer und unterer Riegel
+    { id: 'staender_links', name: 'Ständer links', art: 'quader', material: 'geraet', von: ['-breite / 2', 'versatz', 'rahmenunterkante'], bis: ['-breite / 2 + profil', 'versatz + rahmentiefe', 'rahmenunterkante + rahmenhoehe'] },
+    { id: 'staender_rechts', name: 'Ständer rechts', art: 'quader', material: 'geraet', von: ['breite / 2 - profil', 'versatz', 'rahmenunterkante'], bis: ['breite / 2', 'versatz + rahmentiefe', 'rahmenunterkante + rahmenhoehe'] },
+    { id: 'riegel_oben', name: 'Riegel oben', art: 'quader', material: 'geraet', von: ['-breite / 2 + profil', 'versatz', 'rahmenunterkante + rahmenhoehe - profil'], bis: ['breite / 2 - profil', 'versatz + rahmentiefe', 'rahmenunterkante + rahmenhoehe'] },
+    { id: 'riegel_unten', name: 'Riegel unten', art: 'quader', material: 'geraet', von: ['-breite / 2 + profil', 'versatz', 'rahmenunterkante'], bis: ['breite / 2 - profil', 'versatz + rahmentiefe', 'rahmenunterkante + profil'] },
+    { id: 'traverse', name: 'Traverse (Befestigung)', art: 'quader', material: 'geraet', sichtbar: 'mit_bolzen', von: ['-breite / 2 + profil', 'versatz', 'bolzen_z - profil / 2'], bis: ['breite / 2 - profil', 'versatz + profil', 'bolzen_z + profil / 2'] },
+    // WC: Unterputz-Spülkasten mit Betätigungsöffnung an der Beplankung
+    { id: 'spuelkasten', name: 'Spülkasten', art: 'quader', material: 'geraet', sichtbar: 'ist_wc', von: ['-spk_b / 2', 'versatz + rahmentiefe - spk_t', 'spk_uk'], bis: ['spk_b / 2', 'versatz + rahmentiefe', 'spk_uk + spk_h'] },
+    { id: 'betaetigung', name: 'Betätigungsöffnung', art: 'quader', material: 'geraet', sichtbar: 'ist_wc', detailgrad: ['mittel', 'fein'], von: ['-bet_b / 2', -8, 'bet_mz - bet_h / 2'], bis: ['bet_b / 2', 'versatz + rahmentiefe - spk_t', 'bet_mz + bet_h / 2'] },
+    // Befestigung des Apparats: zwei Gewindestangen durch die Beplankung
+    { id: 'bolzen_links', name: 'Gewindestange links', art: 'zylinder', material: 'geraet', sichtbar: 'mit_bolzen', detailgrad: ['mittel', 'fein'], von: ['-bolzen_a / 2', 'versatz', 'bolzen_z'], nach: ['-bolzen_a / 2', '-bolzen_l', 'bolzen_z'], r: 6 },
+    { id: 'bolzen_rechts', name: 'Gewindestange rechts', art: 'zylinder', material: 'geraet', sichtbar: 'mit_bolzen', detailgrad: ['mittel', 'fein'], von: ['bolzen_a / 2', 'versatz', 'bolzen_z'], nach: ['bolzen_a / 2', '-bolzen_l', 'bolzen_z'], r: 6 },
+    // Abwasser: WC-Bogen nach unten, sonst Stutzen nach hinten
+    { id: 'abwasserbogen', name: 'Abwasserbogen', art: 'sweep', material: 'rohr', sichtbar: 'ist_wc', profil: { kreis: 'sw_r' },
+      pfad: [['sw_s', -5, 'sw_z'], ['sw_s', 'versatz + rahmentiefe - sw_r', 'sw_z'], ['sw_s', 'versatz + rahmentiefe - sw_r', 'rahmenunterkante']], biegeradius: 'sw_r' },
+    { id: 'abwasserstutzen', name: 'Abwasserstutzen', art: 'zylinder', material: 'rohr', sichtbar: 'mit_sw * (1 - ist_wc)', von: ['sw_s', -5, 'sw_z'], nach: ['sw_s', 'versatz + rahmentiefe / 2', 'sw_z'], r: 'sw_r' },
+    // Wasseranschlüsse: Stutzen von der Beplankung zum Rahmen
+    { id: 'stutzen_kw', name: 'Anschluss KW', art: 'zylinder', material: 'rohr', sichtbar: 'mit_kw', von: ['kw_s', -5, 'kw_z'], nach: ['kw_s', 'versatz + profil', 'kw_z'], r: 10 },
+    { id: 'stutzen_ww', name: 'Anschluss WW', art: 'zylinder', material: 'rohr', sichtbar: 'mit_ww', von: ['ww_s', -5, 'ww_z'], nach: ['ww_s', 'versatz + profil', 'ww_z'], r: 10 },
   ],
   anschluesse: ['sw', 'kw', 'ww'].map((a) => ({
     name: a, medium: medien[a], fluss: fluss[a], art: 'rohr', form: 'rund',
