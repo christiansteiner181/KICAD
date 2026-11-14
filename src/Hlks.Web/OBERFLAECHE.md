@@ -4268,7 +4268,7 @@ Lagenummer – einmal bis zum nächsten Wechsel (kein Zeichen, wenn das Rohr dav
 **Lüftung** (seit 09.11.2026, Christian «Lüftungen beziehen sich nicht auf lagen. diese werden für Rohre immer als Achse = -xy UKD und bei kanälen immer OK = -xy UKD
 angegeben»): Werkzeug Kanal (DT), Feld **Achse unter UKD** (runde Produktlinie) bzw. **OK unter UKD** (eckige) in mm; Platzhalter zeigt die UK roh Decke des
 Geschosses. Es setzt die **Achshöhe** = UKD − Wert (rund) bzw. UKD − Wert − Kanalhöhe/2 (eckig) und rechnet bei Wechsel von Produktlinie oder Grösse neu; eine
-von Hand eingetragene Achshöhe leert das Feld. **Plan** (Detailgrad fein): unter der Grössenangabe «Achse = −XYmm UKD» (runde Lüftungsleitungen) bzw. «OK = −XYmm UKD» (Kanäle), aus dem ersten waagrechten Stück und der UK roh Decke des Geschosses (`Leitungsbezeichnung.HoeheUkd`; ohne UK roh Decke keine Angabe).
+von Hand eingetragene Achshöhe leert das Feld. Beim Start (Kanal und Lüftungsrohr) gilt ein gemerkter Abstand im aktuellen Geschoss neu; ohne Abstand und ohne Achshöhe > 0 ist **0 unter UKD** vorbelegt; eine Achshöhe ≤ 0 lehnt das Werkzeug ab (Befund Christian 14.11.2026: Kanäle lagen im Boden). **Lagenwechsel zu klein** (z. B. Abzweig L1 → L2 = 120 mm, T-Stück und Bogen d88.9 brauchen 192 mm): Esc legt keinen senkrechten Stummel an, die Meldung schlägt eine tiefere Lage vor. **Plan** (Detailgrad fein): unter der Grössenangabe «Achse = −XYmm UKD» (runde Lüftungsleitungen) bzw. «OK = −XYmm UKD» (Kanäle), aus dem ersten waagrechten Stück und der UK roh Decke des Geschosses (`Leitungsbezeichnung.HoeheUkd`; ohne UK roh Decke keine Angabe).
 
 ## Anlagen und Systeme, Mustersysteme (Christian 09.11.2026)
 
