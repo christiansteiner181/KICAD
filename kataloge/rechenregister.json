@@ -815,6 +815,7 @@
         "3. Öffnungen: Fenster und Türen der Wand im Stück werden abgezogen und als eigene Raumgrenze geführt.",
         "4. Boden und Decke: Raumfläche gegen die Räume darunter bzw. darüber (Polygon-Schnitt), Reste gegen die Wandbänder des Geschosses darunter bzw. darüber; Rest unten im untersten Geschoss oder auf bzw. unter Terrain = Erdreich, sonst aussen; Rest oben = aussen. Teilflächen unter 0.01 m² gehen in der grössten Teilfläche auf.",
         "5. Masse: Innenmasse. Fläche Seite = Kantenlänge · Raumhöhe (lichteHoehe, sonst Geometriehöhe, sonst Geschosshöhe), Boden und Decke = Raumfläche.",
+        "5a. Bezugsmasse nach SIA 384.201:2003 ND.3 S. 39/40 (flaecheSia, Entscheid Christian 13.11.2026, N8): Raumkante um ihren Abstand zur Wandachse (Innenwand) bzw. zur Wandaussenfläche (Perimeter gegen aussen, Erdreich, unbeheizt) nach aussen verschoben, Ecken = Schnittpunkte; Höhe = Geschosshöhe Oberkante bis Oberkante Geschossdecke; Öffnungen mit ihrer Fläche (lichtes Mass), Wand = Fassadenfläche − Öffnungen; Boden/Decke/Dach im Verhältnis Bezugsfläche/Raumfläche (Annahme).",
         "6. Orientierung: Azimut der Aussennormalen ab geografisch Nord im Uhrzeigersinn = Winkel ab +y − nordwinkel; Neigung 90° Wand, 0° Decke und Dach, 180° Boden.",
         "7. U·A = U · A in W/K aus dem gelesenen U-Wert (keine Normfaktoren); Summen je Raum und Angrenzung.",
         "8. Hüllbauteile: Fläche innen = Summe der Raumgrenzen eines beheizten Raums gegen aussen, Erdreich oder unbeheizt; Aussenmass-Fläche der Wand = Länge an der Aussenseite samt Verlängerung · Wandhöhe − Öffnungen."
@@ -1816,7 +1817,7 @@
         "annahme.hauptlauf"
       ],
       "annahmen": [
-        "Innenmasse der Raumgrenzen statt Aussenmasse nach ND.3 (Heizlast etwas zu klein) – Aussenmasse folgen.",
+        "Flächen in Bezugsmassen nach ND.3 (Raumgrenze.flaecheSia, N8); Annahmen: Öffnungsmass = lichtes Mass aussen, Boden/Decke/Dach im Verhältnis der Bezugsfläche, B' noch mit Innenmassen.",
         "θm,e aus SIA 2028 Tab. 2 (ND.1.2 nennt SIA 381/2) – gleiche Quelle wie θe.",
         "Ohne Zeitkonstante τ > 200 h (keine Korrektur); ohne n50 0 (Hülle nach SIA 180); ohne Abschirmungsklasse «moderat».",
         "Uequiv linear zwischen den Tabellenpunkten; U über 2,0 → «keine Dämmung», unter 0,25 → Spalte 0,25; Tabelle nach der nächsten Tiefe (0 / 1,5 / 3,0 m).",

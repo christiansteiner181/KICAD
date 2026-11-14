@@ -55,6 +55,7 @@ public static class RaumgrenzenAbfragen
             ["bauteil"] = g.Bauteil?.Kennzeichen,
             ["aufbau"] = g.Aufbau?.Kennzeichen,
             ["flaeche_m2"] = R(g.Flaeche),
+            ["flaecheSia_m2"] = R(g.FlaecheSia),   // N8: Bezugsmasse nach SIA 384.201 ND.3
             ["azimut"] = R(g.Azimut, 1),
             ["neigung"] = g.Neigung,
             ["u"] = g.U,

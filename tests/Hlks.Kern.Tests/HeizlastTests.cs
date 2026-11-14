@@ -74,8 +74,10 @@ public class HeizlastTests
         // θe = −8 (Station) + round(−0.01 · (700 − 500)) = −10
         Assert.Equal(-10, Z(r["aussen"]!["thetaE"]));
         var z = r["raeume"]!.AsArray().OfType<JsonObject>().Single(x => (string?)x["raum"] == raum);
-        // HT,ie = Wände (14.16 + 10.4 + 15.6 + 10.4) · 0.25 + Fenster 1.44 · 1.0; Boden und Decke ohne U
-        double hie = (14.16 + 10.4 + 15.6 + 10.4) * 0.25 + 1.44 * 1.0;
+        // N8, SIA 384.201 ND.3 S. 39/40: Aussenabmessungen am Perimeter (Wandaussenflächen −200 … 6200 × −200 … 4200 → 6.4 × 4.4 m), Höhe von
+        // Oberkante zu Oberkante Geschossdecke = Geschosshöhe 3.0 m (nur ein Geschoss). HT,ie = Wände (6.4·3 − 1.44 + 4.4·3 + 6.4·3 + 4.4·3) · 0.25
+        // + Fenster 1.44 · 1.0 (lichtes Mass); Boden und Decke ohne U
+        double hie = (6.4 * 3 - 1.44 + 4.4 * 3 + 6.4 * 3 + 4.4 * 3) * 0.25 + 1.44 * 1.0;
         Assert.Equal(hie, Z(z["hTie_WK"]), 2);
         Assert.Equal(Math.Round(hie * 30), Z(z["phiT"]), 0);
         // ohne Anlage, n50 fehlt (0): V̇ = V̇min = 0.5 · 62.4 m³/h; ρc nach (37) mit h = 700 m
@@ -108,7 +110,8 @@ public class HeizlastTests
         // B' = 24 m² / (0.5 · 20 m Wandumfang, Öffnungen nicht doppelt) = 2.4; Uequiv (Spalte U 0.5) linear zwischen B' 2 und 20
         double ue = 0.4 + (0.2 - 0.4) * (2.4 - 2) / 18;
         double fg2 = (20 - 9.0) / (20 + 14);
-        Assert.Equal(1.1 * fg2 * 24 * ue, Z(z["hTig_WK"]), 3);
+        // Boden in Bezugsmassen (N8): 6.4 · 4.4 = 28.16 m² (Aussenabmessungen); B' noch aus den Innenmassen
+        Assert.Equal(1.1 * fg2 * 28.16 * ue, Z(z["hTig_WK"]), 3);
         // Lüftungsanlage ohne Zulufttemperatur: wie ohne Anlage, V̇ = max(0.2·V, 0.5·V) = V̇min
         Assert.True(z["lueftungsanlage"]!.GetValue<bool>());
         Assert.Equal(0.5 * 6 * 4 * 2.6, Z(z["vPunkt_m3h"]), 2);

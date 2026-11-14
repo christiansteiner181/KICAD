@@ -634,4 +634,28 @@ public class RaumgrenzenTests
         Assert.Equal(erg.Grenzen.Count, o["zeilen"]!.AsArray().Count);
         Assert.NotNull(Tuer.Abfrage(p, "huellbauteile"));
     }
+
+    /// <summary>N8 (Christian 13.11.2026), SIA 384.201 ND.3 S. 39/40, Bild ND.1/ND.4: Perimeter in Aussenabmessungen, raumweise auf der Mittelachse der
+    /// Innenwand geteilt, Innenwand zwischen den Aussenflächen; Höhe von Oberkante zu Oberkante Geschossdecke. Wandachsen −100 … 6100 × −100 … 4100
+    /// (200 mm), Innenwand auf x = 3000 (100 mm), Geschoss 3.0 m, lichte Höhe 2.6 m.</summary>
+    [Fact]
+    public void Bezugsmasse_SIA384_201_Aussenmass_Mittelachse_Geschosshoehe()
+    {
+        var p = RaumgrenzenHilfe.Leer();
+        RaumgrenzenHilfe.Geschoss(p, "EG", 0, 3000);
+        RaumgrenzenHilfe.Waende(p, "EG", -100, -100, 6100, 4100, 200);
+        RaumgrenzenHilfe.Wand(p, "EG", [3000, -100], [3000, 4100], 100);
+        var a = RaumgrenzenHilfe.Raum(p, "EG", 1500, 2000, 2600);
+        var b = RaumgrenzenHilfe.Raum(p, "EG", 4500, 2000, 2600);
+        var erg = RaumgrenzenHilfe.Rechnen(p, a, b);
+        var ga = erg.Grenzen.Where(g => g.Raum.Kennzeichen == a && g.Art == "wand").ToList();
+        // Innenwand: von Aussenfläche Süd (−200) bis Aussenfläche Nord (4200) = 4.4 m × 3.0 m, für beide Räume gleich
+        var innen = ga.Single(g => g.Angrenzung == "beheizt");
+        RaumgrenzenHilfe.Nahe(4.4 * 3.0, innen.FlaecheSia!.Value, 1e-6);
+        RaumgrenzenHilfe.Nahe(innen.FlaecheSia!.Value, erg.Grenzen.Single(g => g.Raum.Kennzeichen == b && g.Art == "wand" && g.Angrenzung == "beheizt").FlaecheSia!.Value, 1e-6);
+        // Südwand von Raum A: Aussenfläche West (−200) bis Mittelachse der Innenwand (3000) = 3.2 m × 3.0 m; Innenmass bleibt 2.95 × 2.6
+        var sued = ga.Single(g => g.Angrenzung == "aussen" && Math.Abs(g.Von![1]) < 1 && Math.Abs(g.Bis![1]) < 1);
+        RaumgrenzenHilfe.Nahe(3.2 * 3.0, sued.FlaecheSia!.Value, 1e-6);
+        RaumgrenzenHilfe.Nahe(2.95 * 2.6, sued.Flaeche, 1e-6);
+    }
 }

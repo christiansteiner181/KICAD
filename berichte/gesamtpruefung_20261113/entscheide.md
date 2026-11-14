@@ -137,3 +137,7 @@ swisspor führt für Rohre nur PIR-Schalen «swissporKISODUR» (Heizung, Kälte,
 - **14.11.2026 Paket Schnitt/Materialliste:** N30 (Formteil – wie jedes Element mit eigenem System – zählt in Materialliste und Mengen nur in seinem
   System), N31 (echter abgesetzter Schnitt: Schnittraum.Abschnitte, je Abschnitt eigene Ebene und u-Bereich, Zuschnitt der Grafik; Werkzeug «Abgesetzter Schnitt»)
   umgesetzt.
+- **14.11.2026 N8:** Bezugsmasse nach SIA 384.201:2003 ND.3 «Gebäudedaten (Ziffer 6.3)», gedruckte S. 39/40 (vom Seitenbild gelesen): Perimeter in
+  Aussenabmessungen, raumweise auf den Mittelachsen der Innenwände und den Oberkanten der Geschossdecken geteilt; Innenbauteile zwischen Aussenfläche
+  des Perimeters und Mittelachsen. Umgesetzt als Raumgrenze.FlaecheSia (flaecheSia_m2), Heizlast rechnet damit; Innenmasse bleiben für Darstellung
+  und Raumvolumen. Annahmen: Öffnungen mit lichtem Mass, Boden/Decke/Dach im Verhältnis, B' noch innen. SN SIA 384/2:2020 liegt im Büro nicht vor.

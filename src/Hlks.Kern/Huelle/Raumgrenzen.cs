@@ -43,7 +43,15 @@
 //   bei Gleichstand die nächste an der Fuge zwischen den Räumen (Annahme).
 //   Teilflächen unter 0.01 m² gehen in der grössten Teilfläche desselben Bodens bzw. derselben Decke auf (Annahme).
 // - Masse: Innenmasse – Raumhöhe wie in der Raumliste (lichteHoehe › Geometriehöhe › Geschosshöhe) × Kantenlänge, Boden und
-//   Decke = Raumfläche. Orientierung: Azimut der Aussennormalen ab geografisch Nord im Uhrzeigersinn (Projekt-Nord = +y,
+//   Decke = Raumfläche. Dazu je Raumgrenze die Fläche in Bezugsmassen nach SIA 384.201:2003 ND.3 «Gebäudedaten (Ziffer 6.3)», gedruckte S. 39/40
+//   (Entscheid Christian 13.11.2026, N8; FlaecheSia, gebraucht von der Heizlast): Bauteile des Wärmedämmperimeters (gegen aussen, Erdreich,
+//   unbeheizt) in Aussenabmessungen, raumweise auf den Mittelachsen der Innenwände und den Oberkanten der Geschossdecken aufgeteilt; Innenbauteile
+//   zwischen der Aussenfläche des Perimeters und den Mittelachsen bzw. Oberkanten. Umsetzung: jede Raumkante wird um ihren Abstand zur Wandachse
+//   (Innenwand) bzw. zur Wandaussenfläche (Perimeter) nach aussen verschoben, die Ecken sind die Schnittpunkte der verschobenen Kanten (Bild ND.1:
+//   l_ie, l_ij); Höhe = Geschosshöhe von Oberkante zu Oberkante der Geschossdecke (Kote bis Kote des Geschosses darüber, sonst Geschoss.hoehe;
+//   Bild ND.4: h_G). Fenster und Türen behalten ihre Fläche (Annahme: Öffnungsmass = lichtes Mass aussen), die Wand die Fassadenfläche minus Öffnungen.
+//   Annahmen: eine Kante mit mehreren Wänden nimmt den Abstand der längsten Wand; Boden, Decke und Dach im Verhältnis Bezugsfläche / Raumfläche
+//   (nicht je Teilfläche neu geschnitten); Teile einer Seite (z. B. unter/über Terrain) im Verhältnis Geschosshöhe / Raumhöhe. Orientierung: Azimut der Aussennormalen ab geografisch Nord im Uhrzeigersinn (Projekt-Nord = +y,
 //   Projektinformation.nordwinkel = Winkel von Projekt-Nord zu geografisch Nord im Uhrzeigersinn, also Azimut = Winkel ab
 //   +y − nordwinkel); Neigung 90° Wand, 0° Decke/Dach (Normale nach oben), 180° Boden.
 // - Geometrie je Raumgrenze (für die Darstellung «Hülle»): Seiten Von/Bis auf der Raumkante mit Unten/Oben; Boden, Decke
@@ -75,6 +83,11 @@ public sealed class Raumgrenze
     public Element? Aufbau { get; init; }
     /// <summary>Fläche in m² (Innenmass).</summary>
     public double Flaeche { get; set; }
+    /// <summary>Fläche in m² in Bezugsmassen nach SIA 384.201 ND.3 (N8); null = nicht gerechnet (dann gilt Flaeche).</summary>
+    public double? FlaecheSia { get; set; }
+    /// <summary>Wand: Abstand der Raumkante zur Wandachse und Wanddicke in mm (für die Bezugsmasse); sonst null.</summary>
+    public double? AchsAbstand { get; set; }
+    public double? Wanddicke { get; set; }
     /// <summary>Azimut der Aussennormalen in Grad ab geografisch Nord im Uhrzeigersinn; null bei waagrechten Flächen.</summary>
     public double? Azimut { get; init; }
     /// <summary>Neigung in Grad: 90 Wand, 0 Decke/Dach, 180 Boden.</summary>
@@ -474,6 +487,7 @@ sealed class RaumgrenzenLauf
             double t2 = uhr.Elapsed.TotalSeconds;
             Horizontal(r, false, liste);
             Horizontal(r, true, liste);
+            Bezugsmasse(r, liste);   // N8: Flächen in Bezugsmassen nach SIA 384.201 ND.3
             tUmgebung += t1 - t0; tSeiten += t2 - t1; tWaagrecht += uhr.Elapsed.TotalSeconds - t2;
             erg.Grenzen.AddRange(liste);
             erg.Raeume.Add(new RaumMasse(r.E, r.FlaecheMm2 / 1e6, r.Hoehe, r.Unten));
@@ -491,7 +505,7 @@ sealed class RaumgrenzenLauf
             erg.Hinweise.Add($"Boden bzw. Decke über bzw. unter Wänden des Nachbargeschosses an der Wandachse geteilt und dem Raum daneben zugeschlagen: {bandStuecke} {(bandStuecke == 1 ? "Stück" : "Stücke")}, {M2(bandFlaeche)} m².");
         if (splitter > 0)
             erg.Hinweise.Add($"{splitter} Teilflächen unter {Grafik.Format(Raumgrenzen.KleinsteFlaeche / 1e6, 2)} m² der grössten Teilfläche desselben Bodens bzw. derselben Decke zugeschlagen.");
-        erg.Hinweise.Add("Flächen in Innenmassen; U·A ohne Normfaktoren (keine b-Faktoren, keine Temperaturkorrekturen).");
+        erg.Hinweise.Add("Flächen in Innenmassen, dazu Bezugsmasse nach SIA 384.201 ND.3 (flaecheSia, für die Heizlast); U·A ohne Normfaktoren (keine b-Faktoren, keine Temperaturkorrekturen).");
         return erg;
     }
 
@@ -612,6 +626,7 @@ sealed class RaumgrenzenLauf
             lb = [pb[0] + nx * off, pb[1] + ny * off];
         }
         double laengeStueck = (tb - ta) * len;
+        int vorher = aus.Count;
         foreach (var t in NachbarnEntlang(r, la, lb, w))
         {
             var a = Pt(ta + (tb - ta) * t.A); var b = Pt(ta + (tb - ta) * t.B);
@@ -622,6 +637,94 @@ sealed class RaumgrenzenLauf
                 if (r.Terrain > r.Unten + Eps) Seitenflaeche(r, a, b, l, nx, ny, w, null, "erdreich", r.Unten, Math.Min(r.Terrain, r.Oben), aus);
                 if (r.Oben > r.Terrain + Eps) Seitenflaeche(r, a, b, l, nx, ny, w, null, "aussen", Math.Max(r.Terrain, r.Unten), r.Oben, aus);
             }
+        }
+        if (w is not null)
+        {
+            double abst = Math.Abs(w.L.Quer((pa[0] + pb[0]) / 2, (pa[1] + pb[1]) / 2));
+            for (int i = vorher; i < aus.Count; i++) { aus[i].AchsAbstand = abst; aus[i].Wanddicke = w.L.Dicke; }
+        }
+    }
+
+    // ------------------------------------------------------------------ Bezugsmasse SIA 384.201 ND.3 (N8)
+
+    static bool Perimeter(string angrenzung) => angrenzung is "aussen" or "erdreich" or "unbeheizt";
+
+    /// <summary>Geschosshöhe von Oberkante zu Oberkante der Geschossdecke: Kote des nächsten Geschosses im selben Gebäude minus Kote, sonst
+    /// Geschoss.hoehe; ohne Geschoss die Raumhöhe.</summary>
+    double Geschosshoehe(RaumInfo r)
+    {
+        if (m.Finde(r.E.Geschoss) is not { } g || g.Zahl("kote") is not double kote) return r.Hoehe;
+        var naechste = m.DerKlasse("Geschoss").Where(x => x.TeilVon == g.TeilVon && x.Zahl("kote") is double kx && kx > kote + 1).Select(x => x.Zahl("kote")!.Value).DefaultIfEmpty(double.NaN).Min();
+        return !double.IsNaN(naechste) ? naechste - kote : g.Zahl("hoehe") is double h && h > 0 ? h : r.Hoehe;
+    }
+
+    /// <summary>FlaecheSia aller Raumgrenzen eines Raums (siehe Dateikopf «Masse»).</summary>
+    void Bezugsmasse(RaumInfo r, List<Raumgrenze> liste)
+    {
+        double hG = Geschosshoehe(r), fh = r.Hoehe > 1 ? hG / r.Hoehe : 1;
+        var seiten = liste.Where(g => g.Von is not null && g.Bis is not null).ToList();
+        double flaecheNeu = 0, flaecheAlt = 0;
+        foreach (var ring in r.Ringe)
+        {
+            int n = ring.Count;
+            if (n < 3) continue;
+            var e = new double[n][]; var no = new double[n][]; var d = new double[n]; var lenk = new double[n];
+            var aufKante = new List<(Raumgrenze G, double Ta, double Tb)>[n];
+            for (int i = 0; i < n; i++)
+            {
+                var p = ring[i]; var q = ring[(i + 1) % n];
+                double ex = q[0] - p[0], ey = q[1] - p[1], len = Math.Sqrt(ex * ex + ey * ey);
+                lenk[i] = len; aufKante[i] = [];
+                if (len < 0.5) { e[i] = [1, 0]; no[i] = [0, -1]; continue; }
+                e[i] = [ex / len, ey / len]; no[i] = [ey / len, -ex / len];
+                foreach (var g in seiten)
+                {
+                    double Quer(double[] x) => (x[0] - p[0]) * no[i][0] + (x[1] - p[1]) * no[i][1];
+                    double T(double[] x) => ((x[0] - p[0]) * e[i][0] + (x[1] - p[1]) * e[i][1]) / len;
+                    if (Math.Abs(Quer(g.Von!)) > 2 || Math.Abs(Quer(g.Bis!)) > 2) continue;
+                    double ta = T(g.Von!), tb = T(g.Bis!);
+                    if (Math.Min(ta, tb) < -1e-3 || Math.Max(ta, tb) > 1 + 1e-3) continue;
+                    aufKante[i].Add((g, ta, tb));
+                }
+                var massgebend = aufKante[i].Where(x => x.G.Art == "wand" && x.G.AchsAbstand is not null).OrderByDescending(x => x.G.Laenge).Select(x => x.G).FirstOrDefault();
+                d[i] = massgebend is null ? 0 : massgebend.AchsAbstand!.Value + (Perimeter(massgebend.Angrenzung) ? massgebend.Wanddicke!.Value / 2 : 0);
+            }
+            // Ecken = Schnittpunkte der verschobenen Kanten
+            var v = new double[n][];
+            for (int i = 0; i < n; i++)
+            {
+                int h = (i + n - 1) % n;
+                double[] a0 = [ring[h][0] + no[h][0] * d[h], ring[h][1] + no[h][1] * d[h]], a1 = [ring[i][0] + no[i][0] * d[i], ring[i][1] + no[i][1] * d[i]];
+                double kreuz = e[h][0] * e[i][1] - e[h][1] * e[i][0];
+                if (Math.Abs(kreuz) < 1e-9) { v[i] = a1; continue; }
+                double t = ((a1[0] - a0[0]) * e[i][1] - (a1[1] - a0[1]) * e[i][0]) / kreuz;
+                v[i] = [a0[0] + e[h][0] * t, a0[1] + e[h][1] * t];
+            }
+            double flRing = 0;
+            for (int i = 0; i < n; i++) flRing += v[i][0] * v[(i + 1) % n][1] - v[(i + 1) % n][0] * v[i][1];
+            double flAlt = 0;
+            for (int i = 0; i < n; i++) flAlt += ring[i][0] * ring[(i + 1) % n][1] - ring[(i + 1) % n][0] * ring[i][1];
+            flaecheNeu += flRing / 2; flaecheAlt += flAlt / 2;
+            for (int i = 0; i < n; i++)
+            {
+                double[] Neu(double t) => t < 1e-3 ? v[i] : t > 1 - 1e-3 ? v[(i + 1) % n]
+                    : [ring[i][0] + e[i][0] * t * lenk[i] + no[i][0] * d[i], ring[i][1] + e[i][1] * t * lenk[i] + no[i][1] * d[i]];
+                foreach (var (g, ta, tb) in aufKante[i])
+                {
+                    if (g.Art != "wand") { g.FlaecheSia = g.Flaeche; continue; }
+                    var a = Neu(ta); var b = Neu(tb);
+                    double lNeu = Math.Sqrt((b[0] - a[0]) * (b[0] - a[0]) + (b[1] - a[1]) * (b[1] - a[1]));
+                    double hoehe = g.Oben - g.Unten;
+                    double brutto = g.Laenge * hoehe / 1e6, oeffnungen = Math.Max(0, brutto - g.Flaeche);
+                    g.FlaecheSia = Math.Max(0, lNeu * hoehe * fh / 1e6 - oeffnungen);
+                }
+            }
+        }
+        double faktor = Math.Abs(flaecheAlt) > 1 ? Math.Abs(flaecheNeu) / Math.Abs(flaecheAlt) : 1;
+        foreach (var g in liste)
+        {
+            if (g.FlaecheSia is not null) continue;
+            g.FlaecheSia = g.Art is "boden" or "decke" or "dach" ? g.Flaeche * faktor : g.Flaeche;
         }
     }
 

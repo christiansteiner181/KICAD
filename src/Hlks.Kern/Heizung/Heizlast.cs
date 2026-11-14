@@ -6,7 +6,7 @@
 // raumnutzung_sia2024.json (Tab. 9). Fehlt eine Datei, rechnet die Abfrage nicht und sagt es.
 //   θe   = SIA 2028 Tab. 6 der Klimastation (Gebaeude.thetaE geht vor) + Höhenkorrektur ND.1.1.1 + τ-Korrektur Tab. ND.1; θm,e = Tab. 2 «Jahr».
 //   θint = Raum.tempWinter, sonst Bürostandard (Wohnen 21, Bad 22 °C), sonst SIA 384.201 Tab. ND.2 nach Raum.nutzung, sonst Rückfall SIA 2024 (2021 θi,des,H, sonst 2015 Tab. 9).
-//   ΦT   = (HT,ie + HT,iue + HT,ig + HT,ij)·(θint − θe) (2) aus den Raumgrenzen (Modul 1c, Innenmasse – Annahme V1) und den Wärmebrücken
+//   ΦT   = (HT,ie + HT,iue + HT,ig + HT,ij)·(θint − θe) (2) aus den Raumgrenzen (Bezugsmasse nach ND.3: Raumgrenze.FlaecheSia, N8) und den Wärmebrücken
 //          mit ψ bzw. χ und Quelle (Klasse Waermebruecke, ek = el = 1,0 ND.4.1); bu (5)/(6); Erdreich (8) mit fg1 ND.5, fg2, Uequiv Tab. 4–7, B' (9),
 //          GW = 1,0; HT,ij (10) mit fij ≥ 0.
 //   ΦV   = HV·(θint − θe) (11), HV = V̇·ρc (12) mit ρc nach (37) bzw. 0,34 (13); ohne Anlage V̇ = max(V̇inf, V̇min) (14), V̇min = 0,3·V (ND.5.2),
@@ -284,18 +284,21 @@ public static class Heizlast
         foreach (var g in grenzen)
         {
             if (g.U is not double u) { if (g.Angrenzung != "beheizt") ohneU++; else ohneUBeheizt++; continue; }
+            // N8 (Christian 13.11.2026): Bauteilflächen in Bezugsmassen nach SIA 384.201 ND.3 (Aussenabmessungen am Perimeter, Mittelachsen und
+            // Oberkanten der Geschossdecken innen; Raumgrenze.FlaecheSia), ohne gerechnete Bezugsmasse die Innenfläche
+            double fl = g.FlaecheSia ?? g.Flaeche;
             double faktor = 1; string text;
             switch (g.Angrenzung)
             {
                 case "aussen":
-                    faktor = 1; text = "ek = 1,0 (ND.4.1)"; hie += g.Flaeche * u; break;
+                    faktor = 1; text = "ek = 1,0 (ND.4.1)"; hie += fl * u; break;
                 case "unbeheizt":
                 {
                     var nb = g.NachbarRaum;
                     if (nb?.Zahl("bu") is double bu) { faktor = bu; text = $"bu = {bu} ({nb.Kennzeichen}.bu, {nb.Eigenschaft("bu")?.Herkunft.Quelle ?? "ohne Quelle"})"; }
                     else if (nb is not null && theta.GetValueOrDefault(nb.Id).Wert is double tu) { faktor = Math.Clamp((tint - tu) / dt, 0, 1); text = $"bu = (θint − θu)/(θint − θe) = ({tint} − {tu})/{R(dt, 1)} = {R(faktor)} (6)"; }
                     else { faktor = 1; text = "bu = 1 (weder bu noch Temperatur des Nachbarraums – sichere Seite, Annahme)"; }
-                    hiue += g.Flaeche * u * faktor; break;
+                    hiue += fl * u * faktor; break;
                 }
                 case "erdreich":
                 {
@@ -321,7 +324,7 @@ public static class Heizlast
                         u = ue;
                     }
                     if (double.IsNaN(u)) { ann.Add("Uequiv nicht bestimmbar (Tabellen bzw. B' fehlen) – Erdreichfläche nicht gerechnet."); continue; }
-                    hig += g.Flaeche * u; break;
+                    hig += fl * u; break;
                 }
                 default:   // beheizt
                 {
@@ -330,13 +333,13 @@ public static class Heizlast
                     if (Math.Abs(tj - tint) < 1e-9) continue;
                     faktor = Math.Max(0, (tint - tj) / dt);
                     text = $"fij = (θint,i − θj)/(θint,i − θe) = ({tint} − {tj})/{R(dt, 1)} = {R((tint - tj) / dt, 3)}{(tint < tj ? " → 0 (Wärmegewinn nicht angerechnet, Annahme)" : "")} (10)";
-                    hij += g.Flaeche * u * faktor; break;
+                    hij += fl * u * faktor; break;
                 }
             }
             beitraege.Add(new JsonObject
             {
                 ["art"] = g.Art, ["angrenzung"] = g.Angrenzung, ["nachbar"] = g.NachbarRaum?.Kennzeichen ?? g.Nachbar, ["bauteil"] = g.Bauteil?.Kennzeichen,
-                ["flaeche_m2"] = R(g.Flaeche, 3), ["u"] = R(u, 3), ["faktor"] = R(faktor, 3), ["h_WK"] = R(g.Flaeche * u * faktor, 3), ["text"] = text,
+                ["flaeche_m2"] = R(fl, 3), ["flaecheInnen_m2"] = R(g.Flaeche, 3), ["u"] = R(u, 3), ["faktor"] = R(faktor, 3), ["h_WK"] = R(fl * u * faktor, 3), ["text"] = text,
             });
         }
         // Erdreich: fg1 (Tab. ND.5), fg2, GW
@@ -426,7 +429,7 @@ public static class Heizlast
         aus["phiHL"] = R(phiT + phiV, 0);
         aus["phiHL_Wm2"] = rm.FlaecheM2 > 0 ? R((phiT + phiV) / rm.FlaecheM2, 1) : null;
         aus["beitraege"] = beitraege;
-        ann.Add("Masse: Innenmasse der Raumgrenzen (ND.3 verlangt Aussenmasse für den Wärmedämmperimeter) – Heizlast etwas zu klein (Annahme V1).");
+        ann.Add("Masse: Bezugsmasse nach SIA 384.201 ND.3 S. 39/40 (Aussenabmessungen am Wärmedämmperimeter, Mittelachsen der Innenwände, Höhe von Oberkante zu Oberkante Geschossdecke; Entscheid Christian 13.11.2026). Annahmen: Öffnungen mit ihrem lichten Mass, Boden/Decke/Dach im Verhältnis der Bezugsfläche; B' noch mit Innenmassen.");
         if (hig > 0) ann.Add("Erdreich: Tiefe z ab Unterkante Raum statt Unterkante Bodenplatte (ND.4.3) – fg1 auf der sicheren Seite (Annahme).");
         ann.Add("ΦRH = 0 (ND.6).");
         aus["annahmen"] = ann;
