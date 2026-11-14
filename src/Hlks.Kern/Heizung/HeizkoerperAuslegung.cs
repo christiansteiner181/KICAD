@@ -5,7 +5,8 @@
 // Einbau) ohne Quelle sind – sie werden genannt, nicht angewendet.
 //   Bedarf je Heizkörper: Raum.heizleistung (z. B. aus heizlast_uebernehmen), auf die Heizkörper des Raums nach Normleistung verteilt (ohne Normleistung gleich).
 //   Betrieb: vlTemp/rlTemp der Heizgruppe des Heizkörpers, θi des Raums wie die Heizlast (Raumwert › Bürostandard › ND.2 › SIA 2024).
-//   ΔT = (VL − RL) / ln((VL − θi)/(RL − θi)) (logarithmisch), ΔTn = (normVl + normRl)/2 − normRaum (Übertemperatur des Herstellers, wie im Büroblatt);
+//   ΔT = (VL − RL) / ln((VL − θi)/(RL − θi)) und ΔTn ebenso logarithmisch aus normVl/normRl/normRaum (Christian 13.11.2026, Gesamtprüfung N24: «beides
+//   logarithmisch», bei Normbedingung f = 1.000; Abweichung vom Büroblatt, das ΔTn arithmetisch rechnet);
 //   Φ = Φn · (ΔT/ΔTn)^n; erforderliche Normleistung = Bedarf / (ΔT/ΔTn)^n; Deckung = Φ / Bedarf; ṁ = Bedarf / (c_p·(VL − RL)) mit Stoffwerten (stoffwerte.json).
 
 using System.Text.Json.Nodes;
@@ -72,16 +73,17 @@ public static class HeizkoerperAuslegung
             if (fehlt.Count > 0) ann.Add($"Herstellerangaben fehlen: {string.Join(", ", fehlt)} (Datenblatt mit Quelle; SN EN 442 liegt nicht vor).");
             double? dtLog = vl is double v1 && rl is double r1 && ti is double t1 ? DeltaTLog(v1, r1, t1) : null;
             if (vl is not null && rl is not null && ti is not null && dtLog is null) ann.Add($"Betrieb {vl}/{rl} °C bei θi {ti} °C: keine Übertemperatur (VL > RL > θi verlangt).");
-            // Herstellerangabe ohne Übertemperatur (ΔTn ≤ 0, z. B. normRaum über der mittleren Normtemperatur): nicht umrechnen statt durch 0 teilen
-            bool normOk = nVl is not double nv || nRl is not double nr || nRaum is not double nm || (nv + nr) / 2 - nm > 1e-9;
+            // Herstellerangabe ohne Übertemperatur (normRl ≤ normRaum bzw. normVl < normRl): nicht umrechnen statt durch 0 teilen
+            double? dtNLog = nVl is double nv && nRl is double nr && nRaum is double nm ? DeltaTLog(nv, nr, nm) : null;
+            bool normOk = nVl is null || nRl is null || nRaum is null || dtNLog is > 1e-9;
             if (!normOk) ann.Add($"Herstellerangabe {nVl}/{nRl}/{nRaum} °C ohne Übertemperatur (ΔTn ≤ 0) – keine Umrechnung; normVl, normRl und normRaum prüfen.");
             if (normOk && dtLog is double dt && nVl is double a && nRl is double bb && nRaum is double c && n is double ex && phiN is double pn)
             {
-                double dtN = (a + bb) / 2 - c;
+                double dtN = dtNLog!.Value;
                 double f = Math.Pow(dt / dtN, ex);
                 double phi = pn * f;
                 z["deltaT_K"] = R(dt, 2); z["deltaTn_K"] = R(dtN, 2); z["faktor"] = R(f, 4); z["leistungBetrieb_W"] = R(phi, 0);
-                z["formel"] = $"ΔT = ({vl} − {rl}) / ln(({vl} − {ti})/({rl} − {ti})) = {R(dt, 2)} K; ΔTn = ({a} + {bb})/2 − {c} = {R(dtN, 2)} K; Φ = {pn}·({R(dt, 2)}/{R(dtN, 2)})^{ex} = {R(phi, 0)} W";
+                z["formel"] = $"ΔT = ({vl} − {rl}) / ln(({vl} − {ti})/({rl} − {ti})) = {R(dt, 2)} K; ΔTn = ({a} − {bb}) / ln(({a} − {c})/({bb} − {c})) = {R(dtN, 2)} K; Φ = {pn}·({R(dt, 2)}/{R(dtN, 2)})^{ex} = {R(phi, 0)} W";
                 if (bedarf is double bd && bd > 0)
                 {
                     z["normleistungErforderlich_W"] = R(bd / f, 0);
@@ -101,7 +103,7 @@ public static class HeizkoerperAuslegung
                 }
                 else ann.Add($"Stoffwerte fehlen für {medium ?? "?"} – kein Massenstrom.");
             }
-            ann.Add("ΔTn als arithmetische Übertemperatur des Herstellers (wie Büroblatt «Auslegung Heizkörper»); Büro-Korrekturen (Luftdruck, Anschlussart, Strahlungsanteil, senkrechter Einbau) ohne Quelle – nicht angewendet.");
+            ann.Add("ΔTn logarithmisch wie ΔT (Christian 13.11.2026; das Büroblatt «Auslegung Heizkörper» rechnet ΔTn arithmetisch); Büro-Korrekturen (Luftdruck, Anschlussart, Strahlungsanteil, senkrechter Einbau) ohne Quelle – nicht angewendet.");
             z["annahmen"] = ann;
             zeilen.Add(z);
         }

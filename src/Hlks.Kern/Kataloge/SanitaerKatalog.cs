@@ -37,7 +37,8 @@ public sealed record SanitaerArt(string Schluessel, string Name, double? LuKw, d
 public sealed record SanitaerKurve(string Schluessel, int Nummer, double Faktor, double Exponent, string Zelle, string Text,
     double BereichVon, double BereichBis, string BereichZelle)
 {
-    public double Spitze(double volumenstrom) => volumenstrom > 0 ? Math.Pow(volumenstrom, Exponent) * Faktor : 0;
+    /// <summary>Spitzendurchfluss; unter dem Kurvenstart (BereichVon) QD = QT wie die Dimensionierung (Christian 13.11.2026, Gesamtprüfung N25).</summary>
+    public double Spitze(double volumenstrom) => volumenstrom <= 0 ? 0 : volumenstrom < BereichVon ? volumenstrom : Math.Pow(volumenstrom, Exponent) * Faktor;
 
     /// <summary>Anzeigename wie in der Zusammenstellung: Kurve «grösster LU n».</summary>
     public string Name => $"Kurve «grösster LU {Nummer}»";

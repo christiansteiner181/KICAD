@@ -23,7 +23,8 @@ public static class HuelleBefehle
 
 static class AufbauEingabe
 {
-    public const string SchichtenBeschreibung = "Schichten von innen nach aussen: [{ material (Kennzeichen, Id oder Name), dicke (mm) }]";
+    public const string SchichtenBeschreibung = "Schichten von innen nach aussen: [{ material (Kennzeichen, Id oder Name), dicke (mm) }]; Schicht mit bekanntem R " +
+        "(ruhende Luftschicht u. a.): [{ r: { wert (m²·K/W), quelle }, dicke?, name?, material? }] – R geht dann vor d/λ";
     public const string UWertBeschreibung = "Ausdrücklicher U-Wert W/(m²·K) aus Datenblatt oder IFC: { wert, quelle }; geht vor der Rechnung";
 
     public static JsonArray Schichten(Kontext k, JsonNode? roh)
@@ -36,6 +37,18 @@ static class AufbauEingabe
         {
             nr++;
             if (s is not JsonObject o) throw new HlksFehler($"Schicht {nr} ist kein Objekt.", "Form: { \"material\": \"MAT-1\", \"dicke\": 200 }");
+            if (o["r"] is { } rRoh)
+            {
+                // Schicht mit bekanntem R (N28): Material und Dicke freiwillig, R mit Quelle Pflicht
+                var (rw, rq) = WertMitQuelle(rRoh, $"r der Schicht {nr}");
+                if (rw <= 0) throw new HlksFehler($"Schicht {nr}: R {Z(rw)} m²·K/W ist ungültig.", "R grösser als 0 angeben.");
+                var so = new JsonObject { ["r"] = rw, ["rQuelle"] = rq };
+                if (Sauber(Param.Text(o, "material")) is { } mt) so["material"] = Hole(k, mt, "Material", $"Material der Schicht {nr}").Id;
+                if (Json.Zahl(o["dicke"]) is double dr) { if (dr <= 0) throw new HlksFehler($"Schicht {nr}: Dicke {Z(dr)} mm ist ungültig.", "Dicke in mm grösser als 0 angeben."); so["dicke"] = dr; }
+                if (Sauber(Param.Text(o, "name")) is { } nm) so["name"] = nm;
+                aus.Add(so);
+                continue;
+            }
             var mat = Hole(k, Param.Text(o, "material"), "Material", $"Material der Schicht {nr}");
             var dicke = Json.Zahl(o["dicke"]) ?? throw new HlksFehler($"Schicht {nr} ({mat.Kennzeichen}): «dicke» fehlt oder ist keine Zahl.", "Dicke in mm angeben (aus dem Plan des Architekten oder dem Datenblatt).");
             if (dicke <= 0) throw new HlksFehler($"Schicht {nr} ({mat.Kennzeichen}): Dicke {Z(dicke)} mm ist ungültig.", "Dicke in mm grösser als 0 angeben.");

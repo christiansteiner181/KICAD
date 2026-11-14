@@ -18,6 +18,8 @@ public sealed class SchichtErgebnis
     public double? Lambda { get; init; }
     public string? LambdaQuelle { get; init; }
     public double? R { get; init; }
+    /// <summary>Quelle eines ausdrücklichen R der Schicht (N28); null = R aus d/λ.</summary>
+    public string? RQuelle { get; init; }
 }
 
 public sealed class AufbauErgebnis
@@ -91,6 +93,23 @@ public static class HuelleRechnung
             nr++;
             var mat = s.Material is null ? null : m.Finde(s.Material);
             if (mat is not null && mat.Klasse != "Material") mat = null;
+            if (s.R is double rs)
+            {
+                // ausdrückliches R der Schicht (ruhende Luftschicht u. a., N28): geht vor d/λ, gilt nur mit Quelle
+                if (string.IsNullOrWhiteSpace(s.RQuelle)) { erg.Fehlt.Add($"Schicht {nr}: R ohne Quelle gilt nicht (aufbau_aendern mit schichten[].r {{ wert, quelle }})."); vollstaendig = false; }
+                else
+                {
+                    summe += rs;
+                    terme.Add($"R {Z(rs)} m²·K/W ({s.Name ?? mat?.Name ?? "Schicht " + nr})");
+                    lambdaQuellen.Add($"Schicht {nr} R: {s.RQuelle}");
+                }
+                erg.Schichten.Add(new SchichtErgebnis
+                {
+                    Nr = nr, MaterialId = s.Material, Material = mat?.Kennzeichen, MaterialName = s.Name ?? mat?.Name, DickeMm = s.Dicke,
+                    R = string.IsNullOrWhiteSpace(s.RQuelle) ? null : rs, RQuelle = s.RQuelle,
+                });
+                continue;
+            }
             double? lambda = null; string? lq = null; double? r = null;
             if (mat is null)
             {
@@ -123,7 +142,7 @@ public static class HuelleRechnung
         if (vollstaendig)
         {
             erg.R = summe;
-            erg.RQuelle = $"R = Σ d/λ = {string.Join(" + ", terme)} = {Z(summe)} m²·K/W; λ-Quellen: {string.Join("; ", lambdaQuellen)}";
+            erg.RQuelle = $"R = Σ d/λ{(liste.Any(x => x.R is not null) ? " + Σ R" : "")} = {string.Join(" + ", terme)} = {Z(summe)} m²·K/W; Quellen: {string.Join("; ", lambdaQuellen)}";
         }
 
         // ---- ausdrücklicher U-Wert (Datenblatt, IFC): geht vor

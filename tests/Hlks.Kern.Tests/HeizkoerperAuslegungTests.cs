@@ -25,7 +25,9 @@ public class HeizkoerperAuslegungTests
         var z = ((JsonObject)Tuer.Abfrage(p, "heizkoerper_auslegung", new JsonObject { ["raum"] = "E.02" }))["heizkoerper"]!.AsArray().OfType<JsonObject>().Single();
         // Bad: Bürostandard 22 °C; HG-2 55/45 °C
         Assert.Equal(22, z["thetaInt"]!.GetValue<double>());
-        double dt = (55 - 45) / Math.Log((55.0 - 22) / (45 - 22)), f = Math.Pow(dt / 50, 1.3);
+        // ΔTn logarithmisch (N24): (75 − 65) / ln(55/45) = 49.83 K; bei Normbedingung wäre f = 1.000
+        double dtN = (75 - 65) / Math.Log(55.0 / 45), dt = (55 - 45) / Math.Log((55.0 - 22) / (45 - 22)), f = Math.Pow(dt / dtN, 1.3);
+        Assert.Equal(49.83, z["deltaTn_K"]!.GetValue<double>(), 2);
         Assert.Equal(Math.Round(1000 * f), z["leistungBetrieb_W"]!.GetValue<double>(), 0);
         Assert.Equal(Math.Round(400 / f), z["normleistungErforderlich_W"]!.GetValue<double>(), 0);
         Assert.Equal(1000 * f >= 400, z["ok"]!.GetValue<bool>());

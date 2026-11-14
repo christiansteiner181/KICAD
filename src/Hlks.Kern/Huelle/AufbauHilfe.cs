@@ -6,8 +6,9 @@ using System.Text.Json.Nodes;
 
 namespace Hlks.Kern;
 
-/// <summary>Eine Schicht eines Aufbaus: Material-Id und Dicke in mm (von innen nach aussen).</summary>
-public sealed record Schicht(string? Material, double? Dicke);
+/// <summary>Eine Schicht eines Aufbaus: Material-Id und Dicke in mm (von innen nach aussen); R in m²·K/W mit Quelle für Schichten, die nicht über d/λ
+/// gehen (ruhende Luftschicht, Schicht mit bekanntem R; Christian 13.11.2026, Gesamtprüfung N28) – dann geht R vor λ.</summary>
+public sealed record Schicht(string? Material, double? Dicke, double? R = null, string? RQuelle = null, string? Name = null);
 
 static class HuelleHilfe
 {
@@ -115,7 +116,7 @@ static class HuelleHilfe
         {
             var o = s as JsonObject;
             var mat = o?["material"] is JsonValue v && v.TryGetValue<string>(out var id) ? id : null;
-            liste.Add(new Schicht(mat, Json.Zahl(o?["dicke"])));
+            liste.Add(new Schicht(mat, Json.Zahl(o?["dicke"]), Json.Zahl(o?["r"]), o?["rQuelle"]?.GetValue<string>(), o?["name"]?.GetValue<string>()));
         }
         return liste;
     }

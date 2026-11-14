@@ -230,7 +230,9 @@ public static class SanitaerZusammenstellung
     {
         if (a.Volumenstrom <= 0) yield break;
         foreach (var k in new[] { kat.Kurve3, kat.Kurve5 })
-            if (!k.ImBereich(a.Volumenstrom))
+            if (a.Volumenstrom < k.BereichVon)
+                yield return $"Volumenstrom {Z(a.Volumenstrom)} l/s unter dem Start der {k.Name}{(ReferenceEquals(k, massgebend) ? " (massgebend)" : "")} ({Z(k.BereichVon)} l/s, {k.BereichZelle}): QD = QT (wie Dimensionierung, Christian 13.11.2026).";
+            else if (!k.ImBereich(a.Volumenstrom))
                 yield return $"Volumenstrom {Z(a.Volumenstrom)} l/s liegt ausserhalb des Bereichs der {k.Name}{(ReferenceEquals(k, massgebend) ? " (massgebend)" : "")}: " +
                     $"{Z(k.BereichVon)} bis {Z(k.BereichBis)} l/s laut Katalog ({k.BereichZelle}) – Spitze dieser Kurve prüfen.";
         if (a.GroessterLu > kat.Kurve5.Nummer)

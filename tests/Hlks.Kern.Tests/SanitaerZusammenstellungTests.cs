@@ -327,8 +327,9 @@ public class SanitaerZusammenstellungTests
         // 1 Waschtisch: Total LU 2 → 0.2 l/s, unter beiden Bereichen (0.3–300 und 0.5–15 l/s laut Katalog)
         var klein = SanitaerZusammenstellung.Auswerten(SKat, [Zeile(SKat, "waschtisch", 1)], [], null, null);
         Etwa(0.2, klein.Volumenstrom, "Volumenstrom");
-        Assert.Contains(klein.Hinweise, h => h.StartsWith("Volumenstrom 0.2 l/s liegt ausserhalb des Bereichs der Kurve «grösster LU 3» (massgebend): 0.3 bis 300 l/s"));
-        Assert.Contains(klein.Hinweise, h => h.StartsWith("Volumenstrom 0.2 l/s liegt ausserhalb des Bereichs der Kurve «grösster LU 5»: 0.5 bis 15 l/s"));
+        Assert.Contains(klein.Hinweise, h => h.StartsWith("Volumenstrom 0.2 l/s unter dem Start der Kurve «grösster LU 3» (massgebend) (0.3 l/s") && h.Contains("QD = QT"));   // N25
+        Assert.Contains(klein.Hinweise, h => h.StartsWith("Volumenstrom 0.2 l/s unter dem Start der Kurve «grösster LU 5» (0.5 l/s"));
+        Etwa(0.2, klein.Spitzendurchfluss, "QD = QT unter dem Kurvenstart (N25)");
         Assert.Contains(klein.Hinweise, h => h.Contains("C55") );
         // 3 Waschtische: 0.6 l/s liegt in beiden Bereichen
         Assert.DoesNotContain(SanitaerZusammenstellung.Auswerten(SKat, [Zeile(SKat, "waschtisch", 3)], [], null, null).Hinweise, h => h.StartsWith("Volumenstrom"));
@@ -342,8 +343,8 @@ public class SanitaerZusammenstellungTests
         Apparat(p, "Waschtisch", "WT-1"); Hausanschluss(p);
         Rohr(p, "R1", "KW-1", "HA-1.aus", "WT-1.kw");
         var z = Abfrage(p, "sanitaer_zusammenstellung", new JsonObject { ["anlage"] = "A-1" });
-        Assert.Contains(z["hinweise"]!.AsArray(), h => h!.GetValue<string>().StartsWith("Volumenstrom 0.2 l/s liegt ausserhalb"));
-        Assert.DoesNotContain(Pruefungen.Alle(p.Modell, p.Katalog), b => b.Text.Contains("ausserhalb des Bereichs"));
+        Assert.Contains(z["hinweise"]!.AsArray(), h => h!.GetValue<string>().StartsWith("Volumenstrom 0.2 l/s unter dem Start"));
+        Assert.DoesNotContain(Pruefungen.Alle(p.Modell, p.Katalog), b => b.Text.Contains("ausserhalb des Bereichs") || b.Text.Contains("unter dem Start"));
     }
 
     [Fact]
@@ -373,7 +374,7 @@ public class SanitaerZusammenstellungTests
         Etwa(0, Zahl(an["trinkwasser"]!["summeLuWw"]), "Netz ΣLU WW");
         // Hinweise zu den Netzverbindungen vor den Kurvenhinweisen: zuletzt 0.4 l/s unter dem Bereich der Kurve «grösster LU 5»;
         // die Kurvenwahl ist im Katalog bestätigt (Christian 20.10.2026) – kein Hinweis dazu
-        Assert.StartsWith("Volumenstrom 0.4 l/s liegt ausserhalb des Bereichs der Kurve «grösster LU 5»", h[^1]);
+        Assert.StartsWith("Volumenstrom 0.4 l/s unter dem Start der Kurve «grösster LU 5»", h[^1]);
         Assert.DoesNotContain(h, x => x.StartsWith("Kurvenwahl"));
         // nicht bestätigt (Testkopie des Katalogs unter %TEMP%): dieselben Hinweise in derselben Reihenfolge, der zur Kurvenwahl zuletzt
         var hu = Abfrage(Aufbauen(KatalogUnbestaetigt), "sanitaer_zusammenstellung", new JsonObject { ["anlage"] = "A-1" })["hinweise"]!.AsArray()

@@ -275,4 +275,16 @@ public class SanitaerKatalogTests
         }
         finally { Directory.Delete(ordner, true); }
     }
+
+    /// <summary>Gesamtprüfung N25 (Christian 13.11.2026): unter dem Kurvenstart QD = QT wie in der Dimensionierung, nicht die Kurve.</summary>
+    [Fact]
+    public void Spitze_UnterDemKurvenstart_GleichVolumenstrom()
+    {
+        foreach (var k in new[] { SKat.Kurve3, SKat.Kurve5 })
+        {
+            double unter = k.BereichVon / 2;
+            Assert.Equal(unter, k.Spitze(unter), 12);
+            Assert.Equal(Math.Pow(k.BereichVon, k.Exponent) * k.Faktor, k.Spitze(k.BereichVon), 12);
+        }
+    }
 }

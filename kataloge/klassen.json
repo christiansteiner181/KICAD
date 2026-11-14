@@ -83,7 +83,7 @@
     "beschreibung": "Schichtaufbau eines Bauteils (Modul 1c): Schichten von innen nach aussen mit Material und Dicke. Bauteile verweisen mit bezuege.aufbau darauf. R = Summe d/λ, U = 1/(Rsi + R + Rse) mit Rsi/Rse aus der Projektinformation; ohne Rsi/Rse kein U.",
     "eigenschaften": [
       { "name": "art", "typ": "auswahl", "pflicht": true, "auswahl": [ "wand", "decke", "dach", "boden", "tuer" ], "beschreibung": "Bauteilart" },
-      { "name": "schichten", "typ": "liste", "beschreibung": "Schichten von innen nach aussen: [{ \"material\": Material-Id, \"dicke\": mm }]" },
+      { "name": "schichten", "typ": "liste", "beschreibung": "Schichten von innen nach aussen: [{ \"material\": Material-Id, \"dicke\": mm }]; Schicht mit bekanntem R (ruhende Luftschicht): { \"r\": m²·K/W, \"rQuelle\": Text, \"dicke\"?, \"name\"?, \"material\"? } – R geht vor d/λ (Gesamtprüfung N28)" },
       { "name": "waermestrom", "typ": "auswahl", "auswahl": [ "horizontal", "aufwaerts", "abwaerts" ], "beschreibung": "Richtung des Wärmestroms (wählt Rsi/Rse); ohne Angabe aus der Art: Wand horizontal, Decke/Dach aufwärts, Boden abwärts" },
       { "name": "rWert", "typ": "zahl", "einheit": "m²·K/W", "beschreibung": "Wärmedurchlasswiderstand der Schichten, Summe d/λ (gerechnet)" },
       { "name": "uWert", "typ": "zahl", "einheit": "W/(m²·K)", "beschreibung": "Wärmedurchgangskoeffizient: gerechnet, oder ausdrücklich aus Datenblatt bzw. IFC mit Quelle (dann gilt dieser)" } ] },

@@ -39,7 +39,7 @@ public static class HuelleAbfragen
             ["schichten"] = new JsonArray(r.Schichten.Select(s => (JsonNode)new JsonObject
             {
                 ["nr"] = s.Nr, ["material"] = s.Material, ["name"] = s.MaterialName, ["dicke_mm"] = s.DickeMm,
-                ["lambda"] = s.Lambda, ["lambdaQuelle"] = s.LambdaQuelle, ["r"] = Rd(s.R),
+                ["lambda"] = s.Lambda, ["lambdaQuelle"] = s.LambdaQuelle, ["r"] = Rd(s.R), ["rQuelle"] = s.RQuelle,
             }).ToArray()),
             ["rsi"] = r.Rsi, ["rse"] = r.Rse, ["uebergangGruppe"] = r.Gruppe, ["uebergangQuelle"] = r.UebergangQuelle,
             ["r"] = Rd(r.R), ["rQuelle"] = r.RQuelle,

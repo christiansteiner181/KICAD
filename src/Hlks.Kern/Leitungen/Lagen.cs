@@ -42,13 +42,23 @@ public static class Lagen
         var kand = p.Modell.DerKlasse("Decke")
             .Where(d => d.Text("art") != "boden" && d.Geometrie is { Art: "polygon", Dicke: double dk } gg && dk > 0 && gg.Punkte.Count >= 3)
             .Select(d => (D: d, Z: d.Geometrie!.Punkte.Max(q => q.Length > 2 ? q[2] : 0), Dicke: d.Geometrie.Dicke!.Value,
-                Flaeche: Math.Abs(Polygone.Flaecheninhalt(d.Geometrie.Punkte)), Beton: (d.Text("aufbau") ?? "").Contains("beton", StringComparison.OrdinalIgnoreCase)))
+                Flaeche: Math.Abs(Polygone.Flaecheninhalt(d.Geometrie.Punkte)), Beton: IstBeton(p, d)))
             .Where(d => d.Z > kote + 500 && d.Z <= oben + 1000).ToList();
         if (kand.Count == 0) return (null, "fehlt", null);
         double groesste = kand.Max(d => d.Flaeche);
         var beton = kand.Where(d => d.Beton && d.Flaeche >= BetonMindestanteil * groesste).ToList();
         var w = (beton.Count > 0 ? beton : kand).OrderByDescending(d => d.Flaeche).ThenBy(d => d.D.Kennzeichen, StringComparer.Ordinal).First();
         return (Math.Round((w.Z - w.Dicke - kote) / 10) * 10, "modell", w.D.Kennzeichen);
+    }
+
+    /// <summary>Betondecke: «Beton» im IFC-Aufbautext, im Namen des bezogenen Aufbaus oder im Kennzeichen/Namen eines Schichtmaterials (Christian
+    /// 13.11.2026, Gesamtprüfung N29: «auch Beton im Aufbaunamen oder in einer Schicht zählt»).</summary>
+    public static bool IstBeton(Projekt p, Element decke)
+    {
+        static bool B(string? t) => t?.Contains("beton", StringComparison.OrdinalIgnoreCase) == true;
+        if (B(decke.Text("aufbau"))) return true;
+        if (Raumgrenzen.AufbauVon(p.Modell, p.Katalog, decke) is not { } a) return false;
+        return B(a.Name) || HuelleHilfe.Schichten(a).Any(x => x.Material is not null && p.Modell.Finde(x.Material) is { } mat && (B(mat.Name) || B(mat.Kennzeichen)) || B(x.Name));
     }
 
     static double? NaechsteKote(Projekt p, Element g, double kote) =>

@@ -541,4 +541,16 @@ public class HuelleAufbauTests
         Assert.Contains("Σ d/λ", a["rQuelle"]!.GetValue<string>());
         Assert.Contains("1/(Rsi + R + Rse)", a["uQuelle"]!.GetValue<string>());
     }
+
+    /// <summary>Gesamtprüfung N28 (Christian 13.11.2026): Schicht mit bekanntem R (ruhende Luftschicht) mit Quelle; R geht vor d/λ und wird addiert.</summary>
+    [Fact]
+    public void Rechnung_SchichtMitEigenemR_WirdAddiert()
+    {
+        var p = MitAufbau();
+        var sch = Schichten(("MAT-1", 200));
+        sch.Add(new JsonObject { ["name"] = "Luftschicht", ["dicke"] = 40, ["r"] = new JsonObject { ["wert"] = 0.18, ["quelle"] = TestQuelle } });   // Testwert
+        Ok(p.Ausfuehren("aufbau_aendern", new JsonObject { ["aufbau"] = "AUF-1", ["schichten"] = sch }));
+        Gleich(0.4 + 0.18, Zahl(p, "AUF-1", "rWert"), 1e-9);
+        Assert.Contains("R 0.18", Hole(p, "AUF-1").Eigenschaft("rWert")!.Herkunft.Quelle);
+    }
 }

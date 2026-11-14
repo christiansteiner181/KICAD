@@ -136,6 +136,7 @@
         "1. V = ΣLU · 0.1 l/s mit ΣLU = ΣLU KW + ΣLU WW.",
         "2. Kurve «grösster LU 3»: Q_D3 = 0.459 · V^0.353 (Excel C57 = B56^0.353*0.459), gültig für V von 0.3 bis 300 l/s.",
         "3. Kurve «grösster LU 5»: Q_D5 = 0.598 · V^0.257 (Excel I57 = B56^0.257*0.598), gültig für V von 0.5 bis 15 l/s.",
+        "3a. Unter dem Start der Kurve (V kleiner als 0.3 bzw. 0.5 l/s) Q_D = V wie in der Dimensionierung (Christian 13.11.2026, Gesamtprüfung N25; Abweichung vom Excel, das die Kurve weiterrechnet).",
         "4. Massgebend ist Kurve 5, wenn der grösste Einzel-LU grösser als 3 ist, sonst Kurve 3. Beide Werte werden immer ausgewiesen.",
         "5. Spitze gesamt = Q_D + Σ Spezialinstallationen Versorgung (Excel C59 = C57+I51 bzw. I59 = I57+I51).",
         "6. Hinweise (keine Befunde): V ausserhalb des Gültigkeitsbereichs einer Kurve; grösster Einzel-LU über 5 (die Regel deckt ihn nicht ab); Kurvenwahl nicht bestätigt (solange im Katalog nicht als bestätigt eingetragen)."
@@ -1845,7 +1846,7 @@
       "rechenweg": [
         "Bedarf je Heizkörper = Raum.heizleistung · Anteil (nach Normleistung der Heizkörper im Raum; ohne Normleistung gleich verteilt).",
         "ΔT = (VL − RL) / ln((VL − θi)/(RL − θi)) (logarithmische Übertemperatur im Betrieb).",
-        "ΔTn = (normVl + normRl)/2 − normRaum (Übertemperatur der Herstellerangabe).",
+        "ΔTn = (normVl − normRl) / ln((normVl − normRaum)/(normRl − normRaum)) – logarithmisch wie ΔT (Christian 13.11.2026, Gesamtprüfung N24; bei Normbedingung f = 1.000).",
         "Φ = Φn · (ΔT/ΔTn)^n; erforderliche Normleistung = Bedarf / (ΔT/ΔTn)^n; Deckung = Φ / Bedarf (ok ab 1,0).",
         "Massenstrom ṁ = Bedarf / (c_p · (VL − RL)) mit c_p bei der mittleren Temperatur."
       ],
@@ -1864,7 +1865,7 @@
         "annahme.hauptlauf"
       ],
       "annahmen": [
-        "ΔTn arithmetisch (wie Herstellerangabe und Büroblatt), ΔT im Betrieb logarithmisch.",
+        "ΔTn und ΔT logarithmisch (Entscheid Christian 13.11.2026); Abweichung vom Büroblatt «Auslegung Heizkörper», das ΔTn arithmetisch rechnet.",
         "Korrekturen des Büroblatts (Luftdruck nach Höhe, Anschlussart, Strahlungsanteil, senkrechter Einbau) ohne Quelle – nicht angewendet.",
         "Erste Heizgruppe des Heizkörpers gilt."
       ],

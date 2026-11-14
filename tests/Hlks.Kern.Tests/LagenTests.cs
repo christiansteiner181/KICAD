@@ -121,4 +121,20 @@ public class LagenTests
         Assert.Contains("«Lage 2 240»", (string)eg["hinweis"]!);
         Assert.Contains("«zirka 3x»", (string)eg["hinweis"]!);
     }
+
+    /// <summary>Gesamtprüfung N29 (Christian 13.11.2026): «Beton» im Namen oder in einer Schicht des zugewiesenen Aufbaus zählt wie der IFC-Text.</summary>
+    [Fact]
+    public void UkRohdecke_Betondecke_ueberZugewiesenenAufbau()
+    {
+        var p = Neu();
+        Decke(p, "D-1", 0, 0, 6000, 4000, 2950, 200);
+        Decke(p, "D-4", 0, 0, 5000, 4000, 2900, 250);
+        Assert.Equal("D-1", (string)Geschoss(p, "EG")["decke"]!);
+        Ok(HuelleTestHilfe.Material(p, "Stahlbeton", 2.3));   // Testwert
+        Ok(p.Ausfuehren("aufbau_anlegen", new JsonObject { ["name"] = "Decke 250", ["art"] = "decke", ["schichten"] = HuelleTestHilfe.Schichten(("Stahlbeton", 250)) }));
+        Ok(p.Ausfuehren("aufbau_zuweisen", new JsonObject { ["elemente"] = new JsonArray("D-4"), ["aufbau"] = "Decke 250" }));
+        var g = Geschoss(p, "EG");
+        Assert.Equal("D-4", (string)g["decke"]!);
+        Assert.Equal(2650, (double)g["ukRohdecke"]!);
+    }
 }
