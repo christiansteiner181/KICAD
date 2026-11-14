@@ -169,8 +169,46 @@ public sealed class MontageelementSetzen : IBefehl
         Setzen(k, vorwand, auf, typ, s, Param.Text(p, "apparat"));
     }
 
+    public const string FamilieId = "geberit-montageelemente";
+
+    /// <summary>Die Familie im Projekt, sonst aus kataloge/familien geladen; null, wenn es sie nicht gibt.</summary>
+    internal static Element? Familie(Kontext k)
+    {
+        Element? Suchen() => k.Arbeit.DerKlasse(Familien.Klasse).FirstOrDefault(f => Familien.Definition(f, k.Katalog).Id == FamilieId);
+        if (Suchen() is { } f) return f;
+        if (!File.Exists(Path.Combine(k.Katalog.Ordner, "familien", "geberit_montageelemente.familie.json"))) return null;
+        try { new FamilieLaden().Ausfuehren(k, new JsonObject { ["datei"] = "geberit_montageelemente" }); }
+        catch (HlksFehler) { return null; }
+        return Suchen();
+    }
+
+    static string? MitFamilie(Kontext k, Element vorwand, VorwandAufbau auf, VorwandKatalog.ElementTyp typ, double s, string? apparat)
+    {
+        if (Familie(k) is not { } fam || Familien.Definition(fam, k.Katalog).Typ(typ.Titel) is null) return null;
+        var pt = auf.Punkt(s, auf.Tiefe); var n = auf.Punkt(s, auf.Tiefe + 1);
+        double dreh = Math.Atan2(n[1] - pt[1], n[0] - pt[0]) * 180 / Math.PI + 90;   // Vorderseite (−y) zum Raum
+        dreh = Math.Round(((dreh % 360) + 360) % 360, 6);
+        new FamiliePlatzieren().Ausfuehren(k, new JsonObject
+        {
+            ["familie"] = fam.Kennzeichen, ["typ"] = typ.Titel, ["punkt"] = new JsonArray(Math.Round(pt[0], 3), Math.Round(pt[1], 3), auf.Okff), ["drehung"] = dreh,
+            ["geschoss"] = vorwand.Geschoss, ["parameter"] = new JsonObject { ["versatz"] = Math.Round(auf.Tiefe - auf.ElementVorne, 3) },
+        });
+        var e = k.Arbeit.Elemente.Last(x => x.Bezuege.GetValueOrDefault(Familien.Bezug) == fam.Id).Kopie();
+        e.TeilVon = vorwand.Id;
+        e.Name = typ.Titel;
+        e.Eigenschaften["element"] = new Wert { Inhalt = JsonValue.Create(typ.Id), Herkunft = k.Herkunft };
+        if (typ.Artikel is { } art) e.Eigenschaften["artikel"] = new Wert { Inhalt = JsonValue.Create(art), Herkunft = k.Herkunft };
+        if (apparat is not null) e.Bezuege["apparat"] = apparat;
+        k.Setzen(e);
+        k.Hinweise.Add($"{e.Kennzeichen}: {typ.Titel}{(typ.Artikel is { } a ? $" ({a})" : "")} in {vorwand.Kennzeichen} (Familie {fam.Kennzeichen})");
+        return e.Kennzeichen;
+    }
+
     internal static string Setzen(Kontext k, Element vorwand, VorwandAufbau auf, VorwandKatalog.ElementTyp typ, double s, string? apparat)
     {
+        // Als Exemplar der Familie «Geberit Montageelemente» (Christian 14.11.2026: «wir brauchen eine familie»): die Familie wird bei Bedarf aus
+        // kataloge/familien geladen; Anschlüsse kommen dann aus der Familie. Ohne Familie (bzw. ohne passenden Typ) wie bisher aus dem Katalog.
+        if (MitFamilie(k, vorwand, auf, typ, s, apparat) is { } kzF) return kzF;
         var pt = auf.Punkt(s, auf.Tiefe);
         var par = new JsonObject
         {
@@ -254,7 +292,16 @@ public static class VorwandSystem
             if (kat.Gegenstueck(alt, system) is not { } neu) { ohne.Add($"{me.Kennzeichen} ({alt.Titel})"); continue; }
             var e = me.Kopie();
             e.Name = neu.Titel;
-            Elementpflege.Eigenschaften(k, e, k.Katalog.Klasse(e.Klasse), new JsonObject { ["element"] = neu.Id, ["artikel"] = neu.Artikel }, true);
+            var eig = new JsonObject { ["element"] = neu.Id, ["artikel"] = neu.Artikel };
+            // Familienexemplar: Typ der Familie und Versatz des neuen Systems mitführen (Anschlüsse folgen über die Familie)
+            if (Familien.FamilieVon(k.Arbeit, me) is not null)
+            {
+                eig["familientyp"] = neu.Titel;
+                var par = (me.Eigenschaft("parameter")?.Inhalt as JsonObject)?.DeepClone().AsObject() ?? new JsonObject();
+                if (VorwandGestell.Ableiten(k.Arbeit, k.Katalog, vorwand) is { } auf2) par["versatz"] = Math.Round(auf2.Tiefe - auf2.ElementVorne, 3);
+                eig["parameter"] = par;
+            }
+            Elementpflege.Eigenschaften(k, e, k.Katalog.Klasse(e.Klasse), eig, true);
             k.Setzen(e);
             n++;
         }

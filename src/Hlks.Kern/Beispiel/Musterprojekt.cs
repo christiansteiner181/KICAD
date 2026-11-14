@@ -50,6 +50,8 @@ public static class Musterprojekt
                 if (!geladen.Contains(f.Id) && p.Ausfuehren("familie_laden", new JsonObject { ["id"] = f.Id, ["ohne_unterlagen"] = true }).Angenommen) entwuerfe.Add(f.Name);
         }
         catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or HlksFehler) { bericht.Add($"Bibliothek nicht lesbar: {ex.Message}"); }
+        // mitgelieferte Familie «Geberit Montageelemente» (kataloge/familien, 14.11.2026)
+        if (p.Ausfuehren("familie_laden", new JsonObject { ["datei"] = "geberit_montageelemente" }).Angenommen) entwuerfe.Add("Geberit Montageelemente (mitgeliefert)");
 
         // ------------------------------------------------------------------ Gebäude: EG und OG, je 4 Räume
         // Grundriss je Geschoss gleich, innen 12.0 × 9.0 m: unten Bad | WC | Küche, oben Wohnen. Aussenwände 300 mm, Innenwände 120 mm.

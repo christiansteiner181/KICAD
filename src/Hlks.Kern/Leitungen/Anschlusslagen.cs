@@ -42,7 +42,7 @@ public static class Anschlusslagen
     {
         if (k.IstArt(e, "Leitung")) return Leitung(m, k, e);
         // Montageelemente: Lage aus dem Katalog des Vorwandelements (Frage 30)
-        if (k.IstArt(e, "Montageelement") && VorwandAnschluesse.Von(m, k, e) is { } me) return me;
+        if (k.IstArt(e, "Montageelement") && Familien.FamilieVon(m, e) is null && VorwandAnschluesse.Von(m, k, e) is { } me) return me;   // ohne Familie (ältere Elemente)
         if (Familien.FamilieVon(m, e) is { } f) return Familie(m, k, e, f);
         var quelle = e.Bezuege.ContainsKey(Familien.Bezug) ? "familie_ungueltig" : e.Geometrie is null ? "nicht_platziert" : "ohne_familie";
         return e.Anschluesse.Select(a => Ohne(m, e, a, quelle)).ToList();

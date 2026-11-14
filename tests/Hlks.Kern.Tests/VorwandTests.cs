@@ -60,12 +60,15 @@ public class VorwandTests
         }));
         var me = Hole(p, "ME-1");
         var st = Anschlusslagen.Von(p.Modell, p.Katalog, me);
+        // Exemplar der Familie «Geberit Montageelemente» (Christian 14.11.2026: «wir brauchen eine familie»), Anschlüsse aus der Familie
+        Assert.Equal("geberit-montageelemente", Familien.Definition(Familien.FamilieVon(p.Modell, me)!, p.Katalog).Id);
+        Assert.All(st, x => Assert.Equal("familie", x.Quelle));
         var sw = Assert.Single(st, x => x.Name == "sw");
         Assert.True(sw.HatLage);
         Assert.Equal(305, sw.Lage![1], 3);   // Vorderseite y = 300 + 5 mm
         Assert.Equal(230, sw.Lage[2], 3);
         Assert.Equal(1, sw.Richtung![1], 6);  // zum Raum (+y)
-        Assert.True(sw.HatGroesse);
+        // Grösse: die Familie führt keine (nur der WC-Abgang wäre belegt, d 90)
         var kw = Assert.Single(st, x => x.Name == "kw");
         Assert.Equal(1005, kw.Lage![2], 3);
         // eine Kaltwasserleitung schliesst räumlich am Zulauf an

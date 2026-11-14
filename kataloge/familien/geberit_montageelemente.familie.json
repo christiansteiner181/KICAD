@@ -1,0 +1,434 @@
+{
+  "format": 1,
+  "id": "geberit-montageelemente",
+  "name": "Geberit Montageelemente",
+  "kategorie": "Montageelement",
+  "hersteller": "Geberit",
+  "beschreibung": "Duofix- und GIS-Montageelemente als Familie (Christian 14.11.2026). Typen und Werte aus kataloge/vorwand_geberit.json – Quellen je Wert (Planungshandbuch Sanitär 2025 Dok. 995.828.00.1, Produktdatenblätter, Montageanleitung 970.704) und Annahmen stehen dort. Erzeugt mit werkzeuge/montageelemente_familie.mjs – nicht von Hand ändern, sondern den Katalog.",
+  "version": 1,
+  "status": "entwurf",
+  "parameter": [
+    {
+      "name": "breite",
+      "art": "typ",
+      "datentyp": "laenge",
+      "gruppe": "abmessung",
+      "beschreibung": "Breite des Elements (Katalog breite)"
+    },
+    {
+      "name": "rahmenhoehe",
+      "art": "typ",
+      "datentyp": "laenge",
+      "gruppe": "abmessung",
+      "beschreibung": "Höhe des Rahmens (Katalog rahmenhoehe bzw. hoehe)"
+    },
+    {
+      "name": "rahmentiefe",
+      "art": "typ",
+      "datentyp": "laenge",
+      "gruppe": "abmessung",
+      "beschreibung": "Tiefe des Rahmens (Katalog rahmentiefe)"
+    },
+    {
+      "name": "rahmenunterkante",
+      "art": "typ",
+      "datentyp": "laenge",
+      "gruppe": "abmessung",
+      "wert": 0,
+      "beschreibung": "Unterkante des Rahmens über OK fertig Boden (Katalog rahmenunterkante; Duofix 0 = ab OKFF)"
+    },
+    {
+      "name": "mit_sw",
+      "art": "typ",
+      "datentyp": "zahl",
+      "gruppe": "anschluss",
+      "wert": 0,
+      "beschreibung": "1 = Anschluss SW vorhanden"
+    },
+    {
+      "name": "sw_z",
+      "art": "typ",
+      "datentyp": "laenge",
+      "gruppe": "abmessung",
+      "wert": 0,
+      "beschreibung": "Höhe des Anschlusses SW über OK fertig Boden (Katalog anschluesse.sw.z)"
+    },
+    {
+      "name": "sw_s",
+      "art": "typ",
+      "datentyp": "laenge",
+      "gruppe": "abmessung",
+      "wert": 0,
+      "beschreibung": "Seitlicher Versatz des Anschlusses SW ab Elementmitte (Katalog anschluesse.sw.s)"
+    },
+    {
+      "name": "mit_kw",
+      "art": "typ",
+      "datentyp": "zahl",
+      "gruppe": "anschluss",
+      "wert": 0,
+      "beschreibung": "1 = Anschluss KW vorhanden"
+    },
+    {
+      "name": "kw_z",
+      "art": "typ",
+      "datentyp": "laenge",
+      "gruppe": "abmessung",
+      "wert": 0,
+      "beschreibung": "Höhe des Anschlusses KW über OK fertig Boden (Katalog anschluesse.kw.z)"
+    },
+    {
+      "name": "kw_s",
+      "art": "typ",
+      "datentyp": "laenge",
+      "gruppe": "abmessung",
+      "wert": 0,
+      "beschreibung": "Seitlicher Versatz des Anschlusses KW ab Elementmitte (Katalog anschluesse.kw.s)"
+    },
+    {
+      "name": "mit_ww",
+      "art": "typ",
+      "datentyp": "zahl",
+      "gruppe": "anschluss",
+      "wert": 0,
+      "beschreibung": "1 = Anschluss WW vorhanden"
+    },
+    {
+      "name": "ww_z",
+      "art": "typ",
+      "datentyp": "laenge",
+      "gruppe": "abmessung",
+      "wert": 0,
+      "beschreibung": "Höhe des Anschlusses WW über OK fertig Boden (Katalog anschluesse.ww.z)"
+    },
+    {
+      "name": "ww_s",
+      "art": "typ",
+      "datentyp": "laenge",
+      "gruppe": "abmessung",
+      "wert": 0,
+      "beschreibung": "Seitlicher Versatz des Anschlusses WW ab Elementmitte (Katalog anschluesse.ww.s)"
+    },
+    {
+      "name": "versatz",
+      "art": "exemplar",
+      "datentyp": "laenge",
+      "gruppe": "abmessung",
+      "wert": 0,
+      "beschreibung": "Abstand Vorderseite Vorwand → Vorderkante Element (setzt der Kern beim Bestücken: Beplankung bzw. Beplankung + Profil)"
+    }
+  ],
+  "typen": [
+    {
+      "name": "Duofix WC 112 Sigma 12",
+      "werte": {
+        "breite": 500,
+        "rahmenhoehe": 1120,
+        "rahmentiefe": 120,
+        "rahmenunterkante": 0,
+        "mit_sw": 1,
+        "sw_z": 230,
+        "sw_s": 0,
+        "mit_kw": 1,
+        "kw_z": 1080,
+        "kw_s": 0,
+        "mit_ww": 0,
+        "ww_z": 0,
+        "ww_s": 0
+      }
+    },
+    {
+      "name": "Duofix WC 82 Omega",
+      "werte": {
+        "breite": 500,
+        "rahmenhoehe": 820,
+        "rahmentiefe": 140,
+        "rahmenunterkante": 0,
+        "mit_sw": 1,
+        "sw_z": 220,
+        "sw_s": 0,
+        "mit_kw": 1,
+        "kw_z": 780,
+        "kw_s": 0,
+        "mit_ww": 0,
+        "ww_z": 0,
+        "ww_s": 0
+      }
+    },
+    {
+      "name": "Duofix WC 98 Omega",
+      "werte": {
+        "breite": 500,
+        "rahmenhoehe": 980,
+        "rahmentiefe": 140,
+        "rahmenunterkante": 0,
+        "mit_sw": 1,
+        "sw_z": 230,
+        "sw_s": 0,
+        "mit_kw": 1,
+        "kw_z": 940,
+        "kw_s": 0,
+        "mit_ww": 0,
+        "ww_z": 0,
+        "ww_s": 0
+      }
+    },
+    {
+      "name": "Duofix WC 112 Omega",
+      "werte": {
+        "breite": 500,
+        "rahmenhoehe": 1120,
+        "rahmentiefe": 120,
+        "rahmenunterkante": 0,
+        "mit_sw": 1,
+        "sw_z": 230,
+        "sw_s": 0,
+        "mit_kw": 1,
+        "kw_z": 1080,
+        "kw_s": 0,
+        "mit_ww": 0,
+        "ww_z": 0,
+        "ww_s": 0
+      }
+    },
+    {
+      "name": "Duofix Waschtisch 112 schmal",
+      "werte": {
+        "breite": 440,
+        "rahmenhoehe": 1120,
+        "rahmentiefe": 75,
+        "rahmenunterkante": 0,
+        "mit_sw": 1,
+        "sw_z": 520,
+        "sw_s": 0,
+        "mit_kw": 1,
+        "kw_z": 590,
+        "kw_s": -76.5,
+        "mit_ww": 1,
+        "ww_z": 590,
+        "ww_s": 76.5
+      }
+    },
+    {
+      "name": "Duofix Urinal",
+      "werte": {
+        "breite": 500,
+        "rahmenhoehe": 1120,
+        "rahmentiefe": 75,
+        "rahmenunterkante": 0,
+        "mit_sw": 1,
+        "sw_z": 500,
+        "sw_s": 0,
+        "mit_kw": 1,
+        "kw_z": 1000,
+        "kw_s": 0,
+        "mit_ww": 0,
+        "ww_z": 0,
+        "ww_s": 0
+      }
+    },
+    {
+      "name": "Duofix Stütz- und Haltegriffe 112",
+      "werte": {
+        "breite": 365,
+        "rahmenhoehe": 1120,
+        "rahmentiefe": 40,
+        "rahmenunterkante": 0,
+        "mit_sw": 0,
+        "sw_z": 0,
+        "sw_s": 0,
+        "mit_kw": 0,
+        "kw_z": 0,
+        "kw_s": 0,
+        "mit_ww": 0,
+        "ww_z": 0,
+        "ww_s": 0
+      }
+    },
+    {
+      "name": "GIS WC 114 Sigma 12",
+      "werte": {
+        "breite": 424,
+        "rahmenhoehe": 1045,
+        "rahmentiefe": 120,
+        "rahmenunterkante": 45,
+        "mit_sw": 1,
+        "sw_z": 230,
+        "sw_s": 0,
+        "mit_kw": 1,
+        "kw_z": 1005,
+        "kw_s": 0,
+        "mit_ww": 0,
+        "ww_z": 0,
+        "ww_s": 0
+      }
+    },
+    {
+      "name": "GIS WC 114 Omega 12",
+      "werte": {
+        "breite": 424,
+        "rahmenhoehe": 1010,
+        "rahmentiefe": 120,
+        "rahmenunterkante": 50,
+        "mit_sw": 1,
+        "sw_z": 230,
+        "sw_s": 0,
+        "mit_kw": 1,
+        "kw_z": 970,
+        "kw_s": 0,
+        "mit_ww": 0,
+        "ww_z": 0,
+        "ww_s": 0
+      }
+    },
+    {
+      "name": "GIS WC 87 Omega 12",
+      "werte": {
+        "breite": 424,
+        "rahmenhoehe": 760,
+        "rahmentiefe": 140,
+        "rahmenunterkante": 33,
+        "mit_sw": 1,
+        "sw_z": 220,
+        "sw_s": 0,
+        "mit_kw": 1,
+        "kw_z": 720,
+        "kw_s": 0,
+        "mit_ww": 0,
+        "ww_z": 0,
+        "ww_s": 0
+      }
+    },
+    {
+      "name": "GIS WC 100 Omega 12",
+      "werte": {
+        "breite": 424,
+        "rahmenhoehe": 895,
+        "rahmentiefe": 140,
+        "rahmenunterkante": 45,
+        "mit_sw": 1,
+        "sw_z": 230,
+        "sw_s": 0,
+        "mit_kw": 1,
+        "kw_z": 855,
+        "kw_s": 0,
+        "mit_ww": 0,
+        "ww_z": 0,
+        "ww_s": 0
+      }
+    },
+    {
+      "name": "GIS Set Waschtisch Standarmatur",
+      "werte": {
+        "breite": 248,
+        "rahmenhoehe": 700,
+        "rahmentiefe": 45,
+        "rahmenunterkante": 624,
+        "mit_sw": 1,
+        "sw_z": 550,
+        "sw_s": 0,
+        "mit_kw": 1,
+        "kw_z": 600,
+        "kw_s": -76.5,
+        "mit_ww": 1,
+        "ww_z": 600,
+        "ww_s": 76.5
+      }
+    },
+    {
+      "name": "GIS Urinal",
+      "werte": {
+        "breite": 420,
+        "rahmenhoehe": 1000,
+        "rahmentiefe": 100,
+        "rahmenunterkante": 0,
+        "mit_sw": 1,
+        "sw_z": 500,
+        "sw_s": 0,
+        "mit_kw": 1,
+        "kw_z": 1000,
+        "kw_s": 0,
+        "mit_ww": 0,
+        "ww_z": 0,
+        "ww_s": 0
+      }
+    }
+  ],
+  "koerper": [
+    {
+      "id": "rahmen",
+      "name": "Rahmen",
+      "art": "quader",
+      "material": "geraet",
+      "von": [
+        "-breite / 2",
+        "versatz",
+        "rahmenunterkante"
+      ],
+      "bis": [
+        "breite / 2",
+        "versatz + rahmentiefe",
+        "rahmenunterkante + rahmenhoehe"
+      ]
+    }
+  ],
+  "anschluesse": [
+    {
+      "name": "sw",
+      "medium": "SW",
+      "fluss": "raus",
+      "art": "rohr",
+      "form": "rund",
+      "lage": [
+        "sw_s",
+        -5,
+        "sw_z"
+      ],
+      "richtung": [
+        0,
+        -1,
+        0
+      ],
+      "sichtbar": "mit_sw",
+      "beschreibung": "SW – 5 mm vor der Beplankung (Planungshandbuch S. 163)"
+    },
+    {
+      "name": "kw",
+      "medium": "KW",
+      "fluss": "rein",
+      "art": "rohr",
+      "form": "rund",
+      "lage": [
+        "kw_s",
+        -5,
+        "kw_z"
+      ],
+      "richtung": [
+        0,
+        -1,
+        0
+      ],
+      "sichtbar": "mit_kw",
+      "beschreibung": "KW – 5 mm vor der Beplankung (Planungshandbuch S. 163)"
+    },
+    {
+      "name": "ww",
+      "medium": "WW",
+      "fluss": "rein",
+      "art": "rohr",
+      "form": "rund",
+      "lage": [
+        "ww_s",
+        -5,
+        "ww_z"
+      ],
+      "richtung": [
+        0,
+        -1,
+        0
+      ],
+      "sichtbar": "mit_ww",
+      "beschreibung": "WW – 5 mm vor der Beplankung (Planungshandbuch S. 163)"
+    }
+  ]
+}
