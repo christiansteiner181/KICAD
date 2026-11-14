@@ -32,6 +32,22 @@ public class BogenRadiusTests
         Assert.DoesNotContain(t.Ecken!, p => p[0] > da * 0.3 && p[1] < -da * 0.3);
     }
 
+    /// <summary>Befund Christian 14.11.2026 («bei rohrbogen haben wir die Radien verloren»): die Bibliotheksbögen haben seit 09.11.2026 eine Kugel im
+    /// Achsschnittpunkt («knick»); sie wird mit den Schenkeln durch den Bogen ersetzt, statt den Radius ganz zu verhindern.</summary>
+    [Fact]
+    public void Kugel_im_Knick_wird_mit_ersetzt()
+    {
+        var d = ZweiZylinder("Testbogen Zylinder mit Knickkugel (fiktiv)");
+        ((JsonArray)d["koerper"]!).Add(JsonNode.Parse("""{"id":"knick","art":"kugel","material":"rohr","mitte":[0,0,0],"r":"da / 2"}"""));
+        var f = FamilieTestHilfe.Def(d);
+        var a = FamilienAuswertung.Aufloesen(f, f.Typen[0].Name, null);
+        Assert.True(a.Gueltig, string.Join("; ", a.Fehler.Select(x => x.Meldung)));
+        var t = Assert.Single(a.Koerper.Where(k => k.Teil is not null)).Teil!;
+        Assert.Equal("koerper", t.Art);
+        var da = a.Werte["da"]!.Value.Zahl;
+        Assert.DoesNotContain(t.Ecken!, p => p[0] > da * 0.3 && p[1] < -da * 0.3);
+    }
+
     [Theory]
     [InlineData("Geberit PE Bogen")]
     [InlineData("Geberit Silent-db20 Bogen")]

@@ -470,7 +470,7 @@ public static class FamilienKoerper
     /// KI-Familien der Grundausstattung, Annahme im Bericht): Grundriss, 3D und Schnitt zeigten eine scharfe Ecke statt eines
     /// Bogens. Die Zylinder werden durch einen Sweep über die Schenkelachsen ersetzt – Pfad Anschluss a → Achsschnittpunkt →
     /// Anschluss b, Profil = grösster Zylinderradius, gerade Einsteckmuffen vom Rohrende (Anschluss) bis zum Ende der Schenkelzylinder,
-    /// Biegeradius aus einem Parameter r/R/radius/biegeradius des Typs, sonst so, dass der Bogen bis zum kürzeren Rohrende reicht (ANNAHME: R = Schenkellänge / tan(Ablenkung / 2); Darstellung, kein Herstellerwert).</summary>
+    /// Biegeradius aus dem Parameter biegeradius (Entscheid 13.11.2026), sonst so, dass der Bogen bis zum kürzeren Rohrende reicht (ANNAHME: R = Schenkellänge / tan(Ablenkung / 2); Darstellung, kein Herstellerwert).</summary>
     internal static void BogenMitRadius(FamilieDef f, FamAufloesung a)
     {
         if (f.Kategorie != "Bogen" || a.Anschluesse.Count != 2 || a.Koerper.Count == 0) return;
@@ -481,8 +481,6 @@ public static class FamilienKoerper
         if (segmente is null && (f.Name.StartsWith("Geberit PE", StringComparison.OrdinalIgnoreCase) || f.Name.StartsWith("Geberit Silent", StringComparison.OrdinalIgnoreCase))) return;
         var zyl = a.Koerper.Where(k => k.Teil is { Art: "zylinder" }).ToList();
         if (zyl.Count == 0 || zyl.Any(k => !k.Def.Detailgrad.SequenceEqual(zyl[0].Def.Detailgrad))) return;
-        // andere Körper im selben Detailgrad (eigener Körper der Familie): so lassen; ein Hüllquader für «grob» stört nicht
-        if (a.Koerper.Any(k => k.Teil is { } t && t.Art != "zylinder" && k.Def.Detailgrad.Intersect(zyl[0].Def.Detailgrad).Any())) return;
         var pa = V3.Aus(a.Anschluesse[0].Lage); var ra = V3.Aus(a.Anschluesse[0].Richtung);
         var pb = V3.Aus(a.Anschluesse[1].Lage); var rb = V3.Aus(a.Anschluesse[1].Richtung);
         // Achsschnittpunkt: nächste Punkte der beiden Schenkelachsen pa − s·ra und pb − t·rb
@@ -492,13 +490,19 @@ public static class FamilienKoerper
         double s = (b * e - d) / nenner, t = (e - b * d) / nenner;   // Parameter auf pa + s·ra bzw. pb + t·rb
         if (s > -1e-6 || t > -1e-6) return;   // Schnittpunkt muss im Inneren liegen
         var pi = ((pa + ra * s) + (pb + rb * t)) * 0.5;
+        double profil = zyl.Max(k => k.Teil!.Radius ?? 0);
+        // Kugel im Achsschnittpunkt (Knickfüller, Familien seit 09.11.2026, Befund Christian 14.11.2026 «bei rohrbogen haben wir die Radien verloren»):
+        // gehört zur Ecke und wird mit den Schenkeln durch den Bogen ersetzt
+        bool Knick(FamKoerperErgebnis k) => k.Def.Art == "kugel" && k.Teil is { Achse: [{ } m, ..] } kt && (V3.Aus(m) - pi).Laenge <= Math.Max(1, 0.05 * profil) && kt.AchseRadius <= profil * 1.05 + 0.5;   // ausgewertet: Netz, Mittelpunkt in Achse
+        var knick = a.Koerper.Where(k => Knick(k) && k.Def.Detailgrad.Intersect(zyl[0].Def.Detailgrad).Any()).ToList();
+        // andere Körper im selben Detailgrad (eigener Körper der Familie): so lassen; ein Hüllquader für «grob» stört nicht
+        if (a.Koerper.Any(k => k.Teil is { } t && t.Art != "zylinder" && !knick.Contains(k) && k.Def.Detailgrad.Intersect(zyl[0].Def.Detailgrad).Any())) return;
         double la = (pa - pi).Laenge, lb = (pb - pi).Laenge;
         double ablenkung = Math.PI - Math.Acos(Math.Clamp((pa - pi).Einheit().Mal((pb - pi).Einheit()), -1, 1));
         if (ablenkung < 1e-3) return;
         // nur der Parameter «biegeradius» (Entscheid Christian 13.11.2026, Frage 25) – «r» bzw. «radius» ist oft der Rohrradius
         double? radiusParameter = a.Werte.GetValueOrDefault("biegeradius") is { IstText: false } wr && wr.Zahl > 0 ? wr.Zahl : null;
         double rMax = Math.Min(la, lb) / Math.Tan(ablenkung / 2) * 0.999;
-        double profil = zyl.Max(k => k.Teil!.Radius ?? 0);
         // R ≥ Profilradius, sonst faltet sich der Bogen innen (Frage 25); begrenzt durch die Schenkel
         double R = Math.Min(Math.Max(radiusParameter ?? rMax, profil), rMax);
         if (profil <= 0 || R <= 0) return;
@@ -538,7 +542,7 @@ public static class FamilienKoerper
         }
         else bogen.Achse = pfad;
         var stelle = a.Koerper.IndexOf(zyl[0]);
-        a.Koerper.RemoveAll(k => zyl.Contains(k));
+        a.Koerper.RemoveAll(k => zyl.Contains(k) || knick.Contains(k));
         a.Koerper.Insert(Math.Min(stelle, a.Koerper.Count), new FamKoerperErgebnis { Def = def, Sichtbar = true, Teil = bogen });
     }
 
