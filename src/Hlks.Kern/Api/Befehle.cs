@@ -181,8 +181,13 @@ public static class Param
         return Json.Zahl(n) ?? throw new HlksFehler($"Parameter «{name}» muss eine Zahl sein.");
     }
 
-    public static bool Bool(JsonObject p, string name, bool vorgabe = false) =>
-        p[name] is JsonValue v && v.TryGetValue<bool>(out var b) ? b : vorgabe;
+    /// <summary>Ja/Nein-Parameter (Json.JaNein, N38): fehlt er oder ist er null → Vorgabe; ein anderer Wert wird abgelehnt statt still als Vorgabe zu gelten.</summary>
+    public static bool Bool(JsonObject p, string name, bool vorgabe = false)
+    {
+        var n = p[name];
+        if (n is null) return vorgabe;
+        return Json.JaNein(n) ?? throw new HlksFehler($"Parameter «{name}» muss true oder false sein.", "Erlaubt: true/false, als Text auch «ja»/«nein» oder «1»/«0».");
+    }
 
     public static Geometrie? Geometrie(JsonObject p, string name = "geometrie")
     {
@@ -297,7 +302,7 @@ static class Elementpflege
                 if (Json.Zahl(n) is double d) return JsonValue.Create(d);
                 throw new HlksFehler($"Eigenschaft «{def.Name}» muss eine Zahl sein{(def.Einheit is null ? "" : $" (in {def.Einheit})")}.");
             case "bool":
-                if (n is JsonValue b && b.TryGetValue<bool>(out var bb)) return JsonValue.Create(bb);
+                if (Json.JaNein(n) is bool bb) return JsonValue.Create(bb);   // N38: «true», «ja», «1» als Text werden umgewandelt
                 throw new HlksFehler($"Eigenschaft «{def.Name}» muss true oder false sein.");
             case "auswahl":
             {

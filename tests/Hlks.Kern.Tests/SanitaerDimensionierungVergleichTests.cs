@@ -97,4 +97,41 @@ public class SanitaerDimensionierungVergleichTests
         Assert.Contains(zeilen, x => x["laenge_m"] is JsonNode l && l.GetValue<double>() > 1.2);   // Fallstrecke 0.4 m + waagrechte Anschlussleitung stromab
         Assert.Equal(alt.ToJsonString(), neu.ToJsonString());
     }
+
+    /// <summary>N39 (Christian 13.11.2026): «nicht kleiner als zufliessend» in einem Durchgang; bei mehreren gleich grossen Zuflüssen wird die Leitung mit dem
+    /// kleinsten Kennzeichen genannt. Geprüft gegen eine Suche stromauf je Leitung (Netz.Folgen) über die Tabellenwerte der Ausgabe. Netz FIKTIV: zwei WC
+    /// mit je einer Fallleitung (FB an TS.a – die alte Suche fand sie zuerst –, FA an TS.c) in eine Sammelleitung S mit kleinerer Tabellen-DN.</summary>
+    [Fact]
+    public void NichtKleiner_EinDurchgang_GleichstandKleinstesKennzeichen()
+    {
+        var p = Netzprojekt(0.5, "SW");
+        Ok(p.Ausfuehren("element_aendern", new JsonObject { ["element"] = "SW-1", ["eigenschaften"] = new JsonObject { ["art"] = "fallstrang" } }));
+        Ok(p.Ausfuehren("element_anlegen", new JsonObject { ["klasse"] = "Strang", ["kennzeichen"] = "SW-S", ["teilVon"] = "SW", ["eigenschaften"] = new JsonObject { ["art"] = "sammelleitung" } }));
+        Kontrollschacht(p);
+        Formteil(p, "TS", "SW-S");
+        Apparat(p, "WC", "WC-B"); Apparat(p, "WC", "WC-A");
+        void L(string kz, string strang, string von, string nach, double[] a, double[] b) =>
+            Ok(p.Ausfuehren("leitung_ziehen", new JsonObject { ["kennzeichen"] = kz, ["strang"] = strang, ["dn"] = 100, ["von"] = von, ["nach"] = nach, ["punkte"] = Pts(a, b) }));
+        L("FB", "SW-1", "WC-B.sw", "TS.a", [3000, 0, 3000], [3000, 0, -50]);
+        L("FA", "SW-1", "WC-A.sw", "TS.c", [3000, 10, 3000], [3000, 10, -50]);
+        L("S", "SW-S", "TS.b", "KS-1.ein", [3000, 0, -50], [8000, 0, -100]);
+        Ok(p.Ausfuehren("element_aendern", new JsonObject { ["element"] = "S", ["eigenschaften"] = new JsonObject { ["gefaelle"] = 1 } }));
+        var r = MitTabellen(() => SanitaerDimensionierung.Abfrage(p, null));
+        var zeilen = r["leitungen"]!.AsArray().OfType<JsonObject>().ToList();
+        var tabelle = zeilen.Where(x => x["dnSoll"] is not null).ToDictionary(x => (string)x["leitung"]!, x => (int)(x["dnTabelle"] ?? x["dnSoll"])!);
+        int erhoeht = 0, gleichstand = 0;
+        foreach (var z in zeilen.Where(x => x["dnSoll"] is not null))
+        {
+            var e = p.Modell.Finde((string)z["leitung"]!)!;
+            var oben = Netz.Folgen(p.Modell, p.Katalog, e, "stromauf", Netz.ElementMedium(p.Modell, e)).Select(x => x.Element.Kennzeichen).Where(tabelle.ContainsKey).ToList();
+            int eigen = tabelle[e.Kennzeichen], max = oben.Count == 0 ? 0 : oben.Max(x => tabelle[x]);
+            Assert.Equal(Math.Max(eigen, max), (int)z["dnSoll"]!);
+            if (max <= eigen) { Assert.Null(z["dnTabelle"]); continue; }
+            var kandidaten = oben.Where(x => tabelle[x] == max).OrderBy(x => x, StringComparer.OrdinalIgnoreCase).ToList();
+            var text = z["annahmen"]!.AsArray().Select(x => (string)x!).Single(x => x.Contains("nicht kleiner als die zufliessende Leitung"));
+            Assert.Contains($"zufliessende Leitung {kandidaten[0]} (", text);
+            erhoeht++; if (kandidaten.Count > 1) gleichstand++;
+        }
+        Assert.True(erhoeht > 0 && gleichstand > 0, $"erhöht {erhoeht}, Gleichstand {gleichstand}: " + string.Join("; ", zeilen.Select(x => $"{x["leitung"]} {x["art"]} {x["dnSoll"]}/{x["dnTabelle"]} {x["annahmen"]?.ToJsonString()} {x["hinweis"]}")));
+    }
 }

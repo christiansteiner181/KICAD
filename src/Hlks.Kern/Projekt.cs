@@ -210,7 +210,7 @@ public sealed class Projekt
     {
         if (parameter is null || !parameter.ContainsKey("trockenlauf")) return parameter;
         var wert = parameter["trockenlauf"];
-        if (wert is not JsonValue v || !v.TryGetValue<bool>(out var t))
+        if (Json.JaNein(wert) is not bool t)   // N38: auch «true»/«ja»/«1» als Text
             throw new HlksFehler("Parameter «trockenlauf» muss true oder false sein.");
         trockenlauf |= t;
         var ohne = parameter.DeepClone().AsObject();

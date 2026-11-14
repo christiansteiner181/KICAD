@@ -156,3 +156,7 @@ swisspor führt für Rohre nur PIR-Schalen «swissporKISODUR» (Heizung, Kälte,
   seiner Klasse; Gerät mit Systemen nur eines Gewerks weiter dessen Gewerk – Verteiler im Sanitär bleibt Sanitär), N35 (war schon so: Werkzeugende
   wechselt das Register nicht, erst ein Klick auf die Leitung öffnet «Ändern | Klasse»; im Code festgehalten), N36 (Stromab/Stromauf folgen,
   Verbinden, Trennen im Kontextregister und im Rechtsklick-Menü nur an Elementen mit Rolle im Netz) umgesetzt.
+- **14.11.2026 Paket N38–N40:** N38 (Ja/Nein-Parameter und -Eigenschaften nehmen auch «true»/«false», «ja»/«nein», «1»/«0» als Text an – Json.JaNein,
+  Param.Bool, trockenlauf; ein anderer Wert wird abgelehnt statt still als Vorgabe zu gelten), N39 (Regel «nicht kleiner als zufliessend» in einem Durchgang
+  mit Zwischenspeicher je Element; bei gleich grossen Zuflüssen wird die Leitung mit dem kleinsten Kennzeichen genannt; bei einem Kreis im Netz wie vorher
+  eine Suche je Leitung), N40 (Lagemanager: je Lage ein eigenes Feld mit «+», gespeichert weiter als Text; unlesbare Einträge werden angezeigt) umgesetzt.

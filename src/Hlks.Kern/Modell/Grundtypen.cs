@@ -316,6 +316,17 @@ public static class Json
         return null;
     }
 
+    /// <summary>Liest Ja/Nein: true/false, als Text auch «true»/«false», «ja»/«nein», «1»/«0» (gross/klein egal), als Zahl 1/0 – N38 (Christian
+    /// 13.11.2026: «Annehmen und umwandeln»; KI-Aufrufe schicken gern «true» als Text). Sonst null.</summary>
+    public static bool? JaNein(JsonNode? n)
+    {
+        if (n is not JsonValue v) return null;
+        if (v.TryGetValue<bool>(out var b)) return b;
+        if (v.GetValueKind() == JsonValueKind.Number) return Zahl(v) switch { 1 => true, 0 => false, _ => null };
+        if (!v.TryGetValue<string>(out var s)) return null;
+        return s.Trim().ToLowerInvariant() switch { "true" or "ja" or "1" => true, "false" or "nein" or "0" => false, _ => null };
+    }
+
     public static string Text(object o, bool eingerueckt = false) => JsonSerializer.Serialize(o, eingerueckt ? Eingerueckt : Optionen);
     public static JsonNode Knoten(object o) => JsonSerializer.SerializeToNode(o, Optionen)!;
 }

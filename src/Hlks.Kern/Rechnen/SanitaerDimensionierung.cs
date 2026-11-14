@@ -64,6 +64,7 @@ public static class SanitaerDimensionierung
         var arten = new Dictionary<string, (string Art, bool Geschaetzt)>(StringComparer.Ordinal);
         (string Art, bool Geschaetzt) Art(Element x) => !merken ? Leitungsart(m, k, x) : arten.TryGetValue(x.Id, out var a) ? a : arten[x.Id] = Leitungsart(m, k, x);
         JsonObject Roh(Element x) => roh.TryGetValue(x.Id, out var r) ? r : roh[x.Id] = Abwasser(p, x, netz.LeitungMedium[x.Id], netz.Leitung(x.Id)!, AnlageVon(m, x), abw!, Art);
+        var zufluss = new Zufluss(m, k, netz, Roh);
         var zeilen = new JsonArray();
         foreach (var (id, medium) in netz.LeitungMedium.OrderBy(x => m.Finde(x.Key)?.Kennzeichen, StringComparer.OrdinalIgnoreCase))
         {
@@ -73,7 +74,7 @@ public static class SanitaerDimensionierung
             if (SanitaerNetz.IstAbwasser(medium) && abw is not null)
             {
                 var aus = Roh(e).DeepClone().AsObject();
-                NichtKleiner(m, k, netz, e, aus, abw, Roh);
+                NichtKleiner(zufluss, e, aus, abw);
                 Vergleich(p, e, aus, abw);
                 zeilen.Add(aus);
             }
@@ -420,17 +421,76 @@ public static class SanitaerDimensionierung
 
     /// <summary>Nennweite in Abflussrichtung nie reduziert (Handbuch S. 26, Fallleitung S. 14): Soll-DN mindestens die grösste Soll-DN der
     /// zufliessenden Abwasserleitungen.</summary>
-    static void NichtKleiner(Modell m, Katalog k, SanitaerNetz netz, Element e, JsonObject aus, JsonObject abw, Func<Element, JsonObject> roh)
+    static void NichtKleiner(Zufluss zufluss, Element e, JsonObject aus, JsonObject abw)
     {
         if (aus["dnSoll"]?.GetValue<int>() is not int dn) return;
-        (int Dn, string Kz)? groesste = null;
-        foreach (var x in Netz.Folgen(m, k, e, "stromauf", netz.LeitungMedium[e.Id]))
-            if (netz.LeitungMedium.TryGetValue(x.Element.Id, out var mx) && SanitaerNetz.IstAbwasser(mx) && roh(x.Element)["dnSoll"]?.GetValue<int>() is int d && d > (groesste?.Dn ?? dn))
-                groesste = (d, x.Element.Kennzeichen);
-        if (groesste is not { } g) return;
+        if (zufluss.Groesste(e) is not { } g || g.Dn <= dn) return;
         aus["dnSoll"] = g.Dn; aus["dnTabelle"] = dn;
         var regel = abw["sammelUndGrundleitungen"]?["regeln"]?["dimensionswechsel"];
         (aus["annahmen"] as JsonArray)?.Add($"DN {g.Dn} statt {dn}: nicht kleiner als die zufliessende Leitung {g.Kz} ({SanitaerNormtabellen.Beleg(new JsonObject { ["tabelle"] = "Dimensionswechsel" }, regel)}).");
+    }
+
+    /// <summary>Grösste Soll-DN (vor der Regel) der Abwasserleitungen stromauf, in einem Durchgang über das Netz (N39, Christian 13.11.2026: bei mehreren
+    /// gleich grossen wird die mit dem kleinsten Kennzeichen genannt; vorher eine vollständige Suche stromauf je Leitung – 2880 Leitungen 403 ms). Je
+    /// Element und Eintritt gemerkt: das Ergebnis eines Elements ist das Maximum über seine Nachbarn stromauf (deren eigene DN und deren Ergebnis).
+    /// Findet die Suche einen Kreis (Anschluss mit Fluss «beide»), rechnet dieses Medium wie vorher mit einer Suche je Leitung.</summary>
+    sealed class Zufluss(Modell m, Katalog k, SanitaerNetz netz, Func<Element, JsonObject> roh)
+    {
+        readonly Dictionary<(string Medium, string Id, string? Ein), (int Dn, string Kz)?> merk = [];
+        readonly HashSet<string> mitKreis = new(StringComparer.OrdinalIgnoreCase);
+
+        (int Dn, string Kz)? Eigene(Element x) =>
+            netz.LeitungMedium.TryGetValue(x.Id, out var mx) && SanitaerNetz.IstAbwasser(mx) && roh(x)["dnSoll"]?.GetValue<int>() is int d ? (d, x.Kennzeichen) : null;
+
+        static (int Dn, string Kz)? Besser((int Dn, string Kz)? a, (int Dn, string Kz)? b) =>
+            a is null ? b : b is null ? a : b.Value.Dn > a.Value.Dn || (b.Value.Dn == a.Value.Dn && StringComparer.OrdinalIgnoreCase.Compare(b.Value.Kz, a.Value.Kz) < 0) ? b : a;
+
+        public (int Dn, string Kz)? Groesste(Element e)
+        {
+            var medium = netz.LeitungMedium[e.Id];
+            if (!mitKreis.Contains(medium))
+            {
+                var r = Rechnen(e, medium);
+                if (r.Kreis) { mitKreis.Add(medium); foreach (var key in merk.Keys.Where(x => x.Medium == medium).ToList()) merk.Remove(key); }
+                else return r.Wert;
+            }
+            (int Dn, string Kz)? g = null;   // wie vorher: Suche je Leitung
+            foreach (var x in Netz.Folgen(m, k, e, "stromauf", medium)) g = Besser(g, Eigene(x.Element));
+            return g;
+        }
+
+        /// <summary>Tiefensuche stromauf mit eigenem Stapel (lange Stränge), Ergebnisse je (Element, Eintritt) gemerkt.</summary>
+        (bool Kreis, (int Dn, string Kz)? Wert) Rechnen(Element start, string medium)
+        {
+            var laeuft = new HashSet<(string, string?)>();
+            var stapel = new Stack<(Element E, string? Ein, List<(Element N, string NEin)> Nachbarn, int I, (int Dn, string Kz)? Acc)>();
+            void Rein(Element x, string? ein)
+            {
+                laeuft.Add((x.Id, ein));
+                stapel.Push((x, ein, Netz.Nachbarn(m, x, ein, "stromauf", medium).Select(t => (t.Nachbar, t.Eintritt)).ToList(), 0, null));
+            }
+            Rein(start, null);
+            (int Dn, string Kz)? ergebnis = null;
+            while (stapel.Count > 0)
+            {
+                var f = stapel.Pop();
+                if (f.I < f.Nachbarn.Count)
+                {
+                    var (n, nEin) = f.Nachbarn[f.I];
+                    if (n.Id == start.Id || laeuft.Contains((n.Id, nEin))) return (true, null);
+                    if (merk.TryGetValue((medium, n.Id, nEin), out var schon)) { stapel.Push((f.E, f.Ein, f.Nachbarn, f.I + 1, Besser(Besser(f.Acc, Eigene(n)), schon))); continue; }
+                    stapel.Push(f);
+                    Rein(n, nEin);
+                    continue;
+                }
+                laeuft.Remove((f.E.Id, f.Ein));
+                if (stapel.Count == 0) { ergebnis = f.Acc; break; }
+                merk[(medium, f.E.Id, f.Ein)] = f.Acc;
+                var oben = stapel.Pop();
+                stapel.Push((oben.E, oben.Ein, oben.Nachbarn, oben.I + 1, Besser(Besser(oben.Acc, Eigene(f.E)), f.Acc)));
+            }
+            return (false, ergebnis);
+        }
     }
 
     /// <summary>Vergleich mit dem Gezeichneten: Innendurchmesser der Serie gegen den Mindest-Innendurchmesser der Soll-DN (Tabelle 5).</summary>

@@ -4256,8 +4256,9 @@ Annäherungen (vollständige NCS-Liste lizenzpflichtig, NCS Inside Licence). Tes
 **Ort:** Register **Koordination › Gruppe Vorgaben › Lagemanager** (seit 09.11.2026, Christian «lagen gelten für alle gewerke gleich und gehören in den tab koordination»; vorher Heizung/Sanitär › Leitungen) (Aktion `gt.lagen`, Symbol `kote`; `aktionen-lagen.js`). Tabelle je Geschoss:
 Kote, **UK roh Decke** (mm über Kote; leer = aus dem Modell/IFC: Unterkante der **Betondecke** darüber – Aufbau mit «Beton», mindestens halb so gross
 wie die grösste Decke dort (ANNAHME) –, sonst der grössten Decke darüber, sonst «fehlt»; die Decke steht neben dem Wert, z. B. «aus dem Modell (D-49)»; seit
-09.11.2026, Christian «uk rohdecke soll aus dem IFC übernommen werden. dies ist im regelfall die betondecke»), **Lagen** (Abstand UK roh Decke bis Rohrachse in
-mm, durch Komma getrennt, Lage 1 zuerst) und die daraus folgenden Achshöhen. **Lagen für alle Geschosse** (Feld über der Tabelle, am Gebäude; seit 09.11.2026,
+09.11.2026, Christian «uk rohdecke soll aus dem IFC übernommen werden. dies ist im regelfall die betondecke»), **Lagen** (Abstand UK roh Decke bis Rohrachse; je Lage ein
+Feld L1, L2 …, «+» gibt ein weiteres – seit 14.11.2026, N40; gespeichert als Text «120, 240, …», leere Felder fallen weg) und die daraus folgenden Achshöhen;
+was der Kern nicht lesen kann, steht unter den Achshöhen («Nicht lesbar: …», Abfrage lagen › hinweis). **Lagen für alle Geschosse** (Feld über der Tabelle, am Gebäude; seit 09.11.2026,
 Christian «lagen gelten default für alle etagen»; leer = 120, 240, 360, 480); ein Eintrag beim Geschoss weicht davon ab. Speichern setzt die Gebäude-Eigenschaft
 `lagen` und die Geschoss-Eigenschaften `ukRohdecke` und `lagen` (`element_aendern`, leer entfernt sie). Daten: Abfrage `lagen { geschoss? }` (Kern `Leitungen/Lagen.cs`, DOM-freier Cache
 `werkzeuge/lagen-daten.js`).
