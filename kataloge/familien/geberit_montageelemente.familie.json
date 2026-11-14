@@ -222,6 +222,22 @@
       "beschreibung": "Radius Abwasserbogen bzw. -stutzen (Darstellung; WC d 90 nach Planungshandbuch S. 178)"
     },
     {
+      "name": "mit_fuessen",
+      "art": "typ",
+      "datentyp": "zahl",
+      "gruppe": "sonstiges",
+      "wert": 0,
+      "beschreibung": "1 = Duofix: verstellbare Füsse statt unterem Riegel"
+    },
+    {
+      "name": "fuss",
+      "art": "exemplar",
+      "datentyp": "laenge",
+      "gruppe": "abmessung",
+      "wert": 100,
+      "beschreibung": "Länge der Füsse unter OK fertig Boden = Bodenaufbau (setzt der Kern beim Bestücken; 0–200 bzw. 0–250 mm verstellbar)"
+    },
+    {
       "name": "versatz",
       "art": "exemplar",
       "datentyp": "laenge",
@@ -260,7 +276,8 @@
         "bolzen_a": 180,
         "bolzen_z": 330,
         "bolzen_l": 40,
-        "sw_r": 45
+        "sw_r": 45,
+        "mit_fuessen": 1
       }
     },
     {
@@ -292,7 +309,8 @@
         "bolzen_a": 180,
         "bolzen_z": 320,
         "bolzen_l": 40,
-        "sw_r": 45
+        "sw_r": 45,
+        "mit_fuessen": 1
       }
     },
     {
@@ -324,7 +342,8 @@
         "bolzen_a": 180,
         "bolzen_z": 330,
         "bolzen_l": 40,
-        "sw_r": 45
+        "sw_r": 45,
+        "mit_fuessen": 1
       }
     },
     {
@@ -356,7 +375,8 @@
         "bolzen_a": 180,
         "bolzen_z": 330,
         "bolzen_l": 40,
-        "sw_r": 45
+        "sw_r": 45,
+        "mit_fuessen": 1
       }
     },
     {
@@ -388,7 +408,8 @@
         "bolzen_a": 180,
         "bolzen_z": 820,
         "bolzen_l": 40,
-        "sw_r": 25
+        "sw_r": 25,
+        "mit_fuessen": 1
       }
     },
     {
@@ -420,7 +441,8 @@
         "bolzen_a": 180,
         "bolzen_z": 810,
         "bolzen_l": 40,
-        "sw_r": 25
+        "sw_r": 25,
+        "mit_fuessen": 1
       }
     },
     {
@@ -452,7 +474,8 @@
         "bolzen_a": 0,
         "bolzen_z": 0,
         "bolzen_l": 40,
-        "sw_r": 25
+        "sw_r": 25,
+        "mit_fuessen": 1
       }
     },
     {
@@ -484,7 +507,8 @@
         "bolzen_a": 180,
         "bolzen_z": 330,
         "bolzen_l": 40,
-        "sw_r": 45
+        "sw_r": 45,
+        "mit_fuessen": 0
       }
     },
     {
@@ -516,7 +540,8 @@
         "bolzen_a": 180,
         "bolzen_z": 330,
         "bolzen_l": 40,
-        "sw_r": 45
+        "sw_r": 45,
+        "mit_fuessen": 0
       }
     },
     {
@@ -548,7 +573,8 @@
         "bolzen_a": 180,
         "bolzen_z": 320,
         "bolzen_l": 40,
-        "sw_r": 45
+        "sw_r": 45,
+        "mit_fuessen": 0
       }
     },
     {
@@ -580,7 +606,8 @@
         "bolzen_a": 180,
         "bolzen_z": 330,
         "bolzen_l": 40,
-        "sw_r": 45
+        "sw_r": 45,
+        "mit_fuessen": 0
       }
     },
     {
@@ -612,7 +639,8 @@
         "bolzen_a": 280,
         "bolzen_z": 850,
         "bolzen_l": 40,
-        "sw_r": 25
+        "sw_r": 25,
+        "mit_fuessen": 0
       }
     },
     {
@@ -644,7 +672,8 @@
         "bolzen_a": 180,
         "bolzen_z": 800,
         "bolzen_l": 40,
-        "sw_r": 25
+        "sw_r": 25,
+        "mit_fuessen": 0
       }
     }
   ],
@@ -702,6 +731,7 @@
       "name": "Riegel unten",
       "art": "quader",
       "material": "geraet",
+      "sichtbar": "1 - mit_fuessen",
       "von": [
         "-breite / 2 + profil",
         "versatz",
@@ -711,6 +741,82 @@
         "breite / 2 - profil",
         "versatz + rahmentiefe",
         "rahmenunterkante + profil"
+      ]
+    },
+    {
+      "id": "fuss_links",
+      "name": "Fuss links",
+      "art": "quader",
+      "material": "geraet",
+      "sichtbar": "mit_fuessen * fuss",
+      "von": [
+        "-breite / 2 + 5",
+        "versatz + rahmentiefe / 2 - 15",
+        "-fuss"
+      ],
+      "bis": [
+        "-breite / 2 + 35",
+        "versatz + rahmentiefe / 2 + 15",
+        "rahmenunterkante"
+      ]
+    },
+    {
+      "id": "fuss_rechts",
+      "name": "Fuss rechts",
+      "art": "quader",
+      "material": "geraet",
+      "sichtbar": "mit_fuessen * fuss",
+      "von": [
+        "breite / 2 - 35",
+        "versatz + rahmentiefe / 2 - 15",
+        "-fuss"
+      ],
+      "bis": [
+        "breite / 2 - 5",
+        "versatz + rahmentiefe / 2 + 15",
+        "rahmenunterkante"
+      ]
+    },
+    {
+      "id": "fussplatte_links",
+      "name": "Fussplatte links",
+      "art": "quader",
+      "material": "geraet",
+      "sichtbar": "mit_fuessen * fuss",
+      "detailgrad": [
+        "mittel",
+        "fein"
+      ],
+      "von": [
+        "-195 - 36.5",
+        "versatz + rahmentiefe / 2 - 24",
+        "-fuss"
+      ],
+      "bis": [
+        "-195 + 36.5",
+        "versatz + rahmentiefe / 2 + 24",
+        "-fuss + 5"
+      ]
+    },
+    {
+      "id": "fussplatte_rechts",
+      "name": "Fussplatte rechts",
+      "art": "quader",
+      "material": "geraet",
+      "sichtbar": "mit_fuessen * fuss",
+      "detailgrad": [
+        "mittel",
+        "fein"
+      ],
+      "von": [
+        "195 - 36.5",
+        "versatz + rahmentiefe / 2 - 24",
+        "-fuss"
+      ],
+      "bis": [
+        "195 + 36.5",
+        "versatz + rahmentiefe / 2 + 24",
+        "-fuss + 5"
       ]
     },
     {

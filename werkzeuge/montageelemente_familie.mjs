@@ -36,6 +36,10 @@ const parameter = [
   p('bolzen_a', 'typ', 'laenge', 'Abstand der Gewindestangen (Befestigung des Apparats)', 0), p('bolzen_z', 'typ', 'laenge', 'Höhe der Gewindestangen über OKFF', 0),
   p('bolzen_l', 'typ', 'laenge', 'Überstand der Gewindestangen vor die Beplankung (Darstellung)', 40),
   p('sw_r', 'typ', 'laenge', 'Radius Abwasserbogen bzw. -stutzen (Darstellung; WC d 90 nach Planungshandbuch S. 178)', 25),
+  // Duofix (Christian 14.11.2026 mit Massbild: «duofix haben unten keinen durchlaufenden Träger, sondern verstellbare füsse»): zwei Füsse bis auf
+  // den Rohboden statt des unteren Riegels; Fussplatte 73 × 48 mm, Fussmitte 195 mm ab Elementmitte (Montageanleitung 972.240.00.0(00) S. 2, Deutung)
+  { name: 'mit_fuessen', art: 'typ', datentyp: 'zahl', gruppe: 'sonstiges', wert: 0, beschreibung: '1 = Duofix: verstellbare Füsse statt unterem Riegel' },
+  p('fuss', 'exemplar', 'laenge', 'Länge der Füsse unter OK fertig Boden = Bodenaufbau (setzt der Kern beim Bestücken; 0–200 bzw. 0–250 mm verstellbar)', 100),
   p('versatz', 'exemplar', 'laenge', 'Abstand Vorderseite Vorwand → Vorderkante Element (setzt der Kern beim Bestücken: Beplankung bzw. Beplankung + Profil)', 0),
 ];
 const medien = { sw: 'SW', kw: 'KW', ww: 'WW' };
@@ -59,6 +63,7 @@ const typen = elemente.map((e) => {
     bolzen_z: e.traverse ?? (wc ? 330 : e.anschluesse?.sw?.z ? e.anschluesse.sw.z + 300 : 0),
     bolzen_l: 40, sw_r: wc ? 45 : 25,
   };
+  vorgabe.mit_fuessen = e.system === 'duofix' ? 1 : 0;
   for (const [k2, v] of Object.entries(vorgabe)) w[k2] = typeof d[k2] === 'number' ? d[k2] : v;
   return { name: e.titel, werte: w };
 });
@@ -80,7 +85,11 @@ const familie = {
     { id: 'staender_links', name: 'Ständer links', art: 'quader', material: 'geraet', von: ['-breite / 2', 'versatz', 'rahmenunterkante'], bis: ['-breite / 2 + profil', 'versatz + rahmentiefe', 'rahmenunterkante + rahmenhoehe'] },
     { id: 'staender_rechts', name: 'Ständer rechts', art: 'quader', material: 'geraet', von: ['breite / 2 - profil', 'versatz', 'rahmenunterkante'], bis: ['breite / 2', 'versatz + rahmentiefe', 'rahmenunterkante + rahmenhoehe'] },
     { id: 'riegel_oben', name: 'Riegel oben', art: 'quader', material: 'geraet', von: ['-breite / 2 + profil', 'versatz', 'rahmenunterkante + rahmenhoehe - profil'], bis: ['breite / 2 - profil', 'versatz + rahmentiefe', 'rahmenunterkante + rahmenhoehe'] },
-    { id: 'riegel_unten', name: 'Riegel unten', art: 'quader', material: 'geraet', von: ['-breite / 2 + profil', 'versatz', 'rahmenunterkante'], bis: ['breite / 2 - profil', 'versatz + rahmentiefe', 'rahmenunterkante + profil'] },
+    { id: 'riegel_unten', name: 'Riegel unten', art: 'quader', material: 'geraet', sichtbar: '1 - mit_fuessen', von: ['-breite / 2 + profil', 'versatz', 'rahmenunterkante'], bis: ['breite / 2 - profil', 'versatz + rahmentiefe', 'rahmenunterkante + profil'] },
+    { id: 'fuss_links', name: 'Fuss links', art: 'quader', material: 'geraet', sichtbar: 'mit_fuessen * fuss', von: ['-breite / 2 + 5', 'versatz + rahmentiefe / 2 - 15', '-fuss'], bis: ['-breite / 2 + 35', 'versatz + rahmentiefe / 2 + 15', 'rahmenunterkante'] },
+    { id: 'fuss_rechts', name: 'Fuss rechts', art: 'quader', material: 'geraet', sichtbar: 'mit_fuessen * fuss', von: ['breite / 2 - 35', 'versatz + rahmentiefe / 2 - 15', '-fuss'], bis: ['breite / 2 - 5', 'versatz + rahmentiefe / 2 + 15', 'rahmenunterkante'] },
+    { id: 'fussplatte_links', name: 'Fussplatte links', art: 'quader', material: 'geraet', sichtbar: 'mit_fuessen * fuss', detailgrad: ['mittel', 'fein'], von: ['-195 - 36.5', 'versatz + rahmentiefe / 2 - 24', '-fuss'], bis: ['-195 + 36.5', 'versatz + rahmentiefe / 2 + 24', '-fuss + 5'] },
+    { id: 'fussplatte_rechts', name: 'Fussplatte rechts', art: 'quader', material: 'geraet', sichtbar: 'mit_fuessen * fuss', detailgrad: ['mittel', 'fein'], von: ['195 - 36.5', 'versatz + rahmentiefe / 2 - 24', '-fuss'], bis: ['195 + 36.5', 'versatz + rahmentiefe / 2 + 24', '-fuss + 5'] },
     { id: 'traverse', name: 'Traverse (Befestigung)', art: 'quader', material: 'geraet', sichtbar: 'mit_bolzen', von: ['-breite / 2 + profil', 'versatz', 'bolzen_z - profil / 2'], bis: ['breite / 2 - profil', 'versatz + profil', 'bolzen_z + profil / 2'] },
     // WC: Unterputz-Spülkasten mit Betätigungsöffnung an der Beplankung
     { id: 'spuelkasten', name: 'Spülkasten', art: 'quader', material: 'geraet', sichtbar: 'ist_wc', von: ['-spk_b / 2', 'versatz + rahmentiefe - spk_t', 'spk_uk'], bis: ['spk_b / 2', 'versatz + rahmentiefe', 'spk_uk + spk_h'] },

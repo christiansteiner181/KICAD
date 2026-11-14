@@ -191,7 +191,7 @@ public sealed class MontageelementSetzen : IBefehl
         new FamiliePlatzieren().Ausfuehren(k, new JsonObject
         {
             ["familie"] = fam.Kennzeichen, ["typ"] = typ.Titel, ["punkt"] = new JsonArray(Math.Round(pt[0], 3), Math.Round(pt[1], 3), auf.Okff), ["drehung"] = dreh,
-            ["geschoss"] = vorwand.Geschoss, ["parameter"] = new JsonObject { ["versatz"] = Math.Round(auf.Tiefe - auf.ElementVorne, 3) },
+            ["geschoss"] = vorwand.Geschoss, ["parameter"] = new JsonObject { ["versatz"] = Math.Round(auf.Tiefe - auf.ElementVorne, 3), ["fuss"] = Math.Round(Math.Max(0, auf.Okff - auf.Rohboden), 3) },   // Füsse bis Rohboden (Duofix)
         });
         var e = k.Arbeit.Elemente.Last(x => x.Bezuege.GetValueOrDefault(Familien.Bezug) == fam.Id).Kopie();
         e.TeilVon = vorwand.Id;
