@@ -406,8 +406,10 @@ function leitungFelder(wid, kategorie) {
     leitungHaken.optionenNeu?.();
   };
   return [
-    // Produktlinie nur noch im Eigenschaftsfenster (Typenwahl; Christian 09.11.2026: «produktelinie soll nur noch im eigenschaftsfenster gezeigt werden»)
-    { id: 'serie', titel: 'Produktlinie', art: 'auswahl', sichtbar: () => false, get werte() { return serienListe(kategorie).map((s) => [s.kz, s.name]); }, leer: 'wählen …', beiAenderung: nachSerie },
+    // Produktlinie nur noch im Eigenschaftsfenster (Typenwahl; Christian 09.11.2026: «produktelinie soll nur noch im eigenschaftsfenster gezeigt werden»);
+    // ist die Palette zu, steht sie hier (Befund Christian 14.11.2026 «eckige kanäle gehen nicht mehr … es sind nur Durchmesser wählbar»: ohne Palette
+    // war keine Produktlinie wählbar – wie Revit, das die Typauswahl dann im Menüband zeigt)
+    { id: 'serie', titel: 'Produktlinie', art: 'auswahl', sichtbar: () => leitungHaken.typWahlSichtbar?.() === false, get werte() { return serienListe(kategorie).map((s) => [s.kz, s.name]); }, leer: 'wählen …', beiAenderung: nachSerie },
     { id: 'groesse', get titel() { return frei() ? 'Normgrösse' : 'Grösse'; }, art: 'auswahl', get leer() { return frei() ? 'Vorschlag …' : 'wählen …'; },
       get werte() {
         const st = stufen();

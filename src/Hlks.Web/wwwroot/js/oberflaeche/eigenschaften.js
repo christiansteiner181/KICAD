@@ -24,7 +24,7 @@ import { elementGruppen, familienKopfHtml, familienMarke, exemplarNeu, kopfOp } 
 import { familieHolen } from '../familien/daten.js';
 import { leitungGruppe, altbestandGruppe, formteilGruppe, leitungsArt, leitungEigenschaften } from '../werkzeuge/leitung-palette.js';
 import { leitungAenderung } from '../werkzeuge/leitung-bearbeiten.js';
-import { serieLaden, serienListe, befundeVon } from '../werkzeuge/leitung-daten.js';
+import { serieLaden, serienListe, befundeVon, haken as leitungHaken } from '../werkzeuge/leitung-daten.js';
 import { istFrei, istAbwasser, freiEingabe } from '../werkzeuge/leitung-frei.js';
 import { kategorieVon } from '../werkzeuge/leitung-logik.js';
 import { anmelden } from './paletten.js';
@@ -54,6 +54,9 @@ export function einrichten(w) {
   wurzel.classList.add('ep');
   wurzel.innerHTML = '<div class="ep-inhalt"></div>';
   inhalt = wurzel.querySelector('.ep-inhalt');
+  // Produktlinie beim Zeichnen in der Optionsleiste, solange die Palette nicht zu sehen ist (zu, oder Reiter hinter einer anderen Palette; 14.11.2026)
+  leitungHaken.typWahlSichtbar = () => !!wurzel?.isConnected && wurzel.getClientRects().length > 0;
+  window.addEventListener('paletten-geaendert', () => leitungHaken.optionenNeu?.());
 
   inhalt.addEventListener('change', beiAenderung);
   // Typenwahl beim Zeichnen (Christian 09.11.2026: «produktelinie in den eigenschaften anzeigen. (wie bei revit, Typenwahl)»): Produktlinie des Werkzeugs

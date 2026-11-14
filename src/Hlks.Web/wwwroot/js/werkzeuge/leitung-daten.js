@@ -11,7 +11,7 @@ import { serieLeichtAus, leitungsBefunde } from './leitung-frei.js';
 
 /** Haken vom laufenden Werkzeug (leitung.js; hier keine Abhängigkeit von der Oberfläche, damit Node-Tests laden können):
  *  hoeheGeaendert() – in der Optionsleiste wurde die Höhe geändert (Höhenwechsel), optionenNeu() – Optionsleiste neu zeichnen. */
-export const haken = { hoeheGeaendert: null, optionenNeu: null, systemFilter: null };   // systemFilter: Sanitär-Funktionen (09.11.2026)
+export const haken = { hoeheGeaendert: null, optionenNeu: null, systemFilter: null, typWahlSichtbar: null };   // typWahlSichtbar: Eigenschaftenpalette zu sehen? (14.11.2026)   // systemFilter: Sanitär-Funktionen (09.11.2026)
 
 // ------------------------------------------------------------------------------------------------ Serien
 
