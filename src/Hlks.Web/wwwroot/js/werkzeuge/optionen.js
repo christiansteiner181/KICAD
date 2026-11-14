@@ -345,6 +345,7 @@ function leitungFelder(wid, kategorie, form = null) {
     if (!(h >= 0) || h === null) return;
     setze(wid, 'hoehe', Math.round(ukd - x - h / 2));
     leitungHaken.hoeheGeaendert?.();
+    leitungHaken.optionenNeu?.();   // die gerechnete Achshöhe gleich zeigen (14.11.2026)
   };
   // Normgrösse gewählt (freie Serie): die Zahlenfelder zeigen ihre Grösse, geändert werden sie von Hand
   // Dämmdicke nach Energiegesetz (Christian 09.11.2026: «dämmdicken gem. energiegesetzt»): Dämmregel des Systems (MuKEn 2014 Anhang 4,

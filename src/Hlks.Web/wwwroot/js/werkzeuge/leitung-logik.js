@@ -342,6 +342,8 @@ export function pflichtFehlt(opt, { kategorie = 'Rohr', serien = [], serie = nul
   if (istFrei(serie)) { const f = freiPflichtFehlt(serie, opt); if (f) return f; }
   else if (!opt.groesse) return { feld: 'groesse', text: 'Die Grösse fehlt.', vorschlag: 'In der Optionsleiste eine Grösse der Produktlinie wählen.' };
   if (!zahlOK(opt.hoehe)) return { feld: 'hoehe', text: 'Die Höhe fehlt.', vorschlag: 'In der Optionsleiste die Höhe der Achse über OK Geschoss in mm eintragen (Pflichtfeld).' };
+  // Befund Christian 14.11.2026 «kanäle werden auf der falschen höhe gezeichnet»: Achshöhe 0 legte die Kanäle in den Boden
+  if (kategorie === 'Kanal' && opt.hoehe <= 0) return { feld: 'hoehe', text: `Achshöhe ${opt.hoehe} mm: der Kanal läge im Boden.`, vorschlag: '«OK unter UKD» bzw. «Achse unter UKD» eintragen (0 = direkt unter der Decke) oder die Achshöhe über OK Geschoss.' };
   return null;
 }
 

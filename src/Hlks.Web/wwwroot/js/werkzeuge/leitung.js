@@ -14,11 +14,11 @@ import { sende } from '../oberflaeche/befehle.js';
 import { meldung } from '../oberflaeche/dialoge.js';
 import { hinweisSetzen } from '../oberflaeche/register.js';
 import { abstand, punktNachLaenge } from './fangen.js';
-import { setze, rasterWert, freiVorbelegen } from './optionen.js';
+import { setze, rasterWert, freiVorbelegen, feldDef } from './optionen.js';
 import { familienLaden } from '../familien/daten.js';
 import { esc } from './schicht.js';
 import * as S from './schicht.js';
-import { lagenLaden, lagenFuer } from './lagen-daten.js';
+import { lagenLaden, lagenFuer, ukdFuer } from './lagen-daten.js';
 import * as L from './leitung-logik.js';
 import * as F from './leitung-frei.js';
 import * as D from './leitung-daten.js';
@@ -155,7 +155,11 @@ function zuruecksetzen(z) {
 async function stillAnlegen(z, ctx) {
   const alle = [...z.punkte], nach = z.nach;
   let abgelehnt = null;
+  // gekürzt nur noch senkrecht (Höhenwechsel ohne waagrechtes Stück) nicht anlegen (Befund Christian 14.11.2026 «scheinbar wird nur 1. Lage
+  // gezeichnet»: Abzweig L1 → L2, 120 mm zu wenig für T-Stück und Bogen d88.9 – angelegt wurde nur der Stummel)
+  const nurSenkrecht = (p) => p.every((q) => Math.hypot(q[0] - p[0][0], q[1] - p[0][1]) < 1);
   for (let n = alle.length; n >= (z.abzweig ? 1 : 2); n--) {
+    if (n < alle.length && nurSenkrecht(alle.slice(0, n))) continue;
     z.punkte = alle.slice(0, n);
     z.nach = n < alle.length ? null : nach;   // gekürzt: das Ende hängt nicht mehr am angeklickten Ziel
     let bau;
@@ -174,7 +178,9 @@ async function stillAnlegen(z, ctx) {
   }
   z.punkte = alle; z.nach = nach;
   const a = L.ablehnung(abgelehnt ?? {});
-  meldung(`Nicht zeichenbar: ${a.text} – Esc verwirft den Zug.`, 'warnung', { vorschlag: a.vorschlag ?? undefined });
+  const hoehenwechsel = /Formteile brauchen dort mindestens/.test(a.text ?? '') && alle.length > 1 && Math.hypot(alle[1][0] - alle[0][0], alle[1][1] - alle[0][1]) < 1;
+  meldung(`Nicht zeichenbar: ${a.text} – Esc verwirft den Zug.`, 'warnung',
+    { vorschlag: hoehenwechsel ? 'Der Höhenwechsel ist für diese Grösse zu klein: eine tiefere Lage bzw. eine grössere Höhendifferenz wählen.' : a.vorschlag ?? undefined });
   z.vorschau = { ok: false, r: abgelehnt ?? {}, unzeichenbar: true };
 }
 
@@ -474,8 +480,14 @@ export function leitungWerkzeug(kategorie = 'Rohr', variante = null) {
         if (def) freiVorbelegen(id, def, true);                                // freie Serie: leere Zahlenfelder mit der Vorlage füllen
         // gemerkte Lage (Christian 09.11.2026: «Ja, Lage merken»): die Höhe gilt im aktuellen Geschoss neu (UK roh Decke je Geschoss); hat es die
         // Lage hier nicht, bleibt die Höhe und das Feld Lage wird leer
-        if (kategorie === 'Rohr') await lagenLaden();   // auch fürs Weiterzeichnen an einer Leitung (Lage übernehmen)
+        await lagenLaden();   // Rohr: Lage (auch fürs Weiterzeichnen an einer Leitung); Kanal: UK roh Decke
         if (ctx.lauf.fertig) return;
+        // Kanal (Christian 09.11.2026: «bei kanälen immer OK = -xy UKD»; Befund 14.11.2026 Achshöhe 0 → Kanal im Boden): ein gemerkter Abstand unter
+        // UKD gilt im aktuellen Geschoss neu; ohne Abstand und ohne brauchbare Höhe gilt 0 unter UKD (direkt unter der Decke)
+        if (form && Number.isFinite(ukdFuer(ctx.geschoss))) {
+          if (!(Number.isFinite(ctx.opt.unterUkd) && ctx.opt.unterUkd >= 0) && !(Number.isFinite(ctx.opt.hoehe) && ctx.opt.hoehe > 0)) setze(id, 'unterUkd', 0);
+          if (Number.isFinite(ctx.opt.unterUkd)) feldDef(id, 'unterUkd')?.beiAenderung?.();
+        }
         if (kategorie === 'Rohr' && ctx.opt.lage) {
           const l = lagenFuer(ctx.geschoss).find((x) => String(x.nr) === String(ctx.opt.lage));
           if (l) setze(id, 'hoehe', Math.round(l.hoehe)); else setze(id, 'lage', '');

@@ -611,3 +611,11 @@ test('Lüftung: Kanal nur eckige, Lüftungsrohr nur runde Produktlinien (Christi
   assert.equal(L.kanalForm({ typen: ['K1'] }, { groessenparameter: { b: {}, h: {} } }), 'eckig');
   assert.ok(O.WERKZEUGE.lueftungsrohr && O.WERKZEUGE.kanal);
 });
+
+test('Kanal mit Achshöhe 0 wird abgelehnt (Befund Christian 14.11.2026: Kanäle lagen im Boden)', () => {
+  const serien = [{ kz: 'FAM-20', name: 'Wickelfalzrohr rund', typen: ['Ø 200'] }];
+  const opt = { serie: 'FAM-20', groesse: 'Ø 200', hoehe: 0 };
+  assert.equal(L.pflichtFehlt(opt, { kategorie: 'Kanal', serien })?.feld, 'hoehe');
+  assert.equal(L.pflichtFehlt({ ...opt, hoehe: 2500 }, { kategorie: 'Kanal', serien }), null);
+  assert.equal(L.pflichtFehlt({ ...opt, hoehe: 0 }, { kategorie: 'Rohr', serien }), null);   // Rohr im Boden bleibt erlaubt (Grundleitung)
+});
