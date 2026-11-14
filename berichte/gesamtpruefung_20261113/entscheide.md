@@ -149,3 +149,6 @@ swisspor führt für Rohre nur PIR-Schalen «swissporKISODUR» (Heizung, Kälte,
   Text aufrecht wie MIRRTEXT=0; PSLTSCALE wartet auf die DWG von Christian), 42 (Knopf «Reservierung übernehmen» mit Name/Zeit, Speicher.Uebernehmen;
   alte Pakete ab 60 Tagen beim Standabbild nach aenderungen\archiv\JJJJ-MM, PaketLesen findet sie dort – Annahme 60 Tage; Programmstand = Commit-Zeit
   aus git in Paket und Standabbild, neuerer Stand → nur lesend) umgesetzt.
+- **14.11.2026 Paket 45–47:** 45 (war schon so: mm/cm/m, ohne Einheit mm; Test um m ergänzt), 46 (Prüfungen je Befehl nur für das Umfeld der Änderung,
+  Teilprüfungen nur im berührten Gebiet, Gesamtprüfung über pruefen; Element.Kopie ohne JSON – Messung 8300 Elemente: Befehl am Netz 426 → ~150 ms,
+  Kopie 200 → 40 ms), 47 (fremde Leitungen grau als Hintergrund, Ansicht.fremdeLeitungen = false blendet aus) umgesetzt.

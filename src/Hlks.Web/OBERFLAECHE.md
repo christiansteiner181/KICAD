@@ -4633,3 +4633,8 @@ Kern `Zeichnung/ZeichnungPlotstil.cs`, MCP `zeichnung_plotstile` und Parameter `
 - Lehnt ein Befehl wegen einer fremden Reservierung ab, trägt die Meldung den Knopf **«Reservierung übernehmen …»**: Rückfrage mit Name, Gerät, seit und bis; danach den Befehl erneut ausführen (Endpunkt POST /api/reservierungen/uebernehmen). Dauer einer Reservierung weiterhin 2 h.
 - Pakete, die im Standabbild stehen und älter als 60 Tage sind, wandern beim Schreiben eines Standabbilds nach aenderungenarchivJJJJ-MM (bleiben lesbar).
 - Trägt ein Paket bzw. Standabbild einen neueren Programmstand (Zeit des letzten Commits) als das eigene Programm, ist das Projekt **nur lesend**: Statusleiste rot «Nur lesend – neuerer Programmstand im Projekt», Befehle werden abgelehnt, kein Standabbild. Abhilfe: KICAD aktualisieren.
+
+### Gewerkefilter und Prüfungen (Gesamtprüfung 45–47, 14.11.2026)
+- Grundriss mit Gewerkefilter: Leitungen fremder Gewerke erscheinen **grau als Hintergrund** (ohne Texte, unter den eigenen); ausschalten je Ansicht mit der Eigenschaft «fremdeLeitungen» = nein (Frage 47).
+- Nach jedem Befehl laufen die Prüfungen nur für das Geänderte und sein Umfeld (Verbindungspartner, Verweise; Teilprüfungen nur im berührten Gebiet); die **Gesamtprüfung** liefert die Prüfliste bzw. die Abfrage «pruefen» (Frage 46).
+- Lagemanager: Abstände in mm, cm oder m; ohne Einheit mm (Frage 45).

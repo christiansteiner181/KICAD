@@ -100,7 +100,7 @@ public class LagenTests
     public void Lagen_EinheitCmUndMinus_WieGeschrieben()
     {
         var p = Neu();
-        Ok(p.Ausfuehren("element_aendern", new JsonObject { ["element"] = "EG", ["eigenschaften"] = new JsonObject { ["ukRohdecke"] = 2700, ["lagen"] = "-12cm, −24 cm, 360, 480mm" } }));
+        Ok(p.Ausfuehren("element_aendern", new JsonObject { ["element"] = "EG", ["eigenschaften"] = new JsonObject { ["ukRohdecke"] = 2700, ["lagen"] = "-12cm, −24 cm, 360, 0.48m" } }));   // Frage 45: mm, cm, m erlaubt, ohne Einheit mm
         var eg = Geschoss(p, "EG");
         Assert.Equal([120.0, 240.0, 360.0, 480.0], ((JsonArray)eg["lagen"]!).Select(l => (double)l!["abstand"]!));
         Assert.Equal(2580, (double)eg["lagen"]![0]!["hoehe"]!);   // 2700 − 120

@@ -36,6 +36,8 @@ public sealed class Wert
     public double? AlsZahl() => Inhalt is JsonValue v && v.GetValueKind() == JsonValueKind.Number ? Json.Zahl(v) : null;
     public string? AlsText() => Inhalt is JsonValue v && v.TryGetValue<string>(out var s) ? s : Inhalt?.ToJsonString();
     public override string ToString() => Einheit is null ? (AlsText() ?? "") : $"{AlsText()} {Einheit}";
+    /// <summary>Tiefe Kopie (Inhalt geklont; Herkunft ist unveränderlich und wird geteilt).</summary>
+    public Wert Kopie() => new() { Inhalt = Inhalt?.DeepClone(), Einheit = Einheit, Herkunft = Herkunft };
 }
 
 /// <summary>Ein Anschluss eines Elements: Medium, Fliessrichtung, Grösse (Rohr: DN; Kanal: d bzw. b × h in mm).</summary>
@@ -140,7 +142,21 @@ public sealed class Element
     public string? Text(string name) => Eigenschaft(name)?.AlsText();
     public Anschluss? AnschlussNamens(string name) => Anschluesse.FirstOrDefault(a => a.Name.Equals(name, StringComparison.OrdinalIgnoreCase));
 
-    public Element Kopie() => JsonSerializer.Deserialize<Element>(JsonSerializer.Serialize(this, Json.Optionen), Json.Optionen)!;
+    /// <summary>Tiefe Kopie ohne JSON-Umweg (Gesamtprüfung Frage 46, 14.11.2026: jeder Befehl kopiert das Modell – der JSON-Umweg kostete bei 8000 Elementen
+    /// rund 200 ms). Gleiches Ergebnis wie Serialisieren und Lesen (Test KopieTests); neue Felder hier nachtragen.</summary>
+    public Element Kopie() => new()
+    {
+        Id = Id, Kennzeichen = Kennzeichen, Klasse = Klasse, Name = Name, TeilVon = TeilVon, Geschoss = Geschoss, Raum = Raum, System = System,
+        Eigenschaften = Eigenschaften.ToDictionary(x => x.Key, x => x.Value.Kopie()),
+        Anschluesse = Anschluesse.Select(a => a.Kopie()).ToList(),
+        Geometrie = Geometrie?.Kopie(),
+        Bezuege = new Dictionary<string, string>(Bezuege),
+        Kennungen = Kennungen is null ? null : new Dictionary<string, string>(Kennungen),
+        Version = Version, Paket = Paket, Angelegt = Angelegt, Geaendert = Geaendert,
+    };
+
+    /// <summary>Kopie über JSON (wie vor dem 14.11.2026) – nur für den Vergleichstest.</summary>
+    public Element KopieUeberJson() => JsonSerializer.Deserialize<Element>(JsonSerializer.Serialize(this, Json.Optionen), Json.Optionen)!;
 }
 
 public sealed record Anschlusspunkt(string Element, string Anschluss);

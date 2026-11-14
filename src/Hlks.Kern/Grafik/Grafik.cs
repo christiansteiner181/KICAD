@@ -90,6 +90,12 @@ public static class Grafik
             foreach (var q in Quellen)
                 g.Teile.AddRange(einlagen ? EinlageGrafik.GemeinsamImPlan(q, q.Gemeinsam(ctx))
                     : koordination ? KoordinationGrafik.GemeinsamImPlan(ctx, q, q.Gemeinsam(ctx)) : q.Gemeinsam(ctx));
+            // Frage 47 (Christian 13.11.2026): Leitungen fremder Gewerke grau als Hintergrund (vor den eigenen, ohne Texte), je Ansicht abschaltbar
+            bool fremdeAn = !(ctx.Ansicht.Eigenschaft("fremdeLeitungen")?.Inhalt is JsonValue fv && fv.TryGetValue<bool>(out var an) && !an);
+            if (fremdeAn && !einlagen && !koordination && !AussparungGrafik.Aktiv(ctx) && ctx.Gewerke is { Count: > 0 })
+                foreach (var e in p.Modell.Elemente)
+                    if (FremdeLeitung(ctx, e) && QuelleFuer(p.Katalog, e) is { } qf)
+                        g.Teile.AddRange(EinlageGrafik.Vergrauen(qf.Plan(ctx, e).Select(t => new Grafikteil { Id = t.Id, Ebene = t.Ebene, Teil = t.Teil, Primitive = t.Primitive.Where(x => x.Art != "text").ToList() })));
             foreach (var e in p.Modell.Elemente)
                 if (Sichtbar(ctx, e) && QuelleFuer(p.Katalog, e) is { } q)
                     g.Teile.AddRange(Zeichnen(ctx, q, e));
@@ -165,7 +171,13 @@ public static class Grafik
 
     /// <summary>Soll das Element in dieser Ansicht erscheinen? (wie filter.js; Beschriftung nur in ihrer Ansicht,
     /// Achsen in allen Grundrissen, Schnittlinien anderer Ansichten als Symbol in Grundrissen)</summary>
-    public static bool Sichtbar(GrafikKontext ctx, Element e)
+    /// <summary>Frage 47: Leitungsbauteil, das nur wegen des Gewerkefilters fehlt (sonst sichtbar wäre).</summary>
+    static bool FremdeLeitung(GrafikKontext ctx, Element e) =>
+        Netz.IstLeitungsbauteil(ctx.Katalog, e) && !Ableitungen.GewerkGewaehlt(ctx.Modell, ctx.Katalog, e, ctx.Gewerke) && Sichtbar(ctx, e, ohneGewerk: true);
+
+    public static bool Sichtbar(GrafikKontext ctx, Element e) => Sichtbar(ctx, e, ohneGewerk: false);
+
+    static bool Sichtbar(GrafikKontext ctx, Element e, bool ohneGewerk)
     {
         var k = ctx.Katalog;
         if (!k.Klassen.TryGetValue(e.Klasse, out var d) || e.Geometrie is null) return false;
@@ -176,7 +188,7 @@ public static class Grafik
         if (IfcDarstellung.Ausgeblendet(ctx, e)) return false;   // N12: Ansicht zeigt nur das Original der IFC-Unterlage
         if (ctx.KlassenAus.Contains(e.Klasse) || d.Linie.Any(ctx.KlassenAus.Contains)) return false;
         // Gewerk der Klasse und des Systems bzw. Mediums (Leitungsklassen haben kein eigenes Gewerk) – wie 3D (filter.js) und Schema
-        if (!Ableitungen.GewerkGewaehlt(ctx.Modell, k, e, ctx.Gewerke)) return false;
+        if (!ohneGewerk && !Ableitungen.GewerkGewaehlt(ctx.Modell, k, e, ctx.Gewerke)) return false;
         // Modul 3, B10: Einlagen und Grundleitungen nur im Einlage- bzw. Grundleitungsplan; dort nur die Elemente des Plans (EinlageGrafik)
         if (EinlageGrafik.Sichtbarkeit(ctx, e) is bool b) return b;
         // Achsen in allen Grundrissen; Unterlagen ohne Geschoss (IFC über mehrere Geschosse) ebenso, sie schneiden selbst

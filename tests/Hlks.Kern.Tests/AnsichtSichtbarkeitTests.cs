@@ -64,9 +64,14 @@ public class AnsichtSichtbarkeitTests
         Assert.Equal(["sanitaer"], Gw(nurMedium));
         Assert.Empty(Gw(ohne));
         Assert.Equal("sanitaer", Darstellung.Element(p, nurMedium)["gewerk"]?.GetValue<string>());
-        // im Plan selbst fehlt das Rohr damit ebenfalls
+        // im Plan: fremde Leitungen grau als Hintergrund (Frage 47, Christian 13.11.2026), ohne Texte; je Ansicht abschaltbar
+        var grau = Grafik.Plan(p, "AN-L").Teile.Where(t => t.Id == imSystem.Id).SelectMany(t => t.Primitive).ToList();
+        Assert.NotEmpty(grau);
+        Assert.All(grau, x => Assert.Equal(EinlageGrafik.Grau, x.Stil.Farbe));
+        Assert.DoesNotContain(grau, x => x.Art == "text");
+        Assert.Contains(Grafik.Plan(p, "AN-S").Teile, t => t.Id == imSystem.Id && t.Primitive.Any(x => x.Stil.Farbe != EinlageGrafik.Grau));
+        ArchitekturHilfe.Ok(p.Ausfuehren("element_aendern", new JsonObject { ["element"] = "AN-L", ["eigenschaften"] = new JsonObject { ["fremdeLeitungen"] = false } }));
         Assert.DoesNotContain(Grafik.Plan(p, "AN-L").Teile, t => t.Id == imSystem.Id);
-        Assert.Contains(Grafik.Plan(p, "AN-S").Teile, t => t.Id == imSystem.Id);
 
         // Montageabschnitt mit Kriterium Gewerk (Baustelle): die Sanitärrohre gehören dazu, das Rohr ohne Gewerk nicht
         Anlegen(p, new JsonObject { ["klasse"] = "Montageabschnitt", ["kennzeichen"] = "MA-S", ["eigenschaften"] = new JsonObject { ["kriterien"] = new JsonObject { ["gewerke"] = new JsonArray("sanitaer") } } });

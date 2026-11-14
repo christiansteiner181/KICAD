@@ -8,6 +8,9 @@ public sealed record Befund(string Code, string Schwere, string Element, string 
     public string Schluessel => $"{Code}|{Element}|{Text}";
 }
 
+/// <summary>Umfang einer Prüfung nach einem Befehl (Frage 46): elementweise Ids und welche Teilprüfungen laufen.</summary>
+public sealed record Pruefumfang(IReadOnlySet<string> Ids, bool Netz, bool Aussparungen, bool Plan);
+
 public static class Pruefungen
 {
     public static readonly Dictionary<string, string> Codes = new()
@@ -69,7 +72,7 @@ public static class Pruefungen
     /// <summary>P40 (Frage 36, Christian 13.11.2026): Geräte, Apparate, Formteile und Armaturen derselben Klasse und Familie/Typ, deren Einfügepunkt
     /// auf 1 mm und deren Drehung auf 0.1° übereinstimmen – zweimal am selben Ort (bisher nur als harte Kollision sichtbar). Gemeldet wird jedes
     /// weitere Element mit dem ersten (nach Kennzeichen) als Bezug. Leitungen und Bauteile der Architektur sind ausgenommen.</summary>
-    static void DoppeltPlatziert(Modell m, Katalog k, List<Befund> b)
+    static void DoppeltPlatziert(Modell m, Katalog k, List<Befund> b, IReadOnlySet<string>? nur = null)
     {
         var kandidaten = m.Elemente.Where(e => e.Geometrie is { Art: "punkt" } g && g.Punkte.Count > 0
             && (Netz.IstNetzgeraet(k, e) || (Netz.IstLeitungsbauteil(k, e) && !k.IstArt(e, "Leitung"))));
@@ -78,7 +81,7 @@ public static class Pruefungen
             var p = e.Geometrie!.Punkte[0];
             return (e.Klasse, e.Bezuege.GetValueOrDefault("familie") ?? "", e.Text("familientyp") ?? "",
                 Math.Round(p[0]), Math.Round(p.Length > 1 ? p[1] : 0), Math.Round(p.Length > 2 ? p[2] : 0), Math.Round(Familien.Drehung(e) * 10));
-        }).Where(g => g.Count() > 1))
+        }).Where(g => g.Count() > 1 && (nur is null || g.Any(e => nur.Contains(e.Id)))))
         {
             var l = gruppe.OrderBy(e => e.Kennzeichen, StringComparer.OrdinalIgnoreCase).ToList();
             foreach (var e in l.Skip(1))
@@ -100,16 +103,26 @@ public static class Pruefungen
         ["Gebaeude"] = ["n50", "q50"],
     };
 
-    public static List<Befund> Alle(Modell m, Katalog k)
+    /// <param name="nur">Frage 46 (Christian 13.11.2026: «Prüfungen nur für Geändertes und Nachbarn, Gesamtprüfung auf Knopfdruck»): nur die
+    /// elementweisen Prüfungen dieser Elemente (Ids); die Teilprüfungen der Module (Leitungen, Schema, Aussparungen, Sanitär, Plan, Heizung) laufen
+    /// ganz – sie sind schnell (Messung 8300 Elemente: zusammen rund 30 ms) und brauchen das Netz. null = alles (Gesamtprüfung, Abfrage pruefen).</param>
+    public static List<Befund> Alle(Modell m, Katalog k, IReadOnlySet<string>? nur = null) => Alle(m, k, nur is null ? null : new Pruefumfang(nur, true, true, true));
+
+    /// <summary>Wie oben mit Umfang (Frage 46): elementweise nur umfang.Ids; die Teilprüfungen nur, wenn die Änderung ihr Gebiet berührt (Netz:
+    /// Leitungen, Schema, Sanitär, Heizung; Aussparungen; Pläne). Der Umfang gilt für vorher und nachher gleich – so stimmt die Differenz.</summary>
+    public static List<Befund> Alle(Modell m, Katalog k, Pruefumfang? umfang)
     {
+        var nur = umfang?.Ids;
+        bool netz = umfang?.Netz ?? true, aussparungen = umfang?.Aussparungen ?? true, plan = umfang?.Plan ?? true;
         var b = new List<Befund>();
         var medienImProjekt = m.DerKlasse("System").Select(s => s.Text("medium")).Where(x => x is not null).ToHashSet(StringComparer.OrdinalIgnoreCase);
 
-        foreach (var g in m.Elemente.GroupBy(e => e.Kennzeichen, StringComparer.OrdinalIgnoreCase).Where(g => g.Count() > 1))
+        foreach (var g in m.Elemente.GroupBy(e => e.Kennzeichen, StringComparer.OrdinalIgnoreCase).Where(g => g.Count() > 1 && (nur is null || g.Any(e => nur.Contains(e.Id)))))
             b.Add(new("P05", "fehler", g.Key, $"Kennzeichen {g.Key} kommt {g.Count()}-mal vor", "Kennzeichen eindeutig machen (element_aendern)"));
 
         foreach (var e in m.Elemente)
         {
+            if (nur is not null && !nur.Contains(e.Id)) continue;
             k.Klassen.TryGetValue(e.Klasse, out var d);
             // Verweise
             foreach (var (rolle, id) in new[] { ("teilVon", e.TeilVon), ("geschoss", e.Geschoss), ("raum", e.Raum), ("system", e.System) })
@@ -174,13 +187,13 @@ public static class Pruefungen
                 if (m.Finde(p.Element)?.AnschlussNamens(p.Anschluss) is null)
                     b.Add(new("P08", "fehler", v.Id, $"Verbindung {v.Id} verweist auf fehlenden Anschluss {p.Element}.{p.Anschluss}", "Verbindung trennen"));
 
-        LeitungenPruefung.Pruefen(m, k, b);   // Modul 3: P13–P16, P18; Nachtrag freie Grösse: P29; Nachtrag Abwasser-Serie: P30
-        SchemaPruefung.Pruefen(m, k, b);      // Modul 3: P17
-        AussparungPruefung.Pruefen(m, k, b);  // Modul 3b: P19, P20
-        SanitaerPruefung.Pruefen(m, k, b);    // Modul 4 Teil A: P21–P26
-        PlanPruefung.Pruefen(m, k, b);        // Modul 7 Teil A: P27; Teil B3: P28
-        HeizungPruefung.Pruefen(m, k, b);     // Modul 5 Teil A-D: P33–P39
-        DoppeltPlatziert(m, k, b);            // Frage 36: P40
+        if (netz) LeitungenPruefung.Pruefen(m, k, b);   // Modul 3: P13–P16, P18; Nachtrag freie Grösse: P29; Nachtrag Abwasser-Serie: P30
+        if (netz || plan) SchemaPruefung.Pruefen(m, k, b);      // Modul 3: P17
+        if (aussparungen) AussparungPruefung.Pruefen(m, k, b);  // Modul 3b: P19, P20
+        if (netz) SanitaerPruefung.Pruefen(m, k, b);    // Modul 4 Teil A: P21–P26
+        if (plan) PlanPruefung.Pruefen(m, k, b);        // Modul 7 Teil A: P27; Teil B3: P28
+        if (netz) HeizungPruefung.Pruefen(m, k, b);     // Modul 5 Teil A-D: P33–P39
+        DoppeltPlatziert(m, k, b, nur);       // Frage 36: P40
 
         return b.OrderBy(x => x.Schwere switch { "fehler" => 0, "warnung" => 1, _ => 2 }).ThenBy(x => x.Code).ThenBy(x => x.Element).ToList();
     }

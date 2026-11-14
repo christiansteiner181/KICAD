@@ -226,9 +226,14 @@ public sealed class Projekt
     BefehlsErgebnis Uebernehmen(string befehl, JsonObject? parameter, List<Operation> ops, Modell arbeit, List<string> hinweise,
         bool trockenlauf, string? rueckgaengigVon, string quelle)
     {
-        var vorherListe = BefundeDesStands();
+        // Frage 46: elementweise Prüfungen nur für das Geänderte und sein Umfeld (vorher und nachher gleich abgegrenzt, die Differenz stimmt so);
+        // die Gesamtprüfung läuft auf Knopfdruck (Abfrage pruefen, BefundeDesStands)
+        var umfeld = Umfeld(Modell, ops);
+        umfeld.UnionWith(Umfeld(arbeit, ops));
+        var umfang = Umfang(umfeld, Modell, arbeit);
+        var vorherListe = Pruefungen.Alle(Modell, Katalog, umfang);
         var vorher = vorherListe.Select(x => x.Schluessel).ToHashSet();
-        var nachherListe = Pruefungen.Alle(arbeit, Katalog);
+        var nachherListe = Pruefungen.Alle(arbeit, Katalog, umfang);
         var nachher = nachherListe.Select(x => x.Schluessel).ToHashSet();
         var neu = nachherListe.Where(x => !vorher.Contains(x.Schluessel)).ToList();
         var behoben = vorherListe.Where(x => !nachher.Contains(x.Schluessel)).ToList();
@@ -317,6 +322,46 @@ public sealed class Projekt
     // Prüfbefunde des aktuellen Modellstands (Gesamtschau H1, 30.10.2026): bisher rechnete jeder Befehl alle Prüfungen dreimal über das
     // ganze Modell (zweimal den alten Stand, einmal den neuen); gemerkt je Modell und Änderungszähler, nach einem eigenen Paket gleich der neue
     (Modell Modell, long Zaehler, List<Befund> Befunde)? befundeStand;
+
+    /// <summary>Umfeld einer Änderung für die Prüfungen (Frage 46): die geänderten Elemente, ihre Verbindungspartner und alle Elemente, die auf eines von
+    /// ihnen verweisen (teilVon, Geschoss, Raum, System, Bezüge) oder auf die sie verweisen.</summary>
+    static HashSet<string> Umfeld(Modell m, List<Operation> ops)
+    {
+        var ids = new HashSet<string>(StringComparer.Ordinal);
+        foreach (var o in ops)
+        {
+            if (o.Art.StartsWith("element", StringComparison.Ordinal)) ids.Add(o.Id);
+            foreach (var v in new[] { o.Verbindung, o.VerbindungVorher }) if (v is not null) { ids.Add(v.Von.Element); ids.Add(v.Nach.Element); }
+        }
+        var aus = new HashSet<string>(ids, StringComparer.Ordinal);
+        foreach (var id in ids)
+        {
+            foreach (var v in m.VerbindungenVon(id)) { aus.Add(v.Von.Element); aus.Add(v.Nach.Element); }
+            if (m.Finde(id) is { } e)
+                foreach (var r in new[] { e.TeilVon, e.Geschoss, e.Raum, e.System }.Concat(e.Bezuege.Values)) if (r is not null) aus.Add(r);
+        }
+        foreach (var e in m.Elemente)
+            if ((e.TeilVon is { } t && ids.Contains(t)) || (e.Geschoss is { } g && ids.Contains(g)) || (e.Raum is { } r && ids.Contains(r))
+                || (e.System is { } s && ids.Contains(s)) || e.Bezuege.Values.Any(ids.Contains)) aus.Add(e.Id);
+        return aus;
+    }
+
+    /// <summary>Welche Teilprüfungen das Umfeld berührt – aus beiden Ständen (gelöschte und neue Elemente zählen mit).</summary>
+    Pruefumfang Umfang(HashSet<string> umfeld, Modell vorher, Modell nachher)
+    {
+        bool netz = false, aussparungen = false, plan = false;
+        foreach (var id in umfeld)
+            foreach (var e in new[] { vorher.Finde(id), nachher.Finde(id) })
+            {
+                if (e is null) continue;
+                bool n = Netz.IstLeitungsbauteil(Katalog, e) || Netz.IstNetzgeraet(Katalog, e) || e.Klasse is "System" or "Anlage" or "Strang" or "Heizgruppe" or "Familie";
+                netz |= n;
+                aussparungen |= n || Katalog.IstArt(e, "Aussparung") || Katalog.IstArt(e, "Wand") || Katalog.IstArt(e, "Decke");
+                plan |= e.Klasse is "Planblatt" or "Ansicht" or "Ansichtsfenster" or "Plansatz";
+                if (e.Klasse is "Projektinformation" or "Gebaeude" or "Geschoss") netz = aussparungen = plan = true;   // Vorgaben für alle Prüfungen
+            }
+        return new Pruefumfang(umfeld, netz, aussparungen, plan);
+    }
 
     public List<Befund> BefundeDesStands()
     {
