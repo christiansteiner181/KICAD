@@ -227,12 +227,19 @@
         "anschluesse.sw": "Montageanleitung 972.342 S. 2 (Abwasser ▼23 cm)",
         "mindesttiefe": "Planungshandbuch S. 176 (Tab. 50: 16.5 cm bei d75/90)",
         "artikel": "Planungshandbuch S. 159, 230",
-        "fussbodenaufbauMax": "Montageanleitung 972.342 S. 2 (0–25 cm)"
+        "fussbodenaufbauMax": "Montageanleitung 972.342 S. 2 (0–25 cm)",
+        "darstellung.bolzen_a": "Montageanleitung 972.769.00.0(00) 11-2024 S. 2 (Massbild 112-cm-Element mit Sigma, Ersatz): Befestigung 18/23 (Bolzenabstand 180, alternativ 230)",
+        "darstellung.bet_mz": "Montageanleitung 972.769.00.0(00) 11-2024 S. 2 (Massbild 112-cm-Element mit Sigma, Ersatz): Betätigungsplatte «100» – Deutung der Masslinie (Recherche 14.11.2026)"
       },
       "annahmen": {
-        "anschluesse.kw": "Spülkastenzulauf R 1/2\" «hinten oder oben mittig» ohne Höhenmass – oben am Rahmen gezeichnet (Annahme)."
+        "anschluesse.kw": "Spülkastenzulauf R 1/2\" «hinten oder oben mittig» ohne Höhenmass – oben am Rahmen gezeichnet (Annahme).",
+        "darstellung.spuelkasten": "Spülkasten-Aussenmasse und Betätigungsöffnung B × H nennt Geberit nicht als Zahl (Recherche 14.11.2026) – Darstellung: Breite = Element − 120 mm, Höhe ≤ 500 mm, Öffnung 250 × 170 mm (Annahme, nur Bild)."
       },
-      "fussbodenaufbauMax": 250
+      "fussbodenaufbauMax": 250,
+      "darstellung": {
+        "bolzen_a": 180,
+        "bet_mz": 1000
+      }
     },
     {
       "id": "duofix.wc.omega.82",
@@ -266,10 +273,17 @@
         "rahmentiefe": "Montageanleitung 972.241 S. 2 (14 cm)",
         "traverse": "Montageanleitung 972.241 S. 2 (32 cm)",
         "anschluesse.sw": "Montageanleitung 972.241 S. 2 (▼22 cm)",
-        "mindesttiefe": "Planungshandbuch S. 176 (Tab. 50, Zeile 82/98, kleinster Wert)"
+        "mindesttiefe": "Planungshandbuch S. 176 (Tab. 50, Zeile 82/98, kleinster Wert)",
+        "darstellung.bolzen_a": "Montageanleitung 972.240.00.0(00) 07-2024 S. 2: Befestigung 18/23",
+        "darstellung.bet_mz": "Montageanleitung 972.240.00.0(00) 07-2024 S. 2: Platte auf Höhe 75 – Deutung der Masslinie (Recherche 14.11.2026)"
       },
       "annahmen": {
-        "anschluesse.kw": "Spülkastenzulauf R 1/2\" «hinten oder oben mittig» ohne Höhenmass – oben am Rahmen gezeichnet (Annahme)."
+        "anschluesse.kw": "Spülkastenzulauf R 1/2\" «hinten oder oben mittig» ohne Höhenmass – oben am Rahmen gezeichnet (Annahme).",
+        "darstellung.spuelkasten": "Spülkasten-Aussenmasse und Betätigungsöffnung B × H nennt Geberit nicht als Zahl (Recherche 14.11.2026) – Darstellung: Breite = Element − 120 mm, Höhe ≤ 500 mm, Öffnung 250 × 170 mm (Annahme, nur Bild)."
+      },
+      "darstellung": {
+        "bolzen_a": 180,
+        "bet_mz": 750
       }
     },
     {
@@ -304,10 +318,17 @@
         "rahmentiefe": "Montageanleitung 972.241 S. 2 (14 cm)",
         "traverse": "Montageanleitung 972.241 S. 2 (33 cm)",
         "anschluesse.sw": "Montageanleitung 972.241 S. 2 (▼23 cm)",
-        "mindesttiefe": "Planungshandbuch S. 176"
+        "mindesttiefe": "Planungshandbuch S. 176",
+        "darstellung.bolzen_a": "Montageanleitung 972.240.00.0(00) 07-2024 S. 2: Befestigung 18/23",
+        "darstellung.bet_mz": "Montageanleitung 972.240.00.0(00) 07-2024 S. 2: Platte auf Höhe 91 – Deutung der Masslinie (Recherche 14.11.2026)"
       },
       "annahmen": {
-        "anschluesse.kw": "Spülkastenzulauf R 1/2\" «hinten oder oben mittig» ohne Höhenmass – oben am Rahmen gezeichnet (Annahme)."
+        "anschluesse.kw": "Spülkastenzulauf R 1/2\" «hinten oder oben mittig» ohne Höhenmass – oben am Rahmen gezeichnet (Annahme).",
+        "darstellung.spuelkasten": "Spülkasten-Aussenmasse und Betätigungsöffnung B × H nennt Geberit nicht als Zahl (Recherche 14.11.2026) – Darstellung: Breite = Element − 120 mm, Höhe ≤ 500 mm, Öffnung 250 × 170 mm (Annahme, nur Bild)."
+      },
+      "darstellung": {
+        "bolzen_a": 180,
+        "bet_mz": 910
       }
     },
     {
@@ -342,10 +363,15 @@
         "rahmentiefe": "Montageanleitung 972.251 S. 2 (12 cm)",
         "traverse": "Montageanleitung 972.251 S. 2 (33 cm)",
         "anschluesse.sw": "Montageanleitung 972.251 S. 2 (▼23 cm)",
-        "mindesttiefe": "Planungshandbuch S. 176"
+        "mindesttiefe": "Planungshandbuch S. 176",
+        "darstellung.bolzen_a": "Montageanleitung 972.240.00.0(00) 07-2024 S. 2: Befestigung 18/23 (Massbild Omega 112 nicht gefunden)"
       },
       "annahmen": {
-        "anschluesse.kw": "Spülkastenzulauf R 1/2\" «hinten oder oben mittig» ohne Höhenmass – oben am Rahmen gezeichnet (Annahme)."
+        "anschluesse.kw": "Spülkastenzulauf R 1/2\" «hinten oder oben mittig» ohne Höhenmass – oben am Rahmen gezeichnet (Annahme).",
+        "darstellung.spuelkasten": "Spülkasten-Aussenmasse und Betätigungsöffnung B × H nennt Geberit nicht als Zahl (Recherche 14.11.2026) – Darstellung: Breite = Element − 120 mm, Höhe ≤ 500 mm, Öffnung 250 × 170 mm (Annahme, nur Bild)."
+      },
+      "darstellung": {
+        "bolzen_a": 180
       }
     },
     {
@@ -386,10 +412,14 @@
         "rahmentiefe": "Produktdatenblatt 111.267.00.2 S. 1",
         "anschluesse.sw": "Montageanleitung 972.812 S. 2 (Ablauf 52 cm)",
         "anschluesse.s": "Montageanleitung 972.812 S. 2 (Achsabstand Eckventile 15.3 cm)",
-        "mindesttiefe": "Planungshandbuch S. 175 (kleinste Vorwandtiefe 13.5 cm)"
+        "mindesttiefe": "Planungshandbuch S. 175 (kleinste Vorwandtiefe 13.5 cm)",
+        "darstellung.bolzen_a": "Produktdatenblatt 111.267.00.2 (PRO_3936433) S. 1: Gewindestangen bei 18/28 cm"
       },
       "annahmen": {
         "anschluesse.kw": "Höhe der Wasseranschlüsse ca. 590 mm aus der CAD-Zeichnung abgeleitet, nicht bemasst."
+      },
+      "darstellung": {
+        "bolzen_a": 180
       }
     },
     {
@@ -421,10 +451,14 @@
         "breite": "Produktdatenblatt 111.628.00.2 S. 1 (B 50 / H 112–130 / T 7.5 cm)",
         "hoehe": "Produktdatenblatt 111.628.00.2 S. 1",
         "rahmentiefe": "Produktdatenblatt 111.628.00.2 S. 1",
-        "artikel": "Planungshandbuch S. 94"
+        "artikel": "Planungshandbuch S. 94",
+        "darstellung.bolzen_z": "Montageanleitung 972.870.00.0(00) 05-2025 S. 2: Urinal-Fixpunkte 67 und 81 cm – Deutung der Masslinie (Recherche 14.11.2026)"
       },
       "annahmen": {
         "anschluesse": "Anschlüsse für das gewählte Urinal einstellbar; gezeichnet Abwasser 500 mm, Spülung 1000 mm über OKFF (Annahme)."
+      },
+      "darstellung": {
+        "bolzen_z": 810
       }
     },
     {
@@ -479,13 +513,20 @@
         "anschluesse.sw": "Produktdatenblatt 461.313.00.6 S. 1 (▼23 cm)",
         "mindesttiefe": "Produktdatenblatt 461.313.00.6 S. 1 (≥ 16.5 cm DN 90, ≥ 19.5 cm DN 100)",
         "fussbodenaufbauMax": "Produktdatenblatt 461.313.00.6 S. 1 (Fussbodenaufbauten 0–20 cm)",
-        "rahmenunterkante": "Montageanleitung 970.704 S. 2 (Rahmen 100 cm, Oberkante 104.5 cm über OKFF; Element an den flankierenden Profilen, nicht am Boden gestützt)"
+        "rahmenunterkante": "Montageanleitung 970.704 S. 2 (Rahmen 100 cm, Oberkante 104.5 cm über OKFF; Element an den flankierenden Profilen, nicht am Boden gestützt)",
+        "darstellung.bolzen_a": "Montageanleitung 972.257.00.0(01) 10-2025 S. 2: Befestigung 18/23",
+        "darstellung.bet_mz": "Montageanleitung 972.257.00.0(01) 10-2025 S. 2: Platte «100» – Deutung der Masslinie (Recherche 14.11.2026)"
       },
       "annahmen": {
         "rahmentiefe": "Rahmentiefe GIS-WC nicht bemasst – 120 mm wie Duofix Sigma 12.",
-        "anschluesse.kw": "Spülkastenzulauf R 1/2\" «hinten oder oben mittig» ohne Höhenmass – oben am Rahmen gezeichnet (Annahme)."
+        "anschluesse.kw": "Spülkastenzulauf R 1/2\" «hinten oder oben mittig» ohne Höhenmass – oben am Rahmen gezeichnet (Annahme).",
+        "darstellung.spuelkasten": "Spülkasten-Aussenmasse und Betätigungsöffnung B × H nennt Geberit nicht als Zahl (Recherche 14.11.2026) – Darstellung: Breite = Element − 120 mm, Höhe ≤ 500 mm, Öffnung 250 × 170 mm (Annahme, nur Bild)."
       },
-      "fussbodenaufbauMax": 200
+      "fussbodenaufbauMax": 200,
+      "darstellung": {
+        "bolzen_a": 180,
+        "bet_mz": 1000
+      }
     },
     {
       "id": "gis.wc.omega.114",
@@ -522,11 +563,16 @@
         "traverse": "Montageanleitung 972.257 S. 2 (33 cm)",
         "anschluesse.sw": "Montageanleitung 972.257 S. 2 (▼23 cm)",
         "mindesttiefe": "Produktdatenblatt 461.261.00.2 S. 1",
-        "rahmenunterkante": "Montageanleitung 972.257 S. 2 (Oberkante 101 cm über OKFF − Elementhöhe 96 cm; Element an den Profilen, nicht am Boden gestützt)"
+        "rahmenunterkante": "Montageanleitung 972.257 S. 2 (Oberkante 101 cm über OKFF − Elementhöhe 96 cm; Element an den Profilen, nicht am Boden gestützt)",
+        "darstellung.bolzen_a": "Montageanleitung 972.257.00.0(01) 10-2025 S. 2: Befestigung 18/23 (Massbild Sigma, Omega nicht eigens belegt)"
       },
       "annahmen": {
         "rahmentiefe": "Rahmentiefe nicht bemasst – 120 mm angenommen.",
-        "anschluesse.kw": "Spülkastenzulauf R 1/2\" «hinten oder oben mittig» ohne Höhenmass – oben am Rahmen gezeichnet (Annahme)."
+        "anschluesse.kw": "Spülkastenzulauf R 1/2\" «hinten oder oben mittig» ohne Höhenmass – oben am Rahmen gezeichnet (Annahme).",
+        "darstellung.spuelkasten": "Spülkasten-Aussenmasse und Betätigungsöffnung B × H nennt Geberit nicht als Zahl (Recherche 14.11.2026) – Darstellung: Breite = Element − 120 mm, Höhe ≤ 500 mm, Öffnung 250 × 170 mm (Annahme, nur Bild)."
+      },
+      "darstellung": {
+        "bolzen_a": 180
       }
     },
     {
@@ -564,11 +610,18 @@
         "traverse": "Montageanleitung 972.256 S. 2 (32 cm)",
         "anschluesse.sw": "Montageanleitung 972.256 S. 2 (▼22 cm)",
         "mindesttiefe": "Produktdatenblatt 461.142.00.2 S. 1 (≥ 20.5 cm)",
-        "rahmenunterkante": "Montageanleitung 972.256 S. 2 (H87: Oberkante 76 cm über OKFF − Elementhöhe 72.7 cm)"
+        "rahmenunterkante": "Montageanleitung 972.256 S. 2 (H87: Oberkante 76 cm über OKFF − Elementhöhe 72.7 cm)",
+        "darstellung.bolzen_a": "Montageanleitung 972.256.00.0(01) 09-2025 S. 2: Befestigung 18/23",
+        "darstellung.bet_mz": "Montageanleitung 972.256.00.0(01) 09-2025 S. 2: Platte 75 – Deutung der Masslinie (Recherche 14.11.2026)"
       },
       "annahmen": {
         "rahmentiefe": "Rahmentiefe nicht bemasst – 140 mm wie Duofix Omega angenommen.",
-        "anschluesse.kw": "Spülkastenzulauf R 1/2\" «hinten oder oben mittig» ohne Höhenmass – oben am Rahmen gezeichnet (Annahme)."
+        "anschluesse.kw": "Spülkastenzulauf R 1/2\" «hinten oder oben mittig» ohne Höhenmass – oben am Rahmen gezeichnet (Annahme).",
+        "darstellung.spuelkasten": "Spülkasten-Aussenmasse und Betätigungsöffnung B × H nennt Geberit nicht als Zahl (Recherche 14.11.2026) – Darstellung: Breite = Element − 120 mm, Höhe ≤ 500 mm, Öffnung 250 × 170 mm (Annahme, nur Bild)."
+      },
+      "darstellung": {
+        "bolzen_a": 180,
+        "bet_mz": 750
       }
     },
     {
@@ -606,11 +659,18 @@
         "traverse": "Montageanleitung 972.256 S. 2 (33 cm)",
         "anschluesse.sw": "Montageanleitung 972.256 S. 2 (▼23 cm)",
         "mindesttiefe": "Produktdatenblatt 461.252.00.2 S. 1 (≥ 20.5 cm)",
-        "rahmenunterkante": "Montageanleitung 972.256 S. 2 (H98: Oberkante 89.5 cm über OKFF − Elementhöhe 85 cm)"
+        "rahmenunterkante": "Montageanleitung 972.256 S. 2 (H98: Oberkante 89.5 cm über OKFF − Elementhöhe 85 cm)",
+        "darstellung.bolzen_a": "Montageanleitung 972.256.00.0(01) 09-2025 S. 2: Befestigung 18/23",
+        "darstellung.bet_mz": "Montageanleitung 972.256.00.0(01) 09-2025 S. 2: Platte 88.5 – Deutung der Masslinie (Recherche 14.11.2026)"
       },
       "annahmen": {
         "rahmentiefe": "Rahmentiefe nicht bemasst – 140 mm angenommen.",
-        "anschluesse.kw": "Spülkastenzulauf R 1/2\" «hinten oder oben mittig» ohne Höhenmass – oben am Rahmen gezeichnet (Annahme)."
+        "anschluesse.kw": "Spülkastenzulauf R 1/2\" «hinten oder oben mittig» ohne Höhenmass – oben am Rahmen gezeichnet (Annahme).",
+        "darstellung.spuelkasten": "Spülkasten-Aussenmasse und Betätigungsöffnung B × H nennt Geberit nicht als Zahl (Recherche 14.11.2026) – Darstellung: Breite = Element − 120 mm, Höhe ≤ 500 mm, Öffnung 250 × 170 mm (Annahme, nur Bild)."
+      },
+      "darstellung": {
+        "bolzen_a": 180,
+        "bet_mz": 885
       }
     },
     {
@@ -651,12 +711,16 @@
         "breite": "Produktdatenblatt 461.431.00.1 S. 1 (24.8 × 7.6 × 4.5 cm, Befestigung 28 cm)",
         "rahmentiefe": "Produktdatenblatt 461.431.00.1 S. 1",
         "mindesttiefe": "Planungshandbuch S. 242 (Tab. 62, 13 cm)",
-        "rahmenunterkante": "Produktdatenblatt 461.431.00.1 S. 1 (Traverse H 7.6 cm, kein Rahmen – Unterkante = Oberkante − 7.6 cm)"
+        "rahmenunterkante": "Produktdatenblatt 461.431.00.1 S. 1 (Traverse H 7.6 cm, kein Rahmen – Unterkante = Oberkante − 7.6 cm)",
+        "darstellung.bolzen_a": "Produktdatenblatt 461.431.00.1 (PRO_101168) S. 1: Befestigung Waschtisch 28 cm standard, 2 Gewindestangen M10"
       },
       "annahmen": {
         "hoehe": "Kein GIS-Waschtischelement; das Set sitzt im GIS-Tragwerk (Einbauhöhe 1140 mm angenommen), gezeichnet als Rahmen bis 700 mm.",
         "anschluesse": "Anschlusshöhen nicht gefunden – Abwasser 550, Eckventile 600 mm über OKFF, ± 76.5 mm wie Duofix angenommen.",
         "rahmenhoehe": "Oberkante der Traverse 70 cm über OKFF ohne Quelle – im GIS Tragwerk stufenlos höhenverstellbar (Produktdatenblatt 461.431.00.1)"
+      },
+      "darstellung": {
+        "bolzen_a": 280
       }
     },
     {
