@@ -124,3 +124,6 @@ swisspor führt für Rohre nur PIR-Schalen «swissporKISODUR» (Heizung, Kälte,
   N16, N15 (894bd3c), 29 (an Wand, Höhe mit Bezug, Vorgabe «montage» je Familie, d7295c6) umgesetzt. 30 (14.11.2026, Christian «die anschlüsse sind im
   vorwand element»): Montageelemente erhalten räumliche Anschlüsse aus dem Katalog (VorwandAnschluesse.cs) statt eigener Bibliotheksfamilien.
   Korrektur zu 37: familie_in_bibliothek nicht in der zentralen Sperrliste (KI-Aufträge schreiben Entwürfe; «als aktuell» sperrt der Befehl).
+- **14.11.2026 Paket Heizung:** 20 (Massenstrom im Netz aus dem Raumbedarf wie heizkoerper_auslegung, ohne Raumwert Normleistung mit Hinweis
+  «stromBasis»), 21 (Hauptleitungen ausserhalb einer Gruppe: höchste Gruppe dahinter, Vorlauf + Anlage.vlHysterese, Rücklauf der Gruppe – Annahme ohne
+  Mischtemperatur), 22 (Armaturen im Schema in Vierteln nach der Fliessrichtung gedreht; ohne bekannte Richtung wie bisher, Hinweis im Schema) umgesetzt.

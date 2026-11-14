@@ -2,7 +2,8 @@
 // Verbrauchern (HeizungLeistung: Leistung → ṁ mit der Spreizung der Heizgruppe), Viskosität Wasser NIST (kataloge/stroemung.json › wasser), Rauheit
 // Tab. 3 und Reibungszahl Tab. 2 (Skript «08 Luftnetzberechnung»; Reibungszahl und Rauheit gelten für jedes Fluid), Innendurchmesser aus der Serie.
 //   ṁ je Leitung = Σ ṁ der Verbraucher dahinter; V̇ = ṁ/ρ; w = V̇/A; Re = w·d/ν; λ laminar bzw. Colebrook; R = λ/d·ρ·w²/2; Δp = R·l.
-//   Temperatur je Weg: Vorlauf = vlTemp, Rücklauf = rlTemp der Heizgruppe (ohne: Mittel).
+//   Temperatur je Weg: Vorlauf = vlTemp, Rücklauf = rlTemp der Heizgruppe (ohne: Mittel); Hauptleitungen ausserhalb einer Gruppe: höchste Gruppe dahinter,
+//   Vorlauf + Anlage.vlHysterese (Frage 21). Massenstrom aus dem Bedarf des Raums, ohne Raumwert aus der Normleistung mit Hinweis (Frage 20).
 // Einzelwiderstände (ζ) fehlen – das Büroblatt «Vorlage Druckverlust Wasser» führt ζ ohne Quelle (Fundstellenbericht); nur Reibung, mit Hinweis.
 
 using System.Text.Json.Nodes;
@@ -60,14 +61,36 @@ public static class RohrDruckverlust
             var strom = beitraege.Select(b => b.Verbraucher.Id).Distinct().Select(v => netz.Strom.GetValueOrDefault(v)).ToList();
             double kgh = strom.Sum(s => s?.Kgh ?? 0);
             z["massenstrom_kgh"] = R(kgh, 1);
-            if (strom.Any(s => s?.Kgh is null)) z["hinweis"] = "Verbraucher ohne Massenstrom (Leistung bzw. Spreizung fehlt) – Summe zu klein.";
+            var hw = new List<string>();
+            if (strom.Any(s => s?.Kgh is null)) hw.Add("Verbraucher ohne Massenstrom (Leistung bzw. Spreizung fehlt) – Summe zu klein.");
+            if (strom.Any(s => s?.Basis == "normleistung")) hw.Add(HeizungLeistung.HinweisNormleistung);
             var gr = stand.In(id).Select(w => w.Gruppe).FirstOrDefault();
             double? vl = gr?.Zahl("vlTemp"), rl = gr?.Zahl("rlTemp");
-            double? t = netz.LeitungWeg.GetValueOrDefault(id) == "rl" ? rl : vl;
+            bool rlWeg = netz.LeitungWeg.GetValueOrDefault(id) == "rl";
+            double? t = rlWeg ? rl : vl;
             if (t is null && vl is double a0 && rl is double b0) t = (a0 + b0) / 2;
+            if (gr is null)
+            {
+                // Hauptleitung ausserhalb einer Heizgruppe (Erzeuger bis Verteiler; Frage 21, Christian 13.11.2026 «Temperatur der höchsten Gruppe, mit
+                // einstellbarer Hysterese»): Gruppe mit der höchsten Vorlauftemperatur unter den Verbrauchern dahinter; Vorlauf + Hysterese der Anlage
+                // (vlHysterese, ohne Wert 0 K), Rücklauf = Rücklauf dieser Gruppe (Annahme: keine Mischtemperatur der Gruppen)
+                var hoechste = beitraege.Select(b => netz.GruppeJeVerbraucher.GetValueOrDefault(b.Verbraucher.Id)).OfType<Element>()
+                    .Where(g => g.Zahl("vlTemp") is not null && g.Zahl("rlTemp") is not null).DistinctBy(g => g.Id).MaxBy(g => g.Zahl("vlTemp")!.Value);
+                if (hoechste is not null)
+                {
+                    var anlage = Heizgruppen.SystemeVon(m, e).Select(s => m.Finde(s.TeilVon)).FirstOrDefault(a => a?.Klasse == "Anlage");
+                    double hy = anlage?.Zahl("vlHysterese") ?? 0;
+                    t = rlWeg ? hoechste.Zahl("rlTemp") : hoechste.Zahl("vlTemp") + hy;
+                    z["temperaturAus"] = rlWeg
+                        ? $"Hauptleitung: Rücklauf der Gruppe {hoechste.Kennzeichen} mit der höchsten Vorlauftemperatur (Annahme, keine Mischtemperatur)"
+                        : $"Hauptleitung: Vorlauf der Gruppe {hoechste.Kennzeichen} {hoechste.Zahl("vlTemp")} °C + Hysterese {hy} K{(anlage is null ? "" : $" (Anlage {anlage.Kennzeichen} vlHysterese)")}";
+                }
+            }
+            if (hw.Count > 0) z["hinweis"] = string.Join(" ", hw);
             var medium = Netz.ElementMedium(m, e) ?? "";
             if (medium.Contains("Glyk", StringComparison.OrdinalIgnoreCase)) { z["hinweis"] = "Wasser-Glykol: Viskosität fehlt – kein Druckverlust."; zeilen.Add(z); continue; }
             if (t is not double tt || RohrDruckverlust.Wasser(kat, tt) is not { } wa) { z["hinweis"] = "Temperatur fehlt bzw. ausserhalb 10–80 °C – kein Druckverlust."; zeilen.Add(z); continue; }
+            z["t"] = tt;
             var serie = HlksMasse.Serie(p, e);
             double? di = serie?.Werte.Innen;
             if (di is not double dmm || dmm <= 0 || kgh <= 0) { z["hinweis"] = di is null ? "Innendurchmesser fehlt (Produktlinie) – kein Druckverlust." : z["hinweis"]?.ToString() ?? "kein Massenstrom"; zeilen.Add(z); continue; }
@@ -76,7 +99,7 @@ public static class RohrDruckverlust
             double lam = KanalDruckverlust.Lambda(re, kmm / 1000 / d, double.IsNaN(reKrit) ? 2320 : reKrit);
             double rpm = lam / d * wa.Rho * w * w / 2, l = (e.Geometrie?.Laenge() ?? 0) / 1000, dp = rpm * l;
             dpJeLeitung[id] = dp;
-            z["t"] = tt; z["di_mm"] = dmm; z["w_ms"] = R(w, 3); z["re"] = R(re, 0); z["lambda"] = R(lam, 4); z["rauheit"] = kText;
+            z["di_mm"] = dmm; z["w_ms"] = R(w, 3); z["re"] = R(re, 0); z["lambda"] = R(lam, 4); z["rauheit"] = kText;
             z["r_Pam"] = R(rpm, 1); z["laenge_m"] = R(l, 2); z["dp_Pa"] = R(dp, 1);
             z["formel"] = $"w = ṁ/(ρ·A) = {R(w, 3)} m/s; Re = w·d/ν = {R(re, 0)}; Δp = λ·(l/d)·ρ·w²/2 = {R(lam, 4)}·({R(l, 2)}/{R(d, 4)})·{R(wa.Rho, 1)}·{R(w, 3)}²/2 = {R(dp, 1)} Pa";
             zeilen.Add(z);

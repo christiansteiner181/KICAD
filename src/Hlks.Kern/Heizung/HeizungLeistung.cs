@@ -34,7 +34,9 @@ public sealed record HeizSumme(double SummeW, IReadOnlyList<Element> Verbraucher
 
 /// <summary>Massen- und Volumenstrom eines Verbrauchers (Christian 02.11.2026: Leistung → Massenstrom, Temperatur aus Heizgruppe): ṁ = Q / (c_p · ΔT),
 /// V = ṁ / ρ, Stoffwerte bei der mittleren Temperatur (stoffwerte.json); Grund, wenn etwas fehlt.</summary>
-public sealed record HeizStrom(double? Kgh, double? Lh, string? Grund, double? SpreizungK = null, Stoffwert? Stoff = null);
+/// <param name="Basis">bedarf (Heizleistung des Raums, verteilt) | normleistung (Rückfall: Raum ohne Heizleistung) – Christian 13.11.2026, Frage 20.</param>
+/// <param name="BasisW">Leistung, aus der der Strom gerechnet ist.</param>
+public sealed record HeizStrom(double? Kgh, double? Lh, string? Grund, double? SpreizungK = null, Stoffwert? Stoff = null, string? Basis = null, double? BasisW = null);
 
 public sealed class HeizungNetz
 {
@@ -42,6 +44,8 @@ public sealed class HeizungNetz
     public Dictionary<string, string> LeistungWoher { get; } = new(StringComparer.Ordinal);
     /// <summary>Verbraucher (Id) → Massen- und Volumenstrom.</summary>
     public Dictionary<string, HeizStrom> Strom { get; } = new(StringComparer.Ordinal);
+    /// <summary>Verbraucher (Id) → Heizgruppe (aus Heizgruppen.Ableiten); für Leitungen ausserhalb einer Gruppe (Frage 21).</summary>
+    public Dictionary<string, Element> GruppeJeVerbraucher { get; } = new(StringComparer.Ordinal);
     public required Modell Modell { get; init; }
     public required Katalog Katalog { get; init; }
     /// <summary>Verbraucher mit Heiz- bzw. Kältemedium → Leistung in W (null = keine Angabe).</summary>
@@ -82,8 +86,31 @@ public static class HeizungLeistung
 {
     public const string Beschriftung = "Σ Normleistung der Verbraucher (Angabe)";
     public const string NichtUmgerechnet = "Leistung: Angabe «leistung» am Verbraucher, sonst die Heiz- bzw. Kühlleistung des Raums gleich auf seine Verbraucher ohne Angabe verteilt (Christian 02.11.2026); " +
-        "nicht auf andere Auslegungstemperaturen umgerechnet. Massenstrom ṁ = Q / (c_p · ΔT) mit der Spreizung der Heizgruppe (vlTemp − rlTemp) und den Stoffwerten des Mediums " +
-        "bei der mittleren Temperatur (kataloge/stoffwerte.json), Volumenstrom = ṁ / ρ; je Leitung die Summe der Verbraucher dahinter.";
+        "nicht auf andere Auslegungstemperaturen umgerechnet. Massenstrom ṁ = Q / (c_p · ΔT) aus dem Bedarf (Heiz- bzw. Kühlleistung des Raums, auf seine Verbraucher nach " +
+        "Normleistung verteilt wie heizkoerper_auslegung; Christian 13.11.2026), ohne Raumwert aus der Normleistung mit Hinweis; Spreizung der Heizgruppe (vlTemp − rlTemp), Stoffwerte " +
+        "des Mediums bei der mittleren Temperatur (kataloge/stoffwerte.json), Volumenstrom = ṁ / ρ; je Leitung die Summe der Verbraucher dahinter.";
+    public const string HinweisNormleistung = "Massenstrom aus der Normleistung (Raum ohne Heiz- bzw. Kühlleistung) – bei tieferen Betriebstemperaturen zu gross; Heizlast übernehmen.";
+
+    /// <summary>Bedarf je Heizverbraucher (Frage 20, Christian 13.11.2026 «aus dem Bedarf»): Heiz- bzw. Kühlleistung des Raums, auf seine Verbraucher
+    /// nach Normleistung verteilt (nicht alle mit Normleistung: gleich), wie heizkoerper_auslegung; Raum ohne Wert → Normleistung (Angabe) als Rückfall.</summary>
+    public static Dictionary<string, (double? W, string? Basis)> Bedarf(Modell m, Katalog k, IReadOnlyList<Element> verbraucher)
+    {
+        var aus = new Dictionary<string, (double? W, string? Basis)>(StringComparer.Ordinal);
+        bool Kaelte(Element v) => v.Anschluesse.Any(a => Netz.Medium(m, v, a).StartsWith("KAE", StringComparison.OrdinalIgnoreCase));
+        foreach (var gr in verbraucher.GroupBy(v => (v.Raum ?? "", Kaelte(v))))
+        {
+            var l = gr.ToList();
+            var raum = gr.Key.Item1.Length == 0 ? null : m.Finde(gr.Key.Item1);
+            if (raum?.Zahl(gr.Key.Item2 ? "kuehlleistung" : "heizleistung") is double q && q > 0)
+            {
+                bool alleMitN = l.All(v => LeistungW(k, v) is double w && w > 0);
+                double summeN = alleMitN ? l.Sum(v => LeistungW(k, v)!.Value) : 0;
+                foreach (var v in l) aus[v.Id] = (Math.Round(q * (alleMitN ? LeistungW(k, v)!.Value / summeN : 1.0 / l.Count), 3), "bedarf");
+            }
+            else foreach (var v in l) aus[v.Id] = LeistungW(k, v) is double w ? (w, "normleistung") : (null, null);
+        }
+        return aus;
+    }
 
     /// <summary>Leistung je Heizverbraucher mit Herkunft: Angabe am Verbraucher; sonst Heizleistung (Kälte: Kühlleistung) des Raums abzüglich der
     /// Angaben, gleich auf die Verbraucher ohne Angabe im Raum verteilt (Christian 02.11.2026: «Raum, gleich verteilt»).</summary>
@@ -104,18 +131,19 @@ public static class HeizungLeistung
     }
 
     /// <summary>Massen- und Volumenstrom je Verbraucher aus Leistung, Spreizung der Heizgruppe und Stoffwerten.</summary>
-    static void Stroeme(Modell m, Katalog k, HeizungNetz n)
+    static void Stroeme(Modell m, Katalog k, HeizungNetz n, Dictionary<string, (double? W, string? Basis)> bedarf)
     {
-        var gruppe = new Dictionary<string, Element>(StringComparer.Ordinal);
+        var gruppe = n.GruppeJeVerbraucher;
         foreach (var hg in m.DerKlasse("Heizgruppe"))
         {
             try { foreach (var v in Heizgruppen.Ableiten(m, k, hg).Verbraucher) gruppe.TryAdd(v.Id, hg); }
             catch (HlksFehler) { /* Gruppe ohne gültigen Weg: ihre Verbraucher bleiben ohne Spreizung */ }
         }
-        foreach (var (id, w) in n.Verbraucher)
+        foreach (var id in n.Verbraucher.Keys)
         {
             var v = m.Finde(id)!;
-            if (w is not double q) { n.Strom[id] = new HeizStrom(null, null, "keine Leistung"); continue; }
+            var (w, basis) = bedarf.GetValueOrDefault(id);
+            if (w is not double q) { n.Strom[id] = new HeizStrom(null, null, "keine Leistung (weder Heizleistung des Raums noch Normleistung)"); continue; }
             if (!gruppe.TryGetValue(id, out var hg) || hg.Zahl("vlTemp") is not double vl || hg.Zahl("rlTemp") is not double rl)
             { n.Strom[id] = new HeizStrom(null, null, "Vor- bzw. Rücklauftemperatur fehlt (Heizgruppe vlTemp/rlTemp)"); continue; }
             var dt = Math.Abs(vl - rl);
@@ -124,7 +152,7 @@ public static class HeizungLeistung
             var tm = (vl + rl) / 2;
             if (k.Stoffwerte?.Wert(medium, tm) is not { } st) { n.Strom[id] = new HeizStrom(null, null, $"Stoffwerte fehlen für {medium ?? "?"} bei {tm:0.#} °C (stoffwerte.json)", dt); continue; }
             var kgh = q / (st.CpKjKgK * 1000 * dt) * 3600;
-            n.Strom[id] = new HeizStrom(Math.Round(kgh, 3), Math.Round(kgh / st.RhoKgM3 * 1000, 3), null, dt, st);
+            n.Strom[id] = new HeizStrom(Math.Round(kgh, 3), Math.Round(kgh / st.RhoKgM3 * 1000, 3), null, dt, st, basis, q);
         }
     }
 
@@ -198,7 +226,7 @@ public static class HeizungLeistung
                     });
             }
         }
-        Stroeme(m, k, n);
+        Stroeme(m, k, n, Bedarf(m, k, heizverbraucher));
         return n;
     }
 

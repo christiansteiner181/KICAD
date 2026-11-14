@@ -72,8 +72,32 @@ public static class SchemaSymbole
         };
     }
 
+    /// <summary>Fliessrichtung am Knoten auf dem Bildschirm (N | S | E | W, y nach oben) aus den Schemalinien mit bekannter Richtung, deren Abschnitt am
+    /// Knoten in der Lage der Leitung liegt (senkrecht bzw. waagrecht): abgehende Linie zuerst, sonst ankommende; null = unbekannt (Frage 22).</summary>
+    public static string? Fluss(SchemaGraph g, SchemaKnoten k, bool senkrecht)
+    {
+        static string? Richtung(double[] a, double[] b, bool senkrecht)
+        {
+            double dx = b[0] - a[0], dy = b[1] - a[1];
+            if (Math.Abs(dx) < 1e-9 && Math.Abs(dy) < 1e-9) return null;
+            bool s = Math.Abs(dy) > Math.Abs(dx);
+            return s != senkrecht ? null : s ? (dy > 0 ? "N" : "S") : (dx > 0 ? "E" : "W");
+        }
+        var bekannt = g.Linien.Where(l => l.RichtungBekannt && l.Punkte.Count >= 2).ToList();
+        foreach (var l in bekannt.Where(l => l.Von.Knoten == k))
+            if (Richtung(l.Punkte[0], l.Punkte[1], senkrecht) is { } r) return r;
+        foreach (var l in bekannt.Where(l => l.Nach.Knoten == k))
+            if (Richtung(l.Punkte[^2], l.Punkte[^1], senkrecht) is { } r) return r;
+        return null;
+    }
+
+    /// <summary>Hat der Knoten eine Schemalinie mit bekannter Fliessrichtung? (für den Hinweis «Richtung unbekannt»)</summary>
+    public static bool RichtungBekannt(SchemaGraph g, SchemaKnoten k) => g.Linien.Any(l => l.RichtungBekannt && (l.Von.Knoten == k || l.Nach.Knoten == k));
+
     /// <summary>Symbol eines Knotens um (x, y): Primitive und halbe Ausdehnung (für Rahmen und Beschriftung).</summary>
-    public static (List<Primitiv> Primitive, double HalbX, double HalbY) Zeichnen(Projekt p, Element e, double x, double y, bool senkrecht, string? farbe, string detail)
+    /// <param name="fluss">Fliessrichtung am Knoten (N | S | E | W) oder null – dreht Armaturen in Fliessrichtung (Frage 22).</param>
+    public static (List<Primitiv> Primitive, double HalbX, double HalbY) Zeichnen(Projekt p, Element e, double x, double y, bool senkrecht, string? farbe, string detail,
+        string? fluss = null)
     {
         if (Schemaplan.IstSchacht(p.Katalog, e))
         {
@@ -84,6 +108,8 @@ public static class SchemaSymbole
         var fam = FamilienSymbol(p, e, detail);
         List<Primitiv> lokal;
         bool drehen = senkrecht;
+        // Familien- und Klassensymbole: Durchfluss in +x gezeichnet (E); mit bekannter Fliessrichtung in Vierteln nach ihr, sonst wie bisher
+        int viertel = fluss switch { "N" => 1, "W" => 2, "S" => 3, "E" => 0, _ => senkrecht ? 1 : 0 };
         if (fam is { Count: > 0 })
         {
             lokal = fam;
@@ -97,7 +123,7 @@ public static class SchemaSymbole
         else if (KatalogSymbolVon(p, e) is { } ks)
         {
             // Symbol der HKAP-Bibliothek: Armaturen drehen mit der Leitung (senkrecht gezeichnet an waagrechten Leitungen um 90°), Apparate stehen aufrecht
-            lokal = SchemaSymbolZeichnung.Primitive(ks, p.Katalog.Schemasymbole!.Massstab, SchemaSymbolZeichnung.Gedreht(ks, senkrecht));
+            lokal = SchemaSymbolZeichnung.Primitive(ks, p.Katalog.Schemasymbole!.Massstab, SchemaSymbolZeichnung.Viertel(ks, senkrecht, fluss));
             drehen = false;
         }
         else
@@ -107,7 +133,7 @@ public static class SchemaSymbole
             lokal = Klasse(schluessel, kuerzel, farbe);
             if (schluessel is "apparat" or "geraet") drehen = false;   // Kürzel bleibt lesbar
         }
-        if (drehen) lokal = lokal.Select(Gedreht).ToList();
+        if (drehen) for (int i = 0; i < viertel; i++) lokal = lokal.Select(Gedreht).ToList();
         var b = Grafik.Begrenzung([new Grafikteil { Primitive = lokal }]) ?? [-1, -1, 1, 1];
         double hx = Math.Max(Math.Abs(b[0]), Math.Abs(b[2])), hy = Math.Max(Math.Abs(b[1]), Math.Abs(b[3]));
         return (lokal.Select(pr => Verschoben(pr, x, y)).ToList(), hx, hy);

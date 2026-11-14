@@ -59,3 +59,41 @@ public class RohrDruckverlustTests
         Assert.All(l.Where(x => x["dp_Pa"] is null), x => Assert.NotNull(x["hinweis"]));
     }
 }
+
+/// <summary>Gesamtprüfung 13.11.2026, Fragen 20 und 21: Rohrnetz rechnet den Massenstrom aus dem Bedarf, Hauptleitungen mit der höchsten Gruppe.</summary>
+public class HeizungBedarfTests
+{
+    [Fact]
+    public void Netz_Massenstrom_aus_Raumbedarf_wie_Auslegung_ohne_Raumwert_Normleistung_mit_Hinweis()
+    {
+        var p = Beispielprojekt.Erzeugen(Kat, null);
+        Ok(p.Ausfuehren("element_aendern", new JsonObject { ["element"] = "HK-E.02", ["eigenschaften"] = new JsonObject { ["leistung"] = new JsonObject { ["wert"] = 1000, ["quelle"] = "fiktiv" } } }));
+        var hk = p.Modell.Finde("HK-E.02")!;
+        var vorher = HeizungLeistung.Ergebnis(p.Modell, p.Katalog).Strom[hk.Id];
+        Assert.Equal("normleistung", vorher.Basis);   // Raum ohne Heizleistung: Rückfall auf die Normleistung
+        Ok(p.Ausfuehren("element_aendern", new JsonObject { ["element"] = "E.02", ["eigenschaften"] = new JsonObject { ["heizleistung"] = new JsonObject { ["wert"] = 400, ["quelle"] = "fiktiv" } } }));
+        var st = HeizungLeistung.Ergebnis(p.Modell, p.Katalog).Strom[hk.Id];
+        var z = ((JsonObject)Tuer.Abfrage(p, "heizkoerper_auslegung", new JsonObject { ["raum"] = "E.02" }))["heizkoerper"]!.AsArray().OfType<JsonObject>().Single();
+        // ein Massenstrom für denselben Heizkörper: Netz = Auslegung (400 W / (c_p · 10 K) ≈ 34 kg/h statt ≈ 86 kg/h aus 1000 W Norm)
+        Assert.Equal("bedarf", st.Basis);
+        Assert.Equal(z["massenstrom_kgh"]!.GetValue<double>(), st.Kgh!.Value, 1);
+        Assert.Equal(vorher.Kgh!.Value * 0.4, st.Kgh!.Value, 1);
+    }
+
+    [Fact]
+    public void Hauptleitung_ohne_Gruppe_rechnet_mit_hoechster_Vorlauftemperatur_plus_Hysterese()
+    {
+        var p = Beispielprojekt.Erzeugen(Kat, null);
+        List<JsonObject> Zeilen() => ((JsonObject)Tuer.Abfrage(p, "rohr_druckverlust", new JsonObject()))["leitungen"]!.AsArray().OfType<JsonObject>()
+            .Where(x => x["temperaturAus"] is not null).ToList();
+        var haupt = Zeilen();
+        Assert.NotEmpty(haupt);
+        var vl0 = haupt.First(x => x["weg"]!.GetValue<string>() == "vl");
+        double t0 = vl0["t"]!.GetValue<double>();
+        var anlage = p.Modell.DerKlasse("Anlage").First(a => p.Modell.Elemente.Any(s => s.Klasse == "System" && s.TeilVon == a.Id && s.Kennzeichen.StartsWith("HZ")));
+        Ok(p.Ausfuehren("element_aendern", new JsonObject { ["element"] = anlage.Kennzeichen, ["eigenschaften"] = new JsonObject { ["vlHysterese"] = new JsonObject { ["wert"] = 5, ["quelle"] = "fiktiv" } } }));
+        var vl1 = Zeilen().First(x => x["leitung"]!.GetValue<string>() == vl0["leitung"]!.GetValue<string>());
+        Assert.Equal(t0 + 5, vl1["t"]!.GetValue<double>(), 6);
+        Assert.Contains("Hysterese 5 K", vl1["temperaturAus"]!.GetValue<string>());
+    }
+}

@@ -295,6 +295,7 @@
   { "name": "Anlage", "kuerzel": "A", "schicht": "system", "gewerk": "allgemein", "ifc": "IfcSystem",
     "beschreibung": "Oberste Ebene des Systemgraphen, z. B. Sanitäranlage. Systeme sind teilVon einer Anlage.",
     "eigenschaften": [ { "name": "beschreibung", "typ": "text", "beschreibung": "Kurzbeschrieb" },
+      { "name": "vlHysterese", "typ": "zahl", "einheit": "K", "beschreibung": "Heizung/Kälte: Zuschlag auf die höchste Vorlauftemperatur der Heizgruppen für Hauptleitungen ausserhalb einer Heizgruppe (Erzeuger bis Verteiler), Eingabe des Planers; ohne Wert 0 K (Christian 13.11.2026, Gesamtprüfung Frage 21)" },
       { "name": "abflusskennzahl", "typ": "zahl", "beschreibung": "Abflusskennzahl K der Sanitär-Zusammenstellung (Modul 4): Schmutzwasserabfluss Q_WW = K × √ΣDU. Wert mit Quelle setzen (SN 592000, Gebäudeart); ohne Wert gilt die Vorgabe der Projektinformation, fehlt auch sie: Befund P25, kein Q_WW" },
       { "name": "spezialinstallationen", "typ": "liste", "beschreibung": "Spezialinstallationen der Sanitär-Zusammenstellung (Modul 4, wie Excel Zeilen 46–51), von Hand: [{ \"bezeichnung\": Text, \"versorgung\": l/s, \"entsorgung\": l/s }]. Σ Versorgung kommt zum Spitzendurchfluss (Excel C59/I59), Σ Entsorgung zum Gesamtabfluss Q_tot (Excel M67)" } ] },
   { "name": "System", "kuerzel": "S", "schicht": "system", "gewerk": "allgemein", "ifc": "IfcDistributionSystem",

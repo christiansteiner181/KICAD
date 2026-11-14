@@ -285,13 +285,14 @@
         "1. Spreizung ΔT = |vlTemp − rlTemp| in K (Heizung: Vorlauf minus Rücklauf, Kälte: Rücklauf minus Vorlauf). Unter 0.1 K gibt es keinen Strom («Spreizung 0 K»).",
         "2. Mittlere Temperatur t_m = (vlTemp + rlTemp) / 2.",
         "3. Stoffwerte c_p in kJ/(kg·K) und ρ in kg/m³ des Mediums bei t_m (Tabelle, linear dazwischen).",
-        "4. Massenstrom ṁ = Q / (c_p · ΔT); gerechnet in kg/h als Q / (c_p · 1000 · ΔT) · 3600 mit Q in W.",
+        "4. Massenstrom ṁ = Q / (c_p · ΔT); gerechnet in kg/h als Q / (c_p · 1000 · ΔT) · 3600 mit Q in W. Q = Bedarf: Heiz- bzw. Kühlleistung des Raums, auf seine Verbraucher nach Normleistung verteilt (nicht alle mit Normleistung: gleich), wie heizkoerper_auslegung; Raum ohne Wert: Normleistung (Angabe) als Rückfall mit Hinweis (stromBasis).",
         "5. Volumenstrom V̇ = ṁ / ρ; in l/h als ṁ / ρ · 1000.",
         "6. Je Leitung bzw. Verteiler: Σ ṁ und Σ V̇ der Verbraucher dahinter; Verbraucher mit fehlender Angabe stehen separat («ohneStrom») mit Grund (keine Leistung; Temperatur fehlt; Spreizung 0 K; Stoffwerte fehlen)."
       ],
       "ergebnis": "Abfragen heizung_leistung und heizung_lesen: Massenstrom in kg/h und Volumenstrom in l/h je Verbraucher, Leitung, Verteiler mit Stoffwerten (c_p, ρ, Fluid, Quelle) und Spreizung.",
       "quellen": [
-        "Christian Steiner, 02.11.2026: Leistung → Massenstrom, Temperatur aus Heizgruppe"
+        "Christian Steiner, 02.11.2026: Leistung → Massenstrom, Temperatur aus Heizgruppe",
+        "Christian Steiner, 13.11.2026 (Gesamtprüfung Frage 20): Massenstrom aus dem Bedarf, ohne Heizlast Rückfall auf Normleistung mit Hinweis"
       ],
       "annahmen": [
         "Die Formel ṁ = Q / (c_p · ΔT) ist die physikalische Grundformel; eine Normquelle ist im Code nicht genannt."
@@ -1931,7 +1932,7 @@
         "Massenstrom je Leitung (Summe der Verbraucher, heizung.massenstrom)",
         "Innendurchmesser der Serie",
         "Länge der Leitung",
-        "Temperatur: vlTemp bzw. rlTemp der Heizgruppe",
+        "Temperatur: vlTemp bzw. rlTemp der Heizgruppe; Hauptleitung ausserhalb einer Gruppe: höchste Gruppe dahinter, Vorlauf + Anlage.vlHysterese, Rücklauf der Gruppe (Christian 13.11.2026, Frage 21; Rücklauf ohne Mischtemperatur = Annahme)",
         "Rauheit nach Material der Serie"
       ],
       "rechenweg": [

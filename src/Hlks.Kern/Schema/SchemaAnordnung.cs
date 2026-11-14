@@ -2135,6 +2135,10 @@ public sealed class Schemaplan
                 var kz = l.OrderBy(e => e, SchemaGraph.Ordnung).Select(e => e.Kennzeichen).ToList();
                 return string.Join(", ", kz.Take(12)) + (kz.Count > 12 ? $" … ({kz.Count})" : "");
             }
+            // Frage 22: Armaturen ohne bekannte Fliessrichtung stehen nach der Einbaulage, nicht nach dem Strom
+            var ohneRichtung = g.Knoten.Where(k => k.Art == "armatur" && !k.Verdeckt && !SchemaSymbole.RichtungBekannt(g, k)).Select(k => k.Element).ToList();
+            if (ohneRichtung.Count > 0)
+                plan.Hinweise.Add($"Fliessrichtung unbekannt, Symbol nach der Einbaulage gezeichnet: {Liste(ohneRichtung)} – Leitungen in Fliessrichtung zeichnen bzw. fliessrichtung_umkehren.");
             var ohneGeschoss = g.Knoten.Where(k => k.Zeile?.IstZone == true).Select(k => k.Element).ToList();
             if (ohneGeschoss.Count > 0)
                 plan.Hinweise.Add($"Ohne Geschoss (Zone unten): {Liste(ohneGeschoss)} – geschoss setzen (element_aendern).");

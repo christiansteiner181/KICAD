@@ -90,6 +90,9 @@ public sealed class SchemaLinie
     /// <summary>Grössen der Leitungen in Fliessrichtung, gleiche aufeinanderfolgende nur einmal («NW 25», «NW 20»).</summary>
     public List<string> Groessen { get; } = [];
     public string? Medium { get; internal set; }
+    /// <summary>Fliessrichtung aus den Anschlüssen bestimmt (rein/raus); false = Richtung nur angenommen (Gesamtprüfung Frage 22: Symbole dann
+    /// wie bisher nach der Einbaulage, mit Hinweis).</summary>
+    public bool RichtungBekannt { get; internal set; }
     /// <summary>Kein Knoten an beiden Enden.</summary>
     public bool Frei => Von.Knoten is null && Nach.Knoten is null;
     /// <summary>Orthogonaler Linienzug in Papier-mm (nach der Anordnung).</summary>
@@ -378,6 +381,7 @@ public sealed class SchemaGraph
         var nach = new SchemaEnde { Knoten = b, Element = b.Element, Anschluss = ba?.Name ?? bAnschluss };
         bool umkehren = !(aa.Fluss == "raus" || ba?.Fluss == "rein") && (aa.Fluss == "rein" || ba?.Fluss == "raus");
         var l = umkehren ? new SchemaLinie { Von = nach, Nach = von, Verbindung = v.Id } : new SchemaLinie { Von = von, Nach = nach, Verbindung = v.Id };
+        l.RichtungBekannt = aa.Fluss is "rein" or "raus" || ba?.Fluss is "rein" or "raus";
         l.Medium = MediumVon(l);
         l.Strang = l.Elemente.Select(StrangVon).FirstOrDefault(s => s is not null) ?? l.Von.Knoten?.Strang ?? l.Nach.Knoten?.Strang;
         Linien.Add(l);
@@ -427,7 +431,7 @@ public sealed class SchemaGraph
             if (fs == "rein" || fe == "raus") zurueck++;
             else if (fs == "raus" || fe == "rein") vor++;
         }
-        var l = new SchemaLinie { Von = start, Nach = ende };
+        var l = new SchemaLinie { Von = start, Nach = ende, RichtungBekannt = vor != zurueck };
         l.Elemente.AddRange(schritte.Select(s => s.E));
         if (zurueck > vor)
         {

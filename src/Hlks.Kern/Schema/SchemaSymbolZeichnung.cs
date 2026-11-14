@@ -12,6 +12,10 @@
 //   - Einbaulage: senkrecht gezeichnete Armaturen werden an waagrechten Leitungen um 90° gegen den Uhrzeigersinn gedreht (Durchfluss dann links → rechts),
 //     waagrecht gezeichnete an senkrechten; Anschlüsse drehen mit. Symbole in der Leitung (einbau ≠ fest) decken die Leitung unter sich: jede durchsichtige,
 //     geschlossene Fläche bekommt eine papierweisse Unterlage unter alle Linien (so bleiben spätere Linien sichtbar, die Leitung verschwindet).
+//   - Fliessrichtung (Gesamtprüfung Frage 22, Christian 13.11.2026 «nach Fliessrichtung drehen»): ist sie an der Leitung bekannt, wird das Symbol in
+//     Vierteln gedreht, bis sein gezeichneter Durchfluss (senkrecht: oben → unten, waagrecht: links → rechts) in Fliessrichtung zeigt – Rückschlagventil,
+//     Pumpe, Schmutzfänger zeigen so nie gegen den Strom. Ohne bekannte Richtung wie bisher nach der Einbaulage (Hinweis im Schema). Texte bleiben lesbar
+//     (höchstens 90°).
 
 namespace Hlks.Kern;
 
@@ -37,6 +41,15 @@ public static class SchemaSymbolZeichnung
         _ => false,
     };
 
+    /// <summary>Vierteldrehungen (gegen den Uhrzeigersinn), damit der gezeichnete Durchfluss in Fliessrichtung zeigt; fluss = N | S | E | W auf dem Bildschirm
+    /// (y nach oben) oder null (unbekannt → wie Gedreht).</summary>
+    public static int Viertel(KatalogSymbol s, bool leitungSenkrecht, string? fluss) => s.Einbau switch
+    {
+        "senkrecht" when fluss is not null => fluss switch { "E" => 1, "N" => 2, "W" => 3, _ => 0 },
+        "waagrecht" when fluss is not null => fluss switch { "N" => 1, "W" => 2, "S" => 3, _ => 0 },
+        _ => Gedreht(s, leitungSenkrecht) ? 1 : 0,
+    };
+
     /// <summary>Text eines Platzhalters: «$1», «$2», «$3»… liefert der Aufrufer (Schlüssel «1», «2» …, sonst leer); «$xy» zeigt die Bezeichnung (Schlüssel «1»)
     /// oder den Vorgabetext «xy». Texte ohne «$» stehen, wie sie sind.</summary>
     public static string Text(string s, IReadOnlyDictionary<string, string>? texte)
@@ -49,11 +62,16 @@ public static class SchemaSymbolZeichnung
 
     /// <summary>Primitive des Symbols um den Ursprung (Papier-mm, y nach oben).</summary>
     /// <param name="massstab">Papier-mm je Symbol-mm; null = der des Katalogs.</param>
-    public static List<Primitiv> Primitive(KatalogSymbol s, double massstab, bool gedreht = false, IReadOnlyDictionary<string, string>? texte = null)
+    public static List<Primitiv> Primitive(KatalogSymbol s, double massstab, bool gedreht = false, IReadOnlyDictionary<string, string>? texte = null) =>
+        Primitive(s, massstab, gedreht ? 1 : 0, texte);
+
+    /// <summary>Primitive des Symbols um den Ursprung, um viertel · 90° gegen den Uhrzeigersinn gedreht.</summary>
+    public static List<Primitiv> Primitive(KatalogSymbol s, double massstab, int viertel, IReadOnlyDictionary<string, string>? texte = null)
     {
+        viertel = ((viertel % 4) + 4) % 4;
         string? linie = s.StandardFarbe.Length > 0 ? s.StandardFarbe : null;
         bool inLeitung = s.Einbau != "fest";
-        double[] Pkt(double x, double y) { var q = Dreh(x * massstab, -y * massstab, gedreht); return [Rund(q.X), Rund(q.Y)]; }
+        double[] Pkt(double x, double y) { var q = Dreh(x * massstab, -y * massstab, viertel); return [Rund(q.X), Rund(q.Y)]; }
         string Stift(KatalogGeo g) => StiftFuer((g.W > 0 ? g.W : Standardstrich) * massstab);
         string? Fuellung(KatalogGeo g) =>
             !g.Fill ? null : g.Fc.Length == 0 ? (linie ?? "schnitt") : g.Fc.Equals("#FFFFFF", StringComparison.OrdinalIgnoreCase) ? "papier" : g.Fc;
@@ -93,7 +111,7 @@ public static class SchemaSymbolZeichnung
                     // HKAP: im Uhrzeigersinn ab 3 Uhr (y nach unten) = im Gegenuhrzeigersinn mit umgekehrtem Vorzeichen (y nach oben)
                     double a0 = -p[3], a1 = -(p[3] + p[4]);
                     double lo = Math.Min(a0, a1), spanne = Math.Abs(p[4]);
-                    double dreh = gedreht ? 90 : 0;
+                    double dreh = 90 * viertel;
                     double von = (((lo + dreh) % 360) + 360) % 360;
                     double r = Rund(p[2] * massstab);
                     if (g.Fill)
@@ -133,9 +151,9 @@ public static class SchemaSymbolZeichnung
                     var text = Text(g.S, texte);
                     if (text.Length == 0) break;
                     double groesse = Rund(g.Size * massstab);
-                    var m = Dreh(p[0] * massstab, -p[1] * massstab, gedreht);   // Mitte des Textes; die Grundlinie liegt etwa eine halbe Kapitalhöhe tiefer
-                    double winkel = gedreht && !g.Aufrecht ? 90 : 0;
-                    var versatz = Dreh(0, -groesse * 0.35, winkel != 0);
+                    var m = Dreh(p[0] * massstab, -p[1] * massstab, viertel);   // Mitte des Textes; die Grundlinie liegt etwa eine halbe Kapitalhöhe tiefer
+                    double winkel = viertel % 2 == 1 && !g.Aufrecht ? 90 : 0;   // lesbar: nie kopfüber
+                    var versatz = Dreh(0, -groesse * 0.35, winkel != 0 ? 1 : 0);
                     texteListe.Add(new Primitiv
                     {
                         Art = "text", Punkte = [[Rund(m.X + versatz.X), Rund(m.Y + versatz.Y)]], Text = text, Groesse = groesse,
@@ -151,13 +169,17 @@ public static class SchemaSymbolZeichnung
     }
 
     /// <summary>Anschlusspunkte des Symbols in Papier-mm um den Ursprung (y nach oben); die Richtung dreht mit.</summary>
-    public static List<SymbolPunkt> Anschluesse(KatalogSymbol s, double massstab, bool gedreht = false) =>
+    public static List<SymbolPunkt> Anschluesse(KatalogSymbol s, double massstab, bool gedreht = false) => Anschluesse(s, massstab, gedreht ? 1 : 0);
+
+    public static List<SymbolPunkt> Anschluesse(KatalogSymbol s, double massstab, int viertel) =>
         s.Anschluesse.Select(a =>
         {
-            var q = Dreh(a.X * massstab, -a.Y * massstab, gedreht);
-            var dir = gedreht ? a.Dir switch { "N" => "W", "W" => "S", "S" => "E", "E" => "N", var d => d } : a.Dir;
+            var q = Dreh(a.X * massstab, -a.Y * massstab, viertel);
+            var dir = a.Dir;
+            for (int i = 0; i < ((viertel % 4) + 4) % 4; i++) dir = dir switch { "N" => "W", "W" => "S", "S" => "E", "E" => "N", var d => d };
             return new SymbolPunkt(a.Id, Rund(q.X), Rund(q.Y), dir);
         }).ToList();
 
-    static (double X, double Y) Dreh(double x, double y, bool gedreht) => gedreht ? (-y, x) : (x, y);   // 90° gegen den Uhrzeigersinn
+    /// <summary>Um viertel · 90° gegen den Uhrzeigersinn.</summary>
+    static (double X, double Y) Dreh(double x, double y, int viertel) => (((viertel % 4) + 4) % 4) switch { 1 => (-y, x), 2 => (-x, -y), 3 => (y, -x), _ => (x, y) };
 }

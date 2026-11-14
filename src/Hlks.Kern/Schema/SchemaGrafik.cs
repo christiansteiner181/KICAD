@@ -313,7 +313,7 @@ public static class SchemaGrafik
             return;
         }
         bool senkrecht = k.Ausrichtung is "senkrecht" or "abgang";
-        var (prims, hx, hy) = SchemaSymbole.Zeichnen(p, k.Element, k.X, k.Y, senkrecht, farbe, detail);
+        var (prims, hx, hy) = SchemaSymbole.Zeichnen(p, k.Element, k.X, k.Y, senkrecht, farbe, detail, k.Art == "armatur" ? SchemaSymbole.Fluss(graph, k, senkrecht) : null);
         var t = new Grafikteil { Id = k.Id, Ebene = ebene, Primitive = prims, Fangpunkte = [[k.X, k.Y]] };
         // Kennzeichen: nicht am T-Stück und nicht an den Armaturen am Anschluss eines Wohnungsblocks (Teil des Blocks, eng
         // zwischen den Anschlusslinien); auf einer Stranglinie im Bündel links des Bündels (dort ist Platz, rechts gehen die

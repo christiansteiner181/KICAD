@@ -317,4 +317,23 @@ public class SchemaSymbolZeichnungTests
         foreach (var key in new[] { "kessel", "speicher", "wt_platte", "heizgruppe", "fuehler", "eig-expansionsgefaess_sd", "sicherheitsventil", "entleerung", "manometer" })
             Assert.Equal("fest", sk.Symbol(key)!.Einbau);
     }
+
+    // Gesamtprüfung Frage 22 (Christian 13.11.2026 «nach Fliessrichtung drehen»): der gezeichnete Durchfluss (Strich vom Ursprung in Durchflussrichtung)
+    // zeigt nach dem Drehen in die Fliessrichtung; ohne Richtung wie bisher nach der Einbaulage.
+    [Theory]
+    [InlineData("senkrecht", false, "E", 3.0, 0.0)]
+    [InlineData("senkrecht", false, "W", -3.0, 0.0)]
+    [InlineData("senkrecht", true, "N", 0.0, 3.0)]
+    [InlineData("senkrecht", true, "S", 0.0, -3.0)]
+    [InlineData("waagrecht", true, "S", 0.0, -3.0)]
+    [InlineData("waagrecht", false, "W", -3.0, 0.0)]
+    [InlineData("senkrecht", false, null, 3.0, 0.0)]   // unbekannt: wie bisher um 90° (links → rechts)
+    public void Symbol_Zeigt_In_Fliessrichtung(string einbau, bool leitungSenkrecht, string? fluss, double x, double y)
+    {
+        // HKAP y nach unten: senkrecht = Strich nach unten (0, 3), waagrecht = nach rechts (3, 0)
+        var s = Sym(einbau, G("line", einbau == "senkrecht" ? [0, 0, 0, 3] : [0, 0, 3, 0]));
+        var pr = SchemaSymbolZeichnung.Primitive(s, 1, SchemaSymbolZeichnung.Viertel(s, leitungSenkrecht, fluss));
+        Assert.Equal(x, pr[0].Punkte[1][0], 6);
+        Assert.Equal(y, pr[0].Punkte[1][1], 6);
+    }
 }

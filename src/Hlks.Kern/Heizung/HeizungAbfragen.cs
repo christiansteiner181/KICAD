@@ -386,6 +386,8 @@ public static class HeizungAbfragen
                 if (strom.SpreizungK is double dt) block["spreizungK"] = dt;
                 if (strom.Stoff is { } sw) block["stoffwerte"] = new JsonObject { ["cp_kJkgK"] = Math.Round(sw.CpKjKgK, 4), ["rho_kgm3"] = Math.Round(sw.RhoKgM3, 2), ["fluid"] = sw.Fluid, ["quelle"] = sw.Quelle };
                 if (strom.Grund is { } grund) block["ohneStrom"] = grund;
+                if (strom.Basis is { } basis) { block["stromBasis"] = basis; block["stromBasisW"] = strom.BasisW; }
+                if (strom.Basis == "normleistung") block["stromHinweis"] = HeizungLeistung.HinweisNormleistung;
             }
         }
         o["heizung"] = block;
