@@ -706,8 +706,8 @@ function erstellen(behaelter, ansichtElement) {
   });
   // Frage 33: Tab (Umschalt+Tab zurück) wählt das nächste Element hinter dem zuletzt angeklickten Punkt
   if (wurzel.tabIndex < 0) wurzel.tabIndex = -1;
-  wurzel.addEventListener(keydown, (e) => {
-    if (e.key !== Tab || !stapel || e.ctrlKey || e.altKey || begehen.aktiv) return;
+  wurzel.addEventListener('keydown', (e) => {
+    if (e.key !== 'Tab' || !stapel || e.ctrlKey || e.altKey || begehen.aktiv) return;
     if (stapel.ids[stapel.i] !== gewaehlt) { stapel = null; return; }   // inzwischen anders gewählt: Tab wieder normal
     e.preventDefault(); e.stopPropagation();
     const n = stapel.ids.length;
