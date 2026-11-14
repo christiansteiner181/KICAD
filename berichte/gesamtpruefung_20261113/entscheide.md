@@ -127,3 +127,6 @@ swisspor führt für Rohre nur PIR-Schalen «swissporKISODUR» (Heizung, Kälte,
 - **14.11.2026 Paket Heizung:** 20 (Massenstrom im Netz aus dem Raumbedarf wie heizkoerper_auslegung, ohne Raumwert Normleistung mit Hinweis
   «stromBasis»), 21 (Hauptleitungen ausserhalb einer Gruppe: höchste Gruppe dahinter, Vorlauf + Anlage.vlHysterese, Rücklauf der Gruppe – Annahme ohne
   Mischtemperatur), 22 (Armaturen im Schema in Vierteln nach der Fliessrichtung gedreht; ohne bekannte Richtung wie bisher, Hinweis im Schema) umgesetzt.
+- **14.11.2026 Paket Rechenkerne:** N24 (ΔTn logarithmisch), N25 (QD = QT unter dem Kurvenstart auch in der Zusammenstellung), N26 (Rohrrauheit ein
+  Standardwert 0.045 mm, Skript C2 Betschart S. 16), N27 (ζ im Heizungsrohrnetz nach Skript C2 S. 13–15: Bogen, T-Stück je Fall, Absperrventil nach DN;
+  Luftkanäle ohne ζ – in den HFGT16-Unterlagen keine Tabelle), N28 (Schicht mit eigenem R mit Quelle), N29 (Betondecke auch über Aufbauname/Schichten) umgesetzt.

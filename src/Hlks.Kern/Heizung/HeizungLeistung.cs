@@ -59,6 +59,9 @@ public sealed class HeizungNetz
     /// <summary>Treffpunkt (Id) → Verbraucher (Ids), die ihn über zwei Wege erreichen.</summary>
     public Dictionary<string, SortedSet<string>> Maschen { get; } = new(StringComparer.Ordinal);
     public HashSet<string> MaschenLeitungen { get; } = new(StringComparer.Ordinal);
+    /// <summary>Leitungsbauteil ausser Leitungen und Verteiler (Bogen, T-Stück, Armatur …) → (Verbraucher-Id, Anschluss auf der Seite des Verbrauchers, Weg);
+    /// für die Einzelwiderstände (ζ, Gesamtprüfung N27).</summary>
+    public Dictionary<string, List<(string Verbraucher, string Ein, string Weg)>> JeBauteil { get; } = new(StringComparer.Ordinal);
 
     public HeizSumme Summe(IEnumerable<Element> verbraucher, bool masche = false)
     {
@@ -209,8 +212,13 @@ public static class HeizungLeistung
                 var weg = rolle == "vorlauf" ? "vl" : "rl";
                 var beitrag = new HeizBeitrag(v, an.Name, weg, leistung);
                 Folgen(m, k, v, an, medium, rolle == "vorlauf" ? "stromauf" : "stromab",
-                    erreicht: x =>
+                    erreicht: (x, ein) =>
                     {
+                        if (!n.JeLeitung.ContainsKey(x.Id) && !k.IstArt(x, "Verteiler") && Netz.IstLeitungsbauteil(k, x) && gezaehlt.Add($"{x.Id}|{v.Id}|{weg}|b"))
+                        {
+                            if (!n.JeBauteil.TryGetValue(x.Id, out var jb)) n.JeBauteil[x.Id] = jb = [];
+                            jb.Add((v.Id, ein, weg));
+                        }
                         if (n.JeLeitung.TryGetValue(x.Id, out var l) && gezaehlt.Add($"{x.Id}|{v.Id}|{weg}")) l.Add(beitrag);
                         else if (weg == "vl" && k.IstArt(x, "Verteiler") && gezaehlt.Add($"{x.Id}|{v.Id}|vt"))
                         {
@@ -252,7 +260,7 @@ public static class HeizungLeistung
     }
 
     /// <summary>Gerichtete Breitensuche ab einem Verbraucheranschluss; ein zweites Erreichen eines Elements ist eine Masche.</summary>
-    static void Folgen(Modell m, Katalog k, Element verbraucher, Anschluss start, string medium, string richtung, Action<Element> erreicht,
+    static void Folgen(Modell m, Katalog k, Element verbraucher, Anschluss start, string medium, string richtung, Action<Element, string> erreicht,
         Action<Element, IReadOnlyList<Element>> masche)
     {
         if (!Ausgang(start.Fluss, richtung) || Gegenueber(m, verbraucher, start) is not { } g0) return;
@@ -262,7 +270,7 @@ public static class HeizungLeistung
         var besucht = new HashSet<string>(StringComparer.Ordinal) { verbraucher.Id, erster.Id };
         var schlange = new Queue<(Element E, string Ein)>();
         schlange.Enqueue((erster, ea.Name));
-        erreicht(erster);
+        erreicht(erster, ea.Name);
         List<Element> Pfad(Element x) { var l = new List<Element>(); for (Element? y = x; y is not null; y = eltern[y.Id]) l.Add(y); return l; }
         while (schlange.Count > 0)
         {
@@ -283,7 +291,7 @@ public static class HeizungLeistung
                     continue;
                 }
                 eltern[nb.Id] = e;
-                erreicht(nb);
+                erreicht(nb, na.Name);
                 schlange.Enqueue((nb, na.Name));
             }
         }

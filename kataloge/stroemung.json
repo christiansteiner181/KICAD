@@ -235,5 +235,90 @@
       }
     ],
     "hinweis": "Kinematische Viskosität ν = η/ρ; zwischen den Tabellenpunkten linear. Nur Wasser – für Wasser-Glykol fehlt die Viskosität."
+  },
+  "rohrRauheitStandard": {
+    "k": 0.045,
+    "einheit": "mm",
+    "quelle": "Prof. Werner Betschart, «C2-3 druckverlust extract pdf v1.1 150619» (Skript HF Gebäudetechnik, Fachkunde Heizung; %OneDrive%HFGT16\u0002_Fachstudium\u0003_Fachkunde HeizungScriptC2 druckverlust.pdf), Seite 16: Beispiel «Heizungsrohr (Heizungswasser von 80 °C), d = 57 x 2,3 mm, mit einer Rohrrauhigkeit von 0.045 mm»; vom Seitenbild geprüft (Hauptlauf 14.11.2026)",
+    "entscheid": "Christian Steiner 13.11.2026 (Gesamtprüfung N26): einen Standardwert übernehmen statt Namensraten bzw. Herstellerwert je Linie",
+    "annahme": "Der Wert steht im Skript als Beispielwert für Stahlrohr, nicht ausdrücklich als Standard; für Kunststoff- und Mehrschichtrohre liegt er auf der sicheren Seite (Tab. 3: 0,0015–0,007 mm)."
+  },
+  "zetaWasser": {
+    "quelle": "Prof. Werner Betschart, «C2-3 druckverlust extract pdf v1.1 150619» (Skript HF Gebäudetechnik, Fachkunde Heizung; %OneDrive%HFGT16\u0002_Fachstudium\u0003_Fachkunde HeizungScriptC2 druckverlust.pdf); Bild-Tabellen ohne Nummer, vom Seitenbild geprüft (Hauptlauf 14.11.2026)",
+    "entscheid": "Christian Steiner 13.11.2026 (Gesamtprüfung N27): ζ-Werte aus den HFGT16-Unterlagen, Dokument und Seite als Quelle",
+    "formel": "Δp = ζ · ρ · w² / 2",
+    "bogen": {
+      "seite": 14,
+      "werte": [
+        {
+          "bedingung": "90°, r = 1,5 d",
+          "zeta": 0.5
+        },
+        {
+          "bedingung": "90°, r = 3 d",
+          "zeta": 0.3
+        },
+        {
+          "bedingung": "90°, r = 6 d",
+          "zeta": 0.2
+        }
+      ]
+    },
+    "tstueck": {
+      "seite": 13,
+      "titel": "Abzweig rechtwinklig",
+      "werte": {
+        "abzweigTrennung": 1.5,
+        "abzweigVereinigung": 1,
+        "durchgangTrennung": 0.3,
+        "durchgangVereinigung": 0.5,
+        "gegenlaufVereinigung": 3,
+        "gegenlaufTrennung": 2
+      }
+    },
+    "durchgangsventil": {
+      "seite": 15,
+      "titel": "Ventile, Durchgangsventile",
+      "werte": [
+        {
+          "dnBis": 15,
+          "zeta": 10
+        },
+        {
+          "dnBis": 20,
+          "zeta": 8.5
+        },
+        {
+          "dnBis": 25,
+          "zeta": 4
+        },
+        {
+          "dnBis": 32,
+          "zeta": 6
+        },
+        {
+          "dnBis": 80,
+          "zeta": 5
+        },
+        {
+          "dnBis": 100,
+          "zeta": 5.4
+        },
+        {
+          "dnBis": 200,
+          "zeta": 6.3
+        },
+        {
+          "dnBis": 300,
+          "zeta": 7
+        },
+        {
+          "dnBis": 400,
+          "zeta": 7.7
+        }
+      ],
+      "hinweis": "DN 25 = 4 so im Skript gedruckt (Folge 10/8.5/4/6/5 auffällig; Sanitär-Excel Formblatt A6 nennt 7) – nicht geändert."
+    },
+    "regulierventile": "Regulier- und Thermostatventile werden nach Seite 27 nicht über ζ, sondern über den kVS-Wert definiert."
   }
 }

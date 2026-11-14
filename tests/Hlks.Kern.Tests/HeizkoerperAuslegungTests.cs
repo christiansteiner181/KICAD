@@ -99,3 +99,30 @@ public class HeizungBedarfTests
         Assert.Contains("Hysterese 5 K", vl1["temperaturAus"]!.GetValue<string>());
     }
 }
+
+/// <summary>Gesamtprüfung N26/N27 (Christian 13.11.2026): Rauheit als ein Standardwert, ζ aus Skript C2 (Betschart) je Bauteil und Verbraucher.</summary>
+public class RohrZetaTests
+{
+    [Fact]
+    public void Zeta_Absperrventil_nach_DN_und_TStueck_aus_Fliessrichtung()
+    {
+        var p = HeizungHilfe.Netz();
+        var netz = HeizungLeistung.Ergebnis(p.Modell, p.Katalog);
+        var zk = (System.Text.Json.Nodes.JsonObject)KanalDruckverlust.Katalog(p.Katalog)!["zetaWasser"]!;
+        string Id(string kz) => p.Modell.Finde(kz)!.Id;
+        var hk1 = Id("HK-1");
+        // Vorlauf HK-1: VE-1 (Absperrventil DN 25) auf der Seite des Heizkörpers über «aus» erreicht → Durchgangsventil DN 25: ζ = 4 (C2 S. 15)
+        var ve = netz.JeBauteil[Id("VE-1")].Single(x => x.Verbraucher == hk1);
+        Assert.Equal(("aus", "vl"), (ve.Ein, ve.Weg));
+        var zv = RohrDruckverlust.Zeta(p.Modell, p.Katalog, zk, p.Modell.Finde("VE-1")!, ve.Ein, ve.Weg);
+        Assert.Equal((4.0, 15), (zv.Zeta!.Value, zv.Seite));
+        // Rücklauf HK-1 tritt bei a in TS-1 ein, b (zum Verteiler) und c (Bypass) führen hinaus → Stromtrennung im Durchgang: ζ = 0.3 (C2 S. 13)
+        var ts = netz.JeBauteil[Id("TS-1")].Single(x => x.Verbraucher == hk1);
+        var zt = RohrDruckverlust.Zeta(p.Modell, p.Katalog, zk, p.Modell.Finde("TS-1")!, ts.Ein, ts.Weg);
+        Assert.Equal((0.3, "T-Stück Durchgang, Stromtrennung"), (zt.Zeta!.Value, zt.Art));
+        // Mischventil und Pumpe: kein ζ in der Quelle bzw. kein Widerstand im Sinne der Tabelle
+        Assert.Null(RohrDruckverlust.Zeta(p.Modell, p.Katalog, zk, p.Modell.Finde("P-1")!, "druck", "vl").Zeta);
+        // Rauheit: ein Standardwert mit Quelle
+        Assert.Equal(0.045, KanalDruckverlust.Katalog(p.Katalog)!["rohrRauheitStandard"]!["k"]!.GetValue<double>());
+    }
+}

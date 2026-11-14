@@ -1940,8 +1940,9 @@
         "η und ρ von Wasser bei der Temperatur (NIST, linear), ν = η/ρ.",
         "V̇ = ṁ/ρ, w = V̇/A mit A = π·d²/4, Re = w·d/ν.",
         "λ laminar 64/Re unter Re 2320, sonst Colebrook (Tab. 2 Skript «08 Luftnetzberechnung»; gilt für jedes Fluid).",
-        "Rauheit k aus Tab. 3, oberer Wert: Kunststoff/Mehrschicht 0,007 mm, Kupfer 0,0015 mm, sonst Stahl gewalzt 0,05 mm.",
-        "R = λ/d·ρ·w²/2, Δp = R·l; je Verbraucher Σ Δp aller Leitungen, die ihn führen."
+        "Rauheit k = 0,045 mm als ein Standardwert für alle Rohre (Christian 13.11.2026, N26; Skript C2 Betschart S. 16, Beispiel Heizungsrohr; für Kunststoff/Mehrschicht sichere Seite).",
+        "R = λ/d·ρ·w²/2, Δp = R·l; je Verbraucher Σ Δp aller Leitungen, die ihn führen.",
+        "Einzelwiderstände (N27): Δp = ζ·ρ·w²/2 mit w der Leitung auf der Seite des Verbrauchers (Annahme); ζ nach Skript C2 (Betschart): Bogen 90° r = 1,5 d 0.5 (S. 14, auch für flachere Bögen), T-Stück rechtwinklig je Fall Abzweig/Durchgang/Gegenlauf, Trennung/Vereinigung aus der Fliessrichtung (S. 13), Absperrventil als Durchgangsventil nach DN (S. 15). Regulier-/Thermostatventile über kVS (S. 27) und übrige Armaturen ohne ζ – Hinweis. Je Verbraucher dp_Pa = Reibung + Einzelwiderstände; massgebend nach dp_Pa."
       ],
       "ergebnis": "Abfrage rohr_druckverlust: je Leitung ṁ, d_i, w, Re, λ, R, Δp; je Verbraucher Σ Δp; massgebender Verbraucher.",
       "quellen": [
