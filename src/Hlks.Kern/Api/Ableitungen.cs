@@ -182,6 +182,16 @@ public static class Ableitungen
     /// (Rohr, Formteil, Armatur …) ohne Systemtyp über ihr Medium (Christian 02.11.2026: «leitungen gehören einem medium»).</summary>
     public static string? Gewerk(Modell m, Katalog k, Element e)
     {
+        // N32 (Christian 13.11.2026: «Gewerk der Geräteklasse»): ein Gerät zwischen zwei Gewerken (Wassererwärmer, Wärmetauscher – seine Systeme gehören
+        // zu verschiedenen Gewerken) behält das Gewerk seiner Klasse für Koordinationsfarbe, Kollisionsmatrix, BCF und Mengen, statt mit dem Kennzeichen
+        // des ersten Systems zu wechseln. Sonst wie bisher der Systemtyp zuerst (Verteiler, Ausdehnungsgefäss gibt es in Heizung und Sanitär).
+        if (!Netz.IstLeitungsbauteil(k, e) && k.Klassen.TryGetValue(e.Klasse, out var d0) && d0.Gewerk is { Length: > 0 } g0 && g0 != "allgemein")
+        {
+            var gewerkeDerSysteme = Netz.SystemeVon(m, e).Prepend(m.Finde(e.System)).OfType<Element>()
+                .Select(x => x.Text("systemtyp") is { } t && k.Systemtypen.TryGetValue(t, out var st0) ? st0.Gewerk : MediumGewerk(k, x.Text("medium")))
+                .OfType<string>().Distinct().Count();
+            if (gewerkeDerSysteme > 1) return g0;
+        }
         var sys = m.Finde(e.System) ?? Netz.SystemeVon(m, e).FirstOrDefault();
         if (sys?.Text("systemtyp") is { } typ && k.Systemtypen.TryGetValue(typ, out var st)) return st.Gewerk;
         if (k.Klassen.TryGetValue(e.Klasse, out var d) && d.Gewerk is { } g) return g;

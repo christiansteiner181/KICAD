@@ -12,7 +12,7 @@ export const BEARBEITEN = ['aendern.verschieben', 'aendern.kopieren', 'aendern.d
 const KONTEXT_OHNE = new Set(['kontext.aehnlich', 'kontext.verbinden', 'kontext.trennen', 'kontext.plus', 'kontext.minus', 'kontext.im-schema-zeigen', 'kontext.im-grundriss-zeigen']);
 
 /** Kontext-Aktionen nur für Netzelemente (Leitungen, Formteile, Geräte mit Rolle); eine Wand hat kein Stromab. */
-const NUR_NETZ = new Set(['kontext.netz-stromab', 'kontext.netz-stromauf', 'kontext.fliessrichtung', 'kontext.leitung-aufteilen']);
+const NUR_NETZ = new Set(['kontext.netz-stromab', 'kontext.netz-stromauf', 'kontext.fliessrichtung', 'kontext.leitung-aufteilen', 'kontext.verbinden', 'kontext.trennen']);   // N36: Verbinden/Trennen dazu
 
 /**
  * Einträge des Bauteilmenüs. istNetz: Element mit Rolle im Netz. aktionen: Liste der registrierten Aktionen ({ id, titel, register }), aktiv(id, param) → bool,

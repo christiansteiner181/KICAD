@@ -127,7 +127,9 @@ export function einrichten(bandElement, optionsleisteElement, schnellzugriffElem
   const spaeter = entprellen(() => { zustandAnwenden(); optionenZeichnen(); }, 40);
   abonnieren('auswahl', (id) => {
     const el = id ? element(id) : null;
-    // Leitung angewählt: Register «Ändern» aktiv (Christian 11.11.2026: «ist eine leitung angewählt soll der tab "ändern" aktiv sein»), aus jedem Register
+    // Leitung angewählt: Register «Ändern» aktiv (Christian 11.11.2026: «ist eine leitung angewählt soll der tab "ändern" aktiv sein»), aus jedem Register.
+    // Nicht während eines Werkzeugs und nicht beim Werkzeugende (N35, Christian 13.11.2026: «Im Gewerkeregister bleiben» – gleich weiterzeichnen):
+    // das Ende wechselt nur den Modus, kein Auswahlereignis; erst ein neuer Klick auf die Leitung öffnet «Ändern | Klasse».
     if (el && (aktivesRegister === 'aendern' || (istLeitungsklasse(el.klasse) && aktivesRegister !== 'kontext' && modus.id !== 'werkzeug'))) registerWaehlen('kontext', false);
     else if (!el && aktivesRegister === 'kontext') registerWaehlen(zuvorRegister === 'kontext' ? 'aendern' : zuvorRegister, false);
     else { reiterZeichnen(); if (aktivesRegister === 'kontext') feldZeichnen(); }

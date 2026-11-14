@@ -134,13 +134,15 @@ async function netzFolgen(richtung, p) {
 }
 
 const hatAuswahl = () => !!gewaehlt();
+// N36 (Christian 13.11.2026: «Ausblenden»): Netzbefehle nur an Elementen mit Rolle im Netz – nicht an Wand, Raum, Text (wie das Rechtsklick-Menü, NUR_NETZ)
+export const netzElement = (el) => !!el && !!el.rolle;
 registrieren({
-  id: 'kontext.netz-stromab', titel: 'Stromab folgen', symbol: 'netzAb', kuerzel: null, register: 'kontext', gruppe: 'Netz',
+  id: 'kontext.netz-stromab', fuer: netzElement, titel: 'Stromab folgen', symbol: 'netzAb', kuerzel: null, register: 'kontext', gruppe: 'Netz',
   aktiv: hatAuswahl, hinweis: 'Zuerst ein Element auswählen.',
   ausfuehren: (p) => netzFolgen('stromab', p),
 });
 registrieren({
-  id: 'kontext.netz-stromauf', titel: 'Stromauf folgen', symbol: 'netzAuf', kuerzel: null, register: 'kontext', gruppe: 'Netz',
+  id: 'kontext.netz-stromauf', fuer: netzElement, titel: 'Stromauf folgen', symbol: 'netzAuf', kuerzel: null, register: 'kontext', gruppe: 'Netz',
   aktiv: hatAuswahl, hinweis: 'Zuerst ein Element auswählen.',
   ausfuehren: (p) => netzFolgen('stromauf', p),
 });

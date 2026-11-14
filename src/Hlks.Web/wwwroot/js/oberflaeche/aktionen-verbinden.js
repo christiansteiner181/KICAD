@@ -46,6 +46,7 @@ async function trennenDialog(el) {
 }
 
 const starten = () => werkzeugStarten(verbindenWerkzeug());
+const netzElement = (el) => !!el && !!el.rolle;   // N36: Verbinden/Trennen nur an Netzelementen
 
 registrieren({
   id: 'aendern.verbinden', titel: 'Verbinden', symbol: 'schemaVerbinden', kuerzel: null, register: 'aendern', gruppe: 'Verändern', groesse: 'klein',
@@ -54,13 +55,13 @@ registrieren({
   ausfuehren: starten,
 });
 registrieren({
-  id: 'kontext.verbinden', titel: 'Verbinden', symbol: 'schemaVerbinden', kuerzel: null, register: 'kontext', gruppe: 'Netz',
+  id: 'kontext.verbinden', fuer: netzElement, titel: 'Verbinden', symbol: 'schemaVerbinden', kuerzel: null, register: 'kontext', gruppe: 'Netz',
   aktiv: imGrundriss, hinweis: nurGrundriss,
   gedrueckt: () => werkzeugAktiv() === 'verbinden',
   ausfuehren: starten,
 });
 registrieren({
-  id: 'kontext.trennen', titel: 'Trennen …', symbol: 'schemaTrennen', kuerzel: null, register: 'kontext', gruppe: 'Netz',
+  id: 'kontext.trennen', fuer: netzElement, titel: 'Trennen …', symbol: 'schemaTrennen', kuerzel: null, register: 'kontext', gruppe: 'Netz',
   aktiv: (p) => verbindungenText(ZIEL(p)).length > 0,
   hinweis: (p) => (ZIEL(p) ? `${ZIEL(p).kennzeichen} hat keine Verbindung.` : 'Zuerst ein Element auswählen.'),
   ausfuehren: (p) => trennenDialog(ZIEL(p)),

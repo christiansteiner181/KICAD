@@ -152,3 +152,7 @@ swisspor führt für Rohre nur PIR-Schalen «swissporKISODUR» (Heizung, Kälte,
 - **14.11.2026 Paket 45–47:** 45 (war schon so: mm/cm/m, ohne Einheit mm; Test um m ergänzt), 46 (Prüfungen je Befehl nur für das Umfeld der Änderung,
   Teilprüfungen nur im berührten Gebiet, Gesamtprüfung über pruefen; Element.Kopie ohne JSON – Messung 8300 Elemente: Befehl am Netz 426 → ~150 ms,
   Kopie 200 → 40 ms), 47 (fremde Leitungen grau als Hintergrund, Ansicht.fremdeLeitungen = false blendet aus) umgesetzt.
+- **14.11.2026 Paket N32/N35/N36:** N32 (Gerät zwischen Systemen zweier Gewerke, z. B. Wassererwärmer an Heizung und Trinkwasser, nimmt das Gewerk
+  seiner Klasse; Gerät mit Systemen nur eines Gewerks weiter dessen Gewerk – Verteiler im Sanitär bleibt Sanitär), N35 (war schon so: Werkzeugende
+  wechselt das Register nicht, erst ein Klick auf die Leitung öffnet «Ändern | Klasse»; im Code festgehalten), N36 (Stromab/Stromauf folgen,
+  Verbinden, Trennen im Kontextregister und im Rechtsklick-Menü nur an Elementen mit Rolle im Netz) umgesetzt.
