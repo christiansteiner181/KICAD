@@ -23,7 +23,8 @@ export function aehnlichMoeglich(el) {
 
 async function aehnlich(el) {
   if (LEITUNGEN.includes(el.klasse)) {
-    const wid = el.klasse === 'Kanal' ? 'kanal' : 'rohr';
+    const rund = el.klasse === 'Kanal' && !(Number(el.werte?.breite) > 0) && !/\d\s*[x×]\s*\d/i.test(String(el.werte?.familientyp ?? ''));   // 14.11.2026
+    const wid = el.klasse === 'Kanal' ? (rund ? 'lueftungsrohr' : 'kanal') : 'rohr';
     setze(wid, 'serie', el.bezuege.familie);
     if (el.werte?.familientyp) setze(wid, 'groesse', el.werte.familientyp);
     abzweigGroesse(el.werte).forEach(([feld, w]) => setze(wid, feld, w));
@@ -31,7 +32,7 @@ async function aehnlich(el) {
     if (Number.isFinite(z)) setze(wid, 'hoehe', hoeheRelativ(element(el.geschoss)?.werte?.kote, z));
     if (el.system) { setze(wid, 'system', el.system); setze(wid, 'medium', ''); setze(wid, 'strang', el.teilVon && element(el.teilVon)?.klasse === 'Strang' ? el.teilVon : ''); }
     else { setze(wid, 'system', ''); setze(wid, 'strang', ''); setze(wid, 'medium', el.werte?.medium ?? ''); }
-    return werkzeugStarten(leitungWerkzeug(el.klasse));
+    return werkzeugStarten(leitungWerkzeug(el.klasse, el.klasse === 'Kanal' ? (rund ? 'rund' : 'eckig') : null));
   }
   return platzieren({ familie: el.bezuege.familie, typ: el.werte.familientyp });
 }

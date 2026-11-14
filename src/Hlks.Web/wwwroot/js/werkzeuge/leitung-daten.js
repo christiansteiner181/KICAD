@@ -20,6 +20,9 @@ const serien = new Map();       // Kennzeichen → { def, laedt }
 export const serienListe = (kategorie) => serienDerKategorie(familienListe(), kategorie);
 
 /** Antwort der Abfrage leitungsserie aus dem Zwischenspeicher (oder null, solange sie nicht da ist; stösst das Laden an). */
+/** Schon geladene Serie, ohne das Laden anzustossen (Form der Kanal-Produktlinien, 14.11.2026). */
+export const serieGeladen = (kz) => serien.get(kz)?.def ?? null;
+
 export function serieDef(kz) {
   if (!kz) return null;
   const e = serien.get(kz);

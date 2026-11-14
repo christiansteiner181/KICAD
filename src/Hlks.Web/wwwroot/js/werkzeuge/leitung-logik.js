@@ -266,6 +266,18 @@ export function serienDerKategorie(familien, kategorie) {
     .sort((a, b) => String(a.name).localeCompare(String(b.name), 'de'));
 }
 
+/** Form einer Kanal-Produktlinie (Christian 14.11.2026: «in lüftung einen button für kanal und für rohr»): 'eckig' | 'rund' | null (unbekannt).
+ *  Aus der geladenen Serie (Grössenparameter b), sonst aus den Typnamen der Familienliste («400 x 200» eckig, «Ø 200» rund). */
+export function kanalForm(serie, def = null) {
+  if (def && istRechteck(def)) return 'eckig';
+  const typen = (serie?.typen ?? []).map((t) => String(t?.name ?? t));
+  if (!typen.length) return def ? 'rund' : null;
+  return typen.some((t) => /\d\s*[x×]\s*\d/i.test(t)) ? 'eckig' : 'rund';
+}
+
+/** Kanal-Produktlinien einer Form (form null: alle); defVon(kz) liefert die geladene Serie, falls vorhanden. */
+export const serienDerForm = (serien, form, defVon = () => null) => (form ? serien.filter((s) => kanalForm(s, defVon(s.kz)) === form) : serien);
+
 /** Gültige Grössen einer Serie (Antwort leitungsserie): [{ typ, aussen, innen, wand, breite, hoehe }]. */
 export function groessenListe(serie) {
   return (serie?.groessen ?? []).filter((g) => g.gueltig !== false).map((g) => ({

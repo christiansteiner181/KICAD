@@ -29,15 +29,18 @@ const nurGrundriss = () => (!projektOffen() ? 'Zuerst ein Projekt öffnen.' : pl
 // ---------------------------------------------------------------------------------------------- Rohr und Kanal zeichnen
 
 // Register je Gewerk (04.11.2026): Rohr unter Heizung und Sanitär, Kanal unter Lüftung
-for (const [id, titel, symbol, kuerzel, kategorie, wid, register] of [
-  ['gt.rohr', 'Rohr', 'rohr', 'PI', 'Rohr', 'rohr', ['heizung', 'sanitaer']],
-  ['gt.kanal', 'Kanal', 'kanal', 'DT', 'Kanal', 'kanal', ['lueftung']],
+// Lüftung: Kanal (eckig) und Lüftungsrohr (rund) als eigene Knöpfe mit nur den passenden Produktlinien (Christian 14.11.2026: «das ginge einfacher,
+// wenn wir in lüftung einen button für kanal und für rohr hätten»)
+for (const [id, titel, symbol, kuerzel, kategorie, wid, register, variante] of [
+  ['gt.rohr', 'Rohr', 'rohr', 'PI', 'Rohr', 'rohr', ['heizung', 'sanitaer'], null],
+  ['gt.kanal', 'Kanal', 'kanal', 'DT', 'Kanal', 'kanal', ['lueftung'], 'eckig'],
+  ['gt.lueftungsrohr', 'Lüftungsrohr', 'rohr', null, 'Kanal', 'lueftungsrohr', ['lueftung'], 'rund'],
 ]) {
   registrieren({
     id, titel, symbol, kuerzel, register, gruppe: 'Leitungen',
     aktiv: imGrundriss, hinweis: nurGrundriss,
     gedrueckt: () => werkzeugAktiv() === wid,
-    ausfuehren() { werkzeugStarten(leitungWerkzeug(kategorie)); },
+    ausfuehren() { werkzeugStarten(leitungWerkzeug(kategorie, variante)); },
   });
 }
 

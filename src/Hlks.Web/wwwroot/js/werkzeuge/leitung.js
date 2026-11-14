@@ -402,10 +402,13 @@ function systemFilter(variante) {
 }
 
 export function leitungWerkzeug(kategorie = 'Rohr', variante = null) {
-  const id = kategorie === 'Kanal' ? 'kanal' : 'rohr';
-  const titel = variante === 'abwasser' ? 'Abwasserleitung' : variante === 'versorgung' ? 'Versorgungsleitung' : kategorie === 'Kanal' ? 'Kanal' : 'Rohr';
+  // Kanal: variante 'rund' = Lüftungsrohr (eigene Optionen und eigenes Gedächtnis), sonst eckig (Christian 14.11.2026)
+  const form = kategorie === 'Kanal' ? (variante === 'rund' ? 'rund' : 'eckig') : null;
+  const id = kategorie === 'Kanal' ? (form === 'rund' ? 'lueftungsrohr' : 'kanal') : 'rohr';
+  const titel = variante === 'abwasser' ? 'Abwasserleitung' : variante === 'versorgung' ? 'Versorgungsleitung' : form === 'rund' ? 'Lüftungsrohr' : kategorie === 'Kanal' ? 'Kanal' : 'Rohr';
+  const linien = () => L.serienDerForm(D.serienListe(kategorie), form, D.serieGeladen);
   return {
-    id: variante ?? id, optionen: id, titel, planarten: ['grundriss'], mehrpunkt: true,
+    id: kategorie === 'Kanal' ? id : variante ?? id, optionen: id, titel, planarten: ['grundriss'], mehrpunkt: true,
     eingabeText: 'Länge',
     // Rechtsklick (Basis): verwirft den angefangenen Zug wie Esc, ohne einen neuen Zustand anzulegen (neu() baut die Leiste)
     zugAngefangen: (z) => z.punkte.length > 0 || !!z.vorschau,
@@ -428,7 +431,7 @@ export function leitungWerkzeug(kategorie = 'Rohr', variante = null) {
     neu(ctx) {
       const z = { punkte: [], von: null, nach: null, abzweig: null, vorschau: null };
       // Gedächtnis: Sanitär-Funktion bzw. Gewerk-Tab, aus dem das Werkzeug gestartet wurde
-      const gedaechtnis = `${variante ? 'sanitaer.' + variante : merken.lesen('menuebandRegister', kategorie === 'Kanal' ? 'lueftung' : 'heizung')}:${id}`;
+      const gedaechtnis = `${variante && kategorie === 'Rohr' ? 'sanitaer.' + variante : merken.lesen('menuebandRegister', kategorie === 'Kanal' ? 'lueftung' : 'heizung')}:${id}`;
       if (!laufend || laufend.gedaechtnis !== gedaechtnis) {
         const g = (merken.lesen(ZULETZT, {}) ?? {})[gedaechtnis];
         if (g) { if (g.system) setze(id, 'system', g.system); if (g.serie) setze(id, 'serie', g.serie); if (g.groesse) setze(id, 'groesse', g.groesse); }
@@ -455,8 +458,12 @@ export function leitungWerkzeug(kategorie = 'Rohr', variante = null) {
           if (ctx.opt.serie) { await D.serieLaden(ctx.opt.serie); if (ctx.lauf.fertig) return; }
           if (F.istAbwasser(D.serieDef(ctx.opt.serie))) { setze(id, 'serie', ''); setze(id, 'groesse', ''); }
         }
+        if (form) {   // Kanal bzw. Lüftungsrohr: eine Produktlinie der anderen Form nicht übernehmen
+          if (ctx.opt.serie) { await D.serieLaden(ctx.opt.serie); if (ctx.lauf.fertig) return; }
+          if (ctx.opt.serie && !linien().some((s) => s.kz === ctx.opt.serie)) { setze(id, 'serie', ''); setze(id, 'groesse', ''); }
+        }
         const o = ctx.opt;
-        const k = L.optionenZustand({ serien: D.serienListe(kategorie), serie: o.serie, serieDef: D.serieDef(o.serie), groesse: o.groesse, systemKz: o.system, strangKz: o.strang, straenge: [] });
+        const k = L.optionenZustand({ serien: linien(), serie: o.serie, serieDef: D.serieDef(o.serie), groesse: o.groesse, systemKz: o.system, strangKz: o.strang, straenge: [] });
         for (const [feld, wert] of Object.entries(k.korrektur)) if (feld !== 'strang') setze(id, feld, wert);
         if (o.system && !element(o.system)) setze(id, 'system', '');          // Wert aus einem anderen Projekt
         if (o.strang && !element(o.strang)) setze(id, 'strang', '');

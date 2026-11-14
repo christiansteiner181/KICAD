@@ -597,3 +597,17 @@ test('Weiterzeichnen ab einem Punkt: Dimension und System bzw. Medium des Punkte
   // nichts Passendes: nichts übernommen
   assert.deepEqual(L.vomPunkt({ medium: '*', dn: 65 }, { klasse: 'Ventil', werte: {} }, groessen), {});
 });
+
+test('Lüftung: Kanal nur eckige, Lüftungsrohr nur runde Produktlinien (Christian 14.11.2026)', () => {
+  const serien = [
+    { kz: 'FAM-19', name: 'Rechteckkanal', typen: ['145 x 145', '400 × 200'] },
+    { kz: 'FAM-20', name: 'Wickelfalzrohr rund', typen: ['Ø 80', 'Ø 100'] },
+    { kz: 'FAM-21', name: 'Ohne Typen', typen: [] },
+  ];
+  assert.deepEqual(L.serienDerForm(serien, 'eckig').map((s) => s.kz), ['FAM-19']);
+  assert.deepEqual(L.serienDerForm(serien, 'rund').map((s) => s.kz), ['FAM-20']);
+  assert.equal(L.serienDerForm(serien, null).length, 3);
+  // geladene Serie mit Grössenparameter b gilt als eckig, auch wenn die Typnamen nichts sagen
+  assert.equal(L.kanalForm({ typen: ['K1'] }, { groessenparameter: { b: {}, h: {} } }), 'eckig');
+  assert.ok(O.WERKZEUGE.lueftungsrohr && O.WERKZEUGE.kanal);
+});

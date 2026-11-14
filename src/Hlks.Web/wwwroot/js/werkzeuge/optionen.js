@@ -10,8 +10,8 @@ import { merken, derKlasse, zustand, element } from '../zustand.js';
 import { zahlAusText, RASTER_MM } from './fangen.js';
 import { KALIBRIERBAR } from './kalibrierung.js';
 import { familieFelder, definitionAus, typTeile } from '../familien/typauswahl.js';
-import { serienListe, serieDef, serieLaden, haken as leitungHaken } from './leitung-daten.js';
-import { groessenListe } from './leitung-logik.js';
+import { serienListe, serieDef, serieGeladen, serieLaden, haken as leitungHaken } from './leitung-daten.js';
+import { groessenListe, serienDerForm } from './leitung-logik.js';
 import { elementWerte } from './vorwand-typen.js';
 import { istFrei, istRechteck, istAbwasser, groessenOptionen, vorbelegung, freiHinweis, abwasserHinweis, beschriftungVon } from './leitung-frei.js';
 import { lagenFuer, ukdFuer } from './lagen-daten.js';
@@ -176,7 +176,9 @@ export const WERKZEUGE = {
   },
   // Leitungen zeichnen (Modul 3, C1): Rohr (PI) und Kanal (DT)
   rohr: { titel: 'Rohr', get felder() { return leitungFelder('rohr', 'Rohr'); }, hinweis: 'H = Höhe ändern (Steigleitung), Zahl = Länge, Enter beendet.' },
-  kanal: { titel: 'Kanal', get felder() { return leitungFelder('kanal', 'Kanal'); }, hinweis: 'H = Höhe ändern (Steigleitung), Zahl = Länge, Enter beendet.' },
+  // Lüftung: Kanal eckig und Lüftungsrohr rund als eigene Knöpfe (Christian 14.11.2026: «das ginge einfacher, wenn wir in lüftung einen button für kanal und für rohr hätten»)
+  kanal: { titel: 'Kanal', get felder() { return leitungFelder('kanal', 'Kanal', 'eckig'); }, hinweis: 'H = Höhe ändern (Steigleitung), Zahl = Länge, Enter beendet.' },
+  lueftungsrohr: { titel: 'Lüftungsrohr', get felder() { return leitungFelder('lueftungsrohr', 'Kanal', 'rund'); }, hinweis: 'H = Höhe ändern (Steigleitung), Zahl = Länge, Enter beendet.' },
   // Fallleitung (Christian 06.11.2026): Serie, Grösse, System wie beim Rohr; Höhe, Lage und Gefälle entfallen (senkrecht durch alle Geschosse)
   // Christian 06.11.2026: «eine fallleitung ist immer abwasser» – nur Abwasser-Serien, kein System/Medium (der Kern nimmt das Schmutzwasser-System)
   fallleitung: {
@@ -302,7 +304,8 @@ function steigFelder(wid) {
   return felder;
 }
 
-function leitungFelder(wid, kategorie) {
+function leitungFelder(wid, kategorie, form = null) {
+  const linien = () => serienDerForm(serienListe(kategorie), form, serieGeladen);   // Lüftung: nur eckige bzw. nur runde Produktlinien
   const aktuelleSerie = () => serieDef(wert(wid, 'serie'));
   const frei = () => istFrei(aktuelleSerie());
   const nachSerie = (el) => {
@@ -409,7 +412,7 @@ function leitungFelder(wid, kategorie) {
     // Produktlinie nur noch im Eigenschaftsfenster (Typenwahl; Christian 09.11.2026: «produktelinie soll nur noch im eigenschaftsfenster gezeigt werden»);
     // ist die Palette zu, steht sie hier (Befund Christian 14.11.2026 «eckige kanäle gehen nicht mehr … es sind nur Durchmesser wählbar»: ohne Palette
     // war keine Produktlinie wählbar – wie Revit, das die Typauswahl dann im Menüband zeigt)
-    { id: 'serie', titel: 'Produktlinie', art: 'auswahl', sichtbar: () => leitungHaken.typWahlSichtbar?.() === false, get werte() { return serienListe(kategorie).map((s) => [s.kz, s.name]); }, leer: 'wählen …', beiAenderung: nachSerie },
+    { id: 'serie', titel: 'Produktlinie', art: 'auswahl', sichtbar: () => leitungHaken.typWahlSichtbar?.() === false, get werte() { return linien().map((s) => [s.kz, s.name]); }, leer: 'wählen …', beiAenderung: nachSerie },
     { id: 'groesse', get titel() { return frei() ? 'Normgrösse' : 'Grösse'; }, art: 'auswahl', get leer() { return frei() ? 'Vorschlag …' : 'wählen …'; },
       get werte() {
         const st = stufen();
