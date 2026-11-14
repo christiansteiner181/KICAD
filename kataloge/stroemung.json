@@ -317,7 +317,7 @@
           "zeta": 7.7
         }
       ],
-      "hinweis": "DN 25 = 4 so im Skript gedruckt (Folge 10/8.5/4/6/5 auffällig; Sanitär-Excel Formblatt A6 nennt 7) – nicht geändert."
+      "hinweis": "DN 25 = 4 wie im Skript gedruckt – bestätigt von Christian Steiner 14.11.2026 («Wie Skript: 4»), obwohl die Folge 10/8.5/4/6/5 auffällt und das Sanitär-Excel Formblatt A6 7 nennt."
     },
     "regulierventile": "Regulier- und Thermostatventile werden nach Seite 27 nicht über ζ, sondern über den kVS-Wert definiert."
   }
