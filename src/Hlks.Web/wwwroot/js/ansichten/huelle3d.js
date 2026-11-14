@@ -10,6 +10,7 @@
 // Decke und Dach nach unten), trianguliert mit ShapeUtils (earcut; Stege sind für earcut gebaut).
 // Koordinaten: Modell mm (x Ost, y Nord, z oben) → three Meter: x = x, y = z, z = −y.
 
+import { B } from './bezugspunkt.js';   // Frage 32
 import * as THREE from 'three';
 import { ANGRENZUNGEN, HUELLE_FARBEN, HUELLE_DECKKRAFT_3D } from './huelle-darstellung.js';
 
@@ -49,7 +50,7 @@ export function umrissEcken(z) {
   return seitenEcken(z) ?? [];
 }
 
-const three = (q) => [q[0] * M, q[2] * M, -q[1] * M];
+const three = (q) => [(q[0] - B[0]) * M, (q[2] - B[2]) * M, -(q[1] - B[1]) * M];   // relativ zum Bezugspunkt (Frage 32)
 
 /** Dreiecke einer Zeile als flache Liste von Eckpunkten (three-Meter, je drei Zahlen) an «aus» angehängt; Rückgabe: Zahl der Dreiecke. */
 export function zeileDreiecke(z, aus) {

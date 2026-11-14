@@ -18,6 +18,7 @@
 // (kamera.rotateZ). Maus (dreht weiter um die Hochachse des Modells, die Rolle bleibt), Treffer, Schnittbereich und Würfel rechnen mit der echten Kamera.
 // Navigationswürfel, Startansicht (Haus), «alles zeigen», Begehen, VR und Blickpunkte richten die Ansicht wieder auf (Rolle 0).
 
+import { bezugSetzen, bezugAus, begrenzungVon, punkteAusKoerpern } from './bezugspunkt.js';   // Frage 32
 import * as THREE from 'three';
 import { zustand, element, auswaehlen, derKlasse, merken } from '../zustand.js';
 import { holen, abfrage } from '../api.js';
@@ -422,6 +423,11 @@ function erstellen(behaelter, ansichtElement) {
     } else {
       for (const id of ids) if (!neu.has(id)) { daten.delete(id); entfernen(id); }
     }
+    // Frage 32: Bezugspunkt wie der XR-Export (Achse über ±5 km → Mitte, ganze Meter); ändert er sich, alle Körper neu bauen
+    if (!ids && bezugSetzen(bezugAus([begrenzungVon(punkteAusKoerpern(neu.values()))]))) {
+      for (const id of [...objekte.keys()]) entfernen(id);
+      for (const k of daten.values()) if (!neu.has(k.id)) hinzufuegen(k);
+    }
     for (const k of neu.values()) { daten.set(k.id, k); hinzufuegen(k); }
     netzeAufraeumen();
     hinweis.dataset.fehler = '';
@@ -599,20 +605,23 @@ function erstellen(behaelter, ansichtElement) {
     strahl.setFromCamera(zeiger, kamera);
     return true;
   }
-  function koerperTreffer(e) {
-    if (!strahlFuer(e)) return null;
+  /** Alle getroffenen Elemente unter dem Mauszeiger, vorne → hinten, je Element einmal (Frage 33, Christian 13.11.2026: «Vorderstes Element zuerst,
+   *  mit Tabulator zu den dahinterliegenden durchschalten»). Vorher gewannen Leitungen und Apparate den Klick auch hinter einer Decke. */
+  function trefferListe(e) {
+    if (!strahlFuer(e)) return [];
     const treffer = schnitt ? schnitt.filtern(strahl.intersectObjects(modell.children, true)) : strahl.intersectObjects(modell.children, true);   // N13: nur was nicht weggeschnitten ist
-    // Treffer sind nach Abstand sortiert: höherer Vorrang gewinnt, bei Gleichstand der nächste
-    let beste = null, bestVorrang = -1, distanz = Infinity;
-    for (const t of treffer) {
+    const liste = [], gesehen = new Set();
+    for (const t of treffer) {   // nach Abstand sortiert
       const id = t.object.userData.id;
       const obj = id ? objekte.get(id) : null;
-      if (!obj) continue;
-      const v = obj.userData.vorrang ?? 1;
-      if (v > bestVorrang) { beste = id; bestVorrang = v; distanz = t.distance; }
+      if (!obj || gesehen.has(id)) continue;
+      gesehen.add(id);
+      liste.push({ id, vorrang: obj.userData.vorrang ?? 1, distanz: t.distance });
     }
-    return beste ? { id: beste, vorrang: bestVorrang, distanz } : null;
+    return liste;
   }
+  function koerperTreffer(e) { return trefferListe(e)[0] ?? null; }
+  let stapel = null;   // Treffer des letzten Klicks zum Durchschalten mit Tab: { ids, i }
   const trefferId = (e) => koerperTreffer(e)?.id ?? null;
 
   /** Klick in der Darstellung Hülle: die vorderste Hüllfläche, ausser ein Haustechnikkörper (Vorrang 2) liegt davor. */
@@ -690,7 +699,22 @@ function erstellen(behaelter, ansichtElement) {
       return;
     }
     infoZeigen(null);
-    auswaehlen(trefferId(e) ?? null);   // Klick ohne Ziehen; ins Leere hebt die Auswahl auf
+    const liste = trefferListe(e).map((t) => t.id);
+    stapel = liste.length > 1 ? { ids: liste, i: 0 } : null;
+    auswaehlen(liste[0] ?? null);   // Klick ohne Ziehen: das vorderste Element; ins Leere hebt die Auswahl auf
+    if (stapel) wurzel.focus({ preventScroll: true });
+  });
+  // Frage 33: Tab (Umschalt+Tab zurück) wählt das nächste Element hinter dem zuletzt angeklickten Punkt
+  if (wurzel.tabIndex < 0) wurzel.tabIndex = -1;
+  wurzel.addEventListener(keydown, (e) => {
+    if (e.key !== Tab || !stapel || e.ctrlKey || e.altKey || begehen.aktiv) return;
+    if (stapel.ids[stapel.i] !== gewaehlt) { stapel = null; return; }   // inzwischen anders gewählt: Tab wieder normal
+    e.preventDefault(); e.stopPropagation();
+    const n = stapel.ids.length;
+    stapel.i = (stapel.i + (e.shiftKey ? n - 1 : 1)) % n;
+    auswaehlen(stapel.ids[stapel.i]);
+    const el = element(stapel.ids[stapel.i]);
+    if (el) { tip.textContent = `${stapel.i + 1}/${n} · ${[el.kennzeichen, el.klasse].filter(Boolean).join(" · ")} (Tab: weiter)`; tip.hidden = false; }
   });
   dom.addEventListener('contextmenu', (e) => e.preventDefault());
 

@@ -7,6 +7,7 @@
 //
 // Koordinaten der 3D-Ansicht (three): x = Ost, y = oben, z = −Nord, Einheit Meter. Alle Funktionen mit «Welt» rechnen in diesen Koordinaten.
 
+import { B, bezugDrei } from './bezugspunkt.js';   // Frage 32: Quader in Projekt-mm, three relativ zum Bezugspunkt
 const GRAD = Math.PI / 180;
 const M = 1 / 1000;
 
@@ -60,10 +61,12 @@ const ACHSEN = ['u', 'v', 'z'];
 export function ebenen(sb) {
   const a = achsen(sb.winkel ?? 0);
   const aus = [];
+  const b = bezugDrei();   // Ebene im Projekt n·p + k ≥ 0, p = p_three + b → Konstante three = k + n·b
+  const nb = (n) => n[0] * b[0] + n[1] * b[1] + n[2] * b[2];
   ACHSEN.forEach((ach, i) => {
-    const n = a[ach];
-    aus.push({ name: NAMEN[ach][0], achse: ach, seite: -1, normale: [...n], konstante: -sb.min[i] * M });
-    aus.push({ name: NAMEN[ach][1], achse: ach, seite: 1, normale: n.map((x) => (x === 0 ? 0 : -x)), konstante: sb.max[i] * M });
+    const n = a[ach], ng = n.map((x) => (x === 0 ? 0 : -x));
+    aus.push({ name: NAMEN[ach][0], achse: ach, seite: -1, normale: [...n], konstante: -sb.min[i] * M + nb(n) });
+    aus.push({ name: NAMEN[ach][1], achse: ach, seite: 1, normale: ng, konstante: sb.max[i] * M + nb(ng) });
   });
   return aus;
 }
@@ -77,8 +80,8 @@ export function enthaelt(sb, p, eps = 1e-3) {
 /** Weltpunkt (m) aus Quaderkoordinaten (u, v, z in mm). */
 export function weltPunkt(sb, u, v, z) {
   const a = achsen(sb.winkel ?? 0);
-  const um = u * M, vm = v * M;
-  return { x: a.u[0] * um + a.v[0] * vm, y: z * M, z: a.u[2] * um + a.v[2] * vm };
+  const um = u * M, vm = v * M, b = bezugDrei();
+  return { x: a.u[0] * um + a.v[0] * vm - b[0], y: z * M - b[1], z: a.u[2] * um + a.v[2] * vm - b[2] };
 }
 
 /** Die acht Ecken des Quaders in Welt-Koordinaten (m). */
@@ -149,7 +152,8 @@ export function quaderSammler(winkelGrad) {
   const lo = [Infinity, Infinity, Infinity], hi = [-Infinity, -Infinity, -Infinity];
   let n = 0;
   return {
-    add(x, y, z) {
+    add(x0, y0, z0) {
+      const b = bezugDrei(), x = x0 + b[0], y = y0 + b[1], z = z0 + b[2];   // three → Projekt (m)
       const u = x * a.u[0] + z * a.u[2], v = x * a.v[0] + z * a.v[2];
       if (u < lo[0]) lo[0] = u; if (u > hi[0]) hi[0] = u;
       if (v < lo[1]) lo[1] = v; if (v > hi[1]) hi[1] = v;
@@ -184,7 +188,7 @@ export function massText(sb) {
 // ---------------------------------------------------------------------------------------------------- Startansicht (Rest N11)
 
 /** Weltpunkt (three, m) → Modellpunkt [x, y, z] in mm (x Ost, y Nord, z oben). */
-export const modellPunkt = (p) => [runden(p.x / M), runden(-p.z / M), runden(p.y / M)];
+export const modellPunkt = (p) => [runden(p.x / M + B[0]), runden(-p.z / M + B[1]), runden(p.y / M + B[2])];
 
 /**
  * Startansicht als Eigenschaft der Ansicht: Blickrichtung (Winkel relativ zur Gebäudeausrichtung, wie wuerfel-logik.startansichtAusRichtung) plus

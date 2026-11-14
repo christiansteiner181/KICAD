@@ -62,6 +62,8 @@ public static class Netz
         var besucht = new HashSet<string> { start.Id };
         var schlange = new Queue<(Element E, int Tiefe, string? Eintritt, double Laenge)>();
         schlange.Enqueue((start, 0, null, 0));
+        var kanten = new List<(string Von, string Nach)>();   // für die massgebende Länge in Maschen (Frage 35)
+        bool masche = false;
         while (schlange.Count > 0 && ergebnis.Count < maxSchritte)
         {
             var (e, tiefe, eintritt, laenge) = schlange.Dequeue();
@@ -69,13 +71,46 @@ public static class Netz
             if (tiefe > 0 && stopp?.Invoke(e) == true) continue;
             foreach (var (n, nEin, _) in Nachbarn(m, e, eintritt, richtung, medium))
             {
-                if (!besucht.Add(n.Id)) continue;
+                kanten.Add((e.Id, n.Id));
+                if (!besucht.Add(n.Id)) { masche = true; continue; }
                 double l = laenge + (n.Geometrie is { Art: "linie" or "polylinie" } g ? g.Laenge() : 0);
                 ergebnis.Add(new NetzSchritt(n, tiefe + 1, e.Kennzeichen, nEin, l));
                 schlange.Enqueue((n, tiefe + 1, nEin, l));
             }
         }
-        return ergebnis;
+        return masche ? MassgebendeLaengen(start, ergebnis, kanten) : ergebnis;
+    }
+
+    /// <summary>Frage 35 (Christian 13.11.2026: «Massgebend ist der Weg mit dem grössten Druckverlust»): erreicht die Suche ein Element über mehrere Wege
+    /// (Masche, Ringleitung), gilt als LaengeBisHier der längste Weg dorthin statt des Wegs mit den wenigsten Bauteilen. Annahme: gleicher spezifischer
+    /// Druckverlust je Meter – dann hat der längste Weg den grössten Druckverlust (Massenströme je Ast sind hier nicht bekannt). Gerechnet im gerichteten
+    /// Graphen der gefundenen Kanten (längster Weg in topologischer Reihenfolge); enthält er einen Kreis (Fluss «beide»), bleibt die Länge der Breitensuche.</summary>
+    static List<NetzSchritt> MassgebendeLaengen(Element start, List<NetzSchritt> ergebnis, List<(string Von, string Nach)> kanten)
+    {
+        var gewicht = ergebnis.ToDictionary(x => x.Element.Id, x => x.Element.Geometrie is { Art: "linie" or "polylinie" } g ? g.Laenge() : 0, StringComparer.Ordinal);
+        var knoten = gewicht.Keys.Append(start.Id).ToHashSet(StringComparer.Ordinal);
+        var nach = new Dictionary<string, List<string>>(StringComparer.Ordinal);
+        var grad = knoten.ToDictionary(x => x, _ => 0, StringComparer.Ordinal);
+        foreach (var (v, n) in kanten.Distinct())
+        {
+            if (!knoten.Contains(v) || !knoten.Contains(n) || n == start.Id) continue;
+            if (!nach.TryGetValue(v, out var l)) nach[v] = l = [];
+            l.Add(n); grad[n]++;
+        }
+        var reihe = new Queue<string>(grad.Where(x => x.Value == 0).Select(x => x.Key));
+        var dist = new Dictionary<string, double>(StringComparer.Ordinal) { [start.Id] = 0 };
+        int gezaehlt = 0;
+        while (reihe.Count > 0)
+        {
+            var v = reihe.Dequeue(); gezaehlt++;
+            foreach (var n in nach.GetValueOrDefault(v) ?? [])
+            {
+                if (dist.TryGetValue(v, out var dv) && dv + gewicht[n] > dist.GetValueOrDefault(n, double.NegativeInfinity)) dist[n] = dv + gewicht[n];
+                if (--grad[n] == 0) reihe.Enqueue(n);
+            }
+        }
+        if (gezaehlt < knoten.Count) return ergebnis;   // Kreis: Breitensuche behalten
+        return ergebnis.Select(x => dist.TryGetValue(x.Element.Id, out var d) && d > x.LaengeBisHier + 1e-9 ? x with { LaengeBisHier = d } : x).ToList();
     }
 
     /// <summary>Leitungsbauteile (Leitung, Formteil, Armatur) im Gegensatz zu Endgeräten.</summary>

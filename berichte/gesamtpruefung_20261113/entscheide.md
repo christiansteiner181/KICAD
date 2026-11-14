@@ -141,3 +141,7 @@ swisspor führt für Rohre nur PIR-Schalen «swissporKISODUR» (Heizung, Kälte,
   Aussenabmessungen, raumweise auf den Mittelachsen der Innenwände und den Oberkanten der Geschossdecken geteilt; Innenbauteile zwischen Aussenfläche
   des Perimeters und Mittelachsen. Umgesetzt als Raumgrenze.FlaecheSia (flaecheSia_m2), Heizlast rechnet damit; Innenmasse bleiben für Darstellung
   und Raumvolumen. Annahmen: Öffnungen mit lichtem Mass, Boden/Decke/Dach im Verhältnis, B' noch innen. SN SIA 384/2:2020 liegt im Büro nicht vor.
+- **14.11.2026 Paket 32/33/35/36:** 32 (3D-Ansicht mit Bezugspunkt wie XR: js/ansichten/bezugspunkt.js, Umrechnung in koerper3d, huelle3d, netzdatei,
+  schnittbereich-logik, begehen-logik, xr-mess-logik; Rechnung und gespeicherte Werte in Projekt-mm – offen: die IFC-Netzdatei speichert float32
+  absolut, bei LV95 ist sie schon in der Datei ungenau → Fassung mit Bezugspunkt im Kern nötig), 33 (vorderstes Element, Tab schaltet durch),
+  35 (LaengeBisHier in Maschen = längster Weg, Annahme gleicher spezifischer Druckverlust), 36 (Befund P40 «Element doppelt platziert») umgesetzt.

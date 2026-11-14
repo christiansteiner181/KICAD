@@ -162,7 +162,7 @@ public class PruefungenTests
     [Fact]
     public void Codes_EnthaltenGenauP01BisP39_UndP45()
     {
-        var erwartet = Enumerable.Range(1, 39).Select(i => $"P{i:D2}").Append("P45").ToList();   // P33–P39 seit Modul 5 Teil A-D (Heizung, zurückgeholt 02.11.2026), P45 seit Nachtrag 21.10.2026 (Formteil einer freien Serie), P31/P32 Leserversion der Quellen
+        var erwartet = Enumerable.Range(1, 40).Select(i => $"P{i:D2}").Append("P45").ToList();   // P40 seit 14.11.2026 (Frage 36: doppelt platziert)   // P33–P39 seit Modul 5 Teil A-D (Heizung, zurückgeholt 02.11.2026), P45 seit Nachtrag 21.10.2026 (Formteil einer freien Serie), P31/P32 Leserversion der Quellen
         Assert.Equal(erwartet, Pruefungen.Codes.Keys.OrderBy(k => k, StringComparer.Ordinal).ToList());
         Assert.All(Pruefungen.Codes.Values, t => Assert.False(string.IsNullOrWhiteSpace(t)));
         Assert.Equal("Apparat ohne Weg im Netz – Belastung fehlt stromab/stromauf", Pruefungen.Codes["P26"]);
@@ -684,5 +684,20 @@ public class PruefungenTests
         Fehlt(m, "P11", "DP-1");
         Fehlt(m, "P11", "KW-S1");
         Fehlt(m, "P11", "KS-1");
+    }
+
+    /// <summary>Frage 36 (Christian 13.11.2026): eigener Befund P40 «doppelt platziert» für zwei gleiche Geräte am selben Ort.</summary>
+    [Fact]
+    public void P40_DoppeltPlatziert_GleicheKlasseLageUndDrehung()
+    {
+        var m = new Modell();
+        Element Wt(string id, double x) => new() { Id = id, Kennzeichen = id, Klasse = "Waschtisch", Geometrie = new Geometrie { Art = "punkt", Punkte = [[x, 0, 0]] } };
+        Assert.Empty(m.Anwenden([new Operation { Art = "element.setzen", Id = "WT-1", Element = Wt("WT-1", 1000) },
+            new Operation { Art = "element.setzen", Id = "WT-2", Element = Wt("WT-2", 1000.4) },
+            new Operation { Art = "element.setzen", Id = "WT-3", Element = Wt("WT-3", 2000) }]));
+        var p40 = Pruefungen.Alle(m, Kat).Where(b => b.Code == "P40").ToList();
+        var b = Assert.Single(p40);
+        Assert.Equal("WT-2", b.Element);
+        Assert.Contains("WT-1", b.Text);
     }
 }

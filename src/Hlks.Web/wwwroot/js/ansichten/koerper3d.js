@@ -10,6 +10,7 @@
 // Art «netz» (Hintergrund einer IFC-Unterlage, Modul 1b): der Körper bekommt nur einen leeren Halter (userData.netz); das Netz
 // lädt ansicht3d.js einmal je Unterlage (netzdatei.js) und hängt es als EIN Mesh (eine Geometrie, nicht auswählbar) an.
 
+import { B } from './bezugspunkt.js';   // Frage 32: Bezugspunkt bei Landeskoordinaten
 import * as THREE from 'three';
 import { cssVar } from './hilfen.js';
 import { formAusTeil, huellboxVon } from './begehen-logik.js';
@@ -18,7 +19,7 @@ const M = 1 / 1000;
 /** Segmente je Umfang für Zylinder und Kugeln (unter ~11° je Segment wirkt es rund). */
 export const RUND = 32;
 /** Modellpunkt (mm) → three-Vektor (m). */
-export const vek = (p) => new THREE.Vector3(p[0] * M, (p[2] ?? 0) * M, -p[1] * M);
+export const vek = (p) => new THREE.Vector3((p[0] - B[0]) * M, ((p[2] ?? 0) - B[2]) * M, -(p[1] - B[1]) * M);   // relativ zum Bezugspunkt (Frage 32)
 
 /** Wie gut lässt sich ein Körper anklicken, wenn mehrere hinter dem Mauszeiger liegen? Grösser = bevorzugt. */
 export const VORRANG = { raum: 0, decke: 1, wand: 1, oeffnung: 1, sonst: 1, leitung: 2, formteil: 2, armatur: 2, apparat: 2 };
@@ -117,14 +118,14 @@ export function quaderGeometrie(t) {
 export function prismaGeometrie(t) {
   const ring = (t.grundriss ?? []).filter(punkt3);
   if (ring.length < 3 || !zahl(t.unten) || !zahl(t.oben) || t.oben <= t.unten) return null;
-  const form = new THREE.Shape(ring.map((p) => new THREE.Vector2(p[0] * M, p[1] * M)));
+  const form = new THREE.Shape(ring.map((p) => new THREE.Vector2((p[0] - B[0]) * M, (p[1] - B[1]) * M)));
   for (const l of t.loecher ?? []) {
     const r = (l ?? []).filter(punkt3);
-    if (r.length >= 3) form.holes.push(new THREE.Path(r.map((p) => new THREE.Vector2(p[0] * M, p[1] * M))));
+    if (r.length >= 3) form.holes.push(new THREE.Path(r.map((p) => new THREE.Vector2((p[0] - B[0]) * M, (p[1] - B[1]) * M))));
   }
   const g = new THREE.ExtrudeGeometry(form, { depth: (t.oben - t.unten) * M, bevelEnabled: false, curveSegments: RUND });
   g.rotateX(-Math.PI / 2);        // (x, y, z) → (x, z, −y): Extrusion nach oben, Grundriss in die Bodenebene
-  g.translate(0, t.unten * M, 0);
+  g.translate(0, (t.unten - B[2]) * M, 0);
   return g;
 }
 

@@ -9,6 +9,7 @@
 // Anschluss > Ecke > Mitte einer Kante > Kante/Achse > Fläche > frei; Anschlüsse von Formteilen sind die Enden ihrer Zylinderachse (der Kern liefert in den Körpern
 // keine benannten Anschlüsse).
 
+import { B } from './bezugspunkt.js';   // Frage 32
 const M = 1 / 1000;
 const GRAD = Math.PI / 180;
 const EPS = 1e-9;
@@ -35,7 +36,7 @@ const zahl = (x) => typeof x === 'number' && Number.isFinite(x);
 const gueltig = (p) => p && zahl(p.x) && zahl(p.y) && zahl(p.z);
 
 /** Modellpunkt [x, y, z] in mm → three-Punkt in m. */
-export const ausModell = (p) => v3(p[0] * M, (p[2] ?? 0) * M, -p[1] * M);
+export const ausModell = (p) => v3((p[0] - B[0]) * M, ((p[2] ?? 0) - B[2]) * M, -(p[1] - B[1]) * M);   // relativ zum Bezugspunkt (Frage 32)
 
 // ---------------------------------------------------------------------------------------------------- Masse
 /** Abstand und Unterschiede von a nach b: Abstand und dx (Ost), dy (Nord), dz (oben) in mm. */
@@ -94,11 +95,11 @@ function quaderTeil(t, ebene, ziel) {
   }
 }
 
-function flaecheRing(r, y) { return r.map((p) => v3(p[0] * M, y, -p[1] * M)); }
+function flaecheRing(r, y) { return r.map((p) => v3((p[0] - B[0]) * M, y, -(p[1] - B[1]) * M)); }
 function prismaTeil(t, ziel) {
   const ring0 = (t.grundriss ?? []).filter((p) => Array.isArray(p) && p.length >= 2);
   if (ring0.length < 3 || !zahl(t.unten) || !zahl(t.oben)) return;
-  const yu = t.unten * M, yo = t.oben * M;
+  const yu = (t.unten - B[2]) * M, yo = (t.oben - B[2]) * M;
   const unten = flaecheRing(ring0, yu), oben = flaecheRing(ring0, yo);
   const loecher = (t.loecher ?? []).map((l) => flaecheRing(l, 0));
   ziel.flaechen.push(flaecheVon(oben, v3(0, 1, 0), loecher));

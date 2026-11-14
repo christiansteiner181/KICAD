@@ -1742,7 +1742,7 @@
         "QT = ΣLU · 0.1 l/s (KW-Leitung vor dem Wassererwärmer: ΣLU KW + ΣLU WW wie die Gesamtsumme am Hausanschluss).",
         "Spitzendurchfluss QD nach Diagramm 1: grösster Einzel-LU > 3 → QD = 0.598 · QT^0.257 (0.5–15 l/s), sonst QD = 0.459 · QT^0.353 (0.3–300 l/s); unter dem Startpunkt der Kurve QD = QT.",
         "Leitungsart: ein Verteiler stromauf ist die Schnittstelle – dahinter A (Ausstossleitung), wenn ein einziger Apparat direkt ab dem Verteiler gespeist wird, sonst T (T-Stückleitung); ohne Verteiler stromauf V (Verteilleitung) bei Strang verteilleitung/steigstrang, sonst T.",
-        "Abgewickelte Länge je Abschnitt: V vom Netzanfang (Hausanschluss bzw. Wassererwärmer) bis zum Ende des Verteil-/Steigstrangs bzw. bis zum Verteiler (Schnittstelle); A und T von der Leitung bis zur entferntesten Entnahmestelle.",
+        "Abgewickelte Länge je Abschnitt: V vom Netzanfang (Hausanschluss bzw. Wassererwärmer) bis zum Ende des Verteil-/Steigstrangs bzw. bis zum Verteiler (Schnittstelle); A und T von der Leitung bis zur entferntesten Entnahmestelle. In Maschen (Ringleitung) gilt der längste Weg dorthin (Frage 35, Christian 13.11.2026 «Weg mit dem grössten Druckverlust»; Annahme gleicher spezifischer Druckverlust je m).",
         "Belastungswerttabelle des Systems und der Leitungsart; passt die Serie zu mehreren Tabellen, gilt die erste (Hinweis). Spalte = kleinste Länge ≥ abgewickelte Länge (ohne Wasserzähler); Zeile = kleinste LU-Stufe ≥ ΣLU → Rohr da × s.",
         "Vergleich: gezeichneter Aussendurchmesser ≥ da der Tabelle → ok, sonst zu klein."
       ],

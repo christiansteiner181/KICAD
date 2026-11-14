@@ -54,6 +54,8 @@ public static class Pruefungen
         ["P32"] = "Quelle einer Familie nicht eindeutig auf die aktuelle Leserversion umschlüsselbar",
         // Nachtrag Modul 3, 21.10.2026 (Formteile in Vorgabegrösse): gemeldet von LeitungenPruefung (Leitungen/FreieGroesse.cs)
         ["P45"] = "Formteil einer freien Produktlinie trägt seine Grösse nicht selbst",
+        // Gesamtprüfung 13.11.2026, Frage 36 (Christian: «Eigener Befund doppelt platziert»)
+        ["P40"] = "Element doppelt platziert",
         // Modul 5 Teil A-D (entwurf/modul-5.md, Punkt 6): gemeldet von HeizungPruefung (Heizung/HeizungPruefung.cs)
         ["P33"] = HeizungPruefung.Codes["P33"],
         ["P34"] = HeizungPruefung.Codes["P34"],
@@ -63,6 +65,27 @@ public static class Pruefungen
         ["P38"] = HeizungPruefung.Codes["P38"],
         ["P39"] = HeizungPruefung.Codes["P39"],
     };
+
+    /// <summary>P40 (Frage 36, Christian 13.11.2026): Geräte, Apparate, Formteile und Armaturen derselben Klasse und Familie/Typ, deren Einfügepunkt
+    /// auf 1 mm und deren Drehung auf 0.1° übereinstimmen – zweimal am selben Ort (bisher nur als harte Kollision sichtbar). Gemeldet wird jedes
+    /// weitere Element mit dem ersten (nach Kennzeichen) als Bezug. Leitungen und Bauteile der Architektur sind ausgenommen.</summary>
+    static void DoppeltPlatziert(Modell m, Katalog k, List<Befund> b)
+    {
+        var kandidaten = m.Elemente.Where(e => e.Geometrie is { Art: "punkt" } g && g.Punkte.Count > 0
+            && (Netz.IstNetzgeraet(k, e) || (Netz.IstLeitungsbauteil(k, e) && !k.IstArt(e, "Leitung"))));
+        foreach (var gruppe in kandidaten.GroupBy(e =>
+        {
+            var p = e.Geometrie!.Punkte[0];
+            return (e.Klasse, e.Bezuege.GetValueOrDefault("familie") ?? "", e.Text("familientyp") ?? "",
+                Math.Round(p[0]), Math.Round(p.Length > 1 ? p[1] : 0), Math.Round(p.Length > 2 ? p[2] : 0), Math.Round(Familien.Drehung(e) * 10));
+        }).Where(g => g.Count() > 1))
+        {
+            var l = gruppe.OrderBy(e => e.Kennzeichen, StringComparer.OrdinalIgnoreCase).ToList();
+            foreach (var e in l.Skip(1))
+                b.Add(new("P40", "warnung", e.Kennzeichen, $"{e.Klasse} steht doppelt am selben Ort wie {l[0].Kennzeichen} (gleicher Typ, Lage und Drehung)",
+                    $"Eines der beiden löschen (element_loeschen {e.Kennzeichen}) oder verschieben"));
+        }
+    }
 
     /// <summary>P12 (Modul 1c): Kennwerte der Hülle, die nur mit Quelle gelten (Norm mit Ausgabe, Datenblatt, IFC). Gerechnete
     /// Werte (Herkunft «berechnung») tragen ihre Formel als Quelle und zählen nicht. Werte ohne Quelle lässt die Rechnung
@@ -157,6 +180,7 @@ public static class Pruefungen
         SanitaerPruefung.Pruefen(m, k, b);    // Modul 4 Teil A: P21–P26
         PlanPruefung.Pruefen(m, k, b);        // Modul 7 Teil A: P27; Teil B3: P28
         HeizungPruefung.Pruefen(m, k, b);     // Modul 5 Teil A-D: P33–P39
+        DoppeltPlatziert(m, k, b);            // Frage 36: P40
 
         return b.OrderBy(x => x.Schwere switch { "fehler" => 0, "warnung" => 1, _ => 2 }).ThenBy(x => x.Code).ThenBy(x => x.Element).ToList();
     }

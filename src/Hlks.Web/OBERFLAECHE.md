@@ -4624,3 +4624,7 @@ Kern `Zeichnung/ZeichnungPlotstil.cs`, MCP `zeichnung_plotstile` und Parameter `
   Echtfarben plotten in ihrer Farbe (wie in AutoCAD). Am Bildschirm bleiben die Farben der Zeichnung.
 - **Nicht unterstützt:** benannte Plotstile (STB), Linientyp-, Füll- und Endstile aus der Tabelle.
 - **Stand der Prüfung:** an einer selbst erzeugten CTB getestet; auf diesem PC und auf W: liegt keine CTB aus AutoCAD – die Probe mit der Büro-Tabelle ist offen.
+
+### 3D: Auswahl und Bezugspunkt (Gesamtprüfung 14.11.2026)
+- Klick im 3D wählt das vorderste Element unter dem Mauszeiger (Frage 33); liegen dahinter weitere, schaltet **Tab** (Umschalt+Tab zurück) zu ihnen durch – der Hinweis zeigt «n/m · Kennzeichen».
+- Modelle in Landeskoordinaten (LV95): die 3D-Ansicht rechnet wie der XR-Export relativ zu einem Bezugspunkt (Achse über ±5 km → Mitte der Ausdehnung, ganze Meter), damit nichts zittert (Frage 32). Gespeicherte Werte (Schnittbereich, Startansicht, Begehen) bleiben in Projekt-mm.

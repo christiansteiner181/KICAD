@@ -11,6 +11,7 @@
 // Koordinaten der 3D-Ansicht (three): x = Ost, y = oben, z = −Nord, Einheit Meter. Die Blickrichtung führt der Zustand als Gieren (Winkel gegen den
 // Uhrzeigersinn von oben ab Projekt-x, Bogenmass – dieselbe Zählung wie der Azimut des Kerns: 90° = Projekt-Nord) und Nicken (über der Waagrechten positiv).
 
+import { B } from './bezugspunkt.js';   // Frage 32
 const GRAD = Math.PI / 180;
 
 /** Augenhöhe über OK Boden in mm, wenn nichts eingestellt ist (Benutzereinstellung ansicht3d.augenhoehe). */
@@ -83,8 +84,8 @@ export function zustandAusStandort(standort, augenhoeheMm = null) {
   if (!s || !zahl(s.x) || !zahl(s.y) || !zahl(standort.bodenOk) || !b || !zahl(b.azimutGrad)) return null;
   const augenMm = zahl(augenhoeheMm) ? augenhoeheMm : zahl(standort.augenhoehe) ? standort.augenhoehe : AUGENHOEHE_VORGABE;
   return {
-    x: s.x / 1000, z: -s.y / 1000,
-    boden: standort.bodenOk / 1000,
+    x: (s.x - B[0]) / 1000, z: -(s.y - B[1]) / 1000,   // three relativ zum Bezugspunkt (Frage 32)
+    boden: (standort.bodenOk - B[2]) / 1000,
     augen: klemme(augenMm, AUGENHOEHE_MIN, AUGENHOEHE_MAX) / 1000,
     gieren: b.azimutGrad * GRAD,
     nicken: klemme(zahl(b.nickenGrad) ? b.nickenGrad : 0, -NICKEN_MAX_GRAD, NICKEN_MAX_GRAD) * GRAD,
@@ -115,8 +116,8 @@ export function kameraWerte(z) {
 /** Standort im Projekt (mm; y nach Nord, z = Augenhöhe absolut) und Blick (Azimut Grad, Nicken Grad) – für Anzeige und Prüfung. */
 export function projektWerte(z) {
   return {
-    x: runden(z.x * 1000), y: runden(-z.z * 1000), z: runden((z.boden + z.augen) * 1000),
-    augenhoehe: runden(z.augen * 1000), bodenOk: runden(z.boden * 1000),
+    x: runden(z.x * 1000 + B[0]), y: runden(-z.z * 1000 + B[1]), z: runden((z.boden + z.augen) * 1000 + B[2]),
+    augenhoehe: runden(z.augen * 1000), bodenOk: runden(z.boden * 1000 + B[2]),
     azimutGrad: runden((((z.gieren / GRAD) % 360) + 360) % 360, 3), nickenGrad: runden(z.nicken / GRAD, 3),
   };
 }

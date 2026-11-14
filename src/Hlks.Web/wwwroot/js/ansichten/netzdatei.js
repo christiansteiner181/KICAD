@@ -19,6 +19,7 @@
 // Produkt, damit auch 1.7 Mio. Dreiecke flüssig drehbar bleiben). Die Punkte kommen dabei gleich in three-Koordinaten
 // (Meter; x = x, y = z, z = −y – wie koerper3d.js). Das Netz ist nicht orientiert: gezeichnet wird beidseitig.
 
+import { B } from './bezugspunkt.js';   // Frage 32
 export const KENNUNG = 'HLKSNETZ';
 export const GLOBALID_LAENGE = 22;
 /** Fassungen, die leseNetz kennt (der Kern schreibt die höchste: IfcNetzErzeuger.Fassung). */
@@ -163,10 +164,10 @@ export function leseNetz(daten, optionen = {}) {
     abschnitt(ab, 0);
     for (const x of g.farben) abschnitt(ab + x.ab, x.farbe);
     for (let k = 0, o = g.punkteAb; k < g.p; k++, o += 12) {
-      positionen[vp++] = dv.getFloat32(o, true) * M;          // x
+      positionen[vp++] = (dv.getFloat32(o, true) - B[0]) * M;  // x, relativ zum Bezugspunkt (Frage 32)
       const y = dv.getFloat32(o + 4, true), z = dv.getFloat32(o + 8, true);
-      positionen[vp++] = z * M;                                // three-y = Höhe z
-      positionen[vp++] = -y * M;                               // three-z = −y
+      positionen[vp++] = (z - B[2]) * M;                       // three-y = Höhe z
+      positionen[vp++] = -(y - B[1]) * M;                      // three-z = −y
     }
     for (let k = 0, o = g.dreieckeAb; k < g.d * 3; k++, o += 4) {
       const i = dv.getInt32(o, true);
