@@ -4445,7 +4445,9 @@ jedes neue Projekt erhält alle Mustersysteme.
   Zug wird von hinten gekürzt, bis der Kern ihn annimmt, und bis dort angelegt (Meldung «angelegt bis Punkt n»). **Dunkles Design**: transparente Farbflächen werden mit Weiss vorgemischt (mindestens 60 % Farbe, Deckkraft 0.85; Abwasser bleibt braun), damit sie nicht
   abgedunkelt wirken («die darstellung der transparenten flächen wird im dunklen modeu abgedunkelt. das ist nicht gewollt»; `plangrafik.js › mitWeiss`).
 - **Produktlinie nur im Eigenschaftsfenster** (Christian 09.11.2026): nicht mehr in der Optionsleiste von Rohr/Kanal/Fallleitung; die Typenwahl oben in der
-  Palette ist doppelt so gross und gilt während des Zeichnens für die nächsten Teile.
+  Palette ist doppelt so gross und gilt während des Zeichnens für die nächsten Teile. **Ausnahme:** Ist die Eigenschaftenpalette zu (oder als Reiter hinter
+  einer anderen Palette), steht «Produktlinie» vorne in der Optionsleiste (Befund Christian 14.11.2026 «es sind nur Durchmesser wählbar» – ohne Palette war
+  kein Rechteckkanal wählbar); Öffnen oder Schliessen der Palette zeichnet die Optionsleiste neu.
 - **Dämmregel** (Spalte im Dialog, Systemeigenschaft `daemmregel`; Christian 09.11.2026: «dämmdicken gem. energiegesetzt»): «MuKEn 2014 (λ > 0,03 W/(m·K))» bzw.
   «(λ ≤ 0,03 W/(m·K))» – beim Zeichnen ergibt sich die Dämmdicke aus der DN der gewählten Grösse nach MuKEn 2014 Anhang 4 (`kataloge/daemmung.json`, Quelle
   Art. 1.17 Abs. 2–3, S. 25/27; Rechenregister `leitungen.daemmdicke`); geht der festen Dämmung vor. Die Standard-Mustersysteme Hz-VL/RL (auch Glykol), Sa-WW
