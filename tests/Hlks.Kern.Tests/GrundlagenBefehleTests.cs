@@ -102,9 +102,13 @@ public class GrundlagenBefehleTests
         var p = Projekt();
         var datei = StandardDxf(o);
         var vorher = p.Modell.Elemente.Count;
+        int Abgelegt() => Directory.GetFiles(Unterlagen.Ordner(p)).Length;
+        int dateienVorher = Abgelegt();
         var tl = Ok(Einfuegen(p, datei, trocken: true));
         Assert.True(tl.Trockenlauf);
         Assert.Equal(vorher, p.Modell.Elemente.Count);
+        Assert.Equal(dateienVorher, Abgelegt());   // Frage 39: im Trockenlauf nichts in den Ordner unterlagen kopiert
+        Assert.Contains(tl.Hinweise, h => h.StartsWith("Trockenlauf: Datei gelesen"));
         Assert.Contains(tl.Aenderungen, a => a.Art == "angelegt" && a.Klasse == "Unterlage");
 
         Ok(Einfuegen(p, datei));

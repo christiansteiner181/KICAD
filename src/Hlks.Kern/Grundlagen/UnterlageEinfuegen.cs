@@ -38,7 +38,17 @@ public sealed class UnterlageEinfuegen : IBefehl
         // Zahlen in den Hinweisen immer mit Punkt, unabhängig von der Spracheinstellung des Rechners
         var kultur = CultureInfo.CurrentCulture;
         CultureInfo.CurrentCulture = CultureInfo.InvariantCulture;
-        try { Ausfuehren2(k, p); }
+        try
+        {
+            if (!k.Trockenlauf) { Ausfuehren2(k, p); return; }
+            // Frage 39: im Trockenlauf nichts in den Ordner unterlagen kopieren – gelesen wird aus einem Temp-Ordner, der danach wegkommt. Ein blosser
+            // Name meint weiterhin eine schon abgelegte Unterlage: vorher auf den echten Pfad auflösen.
+            var q = Param.Text(p, "datei", true)!.Trim();
+            if (KiPfade.IstName(q) && File.Exists(Path.Combine(Unterlagen.Ordner(k.Projekt), q)) && !KiPfade.IstKi(k.Projekt))
+                p = new JsonObject(p.Select(x => KeyValuePair.Create(x.Key, x.Key == "datei" ? (JsonNode?)Path.Combine(Unterlagen.Ordner(k.Projekt), q) : x.Value?.DeepClone())));
+            Unterlagen.ImTrockenlauf(() => Ausfuehren2(k, p));
+            k.Hinweise.Add("Trockenlauf: Datei gelesen und geprüft, nichts in den Ordner unterlagen kopiert.");
+        }
         finally { CultureInfo.CurrentCulture = kultur; }
     }
 

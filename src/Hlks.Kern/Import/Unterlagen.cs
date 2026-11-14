@@ -11,8 +11,29 @@ namespace Hlks.Kern;
 public static class Unterlagen
 {
     /// <summary>Ordner der Unterlagen; ohne Ablage (Tests, Simulator) ein Temp-Ordner je Projekt.</summary>
+    /// <summary>Trockenlauf von unterlage_einfuegen (Frage 39, Christian 13.11.2026: «Erst beim Ausführen kopieren; Trockenlauf prüft nur die
+    /// Lesbarkeit»): solange gesetzt, gilt dieser Temp-Ordner statt des Ordners unterlagen – Ablage und Ableitungen landen dort und werden danach
+    /// gelöscht.</summary>
+    [ThreadStatic] static string? trockenOrdner;
+
+    /// <summary>Führt aktion mit einem eigenen Temp-Ordner als Unterlagenordner aus und räumt ihn danach weg.</summary>
+    public static void ImTrockenlauf(Action aktion)
+    {
+        var alt = trockenOrdner;
+        var t = Path.Combine(Path.GetTempPath(), "HLKS_CAD", "trockenlauf", Guid.NewGuid().ToString("N"));
+        Directory.CreateDirectory(t);
+        trockenOrdner = t;
+        try { aktion(); }
+        finally
+        {
+            trockenOrdner = alt;
+            try { Directory.Delete(t, true); } catch (IOException) { } catch (UnauthorizedAccessException) { }
+        }
+    }
+
     public static string Ordner(Projekt p)
     {
+        if (trockenOrdner is not null) return trockenOrdner;
         var o = p.Speicher?.UnterlagenOrdner;
         if (o is not null)
         {

@@ -135,4 +135,19 @@ public class ZeichnungGeoBefehleTests : IDisposable
         // Darstellung: die Schraffurlinien (Abstand 5, 45°) kommen dazu – deutlich mehr als die sieben Objekte allein
         Assert.True(ZeichnungGrafik.Erzeugen(w, null, 1).Anzahl > 25);
     }
+
+    /// <summary>Frage 40 (Christian 13.11.2026): gespiegelter Text bleibt lesbar wie MIRRTEXT = 0 – an der waagrechten Achse nicht kopfüber,
+    /// an der senkrechten nicht von rechts nach links; die Lage wird gespiegelt.</summary>
+    [Theory]
+    [InlineData(1, 0, 10.0, -20.0)]   // waagrechte Achse y = 0: Text bei (10, 20) → (10, −20), Richtung 0° bleibt (vorher 180°, kopfüber)
+    [InlineData(0, 1, -10.0, 20.0)]   // senkrechte Achse x = 0: (10, 20) → (−10, 20), gespiegelt 180° → aufrecht 0°
+    public void Spiegeln_TextBleibtLesbar(int bx, int by, double x, double y)
+    {
+        var z = Neu();
+        var k = Zeichnen(z, """[ {"art":"text","ort":[10,20],"text":"Notiz","hoehe":2.5} ]""");
+        ZeichnungBearbeiten.Aendern(z, [k[0]], "spiegeln", J($$"""{"achse":[[0,0],[{{bx}},{{by}}]]}"""));
+        var t = Assert.Single(Alle<TextEntity>(z));
+        Assert.Equal(0, t.Rotation, 6);
+        Assert.Equal((x, y), (Math.Round(t.InsertPoint.X, 6), Math.Round(t.InsertPoint.Y, 6)));
+    }
 }

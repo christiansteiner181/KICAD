@@ -167,6 +167,9 @@ public static class ZeichnungGeoBefehle
         double phi = Math.Atan2(dy, dx);
         (double X, double Y) P(double x, double y) { double t = ((x - ax) * dx + (y - ay) * dy) / l2; return (2 * (ax + t * dx) - x, 2 * (ay + t * dy) - y); }
         XYZ Q(XYZ p) { var (x, y) = P(p.X, p.Y); return new XYZ(x, y, p.Z); }
+        // Frage 40 (Christian 13.11.2026: «Lesbar halten, Position gespiegelt, Text aufrecht, wie MIRRTEXT=0»): gespiegelte Richtung 2φ − r, und nur
+        // wenn sie dann von rechts nach links bzw. kopfüber liest, um 180° gedreht. Vorher immer + 180°: an einer waagrechten Achse stand der Text auf dem Kopf.
+        static double Lesbar(double w) { w = Norm(w); return w > Math.PI / 2 + 1e-9 && w <= 3 * Math.PI / 2 + 1e-9 ? Norm(w + Math.PI) : w; }
         void Tun(Entity e)
         {
             switch (e)
@@ -184,9 +187,9 @@ public static class ZeichnungGeoBefehle
                     break;
                 }
                 case Point pt: pt.Location = Q(pt.Location); break;
-                // Text bleibt lesbar (wie AutoCAD mit MIRRTEXT = 0): Ort gespiegelt, Richtung gespiegelt und um 180° gedreht
-                case TextEntity t: t.InsertPoint = Q(t.InsertPoint); t.AlignmentPoint = Q(t.AlignmentPoint); t.Rotation = Norm(2 * phi - t.Rotation + Math.PI); break;
-                case MText m: { double w = Norm(2 * phi - m.Rotation + Math.PI); m.InsertPoint = Q(m.InsertPoint); m.AlignmentPoint = new XYZ(Math.Cos(w), Math.Sin(w), 0); break; }   // Richtung des Absatztexts steht im Richtungsvektor
+                // Text bleibt lesbar (wie AutoCAD mit MIRRTEXT = 0): Ort gespiegelt, Richtung gespiegelt und aufrecht gehalten (Lesbar)
+                case TextEntity t: t.InsertPoint = Q(t.InsertPoint); t.AlignmentPoint = Q(t.AlignmentPoint); t.Rotation = Lesbar(2 * phi - t.Rotation); break;
+                case MText m: { double w = Lesbar(2 * phi - m.Rotation); m.InsertPoint = Q(m.InsertPoint); m.AlignmentPoint = new XYZ(Math.Cos(w), Math.Sin(w), 0); break; }   // Richtung des Absatztexts steht im Richtungsvektor
                 case Insert ins: ins.InsertPoint = Q(ins.InsertPoint); ins.Rotation = Norm(2 * phi - ins.Rotation); ins.YScale = -ins.YScale; break;
             }
         }
