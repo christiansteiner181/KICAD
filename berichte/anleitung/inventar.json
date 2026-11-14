@@ -2653,12 +2653,14 @@
           },
           "schritte": [
             "Grundriss EG aktivieren.",
-            "Register Ansicht › Gruppe Ansicht › «Ansicht duplizieren» klicken."
+            "Register Ansicht › Gruppe Ansicht › «Ansicht duplizieren» klicken.",
+            "Hat die Ansicht Beschriftungen (Massketten, Texte, Symbole): «Nur Ansicht» oder «Mit Beschriftungen» wählen."
           ],
-          "erwartung": "Eine Kopie «Grundriss EG Sanitär – Kopie» mit freiem Kennzeichen entsteht und öffnet.",
+          "erwartung": "Eine Kopie «Grundriss EG Sanitär – Kopie» mit freiem Kennzeichen entsteht und öffnet; mit «Mit Beschriftungen» trägt sie Kopien der Beschriftungen, das Original bleibt unverändert (N33, Christian 13.11.2026).",
           "pruefpunkte": [
             "Neue Ansicht im Projektbrowser.",
-            "Einstellungen (Massstab, Gewerke) wie das Original."
+            "Einstellungen (Massstab, Gewerke) wie das Original.",
+            "Mit Beschriftungen: Massketten und Texte erscheinen auch in der Kopie; «Nur Ansicht»: die Kopie ist leer."
           ],
           "bild": {
             "projekt": "beispiel",
@@ -2683,12 +2685,15 @@
           "schritte": [
             "Grundriss 1.OG aktivieren, «Als Vorlage speichern» klicken, den Namen bestätigen.",
             "Im Projektbrowser den Ast «Ansichtsvorlagen» ansehen.",
-            "Grundriss EG aktivieren, «Vorlage anwenden» klicken, die Vorlage wählen, «Anwenden»."
+            "Grundriss EG aktivieren, «Vorlage anwenden» klicken, die Vorlage wählen, «Anwenden» (abgehakte Einstellungen behält die Ansicht selbst).",
+            "Die Vorlage ändern (z. B. Massstab) und den Grundriss EG ansehen."
           ],
-          "erwartung": "Die Vorlage (Kennzeichen VL-GR-1.OG) trägt Massstab, Schnitthöhe, Detailgrad, Gewerke und ausgeblendete Klassen und erscheint unter «Ansichtsvorlagen». Beim Anwenden werden genau diese Einstellungen übertragen, Art und Geschoss bleiben.",
+          "erwartung": "Die Vorlage (Kennzeichen VL-GR-1.OG) erscheint unter «Ansichtsvorlagen». Anwenden verknüpft die Ansicht wie in Revit (Frage 49): Massstab, Schnitthöhe, Detailgrad, Gewerke, Systeme, ausgeblendete Klassen, IFC-Darstellung, Darstellung, Legende, Bemassungseinheit u. a. kommen aus der Vorlage, und Änderungen der Vorlage wirken auf alle verknüpften Ansichten. Ändert man eine dieser Einstellungen direkt an der Ansicht, wird nur sie von der Vorlage gelöst (Hinweis). «(keine)» löst die Verknüpfung, die Werte bleiben.",
           "pruefpunkte": [
             "Vorlage unter «Ansichtsvorlagen».",
-            "Meldung «Vorlage … auf … angewendet.».",
+            "Meldung «… mit Vorlage … verknüpft.».",
+            "Massstab der Vorlage geändert → Grundriss EG folgt.",
+            "Detailgrad am Grundriss geändert → Hinweis «… von der Ansichtsvorlage … gelöst», Vorlagenänderungen am Detailgrad wirken dort nicht mehr.",
             "Vorlage lässt sich nicht selbst eine Vorlage geben."
           ],
           "bild": {

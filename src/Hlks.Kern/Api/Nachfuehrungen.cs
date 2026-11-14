@@ -23,6 +23,7 @@ public static class Nachfuehrungen
         new SanitaerNachfuehren(),     // Modul 4 Teil A: Eingaben der Sanitär-Zusammenstellung prüfen (abflusskennzahl, spezialinstallationen)
         new HeizungNachfuehren(),      // Modul 5 Teil A-D: Mischventil-Anschlüsse nach art, Systempaar beidseitig, Heizgruppen-Angaben prüfen
         new FamilienBibliothekNachfuehren(),   // Modul 2 (Nachtrag B7): Familie.bibliothek im selben Paket (Schreiben danach: Projekt.Uebernehmen)
+        new AnsichtsvorlagenNachfuehren(),   // Frage 49 (13.11.2026): Ansichtsvorlage als Verknüpfung, Einstellungen einzeln lösbar (Plan/Ansichtsvorlagen.cs)
         new PlanwinkelNachfuehren()];   // N9: Planwinkel am Gebäude, sobald es Wände gibt und noch kein Winkel steht (Planwinkel.cs)
 
     /// <summary>Runden, die jeder Befehl mindestens bekommt (Regeln dürfen einander auslösen).</summary>

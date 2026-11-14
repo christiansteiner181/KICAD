@@ -592,6 +592,18 @@ public sealed class ElementLoeschen : IBefehl
                 k.Hinweise.Add($"{beschriftungen.Count} Beschriftung(en) von {e.Kennzeichen} mitgelöscht.");
             }
         }
+        // Ansichtsvorlage löschen (Frage 49): verknüpfte Ansichten verlieren die Verknüpfung, ihre Einstellungen bleiben (wie Revit)
+        if (Ansichtsvorlagen.IstVorlage(e))
+        {
+            var verknuepft = k.Arbeit.Elemente.Where(x => x.Id != e.Id && x.Bezuege.GetValueOrDefault(Ansichtsvorlagen.Bezug) == e.Id).ToList();
+            foreach (var x in verknuepft)
+            {
+                var c = x.Kopie();
+                c.Bezuege.Remove(Ansichtsvorlagen.Bezug); c.Eigenschaften.Remove("ansichtsvorlage"); c.Eigenschaften.Remove("vorlageGeloest");
+                k.Setzen(c);
+            }
+            if (verknuepft.Count > 0) k.Hinweise.Add($"Ansichtsvorlage {e.Kennzeichen} gelöscht: {verknuepft.Count} Ansicht(en) nicht mehr verknüpft, ihre Einstellungen bleiben.");
+        }
         var abhaengig = k.Arbeit.Elemente.Where(x => x.Id != e.Id && !Mitgeloescht(x) &&
             (x.TeilVon == e.Id || x.Geschoss == e.Id || x.Raum == e.Id || x.System == e.Id || x.Bezuege.ContainsValue(e.Id))).ToList();
         if (abhaengig.Count > 0)

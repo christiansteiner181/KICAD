@@ -667,7 +667,9 @@ public sealed class EinlageGrafik : IGrafikquelle
     /// offenem Pfeil; Koten schwarz, unterstrichen, mit gefülltem Pfeil.</summary>
     static Grafikteil Hinweistext(GrafikKontext ctx, Freistellung frei, List<double[]> ziele, string text, double schrift, bool fett, string? farbe, bool unterstrichen)
     {
-        double cx = ziele.Average(z => z[0]), cy = ziele.Average(z => z[1]);
+        // Entscheid 27 (Christian 13.11.2026): Platzierung und Freistellung in den Achsen der Ansicht; zurück ins Modell erst am Schluss
+        var zv = ziele.Select(frei.InAnsicht).ToList();
+        double cx = zv.Average(z => z[0]), cy = zv.Average(z => z[1]);
         double g = ctx.AufModell(schrift), w = text.Length * ZeichenBreite * g, h = (Oberlaenge + Unterlaenge) * g;
         (double X0, double Y0, double[] Box)? gewaehlt = null, zweite = null, erste = null;
         foreach (var a in Abstaende)
@@ -685,8 +687,13 @@ public sealed class EinlageGrafik : IGrafikquelle
             }
             if (gewaehlt is not null) break;
         }
-        var (tx, ty, b) = gewaehlt ?? zweite ?? erste!.Value;
-        frei.Box(b);
+        var (txv, tyv, bv) = gewaehlt ?? zweite ?? erste!.Value;
+        frei.Box(bv);
+        // Block waagrecht im Modell um die zurückgedrehte Blockmitte legen; Ansichtsausrichtung dreht ihn um diesen Anker auf die Ansicht zurück
+        double[] mv = [(bv[0] + bv[2]) / 2, (bv[1] + bv[3]) / 2], mm = frei.InModell(mv);
+        double vx = mm[0] - mv[0], vy = mm[1] - mv[1];
+        double tx = txv + vx, ty = tyv + vy;
+        double[] b = [bv[0] + vx, bv[1] + vy, bv[2] + vx, bv[3] + vy];
         var teil = new Grafikteil { Ebene = "beschriftung" };
         var t = BeschriftungHilfen.Text([tx, ty], text, schrift, "links", 0, fett);
         t.Stil.Farbe = farbe;
@@ -695,12 +702,16 @@ public sealed class EinlageGrafik : IGrafikquelle
         double unten = ty - ctx.AufModell(0.6);
         if (unterstrichen) teil.Primitive.Add(Strich([tx, unten], [tx + w, unten], farbe));
         foreach (var pr in teil.Primitive) pr.Anker = [(b[0] + b[2]) / 2, (b[1] + b[3]) / 2];   // N9: Textblock bleibt waagrecht (Führungslinien nicht)
-        foreach (var z in ziele)
+        double untenV = tyv - ctx.AufModell(0.6);
+        for (int i = 0; i < ziele.Count; i++)
         {
-            // Führungslinie vom nächsten Punkt des Textblocks (unterstrichen: vom näheren Ende des Strichs) zum Ziel
-            double[] s = unterstrichen
-                ? (Math.Abs(z[0] - tx) < Math.Abs(z[0] - (tx + w)) ? [tx, unten] : [tx + w, unten])
-                : [Math.Clamp(z[0], b[0], b[2]), Math.Clamp(z[1], b[1], b[3])];
+            var z = ziele[i]; var zw = zv[i];
+            // Führungslinie vom nächsten Punkt des Textblocks (unterstrichen: vom näheren Ende des Strichs) zum Ziel – in Ansichtsachsen bestimmt,
+            // damit sie am gedrehten Block ansetzt (Gesamtprüfung: bei 30° lag sie bis 7 mm daneben)
+            double[] sv = unterstrichen
+                ? (Math.Abs(zw[0] - txv) < Math.Abs(zw[0] - (txv + w)) ? [txv, untenV] : [txv + w, untenV])
+                : [Math.Clamp(zw[0], bv[0], bv[2]), Math.Clamp(zw[1], bv[1], bv[3])];
+            var s = frei.InModell(sv);
             teil.Primitive.Add(Strich(s, z, farbe));
             frei.Weich(s, z);
             teil.Primitive.AddRange(Pfeil(ctx, s, z, farbe, gefuellt: unterstrichen));
@@ -819,8 +830,10 @@ public sealed class EinlageGrafik : IGrafikquelle
         return aus;
     }
 
-    static Grafikteil Leitungsbeschriftung(GrafikKontext ctx, Freistellung frei, Element l, double[] a, double[] b, string text)
+    static Grafikteil Leitungsbeschriftung(GrafikKontext ctx, Freistellung frei, Element l, double[] am, double[] bm, string text)
     {
+        // Entscheid 27: in Ansichtsachsen platzieren (lesbar auf dem Blatt), die eigene Leitung zählt nicht als Hindernis
+        var a = frei.InAnsicht(am); var b = frei.InAnsicht(bm);
         var u = BeschriftungHilfen.Einheit(BeschriftungHilfen.Minus(b, a));
         double winkel = BeschriftungHilfen.LesbarerWinkel(Math.Atan2(u[1], u[0]) * 180 / Math.PI);
         var ul = BeschriftungHilfen.Drehen([1, 0], winkel);   // Leserichtung
@@ -843,8 +856,8 @@ public sealed class EinlageGrafik : IGrafikquelle
                 var box = new[] { ecken.Min(q => q[0]), ecken.Min(q => q[1]), ecken.Max(q => q[0]), ecken.Max(q => q[1]) };
                 var fuss = BeschriftungHilfen.Plus(m, BeschriftungHilfen.Mal(n, halb));
                 erste ??= (fuss, grund, box, n);
-                if (zweite is null && frei.Frei(box, weich: false)) zweite = (fuss, grund, box, n);
-                if (frei.Frei(box)) { gewaehlt = (fuss, grund, box, n); break; }
+                if (zweite is null && frei.Frei(box, weich: false, ausser: l.Id)) zweite = (fuss, grund, box, n);
+                if (frei.Frei(box, ausser: l.Id)) { gewaehlt = (fuss, grund, box, n); break; }
             }
             if (gewaehlt is not null || len < ctx.AufModell(20)) break;   // kurze Stücke: nur mittig
         }
@@ -852,20 +865,33 @@ public sealed class EinlageGrafik : IGrafikquelle
         frei.Box(bx);
         // Führungslinie von der Leitungskante bis vor den Text (Abstand minus 0.5 mm)
         var ende = BeschriftungHilfen.Plus(f, BeschriftungHilfen.Mal(nn, abst - halb - ctx.AufModell(0.5)));
-        frei.Weich(f, ende);
+        var fm = frei.InModell(f); var em = frei.InModell(ende);
+        frei.Weich(fm, em);
+        var rahmen = new Primitiv
+        {
+            Art = "polygon", Punkte = new[] { (bx[0], bx[1]), (bx[2], bx[1]), (bx[2], bx[3]), (bx[0], bx[3]) }.Select(q => frei.InModell([q.Item1, q.Item2])).ToList(),
+            Stil = new Stil { Stift = null, Fuellung = null },
+        };
         return new Grafikteil
         {
             Ebene = "beschriftung",
-            Primitive = [Strich(f, ende, null), BeschriftungHilfen.Text(gr, text, Schrift, "mitte", winkel).Mitdrehend(), Rahmen(bx)],   // N9: folgt der Leitung
+            // N9: folgt der Leitung; Winkel im Modell = lesbarer Winkel auf dem Blatt − Drehung (die Ausrichtung klappt ihn dann nicht mehr um)
+            Primitive = [Strich(fm, em, null), BeschriftungHilfen.Text(frei.InModell(gr), text, Schrift, "mitte", winkel - ctx.Drehung).Mitdrehend(), rahmen],
         };
     }
 
     // ------------------------------------------------------------------ Freistellung
 
     /// <summary>Belegte Flächen (Texte, Massketten-Zahlen) und Leitungen des Plans (Achse mit halber Breite) – nie überdecken; Linien der
-    /// Massketten und Führungslinien – möglichst nicht überdecken (weich).</summary>
+    /// Massketten und Führungslinien – möglichst nicht überdecken (weich). Alles in den Achsen der Ansicht (Entscheid 27, Christian 13.11.2026):
+    /// Boxen werden in Ansichtsachsen übergeben und geprüft, Linien und Texte des Modells beim Eintragen gedreht.</summary>
     sealed class Freistellung(GrafikKontext ctx)
     {
+        readonly double drehung = ctx.Drehung;
+        /// <summary>Modell → Ansicht (um +Drehung).</summary>
+        public double[] InAnsicht(double[] p) => Ansichtsausrichtung.Drehen(p, drehung);
+        /// <summary>Ansicht → Modell (um −Drehung).</summary>
+        public double[] InModell(double[] p) => Ansichtsausrichtung.Drehen(p, -drehung);
         readonly List<double[]> boxen = [];
         readonly List<(double[] A, double[] B, double R, string Id)> linien = [];
         readonly List<(double[] A, double[] B)> weich = [];
@@ -874,13 +900,13 @@ public sealed class EinlageGrafik : IGrafikquelle
         public void Box(double[] b) => boxen.Add(b);
 
         /// <summary>Linie, die Texte möglichst nicht überdecken sollen (Führungslinien).</summary>
-        public void Weich(double[] a, double[] b) => weich.Add((a, b));
+        public void Weich(double[] a, double[] b) => weich.Add((InAnsicht(a), InAnsicht(b)));
 
         public void Leitung(GrafikKontext c, Element l)
         {
             double r = (HlksMasse.Von(c.Projekt, l)?.Breite ?? c.AufModell(Stifte.Mm(Stifte.Dick))) / 2;
             var xy = HlksLinien.OhneDoppelte(HlksEinordnung.Punkte(l));
-            for (int i = 1; i < xy.Count; i++) linien.Add((xy[i - 1], xy[i], r, l.Id));
+            for (int i = 1; i < xy.Count; i++) linien.Add((InAnsicht(xy[i - 1]), InAnsicht(xy[i]), r, l.Id));
         }
 
         /// <summary>Zahlen der Massketten als belegte Flächen.</summary>
@@ -888,23 +914,24 @@ public sealed class EinlageGrafik : IGrafikquelle
         {
             foreach (var pr in ketten.SelectMany(t => t.Primitive))
             {
-                if (pr.Art == "linie" && pr.Punkte.Count == 2) { weich.Add((pr.Punkte[0], pr.Punkte[1])); continue; }
+                if (pr.Art == "linie" && pr.Punkte.Count == 2) { weich.Add((InAnsicht(pr.Punkte[0]), InAnsicht(pr.Punkte[1]))); continue; }
                 if (pr.Art != "text" || pr.Text is not { Length: > 0 } tx || pr.Punkte.Count == 0) continue;
                 double g = c.AufModell(pr.Groesse ?? Schrift), w = tx.Length * ZeichenBreite * g, a = (pr.Winkel ?? 0) * Math.PI / 180;
                 double x0 = pr.Ausrichtung == "mitte" ? -w / 2 : pr.Ausrichtung == "rechts" ? -w : 0;
                 var ecken = new[] { (x0, -Unterlaenge * g), (x0 + w, -Unterlaenge * g), (x0 + w, Oberlaenge * g), (x0, Oberlaenge * g) }
-                    .Select(q => (X: pr.Punkte[0][0] + q.Item1 * Math.Cos(a) - q.Item2 * Math.Sin(a), Y: pr.Punkte[0][1] + q.Item1 * Math.Sin(a) + q.Item2 * Math.Cos(a))).ToList();
+                    .Select(q => InAnsicht([pr.Punkte[0][0] + q.Item1 * Math.Cos(a) - q.Item2 * Math.Sin(a), pr.Punkte[0][1] + q.Item1 * Math.Sin(a) + q.Item2 * Math.Cos(a)]))
+                    .Select(q => (X: q[0], Y: q[1])).ToList();
                 boxen.Add([ecken.Min(q => q.X), ecken.Min(q => q.Y), ecken.Max(q => q.X), ecken.Max(q => q.Y)]);
             }
         }
 
         /// <summary>Frei = keine Überdeckung mit Texten und Leitungen des Plans (mit Rand); mit weich auch nicht mit Linien der Massketten
         /// und Führungslinien.</summary>
-        public bool Frei(double[] b, bool weich = true)
+        public bool Frei(double[] b, bool weich = true, string? ausser = null)
         {
             var r = new[] { b[0] - rand, b[1] - rand, b[2] + rand, b[3] + rand };
             if (boxen.Any(x => r[0] < x[2] && x[0] < r[2] && r[1] < x[3] && x[1] < r[3])) return false;
-            if (linien.Any(l => SchneidetBox(l.A, l.B, [r[0] - l.R, r[1] - l.R, r[2] + l.R, r[3] + l.R]))) return false;
+            if (linien.Any(l => l.Id != ausser && SchneidetBox(l.A, l.B, [r[0] - l.R, r[1] - l.R, r[2] + l.R, r[3] + l.R]))) return false;
             return !weich || !this.weich.Any(l => SchneidetBox(l.A, l.B, r));
         }
 

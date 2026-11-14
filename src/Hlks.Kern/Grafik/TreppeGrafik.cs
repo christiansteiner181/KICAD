@@ -189,7 +189,7 @@ internal static class TreppeGrafik
             }
             lauf += l;
         }
-        double winkel = BeschriftungHilfen.LesbarerWinkel(Math.Atan2(richtung[1], richtung[0]) * 180 / Math.PI);
+        double winkel = BeschriftungHilfen.LesbarInAnsicht(Math.Atan2(richtung[1], richtung[0]) * 180 / Math.PI, ctx.Drehung);   // Entscheid 27
         var oben = BeschriftungHilfen.Drehen([0, 1], winkel);
         double ab = ctx.AufModell(Textabstand);
         return BeschriftungHilfen.Text([mitte[0] + oben[0] * ab, mitte[1] + oben[1] * ab], text, Schrift, "mitte", winkel).Mitdrehend();

@@ -277,6 +277,31 @@ public class AnsichtAusrichtungTests
         }
     }
 
+    /// <summary>Entscheid 27 (Christian 13.11.2026): «Masszahl immer über der Masslinie» – auch wenn die Leserichtung wegen der Ansichtsdrehung umklappt.</summary>
+    [Theory]
+    [InlineData(130.0)]
+    [InlineData(310.0)]
+    [InlineData(100.0)]
+    public void Grafik_MasszahlStehtAufDemBlattUeberDerMasslinie(double richtung)
+    {
+        var p = Gedreht();
+        double r = richtung * Math.PI / 180;
+        Ok(p.Ausfuehren("element_anlegen", new JsonObject
+        {
+            ["klasse"] = "Bemassung", ["kennzeichen"] = "BM-U", ["bezuege"] = new JsonObject { ["ansicht"] = "AN-EG" },
+            ["geometrie"] = new JsonObject { ["art"] = "polylinie", ["punkte"] = Pts(new[] { 2000.0, 2000.0 }, new[] { 2000 + 4000 * Math.Cos(r), 2000 + 4000 * Math.Sin(r) }) },
+        }));
+        var g = Grafik.Plan(p, "AN-EG");
+        var teil = g.Teile.Single(x => x.Id == p.Modell.Finde("BM-U")!.Id);
+        var t = teil.Primitive.Single(x => x.Art == "text");
+        var linie = teil.Primitive.Where(x => x.Art == "linie").OrderByDescending(x => Math.Abs(x.Punkte[1][0] - x.Punkte[0][0]) + Math.Abs(x.Punkte[1][1] - x.Punkte[0][1])).First();
+        double[] mitte = [(linie.Punkte[0][0] + linie.Punkte[1][0]) / 2, (linie.Punkte[0][1] + linie.Punkte[1][1]) / 2];
+        // auf dem Blatt: Text gegenüber der Masslinie in Richtung «oben» der Leserichtung
+        var auf = Ansichtsausrichtung.Drehen([t.Punkte[0][0] - mitte[0], t.Punkte[0][1] - mitte[1]], g.Drehung);
+        var oben = BeschriftungHilfen.Drehen([0, 1], Ansichtsausrichtung.Norm((t.Winkel ?? 0) + g.Drehung));
+        Assert.True(auf[0] * oben[0] + auf[1] * oben[1] > 0, $"Masszahl unter der Linie (Richtung {richtung}°, Drehung {g.Drehung}°)");
+    }
+
     [Fact]
     public void Grafik_BemassungHorizontalGiltInDenAchsenDerAnsicht()
     {

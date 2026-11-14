@@ -91,7 +91,7 @@ internal static class BeschriftungMass
         }
 
         // Masszahlen: eine je Abschnitt, mittig über der Masslinie, von unten bzw. rechts lesbar
-        double winkel = BeschriftungHilfen.LesbarerWinkel(Math.Atan2(d[1], d[0]) * 180 / Math.PI);
+        double winkel = BeschriftungHilfen.LesbarInAnsicht(Math.Atan2(d[1], d[0]) * 180 / Math.PI, ctx.Drehung);   // Entscheid 27: über der Linie auf dem Blatt
         var oben = BeschriftungHilfen.Drehen([0, 1], winkel);
         string einheit = Bemassungseinheit.Fuer(ctx.Modell, ctx.Ansicht, e).Einheit;   // Masskette › Ansicht › Projekt › Gewerk
         var ersatz = e.Text("text");

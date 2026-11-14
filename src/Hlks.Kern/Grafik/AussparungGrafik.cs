@@ -346,11 +346,22 @@ public sealed class AussparungGrafik : IGrafikquelle
 
     static bool Ueberlappt(double[] a, double[] b) => a[0] < b[2] && b[0] < a[2] && a[1] < b[3] && b[1] < a[3];
 
+    /// <summary>Achsparallele Hülle eines Modell-Rechtecks in den Achsen der Ansicht (Entscheid 27).</summary>
+    static double[] BoxInAnsicht(GrafikKontext ctx, double[] b)
+    {
+        if (ctx.Drehung == 0) return b;
+        var e = new[] { new[] { b[0], b[1] }, [b[2], b[1]], [b[2], b[3]], [b[0], b[3]] }.Select(q => Ansichtsausrichtung.Drehen(q, ctx.Drehung)).ToList();
+        return [e.Min(q => q[0]), e.Min(q => q[1]), e.Max(q => q[0]), e.Max(q => q[1])];
+    }
+
     static Dictionary<string, List<Grafikteil>> Platzieren(GrafikKontext ctx, List<Entwurf> entwuerfe, List<Grafikteil>? ketten = null)
     {
+        // Entscheid 27 (Christian 13.11.2026): Lagen und Freistellung in den Achsen der Ansicht (gedrehter Grundriss); ins Modell zurück erst beim Zeichnen
+        double[] V(double[] p) => Ansichtsausrichtung.Drehen(p, ctx.Drehung);
+        double[] M(double[] p) => Ansichtsausrichtung.Drehen(p, -ctx.Drehung);
         var ergebnis = new Dictionary<string, List<Grafikteil>>();
         foreach (var en in entwuerfe) ergebnis[en.E.Id] = [en.Symbol];
-        var symbole = entwuerfe.Select(en => en.Box).ToList();
+        var symbole = entwuerfe.Select(en => BoxInAnsicht(ctx, en.Box)).ToList();
         var bloecke = new List<double[]>();
 
         double s = ctx.AufModell(Schrift), lh = ctx.AufModell(Schrift * ZeilenFaktor), luecke = ctx.AufModell(Abstand), rand = ctx.AufModell(Rand), ring = ctx.AufModell(Ring);
@@ -362,12 +373,14 @@ public sealed class AussparungGrafik : IGrafikquelle
                 double g = ctx.AufModell(pr.Groesse ?? Schrift), w = tx.Length * ZeichenBreite * g, a = (pr.Winkel ?? 0) * Math.PI / 180;
                 double x0 = pr.Ausrichtung == "mitte" ? -w / 2 : pr.Ausrichtung == "rechts" ? -w : 0;
                 var ecken = new[] { (x0, -Unterlaenge * g), (x0 + w, -Unterlaenge * g), (x0 + w, Oberlaenge * g), (x0, Oberlaenge * g) }
-                    .Select(q => (X: pr.Punkte[0][0] + q.Item1 * Math.Cos(a) - q.Item2 * Math.Sin(a), Y: pr.Punkte[0][1] + q.Item1 * Math.Sin(a) + q.Item2 * Math.Cos(a))).ToList();
+                    .Select(q => V([pr.Punkte[0][0] + q.Item1 * Math.Cos(a) - q.Item2 * Math.Sin(a), pr.Punkte[0][1] + q.Item1 * Math.Sin(a) + q.Item2 * Math.Cos(a)]))
+                    .Select(q => (X: q[0], Y: q[1])).ToList();
                 bloecke.Add([ecken.Min(q => q.X), ecken.Min(q => q.Y), ecken.Max(q => q.X), ecken.Max(q => q.Y)]);
             }
             else if (pr.Art == "linie" && pr.Punkte.Count == 2)
             {
-                double[] b = [Math.Min(pr.Punkte[0][0], pr.Punkte[1][0]), Math.Min(pr.Punkte[0][1], pr.Punkte[1][1]), Math.Max(pr.Punkte[0][0], pr.Punkte[1][0]), Math.Max(pr.Punkte[0][1], pr.Punkte[1][1])];
+                var p0 = V(pr.Punkte[0]); var p1 = V(pr.Punkte[1]);
+                double[] b = [Math.Min(p0[0], p1[0]), Math.Min(p0[1], p1[1]), Math.Max(p0[0], p1[0]), Math.Max(p0[1], p1[1])];
                 if (Math.Min(b[2] - b[0], b[3] - b[1]) <= ctx.AufModell(2.5)) symbole.Add(b);   // schräge lange Linien (Wandkette schräg) nicht
             }
         }
@@ -384,9 +397,11 @@ public sealed class AussparungGrafik : IGrafikquelle
             double pad = en.Rahmen ? ctx.AufModell(BoxRand) : 0;   // Aussparungsbox: Rand zwischen Text und Rahmen
             double w = zeilen.Max(z => z.Length) * ZeichenBreite * s + 2 * pad;
             double h = (Oberlaenge + Unterlaenge) * s + (n - 1) * lh + 2 * pad;
-            double stdUnten = en.Cy + (n - 1) * lh / 2 - s * 0.35 - (n - 1) * lh - Unterlaenge * s - pad;   // Grundlage: Block mittig am Symbol
-            double rechts = en.TextX + luecke, links = en.Box[0] - luecke - w, mitteX = en.Cx - w / 2;
-            double oben = en.Box[3] + luecke, unten = en.Box[1] - luecke - h;
+            var cv = V([en.Cx, en.Cy]); var sb = BoxInAnsicht(ctx, en.Box);
+            double textX = ctx.Drehung == 0 ? en.TextX : Math.Max(sb[2], cv[0] + (en.TextX - en.Cx));
+            double stdUnten = cv[1] + (n - 1) * lh / 2 - s * 0.35 - (n - 1) * lh - Unterlaenge * s - pad;   // Grundlage: Block mittig am Symbol
+            double rechts = textX + luecke, links = sb[0] - luecke - w, mitteX = cv[0] - w / 2;
+            double oben = sb[3] + luecke, unten = sb[1] - luecke - h;
 
             IEnumerable<(double X, double Y)> Lagen()
             {
@@ -424,14 +439,16 @@ public sealed class AussparungGrafik : IGrafikquelle
             bloecke.Add([lage.X, lage.Y, lage.X + w, lage.Y + h]);
 
             var teil = new Grafikteil { Id = null, Ebene = "beschriftung" };
-            if (gewaehlt != 0)   // Führungslinie vom Symbol zum Block (Planfarbe)
+            if (gewaehlt != 0)   // Führungslinie vom Symbol zum Block (Planfarbe), in Ansichtsachsen bestimmt
             {
                 double bx = lage.X + w / 2, by = lage.Y + h / 2;
-                double ax = Math.Clamp(bx, en.Box[0], en.Box[2]), ay = Math.Clamp(by, en.Box[1], en.Box[3]);
+                double ax = Math.Clamp(bx, sb[0], sb[2]), ay = Math.Clamp(by, sb[1], sb[3]);
                 double ex = Math.Clamp(ax, lage.X, lage.X + w), ey = Math.Clamp(ay, lage.Y, lage.Y + h);
                 if (Math.Abs(ex - ax) + Math.Abs(ey - ay) > 1e-6)
-                    teil.Primitive.Add(new Primitiv { Art = "linie", Punkte = [[ax, ay], [ex, ey]], Stil = new Stil { Stift = Stifte.Duenn } });
+                    teil.Primitive.Add(new Primitiv { Art = "linie", Punkte = [M([ax, ay]), M([ex, ey])], Stil = new Stil { Stift = Stifte.Duenn } });
             }
+            // Block waagrecht im Modell um die zurückgedrehte Blockmitte (die Ausrichtung dreht ihn um diesen Anker zurück auf die Ansicht)
+            { double[] mv = [lage.X + w / 2, lage.Y + h / 2]; var mm = M(mv); lage = (lage.X + mm[0] - mv[0], lage.Y + mm[1] - mv[1]); }
             double y0 = lage.Y + pad + (n - 1) * lh + Unterlaenge * s;   // Grundlinie der ersten Zeile
             if (en.Rahmen)   // Aussparungsbox: weisse Fläche mit grauem Rahmen unter dem Text, alles in der Koordinationsfarbe «architektur»
                 teil.Primitive.Insert(0, new Primitiv

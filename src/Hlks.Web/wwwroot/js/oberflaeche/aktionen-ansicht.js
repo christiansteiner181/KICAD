@@ -2,7 +2,7 @@
 // Ansichtsvorlagen speichern und anwenden, Fensteranordnung (WT, WC, eigenes Fenster), Zoom (ZF, ZA), Design hell/dunkel.
 // Eine Ansicht ist ein Element der Klasse Ansicht; alles läuft über element_anlegen / element_aendern.
 
-import { zustand, element, derKlasse, abonnieren } from '../zustand.js';
+import { zustand, element, derKlasse, abonnieren, alleElemente } from '../zustand.js';
 import * as fenster from '../fenster.js';
 import { registrieren } from './register.js';
 import { zeigen, meldung, eingabe, kontextmenue } from './dialoge.js';
@@ -17,7 +17,7 @@ import { esc, knoten, vergleichen, gewerkeListe, aufElement, freiesKennzeichen, 
 import { systemGewerk } from './projektbrowser-gliederung.js';
 import { anlageMitGewerk, anlagenVorne } from './sanitaer-anlage.js';
 import { MODI, MODUS_NAMEN, ARTEN as IFC_ARTEN, ifcModus } from '../ansichten/ifc-darstellung.js';
-import { duplikatParameter, vorlageEigenschaften } from './ansicht-logik.js';
+import { vorlageEigenschaften } from './ansicht-logik.js';
 import { steuerung as gesten } from '../gesten/gesten-steuerung.js';   // Grundschalter «Gesten» (Modul G); gesten.js selbst wird erst beim Einschalten geladen
 
 const MASSSTAEBE = [10, 20, 50, 100, 200, 500];
@@ -39,8 +39,18 @@ const anlagenFuer = (gewerk) => {
   return anlagenVorne(anlagen(), (a) => anlageMitGewerk(a, systeme, (s) => systemGewerk(ctx, s), element, gewerk));
 };
 /** Einstellungen, die eine Ansichtsvorlage überträgt (Art und Geschoss bleiben bei der Ansicht). */
-const VORLAGE_EINSTELLUNGEN = ['massstab', 'schnitthoehe', 'schnitthoeheNachSia', 'detailgrad', 'gewerke', 'klassenAusblenden', 'ifcDarstellung'];
-const NUR_MIT_VORLAGE_LEER = ['gewerke', 'klassenAusblenden', 'ifcDarstellung'];
+// Einstellungen, die eine verknüpfte Vorlage steuert – gleiche Liste wie im Kern (Plan/Ansichtsvorlagen.cs, Frage 49)
+const VORLAGE_EINSTELLUNGEN = ['massstab', 'schnitthoehe', 'schnitthoeheNachSia', 'detailgrad', 'gewerke', 'systeme', 'klassenAusblenden', 'ifcDarstellung', 'darstellung',
+  'aussparungsboxen', 'beschriftungAmSymbol', 'legende', 'bemassungEinheit', 'rohrbezeichnung'];
+const EINSTELLUNG_NAMEN = { massstab: 'Massstab', schnitthoehe: 'Schnitthöhe', schnitthoeheNachSia: 'Schnitthöhe nach SIA', detailgrad: 'Detailgrad', gewerke: 'Gewerke',
+  systeme: 'Systeme', klassenAusblenden: 'Ausgeblendete Klassen', ifcDarstellung: 'IFC-Darstellung', darstellung: 'Darstellung', aussparungsboxen: 'Aussparungsboxen',
+  beschriftungAmSymbol: 'Beschriftung am Symbol', legende: 'Legende', bemassungEinheit: 'Bemassungseinheit', rohrbezeichnung: 'Rohrbezeichnung' };
+// Klassen, die als Beschriftung einer Ansicht gelten (bezuege.ansicht) – für die Frage beim Duplizieren (N33); der Kern prüft selbst über die Basisklasse
+function istBeschriftung(klasse) {
+  const kl = zustand.katalog?.klassen ?? [];
+  for (let n = klasse, i = 0; n && i < 10; i++) { if (n === 'Beschriftung') return true; n = kl.find((k) => k.name === n)?.basis; }
+  return false;
+}
 const GLIEDERUNG = new Set(['Gebaeude', 'Geschoss', 'Anlage', 'System', 'Strang', 'Zone']);
 const NIE_GRAFISCH = new Set(['ansicht', 'funktion']);
 
@@ -164,8 +174,20 @@ registrieren({
     const a = ansichtVon(p);
     const kz = freiesKennzeichen(a.kennzeichen);
     const name = freierName(`${anzeigeName(a)} – Kopie`, ansichten().map((x) => x.name || x.kennzeichen));
-    const r = await sende('element_anlegen', duplikatParameter(a, kz, name));   // samt Schnittlinie (Schnitt, Ansicht)
-    if (!ergebnisMelden(r, `Ansicht «${name}» angelegt.`)) return;
+    // N33 (Christian 13.11.2026): beim Duplizieren wählen – nur die Ansicht oder mit ihren Beschriftungen; der Kern kopiert samt Schnittlinie
+    const anzahl = alleElemente().filter((x) => x.bezuege?.ansicht === a.id && istBeschriftung(x.klasse)).length;
+    let mit = false;
+    if (anzahl > 0) {
+      const w = await zeigen({
+        titel: 'Ansicht duplizieren',
+        inhalt: knoten(`<p class="dlg-text">«${esc(anzeigeName(a))}» hat ${anzahl} Beschriftung(en) (Massketten, Texte, Symbole). Mitkopieren?</p>`),
+        knoepfe: [{ text: 'Abbrechen', wert: null }, { text: 'Nur Ansicht', wert: false }, { text: 'Mit Beschriftungen', wert: true, primaer: true }],
+      });
+      if (w === null || w === undefined) return;
+      mit = w === true;
+    }
+    const r = await sende('ansicht_duplizieren', { ansicht: a.kennzeichen, kennzeichen: kz, name, mitBeschriftungen: mit });
+    if (!ergebnisMelden(r, `Ansicht «${name}» angelegt${mit ? ' (mit Beschriftungen)' : ''}.`)) return;
     if (a.werte?.vorlage !== true && await aufElement(kz)) await fenster.ansichtOeffnen(kz);
   },
 });
@@ -188,16 +210,12 @@ registrieren({
   },
 });
 
-/** Überträgt die Einstellungen einer Vorlage auf eine Ansicht (Art und Geschoss bleiben). */
-async function vorlageUebertragen(v, a) {
-  const eig = {};
-  for (const k of VORLAGE_EINSTELLUNGEN) {
-    if (v.werte?.[k] !== undefined) eig[k] = v.werte[k];
-    else if (a.werte?.[k] !== undefined && NUR_MIT_VORLAGE_LEER.includes(k)) eig[k] = null;   // Vorlage ohne Filter hebt Filter auf
-  }
-  eig.ansichtsvorlage = v.kennzeichen;
+/** Verknüpft eine Ansicht mit einer Vorlage (Frage 49, wie Revit): der Kern überträgt die Einstellungen und führt sie bei jeder Änderung der Vorlage nach;
+ *  «geloest» = Einstellungen, die die Ansicht selbst behält. v = null löst die Verknüpfung (Werte bleiben). */
+async function vorlageUebertragen(v, a, geloest = []) {
+  const eig = v ? { ansichtsvorlage: v.kennzeichen, vorlageGeloest: geloest.length ? geloest : null } : { ansichtsvorlage: null, vorlageGeloest: null };
   const r = await sende('element_aendern', { element: a.kennzeichen, eigenschaften: eig });
-  ergebnisMelden(r, `Vorlage «${anzeigeName(v)}» auf «${anzeigeName(a)}» angewendet.`);
+  ergebnisMelden(r, v ? `«${anzeigeName(a)}» mit Vorlage «${anzeigeName(v)}» verknüpft.` : `Verknüpfung von «${anzeigeName(a)}» gelöst.`);
 }
 
 registrieren({
@@ -210,11 +228,16 @@ registrieren({
     if (liste.length === 0) { meldung('Es gibt noch keine Ansichtsvorlage.', 'info', { vorschlag: 'Eine Ansicht wählen und «Als Vorlage speichern».' }); return; }
     let v = p?.vorlage ? element(p.vorlage) : null;
     if (!v) {
-      const w = knoten(`<div><p class="dlg-text">Die Einstellungen der Vorlage (Massstab, Detailgrad, Gewerke, ausgeblendete Klassen) werden auf «${esc(anzeigeName(a))}» übertragen. Art und Geschoss bleiben.</p>
-        <label class="fz"><span>Vorlage</span><select class="f-v">${liste.map((x) => `<option value="${esc(x.kennzeichen)}" ${x.kennzeichen === a.werte?.ansichtsvorlage ? 'selected' : ''}>${esc(anzeigeName(x))} (${esc(x.werte?.art ?? '?')})</option>`).join('')}</select></label></div>`);
+      const geloest = new Set(a.werte?.vorlageGeloest ?? []);
+      const w = knoten(`<div><p class="dlg-text">«${esc(anzeigeName(a))}» wird mit der Vorlage verknüpft: ihre Einstellungen gelten, und spätere Änderungen der Vorlage wirken
+        auch hier. Abgehakte Einstellungen behält die Ansicht selbst (von der Vorlage gelöst). Art, Geschoss, Ausrichtung und Ausschnitt bleiben.</p>
+        <label class="fz"><span>Vorlage</span><select class="f-v"><option value="">(keine – Verknüpfung lösen)</option>${liste.map((x) => `<option value="${esc(x.kennzeichen)}" ${x.kennzeichen === (a.werte?.ansichtsvorlage ?? liste[0]?.kennzeichen) ? 'selected' : ''}>${esc(anzeigeName(x))} (${esc(x.werte?.art ?? '?')})</option>`).join('')}</select></label>
+        <fieldset class="fz"><legend>Von der Vorlage gelöst</legend>${VORLAGE_EINSTELLUNGEN.map((k) => `<label><input type="checkbox" class="f-g" value="${k}" ${geloest.has(k) ? 'checked' : ''}> ${esc(EINSTELLUNG_NAMEN[k] ?? k)}</label>`).join(' ')}</fieldset></div>`);
       const ok = await zeigen({ titel: 'Vorlage anwenden', inhalt: w, knoepfe: [{ text: 'Abbrechen', wert: false }, { text: 'Anwenden', wert: true, primaer: true }] });
       if (ok !== true) return;
-      v = element(w.querySelector('.f-v').value);
+      const kz = w.querySelector('.f-v').value;
+      await vorlageUebertragen(kz ? element(kz) : null, a, [...w.querySelectorAll('.f-g:checked')].map((x) => x.value));
+      return;
     }
     if (v) await vorlageUebertragen(v, a);
   },

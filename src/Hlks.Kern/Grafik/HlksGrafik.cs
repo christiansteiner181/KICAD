@@ -339,7 +339,7 @@ public sealed class HlksGrafik : IGrafikquelle
             Stil = new Stil { Stift = Stifte.Hilf, Farbe = farbe, Fuellung = farbe } };
         if (ctx.Detailgrad == "fein" && gef > 0.005)
         {
-            var grad = HlksLinien.LesbarerWinkel(m.Winkel); var rad = grad * Math.PI / 180;
+            var grad = BeschriftungHilfen.LesbarInAnsicht(m.Winkel, ctx.Drehung); var rad = grad * Math.PI / 180;
             yield return new Primitiv
             {
                 // über der Leitung (Text nicht über dem Pfeil), Schriftfarbe des Designs; nur Gegengefälle rot
@@ -665,7 +665,7 @@ public sealed class HlksGrafik : IGrafikquelle
         if (ctx.Detailgrad != "fein" || Leitungsbezeichnung.Text(ctx.Projekt, ctx.Ansicht, e) is not { } text) return;
         w = TextBreite(ctx, e, w);
         var m = HlksLinien.PunktBeiLaenge(xy, HlksLinien.Laenge(xy) / 2)!.Value;
-        var grad = HlksLinien.LesbarerWinkel(m.Winkel);
+        var grad = BeschriftungHilfen.LesbarInAnsicht(m.Winkel, ctx.Drehung);   // Entscheid 27: «über» und «unter» der Linie auf dem Blatt
         var rad = grad * Math.PI / 180;
         var abstand = w / 2 + 0.4 * ctx.Massstab;   // über der Linie, in Leserichtung gesehen
         if (DimensionBeschriften(ctx, e, text)) teil.Primitive.Add(new Primitiv
@@ -689,7 +689,7 @@ public sealed class HlksGrafik : IGrafikquelle
             {
                 double ein = Math.Min(8 * ctx.Massstab, l / 2);   // ANNAHME Gestaltung: 8 mm Papier nach dem höchsten Punkt
                 double px = so.Punkt[0] + dx / l * ein, py = so.Punkt[1] + dy / l * ein;
-                var g2 = HlksLinien.LesbarerWinkel(Math.Atan2(dy, dx) * 180 / Math.PI); var r2 = g2 * Math.PI / 180;
+                var g2 = BeschriftungHilfen.LesbarInAnsicht(Math.Atan2(dy, dx) * 180 / Math.PI, ctx.Drehung); var r2 = g2 * Math.PI / 180;
                 teil.Primitive.Add(new Primitiv
                 {
                     Art = "text", Punkte = [[px + Math.Sin(r2) * (abstand + Schrift * ctx.Massstab), py - Math.Cos(r2) * (abstand + Schrift * ctx.Massstab)]],

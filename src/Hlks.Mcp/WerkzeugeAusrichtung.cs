@@ -44,4 +44,13 @@ public sealed partial class Werkzeuge
         [Description(AnsichtRaumZeigen.ParRand)] double? rand = null,
         [Description("Nur prüfen, nichts ändern")] bool trockenlauf = false) =>
         Befehl("ansicht_raum_zeigen", Parameter(("raum", raum), ("ansicht", ansicht), ("rand", rand)), trockenlauf);
+
+    [McpServerTool(Name = "ansicht_duplizieren"), Description(AnsichtDuplizieren.Text)]
+    public string AnsichtDuplizierenWerkzeug(
+        [Description(AnsichtDuplizieren.ParAnsicht)] string ansicht,
+        [Description(AnsichtDuplizieren.ParMit)] bool mitBeschriftungen = false,
+        [Description(AnsichtDuplizieren.ParName)] string? name = null,
+        [Description(AnsichtDuplizieren.ParKennzeichen)] string? kennzeichen = null,
+        [Description("Nur prüfen, nichts ändern")] bool trockenlauf = false) =>
+        Befehl("ansicht_duplizieren", Parameter(("ansicht", ansicht), ("mitBeschriftungen", mitBeschriftungen), ("name", name), ("kennzeichen", kennzeichen)), trockenlauf);
 }

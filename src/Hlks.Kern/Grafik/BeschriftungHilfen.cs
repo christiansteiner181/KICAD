@@ -44,6 +44,11 @@ internal static class BeschriftungHilfen
             Fett = fett ? true : null,
         };
 
+    /// <summary>Lesbarer Winkel im Modell für eine Ansicht mit Drehung (Grad): lesbar auf dem Blatt (Ansicht), zurück ins Modell gerechnet. Texte «über
+    /// der Linie» stehen so auch im gedrehten Grundriss über der Linie (Entscheid 27, Christian 13.11.2026: «Masszahl immer über der Masslinie»);
+    /// die Ansichtsausrichtung klappt sie danach nicht mehr um.</summary>
+    public static double LesbarInAnsicht(double modellGrad, double drehung) => drehung == 0 ? LesbarerWinkel(modellGrad) : LesbarerWinkel(modellGrad + drehung) - drehung;
+
     /// <summary>Winkel (Grad) so normieren, dass die Schrift von unten bzw. von rechts lesbar ist: Bereich (−90, 90].</summary>
     public static double LesbarerWinkel(double grad)
     {

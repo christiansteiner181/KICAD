@@ -53,7 +53,7 @@ public sealed partial class Werkzeuge
     public string AufbauAnlegen(
         [Description("Bezeichnung des Aufbaus (im Projekt eindeutig)")] string name,
         [Description("wand | decke | dach | boden | tuer")] string art,
-        [Description("Schichten von innen nach aussen: [{ material (Kennzeichen, Id oder Name), dicke (mm) }]")] JsonElement schichten,
+        [Description("Schichten von innen nach aussen: [{ material (Kennzeichen, Id oder Name), dicke (mm) }]; Schicht mit bekanntem R (ruhende Luftschicht u. a.): [{ r: { wert (m²·K/W), quelle }, dicke?, name?, material? }] – R geht dann vor d/λ")] JsonElement schichten,
         [Description("horizontal | aufwaerts | abwaerts (wählt Rsi/Rse); ohne Angabe aus der Art: Wand und Tür horizontal, Decke und Dach aufwaerts, Boden abwaerts")] string? waermestrom = null,
         [Description("Ausdrücklicher U-Wert W/(m²·K) aus Datenblatt oder IFC: { wert, quelle }; geht vor der Rechnung")] JsonElement? uWert = null,
         [Description("Quelle der Schichtfolge, z. B. Plan oder Bauteilkatalog des Architekten")] string? quelle = null,
@@ -65,7 +65,7 @@ public sealed partial class Werkzeuge
         [Description("Aufbau (Kennzeichen, Id oder Name)")] string aufbau,
         [Description("Neue Bezeichnung")] string? name = null,
         [Description("wand | decke | dach | boden | tuer; die Art muss zu den Bauteilen passen, die den Aufbau verwenden")] string? art = null,
-        [Description("Neue Schichtfolge (ersetzt die alte): Schichten von innen nach aussen: [{ material (Kennzeichen, Id oder Name), dicke (mm) }]")] JsonElement? schichten = null,
+        [Description("Neue Schichtfolge (ersetzt die alte): Schichten von innen nach aussen: [{ material (Kennzeichen, Id oder Name), dicke (mm) }]; Schicht mit bekanntem R (ruhende Luftschicht u. a.): [{ r: { wert (m²·K/W), quelle }, dicke?, name?, material? }] – R geht dann vor d/λ")] JsonElement? schichten = null,
         [Description("horizontal | aufwaerts | abwaerts; auto = aus der Art")] string? waermestrom = null,
         [Description("Ausdrücklicher U-Wert W/(m²·K) aus Datenblatt oder IFC: { wert, quelle }; geht vor der Rechnung")] JsonElement? uWert = null,
         [Description("Quelle der neuen Schichtfolge")] string? quelle = null,

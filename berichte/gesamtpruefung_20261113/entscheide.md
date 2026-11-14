@@ -130,3 +130,7 @@ swisspor führt für Rohre nur PIR-Schalen «swissporKISODUR» (Heizung, Kälte,
 - **14.11.2026 Paket Rechenkerne:** N24 (ΔTn logarithmisch), N25 (QD = QT unter dem Kurvenstart auch in der Zusammenstellung), N26 (Rohrrauheit ein
   Standardwert 0.045 mm, Skript C2 Betschart S. 16), N27 (ζ im Heizungsrohrnetz nach Skript C2 S. 13–15: Bogen, T-Stück je Fall, Absperrventil nach DN;
   Luftkanäle ohne ζ – in den HFGT16-Unterlagen keine Tabelle), N28 (Schicht mit eigenem R mit Quelle), N29 (Betondecke auch über Aufbauname/Schichten) umgesetzt.
+- **14.11.2026 Paket Ansichten:** 27 (Freistellung und Platzierung in Einlage-, Grundleitungs- und Aussparungsplänen in Ansichtsachsen, eigene Leitung
+  ausgenommen, Führungslinien am gedrehten Block; Masszahlen und Leitungstexte lesbar auf dem Blatt bestimmt → immer über der Linie), 49 (Ansichtsvorlage
+  als Verknüpfung mit vorlageGeloest, Nachführung AnsichtsvorlagenNachfuehren), N33 (Befehl ansicht_duplizieren, Wahl «Nur Ansicht» / «Mit Beschriftungen»)
+  umgesetzt. Schnittsymbol im gedrehten Grundriss (Ausgabe-Bericht Punkt 8) nicht angefasst.
