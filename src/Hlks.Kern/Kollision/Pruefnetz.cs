@@ -82,7 +82,7 @@ public sealed class Pruefnetz
     }
 
     /// <summary>Aus einer Netzdatei (float32-Punkte, Dreiecke je Produkt).</summary>
-    public static Pruefnetz Aus(float[] punkte, int[] dreiecke)
+    public static Pruefnetz Aus(double[] punkte, int[] dreiecke)
     {
         var pd = new double[punkte.Length];
         for (int i = 0; i < punkte.Length; i++) pd[i] = punkte[i];

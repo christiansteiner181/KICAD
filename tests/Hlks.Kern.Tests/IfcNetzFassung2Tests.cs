@@ -74,7 +74,7 @@ static class NetzdateiTestschreiber
     /// <summary>Dieselben Produkte (Bauteile und Teile, ohne Öffnungen) im Format Fassung 1 – so sah die Datei vor B1b aus.</summary>
     public static void AlsFassung1(IfcNetzdatei quelle, string ziel) =>
         Schreiben(ziel, 1, quelle.Alle(nurHintergrund: false).Select(x =>
-            new Satz(x.Produkt.GlobalId, x.Produkt.Entitaet, x.Punkte, x.Dreiecke, x.Produkt.Uebernommen, Kote: x.Produkt.GeschossKote, Label: x.Produkt.EntityLabel)));
+            new Satz(x.Produkt.GlobalId, x.Produkt.Entitaet, x.Punkte.Select(v => (float)v).ToArray(), x.Dreiecke, x.Produkt.Uebernommen, Kote: x.Produkt.GeschossKote, Label: x.Produkt.EntityLabel)));
 
     /// <summary>Datei in den Unterlagen des Projekts ablegen und der (einzigen) IFC-Unterlage als Netzdatei geben (nur im Test direkt
     /// im Modell gesetzt).</summary>
@@ -126,7 +126,7 @@ public sealed class IfcNetzFassung2Tests : IDisposable
     public void Fassung2_OeffnungenAlsEigeneDatensaetze_MitWirtUndFuellung(string schema)
     {
         var n = Netz(Uebernommen(schema));
-        Assert.Equal(5, n.Fassung);   // Fassung 3 seit Nachtrag B3c (Material), 4 seit IFC 1:1 (Farben), 5 Anzeigenetz (xBIM); Rolle, Bezug, Öffnungen wie Fassung 2
+        Assert.Equal(IfcNetzErzeuger.Fassung, n.Fassung);   // Fassung 6 Ursprung, 3 seit Nachtrag B3c (Material), 4 seit IFC 1:1 (Farben), 5 Anzeigenetz (xBIM); Rolle, Bezug, Öffnungen wie Fassung 2
         Assert.Equal(IfcNetzErzeuger.Fassung, n.Fassung);
         Assert.Contains("Oeffnungen", n.Beschreibung);
         Assert.Equal(7, n.Oeffnungen.Count);
@@ -302,11 +302,11 @@ public sealed class IfcNetzFassung2Tests : IDisposable
         var pfad = Temp(".bin");
         NetzdateiTestschreiber.Schreiben(pfad, 2, [NetzdateiTestschreiber.Quader("WAND1", "IfcWall", [0, 0, 0], [1, 1, 1])]);
         var bytes = File.ReadAllBytes(pfad);
-        BitConverter.GetBytes(6).CopyTo(bytes, 8);
+        BitConverter.GetBytes(7).CopyTo(bytes, 8);
         File.WriteAllBytes(pfad, bytes);
         var f = Assert.Throws<HlksFehler>(() => IfcNetzdatei.Oeffnen(pfad));
-        Assert.Contains("Fassung 6", f.Message);
-        Assert.Contains("1 und 2 und 3 und 4 und 5", f.Message);
+        Assert.Contains("Fassung 7", f.Message);
+        Assert.Contains("1 und 2 und 3 und 4 und 5 und 6", f.Message);
         // Rolle 9 beim ersten Datensatz: nach Kopf, Label, GlobalId, Entität, Kote, Kennzeichen
         BitConverter.GetBytes(2).CopyTo(bytes, 8);
         int text = BitConverter.ToInt32(bytes, 12);

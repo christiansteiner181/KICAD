@@ -359,15 +359,15 @@ public sealed class AussparungNachtragB3cTests : IDisposable
     public void Abgleich_DurchgehendeAussparung_JeBauteilNurSeinTeil()
     {
         var lage = new Aussparungslage(new V3(1000, 137.5, 1000), new V3(0, 1, 0), new V3(1, 0, 0), new V3(0, 0, 1), false, 95, 95, 275);
-        var a = Pruefnetz.Aus(NetzBau.Quader([0, 0, 0], [2000, 150, 2600]).Ecken.SelectMany(q => q.Select(x => (float)x)).ToArray(),
+        var a = Pruefnetz.Aus(NetzBau.Quader([0, 0, 0], [2000, 150, 2600]).Ecken.SelectMany(q => q).ToArray(),
             NetzBau.Quader([0, 0, 0], [2000, 150, 2600]).Dreiecke.SelectMany(x => x).ToArray());
-        var b = Pruefnetz.Aus(NetzBau.Quader([0, 150, 0], [2000, 275, 2600]).Ecken.SelectMany(q => q.Select(x => (float)x)).ToArray(),
+        var b = Pruefnetz.Aus(NetzBau.Quader([0, 150, 0], [2000, 275, 2600]).Ecken.SelectMany(q => q).ToArray(),
             NetzBau.Quader([0, 150, 0], [2000, 275, 2600]).Dreiecke.SelectMany(x => x).ToArray());
         var o = NetzBau.Quader([900, -10, 900], [1100, 160, 1100]);
         var oeffnung = new Pruefoeffnung
         {
             UnterlageId = "UL", GlobalId = "O", Entitaet = "IfcOpeningElement",
-            Netz = Pruefnetz.Aus(o.Ecken.SelectMany(q => q.Select(x => (float)x)).ToArray(), o.Dreiecke.SelectMany(x => x).ToArray()),
+            Netz = Pruefnetz.Aus(o.Ecken.SelectMany(q => q).ToArray(), o.Dreiecke.SelectMany(x => x).ToArray()),
         };
         Assert.True(AussparungenAbgleichen.AbgedecktIn(oeffnung, lage, a));
         Assert.False(AussparungenAbgleichen.AbgedecktIn(oeffnung, lage, b));

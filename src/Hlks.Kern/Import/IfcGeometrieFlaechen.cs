@@ -227,9 +227,9 @@ public static class Netzflaechen
         return best;
     }
 
-    /// <summary>Waagrechter Schnitt der Dreiecke (Punkte float x, y, z; Dreiecke int) mit der Ebene z = h: Strecken
+    /// <summary>Waagrechter Schnitt der Dreiecke (Punkte double x, y, z; Dreiecke int) mit der Ebene z = h: Strecken
     /// [x1, y1, x2, y2]. Punkte genau auf der Ebene zählen als darüber (keine doppelten Strecken an Kanten).</summary>
-    public static void Schneiden(float[] punkte, int[] dreiecke, double h, List<double[]> aus)
+    public static void Schneiden(double[] punkte, int[] dreiecke, double h, List<double[]> aus)
     {
         for (int i = 0; i + 2 < dreiecke.Length; i += 3)
         {

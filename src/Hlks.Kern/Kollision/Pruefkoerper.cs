@@ -400,8 +400,8 @@ public static class Pruefkoerperbau
         public required Element Unterlage { get; init; }
         public required IfcNetzdatei Datei { get; init; }
         /// <summary>GlobalId → exaktes Netz für Elemente (übernommene Produkte; Ganze aus ihren Teilen).</summary>
-        public Dictionary<string, (IfcNetzProdukt Produkt, float[] Punkte, int[] Dreiecke)> Uebernommen { get; } = new(StringComparer.Ordinal);
-        public List<(IfcNetzProdukt Produkt, float[] Punkte, int[] Dreiecke)> Hintergrund { get; } = [];
+        public Dictionary<string, (IfcNetzProdukt Produkt, double[] Punkte, int[] Dreiecke)> Uebernommen { get; } = new(StringComparer.Ordinal);
+        public List<(IfcNetzProdukt Produkt, double[] Punkte, int[] Dreiecke)> Hintergrund { get; } = [];
         /// <summary>Fassung 2: GlobalId eines Teils → GlobalId seines Ganzen.</summary>
         public Dictionary<string, string> GanzesVon { get; } = new(StringComparer.Ordinal);
         /// <summary>Fassung 2: Hintergrund-Teile, die nicht geprüft werden, weil ihr Ganzes ein eigenes Netz hat.</summary>
@@ -419,11 +419,11 @@ public static class Pruefkoerperbau
 
     /// <summary>Teile eines Ganzen zu einem Datensatz unter der GlobalId des Ganzen vereinen (Punkte hintereinander, Indizes
     /// verschoben, Begrenzung vereint; Entität und Geschoss vom ersten Teil).</summary>
-    static (IfcNetzProdukt Produkt, float[] Punkte, int[] Dreiecke) Vereinen(string ganz, List<(IfcNetzProdukt Produkt, float[] Punkte, int[] Dreiecke)> teile)
+    static (IfcNetzProdukt Produkt, double[] Punkte, int[] Dreiecke) Vereinen(string ganz, List<(IfcNetzProdukt Produkt, double[] Punkte, int[] Dreiecke)> teile)
     {
-        var pu = new float[teile.Sum(t => t.Punkte.Length)];
+        var pu = new double[teile.Sum(t => t.Punkte.Length)];
         var dr = new int[teile.Sum(t => t.Dreiecke.Length)];
-        float[] bb = [float.MaxValue, float.MaxValue, float.MaxValue, float.MinValue, float.MinValue, float.MinValue];
+        double[] bb = [double.MaxValue, double.MaxValue, double.MaxValue, double.MinValue, double.MinValue, double.MinValue];
         int op = 0, od = 0;
         foreach (var (pr, p, d) in teile)
         {
@@ -448,7 +448,7 @@ public static class Pruefkoerperbau
     static void Einordnen(Netzdaten nd, IReadOnlySet<string> elementGids, bool exakt, bool hintergrund)
     {
         var mitNetz = nd.Datei.Produkte.Where(x => x.Dreiecke > 0 && x.Rolle != IfcNetzRolle.Oeffnung).Select(x => x.GlobalId).ToHashSet(StringComparer.Ordinal);
-        var ohneGanzes = new Dictionary<string, List<(IfcNetzProdukt Produkt, float[] Punkte, int[] Dreiecke)>>(StringComparer.Ordinal);
+        var ohneGanzes = new Dictionary<string, List<(IfcNetzProdukt Produkt, double[] Punkte, int[] Dreiecke)>>(StringComparer.Ordinal);
         foreach (var x in nd.Datei.Alle(nurHintergrund: false))
         {
             var pr = x.Produkt;

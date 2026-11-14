@@ -20,7 +20,7 @@ public sealed class KollisionGeometrieIfcTests : IDisposable
 
     static IfcNetzdatei Netzdatei(Projekt p) => IfcNetzdatei.Oeffnen(Unterlagen.Pfad(p, p.Modell.DerKlasse("Unterlage").Single().Text("netz")!));
 
-    static Huelle3 Huelle(float[] b) => new(new V3(b[0], b[1], b[2]), new V3(b[3], b[4], b[5]));
+    static Huelle3 Huelle(double[] b) => new(new V3(b[0], b[1], b[2]), new V3(b[3], b[4], b[5]));
 
     [Theory]
     [InlineData("IFC4")]

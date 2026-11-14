@@ -13,7 +13,7 @@ public class IfcNetzTests
         return IfcNetzdatei.Oeffnen(Unterlagen.Pfad(p, ul.Text("netz")!));
     }
 
-    static double Inhalt(float[] pu, int[] dr)
+    static double Inhalt(double[] pu, int[] dr)
     {
         // Oberfläche aller Dreiecke (mm²)
         double s = 0;
@@ -34,7 +34,7 @@ public class IfcNetzTests
     {
         var (p, _) = IfcArchitekturTests.Uebernommen(schema);
         var n = Netz(p);
-        Assert.Equal(5, n.Fassung);   // Fassung 5 Anzeigenetz (xBIM), 4 seit IFC 1:1 (Farben), 3 seit Nachtrag B3c (Material), 2 seit Modul 3b (B1b); Fassung 1 und 2 lesen: IfcNetzFassung2Tests, AussparungMaterialTests
+        Assert.Equal(6, n.Fassung);   // Fassung 6 Ursprung (Frage 32), 5 Anzeigenetz (xBIM), 4 seit IFC 1:1 (Farben), 3 seit Nachtrag B3c (Material), 2 seit Modul 3b (B1b); Fassung 1 und 2 lesen: IfcNetzFassung2Tests, AussparungMaterialTests
         Assert.Contains("HLKS-CAD Netzdatei", n.Beschreibung);
         var sued = IfcArchitekturTests.Namens(p, "Wand", "W-Sued");
         var w = n.Produkt(sued.Kennungen!["ifc"])!;
@@ -212,7 +212,7 @@ public class IfcNetzTests
         var gf = Assert.Single(Netzflaechen.Grundflaeche(n));
         Assert.Equal(800000, gf.Inhalt, 0);
         var strecken = new List<double[]>();
-        Netzflaechen.Schneiden(n.P.Select(x => (float)x).ToArray(), n.D.ToArray(), 500, strecken);
+        Netzflaechen.Schneiden(n.P.ToArray(), n.D.ToArray(), 500, strecken);
         var zug = Assert.Single(Netzflaechen.Verbinden(strecken));
         Assert.Equal(5, zug.Count);   // geschlossen: Anfang = Ende
         Assert.Equal(zug[0], zug[^1]);

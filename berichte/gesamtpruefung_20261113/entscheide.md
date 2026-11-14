@@ -160,3 +160,8 @@ swisspor führt für Rohre nur PIR-Schalen «swissporKISODUR» (Heizung, Kälte,
   Param.Bool, trockenlauf; ein anderer Wert wird abgelehnt statt still als Vorgabe zu gelten), N39 (Regel «nicht kleiner als zufliessend» in einem Durchgang
   mit Zwischenspeicher je Element; bei gleich grossen Zuflüssen wird die Leitung mit dem kleinsten Kennzeichen genannt; bei einem Kreis im Netz wie vorher
   eine Suche je Leitung), N40 (Lagemanager: je Lage ein eigenes Feld mit «+», gespeichert weiter als Text; unlesbare Einträge werden angezeigt) umgesetzt.
+- **14.11.2026 IFC-Netzdatei mit Bezugspunkt (Rest aus 32):** Netzdatei Fassung 6 – im Kopf 3 × float64 Ursprung (Mitte des ersten Netzes, ganze Meter),
+  alle float32 relativ dazu. Der Kern-Leser liefert absolute Projekt-mm als double (Kollision, Aussparungen, Grundriss-Hintergrund, XR rechnen damit), die
+  3D-Ansicht rechnet Ursprung − Bezugspunkt in float64. Test: Wand bei LV95 behält 200 mm Dicke (float32 absolut: 256 mm Raster). Bestehende Netzdateien
+  (Fassung 5) bleiben lesbar und werden erst mit «IFC erneut übernehmen» genau. Damit sind die entschiedenen Punkte der Gesamtprüfung 13.11.2026 umgesetzt; offen bleibt, was auf Unterlagen wartet (PSLTSCALE: DWG mit Layout von
+  Christian; N41: Justieren am echten Plan).

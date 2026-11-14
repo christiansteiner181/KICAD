@@ -12,6 +12,9 @@
 //   uint16 L + L Byte UTF-8 Fundstelle des Materials (L = 0: keine Angabe)],
 //   6 × float32 Begrenzung, int32 Punkte p, int32 Dreiecke d,
 //   p × 3 float32 Punkte (x Ost, y Nord, z, mm), d × 3 int32 Dreiecke (Punktindizes je Produkt, 0-basiert).
+//   Fassung 6 (14.11.2026, Frage 32): nach der Begrenzung im Kopf 3 × float64 Ursprung; alle float32 (Begrenzung je Produkt, Punkte) sind relativ dazu –
+//   float32 absolut wäre bei Landeskoordinaten (x ≈ 2.6e9 mm) auf 256 mm genau. Der Leser rechnet Ursprung − Bezugspunkt in float64 und legt nur die
+//   kleinen relativen Werte in die Float32Array der Anzeige; produkte[].begrenzung ist absolut (Ursprung dazugezählt).
 // Öffnungen (Rolle oeffnung) werden nie gezeichnet – die Bauteilnetze sind nicht ausgeschnitten, Öffnungen dienen nur der
 // Kollisionsprüfung. Teile (Rolle teil) zeichnen sich wie in Fassung 1 nach ihrem Kennzeichen.
 //
@@ -23,7 +26,7 @@ import { B } from './bezugspunkt.js';   // Frage 32
 export const KENNUNG = 'HLKSNETZ';
 export const GLOBALID_LAENGE = 22;
 /** Fassungen, die leseNetz kennt (der Kern schreibt die höchste: IfcNetzErzeuger.Fassung). */
-export const FASSUNGEN = Object.freeze([1, 2, 3, 4, 5]);
+export const FASSUNGEN = Object.freeze([1, 2, 3, 4, 5, 6]);
 /** Rollen der Datensätze nach ihrer Nummer (Fassung 2; Fassung 1: immer bauteil). */
 export const ROLLEN = Object.freeze(['bauteil', 'teil', 'oeffnung']);
 const M = 1 / 1000;
@@ -81,6 +84,8 @@ export function leseNetz(daten, optionen = {}) {
   brauche(48, 'Begrenzung');
   const begrenzung = [];
   for (let i = 0; i < 6; i++) { begrenzung.push(dv.getFloat64(pos, true)); pos += 8; }
+  const ursprung = [0, 0, 0];   // Fassung 6: float32-Werte relativ dazu
+  if (fassung >= 6) { brauche(24, 'Ursprung'); for (let i = 0; i < 3; i++) { ursprung[i] = dv.getFloat64(pos, true); pos += 8; } }
 
   // Erster Durchgang: Köpfe lesen und Punkte/Dreiecke überspringen; so ist die Grösse des Ergebnisses vorab bekannt.
   const produkte = [];
@@ -124,7 +129,7 @@ export function leseNetz(daten, optionen = {}) {
     }
     brauche(24 + 8, 'Produktkopf');
     const bb = [];
-    for (let i = 0; i < 6; i++) { bb.push(dv.getFloat32(pos, true)); pos += 4; }
+    for (let i = 0; i < 6; i++) { bb.push(dv.getFloat32(pos, true) + ursprung[i % 3]); pos += 4; }
     const p = i32('Punktzahl'), d = i32('Dreieckszahl');
     if (p < 0 || d < 0) throw new NetzFehler(`Die Netzdatei ist beschädigt (Produkt ${n + 1}: negative Anzahl).`);
     brauche(12 * p + 12 * d, `Punkte und Dreiecke von Produkt ${n + 1}`);
@@ -159,15 +164,16 @@ export function leseNetz(daten, optionen = {}) {
     if (letzte && letzte.ab === ab) { letzte.farbe = farbe; return; }
     if ((letzte?.farbe ?? 0) !== farbe) farbenGesamt.push({ ab, farbe });
   };
+  const ox = ursprung[0] - B[0], oy = ursprung[1] - B[1], oz = ursprung[2] - B[2];   // in float64: Ursprung der Datei relativ zum Bezugspunkt
   for (const g of gewaehlt) {
     const ab = vi / 3;
     abschnitt(ab, 0);
     for (const x of g.farben) abschnitt(ab + x.ab, x.farbe);
     for (let k = 0, o = g.punkteAb; k < g.p; k++, o += 12) {
-      positionen[vp++] = (dv.getFloat32(o, true) - B[0]) * M;  // x, relativ zum Bezugspunkt (Frage 32)
+      positionen[vp++] = (dv.getFloat32(o, true) + ox) * M;    // x, relativ zum Bezugspunkt (Frage 32)
       const y = dv.getFloat32(o + 4, true), z = dv.getFloat32(o + 8, true);
-      positionen[vp++] = (z - B[2]) * M;                       // three-y = Höhe z
-      positionen[vp++] = -(y - B[1]) * M;                      // three-z = −y
+      positionen[vp++] = (z + oz) * M;                         // three-y = Höhe z
+      positionen[vp++] = -(y + oy) * M;                        // three-z = −y
     }
     for (let k = 0, o = g.dreieckeAb; k < g.d * 3; k++, o += 4) {
       const i = dv.getInt32(o, true);
@@ -175,5 +181,5 @@ export function leseNetz(daten, optionen = {}) {
     }
     versatz += g.p;
   }
-  return { fassung, beschreibung, begrenzung, produkte, punkte: summeP, dreiecke: summeD, positionen, indizes, farben: farbenGesamt };
+  return { fassung, beschreibung, begrenzung, ursprung, produkte, punkte: summeP, dreiecke: summeD, positionen, indizes, farben: farbenGesamt };
 }

@@ -163,8 +163,8 @@ public sealed class FamilienGrafik : IGrafikquelle
             if (t.Art != "koerper" || t.Ecken is not { Count: > 0 } ecken || t.Dreiecke is not { Count: > 0 } dreiecke) continue;
             if (hoehe < ecken.Min(p => p[2]) || hoehe > ecken.Max(p => p[2])) continue;
             if (erster) { (ox, oy, erster) = (ecken[0][0], ecken[0][1], false); }
-            var punkte = new float[ecken.Count * 3];
-            for (int i = 0; i < ecken.Count; i++) { punkte[3 * i] = (float)(ecken[i][0] - ox); punkte[3 * i + 1] = (float)(ecken[i][1] - oy); punkte[3 * i + 2] = (float)(ecken[i][2] - hoehe); }
+            var punkte = new double[ecken.Count * 3];
+            for (int i = 0; i < ecken.Count; i++) { punkte[3 * i] = (ecken[i][0] - ox); punkte[3 * i + 1] = (ecken[i][1] - oy); punkte[3 * i + 2] = (ecken[i][2] - hoehe); }
             var d = new int[dreiecke.Count * 3];
             for (int i = 0; i < dreiecke.Count; i++) { d[3 * i] = dreiecke[i][0]; d[3 * i + 1] = dreiecke[i][1]; d[3 * i + 2] = dreiecke[i][2]; }
             Netzflaechen.Schneiden(punkte, d, 0, strecken);

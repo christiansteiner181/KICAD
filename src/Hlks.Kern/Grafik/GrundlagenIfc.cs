@@ -89,10 +89,10 @@ public sealed class GrundlagenIfc : IGrundlagenArt
 
     sealed class Hintergrund
     {
-        public required float[] Punkte { get; init; }
+        public required double[] Punkte { get; init; }
         public required int[] Dreiecke { get; init; }
-        public required float ZMin { get; init; }
-        public required float ZMax { get; init; }
+        public required double ZMin { get; init; }
+        public required double ZMax { get; init; }
         public ConcurrentDictionary<long, List<List<double[]>>> Schnitte { get; } = new();
         /// <summary>Schnitte mit senkrechten Ebenen (Schnitt, Ansicht), je Lage der Ebene.</summary>
         public ConcurrentDictionary<string, List<List<double[]>>> Ebenen { get; } = new();
@@ -126,11 +126,11 @@ public sealed class GrundlagenIfc : IGrundlagenArt
         h.Benutzt = Interlocked.Increment(ref zaehler);
         var schluessel = string.Create(CultureInfo.InvariantCulture, $"{raum.Ax:F1}|{raum.Ay:F1}|{raum.Dx:F7}|{raum.Dy:F7}|{raum.Nx:F7}|{raum.Ny:F7}");
         if (h.Ebenen.TryGetValue(schluessel, out var da)) return da;
-        var q = new float[h.Punkte.Length];
+        var q = new double[h.Punkte.Length];
         for (int i = 0; i + 2 < q.Length; i += 3)
         {
             double x = h.Punkte[i], y = h.Punkte[i + 1];
-            q[i] = (float)raum.U(x, y); q[i + 1] = h.Punkte[i + 2]; q[i + 2] = (float)raum.W(x, y);
+            q[i] = raum.U(x, y); q[i + 1] = h.Punkte[i + 2]; q[i + 2] = raum.W(x, y);
         }
         var strecken = new List<double[]>();
         Netzflaechen.Schneiden(q, h.Dreiecke, 0, strecken);
@@ -145,9 +145,9 @@ public sealed class GrundlagenIfc : IGrundlagenArt
         var key = pfad + (nurHintergrund ? "|h" : "|a");
         if (dateien.TryGetValue(key, out var h)) return h;
         var datei = IfcNetzdatei.Oeffnen(pfad);
-        var punkte = new List<float>();
+        var punkte = new List<double>();
         var dreiecke = new List<int>();
-        float zmin = float.MaxValue, zmax = float.MinValue;
+        double zmin = double.MaxValue, zmax = double.MinValue;
         foreach (var (pr, pu, dr) in datei.Alle(nurHintergrund, anzeige: true))   // Fassung 5: wie ein IFC-Betrachter, Öffnungen ausgeschnitten
         {
             int basis = punkte.Count / 3;

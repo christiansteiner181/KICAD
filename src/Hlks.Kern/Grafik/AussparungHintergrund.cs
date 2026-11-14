@@ -22,7 +22,7 @@ internal static class AussparungHintergrund
     sealed class Daten
     {
         public required bool HatHlks { get; init; }
-        public required float[] Punkte { get; init; }
+        public required double[] Punkte { get; init; }
         public required int[] Dreiecke { get; init; }
         public ConcurrentDictionary<long, List<List<double[]>>> Schnitte { get; } = new();
         public long Benutzt;
@@ -80,7 +80,7 @@ internal static class AussparungHintergrund
         string schluessel = $"{pfad}|{info.Length}|{info.LastWriteTimeUtc.Ticks}";
         if (dateien.TryGetValue(schluessel, out var da)) { da.Benutzt = Interlocked.Increment(ref zaehler); return da; }
         var datei = IfcNetzdatei.Oeffnen(pfad);
-        var punkte = new List<float>();
+        var punkte = new List<double>();
         var dreiecke = new List<int>();
         bool hlks = false;
         foreach (var (pr, pu, dr) in datei.Alle(nurHintergrund: true))

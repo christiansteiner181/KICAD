@@ -35,8 +35,8 @@ public static class NetzDraufsicht
         foreach (var t in netze)
         {
             if (t.Ecken!.Max(p => p[2]) < hoehe) continue;
-            var pf = new float[t.Ecken.Count * 3];
-            for (int i = 0; i < t.Ecken.Count; i++) { pf[3 * i] = (float)(t.Ecken[i][0] - x0); pf[3 * i + 1] = (float)(t.Ecken[i][1] - y0); pf[3 * i + 2] = (float)(t.Ecken[i][2] - hoehe); }
+            var pf = new double[t.Ecken.Count * 3];
+            for (int i = 0; i < t.Ecken.Count; i++) { pf[3 * i] = (t.Ecken[i][0] - x0); pf[3 * i + 1] = (t.Ecken[i][1] - y0); pf[3 * i + 2] = (t.Ecken[i][2] - hoehe); }
             var df = t.Dreiecke!.SelectMany(d => d).ToArray();
             Netzflaechen.Schneiden(pf, df, 0, strecken);
         }

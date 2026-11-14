@@ -16,7 +16,7 @@ const ROLLE = { bauteil: 0, teil: 1, oeffnung: 2 };
 
 /** Netzdatei wie der Kern (IfcNetzErzeuger). produkte: { label, gid, ent, kote, uebernommen, rolle?, bezug?, fuellungen?, punkte, dreiecke }.
  * Fassung 1 schreibt Rolle, Bezug und Füllungen nicht. */
-function baueNetz(produkte, { fassung = 2 } = {}) {
+function baueNetz(produkte, { fassung = 2, ursprung = [0, 0, 0] } = {}) {
   const teile = [];
   const puffer = (n, fn) => { const b = new DataView(new ArrayBuffer(n)); fn(b); teile.push(new Uint8Array(b.buffer)); };
   const text = (t) => new Uint8Array([...t].map((c) => c.charCodeAt(0)));
@@ -26,6 +26,7 @@ function baueNetz(produkte, { fassung = 2 } = {}) {
   puffer(8, (b) => { b.setInt32(0, fassung, true); b.setInt32(4, beschr.length, true); });
   teile.push(beschr);
   puffer(4 + 48, (b) => { b.setInt32(0, produkte.length, true); [0, 0, 0, 10000, 10000, 3000].forEach((v, i) => b.setFloat64(4 + 8 * i, v, true)); });
+  if (fassung >= 6) puffer(24, (b) => ursprung.forEach((v, i) => b.setFloat64(8 * i, v, true)));   // Fassung 6: Ursprung, float32 relativ dazu
   for (const p of produkte) {
     puffer(4, (b) => b.setInt32(0, p.label, true));
     teile.push(gid(p.gid));
@@ -129,8 +130,8 @@ test('Netzdatei Fassung 2: Fehler deutsch (unbekannte Rolle, abgeschnitten in Be
   assert.throws(() => netzd.leseNetz(kaputt.buffer), /unbekannte Rolle 7/);
   for (const kuerzer of [lage, lage + 5, lage + 23, ganz.byteLength - 1])
     assert.throws(() => netzd.leseNetz(ganz.slice(0, kuerzer)), /abgeschnitten/, `bei ${kuerzer} Byte`);
-  assert.throws(() => netzd.leseNetz(baueNetz(PRODUKTE, { fassung: 6 })), /Fassung 6 wird nicht unterstützt \(bekannt: 1, 2, 3, 4, 5\)/);
-  assert.deepEqual(netzd.FASSUNGEN, [1, 2, 3, 4, 5]);
+  assert.throws(() => netzd.leseNetz(baueNetz(PRODUKTE, { fassung: 7 })), /Fassung 7 wird nicht unterstützt \(bekannt: 1, 2, 3, 4, 5, 6\)/);
+  assert.deepEqual(netzd.FASSUNGEN, [1, 2, 3, 4, 5, 6]);
   assert.deepEqual(netzd.ROLLEN, ['bauteil', 'teil', 'oeffnung']);
 });
 
@@ -165,7 +166,7 @@ test('Netzdatei: der Leser kennt die Fassung des Kern-Schreibers, die Rollen-Num
   if (!cs) return;
   const f = Number(cs.match(/public const int Fassung = (\d+);/)?.[1]);
   assert.ok(netzd.FASSUNGEN.includes(f), `Kern schreibt Fassung ${f}`);
-  assert.match(cs, /LesbareFassungen = \[1, 2, 3, 4, 5\]/);
+  assert.match(cs, /LesbareFassungen = \[1, 2, 3, 4, 5, 6]/);
   assert.match(cs, /uint8 m \+ m\*\(uint16 L \+ L Byte UTF-8\) Materialnamen/);   // Fassung 3 (Nachtrag B3c)
   assert.match(cs, /enum IfcNetzRolle : byte \{ Bauteil = 0, Teil = 1, Oeffnung = 2 \}/);
   assert.match(cs, /uint8 Rolle \(0 = bauteil, 1 = teil, 2 = oeffnung\), 22 Byte Bezug/);
@@ -192,4 +193,25 @@ test('Netzdatei Fassung 5 (xBIM): das Anzeigenetz (Öffnungen ausgeschnitten) er
   assert.equal(n.fassung, 5);
   assert.equal(n.dreiecke, 3);    // Wand: 2 Dreiecke der Anzeige, Decke: 1 des Hauptnetzes
   assert.equal(n.punkte, 7);
+});
+
+test('Netzdatei Fassung 6 (Frage 32): Punkte relativ zum Ursprung, Anzeige relativ zum Bezugspunkt in float64 – bei LV95 auf unter 1 mm genau', async () => {
+  const { B, bezugSetzen } = await import('./bezugspunkt.js');
+  const U = [2600123000, 1200456000, 500000];   // Landeskoordinaten in mm (fiktiv)
+  const p = { label: 1, gid: 'WAND-LV95', ent: 'IfcWall', kote: 0, uebernommen: false, punkte: [[0.25, 0, 0], [1000.5, 0, 0], [0, 1000.75, 2500]], dreiecke: [[0, 1, 2]] };
+  try {
+    bezugSetzen([2600120000, 1200450000, 499000]);
+    const n = netzd.leseNetz(baueNetz([p], { fassung: 6, ursprung: U }));
+    assert.equal(n.fassung, 6);
+    assert.deepEqual(n.ursprung, U);
+    assert.deepEqual(n.produkte[0].begrenzung, [U[0], U[1] + 1, U[2] + 2, U[0] + 3, U[1] + 4, U[2] + 5]);   // baueNetz schreibt 0 … 5 relativ
+    // erster Punkt: x = U − B + 0.25 mm = 3000.25 mm → 3.00025 m (three: x, y = z, z = −y)
+    assert.ok(Math.abs(n.positionen[0] - 3.00025) < 1e-6, String(n.positionen[0]));
+    assert.ok(Math.abs(n.positionen[1] - 1.0) < 1e-6);
+    assert.ok(Math.abs(n.positionen[2] + 6.0) < 1e-6);
+    assert.ok(Math.abs(n.positionen[8] + 7.00075) < 1e-6, String(n.positionen[8]));   // y des dritten Punkts: 6000 + 1000.75 mm
+    // ältere Fassung bleibt absolut (Ursprung 0)
+    assert.deepEqual(netzd.leseNetz(baueNetz([p], { fassung: 5 })).ursprung, [0, 0, 0]);
+  } finally { bezugSetzen([0, 0, 0]); }
+  assert.deepEqual([...B], [0, 0, 0]);
 });
