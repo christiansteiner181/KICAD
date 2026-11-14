@@ -1,8 +1,8 @@
 // Befehle an den Kern mit einheitlicher Fehler- und Ergebnisbehandlung. Die Oberfläche ändert nie selbst etwas:
 // sie schickt den Befehl und wartet, bis das Ereignis vom Server zurückkommt.
 
-import { befehl } from '../api.js';
-import { meldung } from './dialoge.js';
+import { befehl, senden } from '../api.js';
+import { meldung, zeigen } from './dialoge.js';
 import { esc } from './werkzeug.js';
 
 /** Sendet einen Befehl. Netzwerk- und Serverfehler werden zu einem abgelehnten Ergebnis (nie eine Ausnahme). */
@@ -18,7 +18,8 @@ export async function sende(name, parameter = {}, opt = {}) {
 /** Zeigt das Ergebnis eines echten Befehls als Meldung. Gibt zurück, ob er angenommen wurde. */
 export function ergebnisMelden(r, okText = null) {
   if (!r.angenommen) {
-    meldung(r.fehler || r.meldung || 'Der Befehl wurde abgelehnt.', 'warnung', { vorschlag: r.vorschlag });
+    const gesperrt = (r.gesperrt ?? []).filter((g) => g && typeof g === 'object' && g.element);
+    meldung(r.fehler || r.meldung || 'Der Befehl wurde abgelehnt.', 'warnung', { vorschlag: r.vorschlag, knopf: gesperrt.length ? { text: 'Reservierung übernehmen …', aktion: () => reservierungUebernehmen(gesperrt) } : null });
     return false;
   }
   const hinweise = (r.hinweise ?? []).filter(Boolean);
@@ -27,6 +28,22 @@ export function ergebnisMelden(r, okText = null) {
   if ((r.gesperrt ?? []).length > 0) meldung('Gesperrt (reserviert): ' + r.gesperrt.map((g) => g?.element ?? g?.kennzeichen ?? (typeof g === 'string' ? g : JSON.stringify(g))).join(', '), 'warnung');
   if ((r.konflikte ?? []).length > 0) meldung('Konflikt: ' + r.konflikte.map((k) => (typeof k === 'string' ? k : k?.meldung ?? JSON.stringify(k))).join('; '), 'warnung');
   return true;
+}
+
+/** Frage 42 (Christian 13.11.2026): fremde Reservierungen übernehmen, mit Name und Zeitpunkt – nur nach Absturz oder VPN-Abbruch der anderen Person. */
+async function reservierungUebernehmen(gesperrt) {
+  const zeit = (t) => { const d = new Date(t); return Number.isNaN(d.getTime()) ? String(t ?? '') : d.toLocaleString('de-CH', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' }); };
+  const wer = [...new Map(gesperrt.map((g) => [`${g.akteur}@${g.geraet}`, g])).values()];
+  const inhalt = document.createElement('div');
+  inhalt.innerHTML = `<p class="dlg-text">Diese Elemente sind reserviert von:</p><ul>${wer.map((g) => `<li><b>${esc(g.akteur)}</b> auf ${esc(g.geraet)} – seit ${esc(zeit(g.seit))}, bis ${esc(zeit(g.bis))}</li>`).join('')}</ul>
+    <p class="dlg-text">Nur übernehmen, wenn die Person nicht mehr daran arbeitet (Absturz, VPN-Abbruch). Arbeitet sie noch, können ihre Änderungen mit deinen zusammenstossen.</p>`;
+  const ok = await zeigen({ titel: 'Reservierung übernehmen', inhalt, knoepfe: [{ text: 'Abbrechen', wert: false }, { text: 'Übernehmen', wert: true, primaer: true }] });
+  if (ok !== true) return;
+  try {
+    const r = await senden('/api/reservierungen/uebernehmen', { elemente: gesperrt.map((g) => g.element) });
+    const n = (r.uebernommen ?? []).length;
+    meldung(n ? `${n} Reservierung(en) übernommen – den Befehl jetzt erneut ausführen.` : 'Nichts zu übernehmen (inzwischen frei oder abgelaufen).', n ? 'ok' : 'info');
+  } catch (e) { meldung(e.message ?? String(e), 'fehler', { vorschlag: e.vorschlag }); }
 }
 
 const ART_TEXT = { angelegt: 'angelegt', geaendert: 'geändert', geloescht: 'gelöscht', getrennt: 'getrennt', verbunden: 'verbunden' };

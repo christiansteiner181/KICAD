@@ -4,6 +4,23 @@
     <RootNamespace>Hlks.Kern</RootNamespace>
   </PropertyGroup>
 
+  <!-- Frage 42 (14.11.2026): Programmstand = Zeit des letzten Commits (Unix-Sekunden) für «neuerer Programmstand → nur lesend» (Projekt.Programmstand).
+       cmd.exe verlangt ein verdoppeltes Prozentzeichen, sh ein einfaches; übernommen werden nur Ziffern (ohne git: kein Programmstand = 0). -->
+  <Target Name="ProgrammstandAusGit" BeforeTargets="GetAssemblyAttributes">
+    <Exec Command="git log -1 --format=%25%25ct" ConsoleToMSBuild="true" IgnoreExitCode="true" StandardOutputImportance="low" StandardErrorImportance="low" WorkingDirectory="$(MSBuildProjectDirectory)" Condition="'$(Programmstand)' == '' And '$(OS)' == 'Windows_NT'">
+      <Output TaskParameter="ConsoleOutput" PropertyName="ProgrammstandRoh" />
+    </Exec>
+    <Exec Command="git log -1 --format=%25ct" ConsoleToMSBuild="true" IgnoreExitCode="true" StandardOutputImportance="low" StandardErrorImportance="low" WorkingDirectory="$(MSBuildProjectDirectory)" Condition="'$(Programmstand)' == '' And '$(OS)' != 'Windows_NT'">
+      <Output TaskParameter="ConsoleOutput" PropertyName="ProgrammstandRoh" />
+    </Exec>
+    <PropertyGroup Condition="'$(Programmstand)' == '' And '$([System.Text.RegularExpressions.Regex]::IsMatch(&quot;$(ProgrammstandRoh)&quot;, &quot;^[0-9]+%24&quot;))' == 'True'">
+      <Programmstand>$(ProgrammstandRoh)</Programmstand>
+    </PropertyGroup>
+    <ItemGroup Condition="'$(Programmstand)' != ''">
+      <AssemblyMetadata Include="Programmstand" Value="$(Programmstand)" />
+    </ItemGroup>
+  </Target>
+
   <ItemGroup>
     <!-- Polygon-Vereinigung, -Differenz und -Versatz (Wandanschlüsse, Öffnungen, Raumgrenzen). Boost Software License. -->
     <PackageReference Include="Clipper2" Version="1.5.4" />

@@ -4628,3 +4628,8 @@ Kern `Zeichnung/ZeichnungPlotstil.cs`, MCP `zeichnung_plotstile` und Parameter `
 ### 3D: Auswahl und Bezugspunkt (Gesamtprüfung 14.11.2026)
 - Klick im 3D wählt das vorderste Element unter dem Mauszeiger (Frage 33); liegen dahinter weitere, schaltet **Tab** (Umschalt+Tab zurück) zu ihnen durch – der Hinweis zeigt «n/m · Kennzeichen».
 - Modelle in Landeskoordinaten (LV95): die 3D-Ansicht rechnet wie der XR-Export relativ zu einem Bezugspunkt (Achse über ±5 km → Mitte der Ausdehnung, ganze Meter), damit nichts zittert (Frage 32). Gespeicherte Werte (Schnittbereich, Startansicht, Begehen) bleiben in Projekt-mm.
+
+### Reservierungen und Programmstand (Gesamtprüfung Frage 42, 14.11.2026)
+- Lehnt ein Befehl wegen einer fremden Reservierung ab, trägt die Meldung den Knopf **«Reservierung übernehmen …»**: Rückfrage mit Name, Gerät, seit und bis; danach den Befehl erneut ausführen (Endpunkt POST /api/reservierungen/uebernehmen). Dauer einer Reservierung weiterhin 2 h.
+- Pakete, die im Standabbild stehen und älter als 60 Tage sind, wandern beim Schreiben eines Standabbilds nach aenderungenarchivJJJJ-MM (bleiben lesbar).
+- Trägt ein Paket bzw. Standabbild einen neueren Programmstand (Zeit des letzten Commits) als das eigene Programm, ist das Projekt **nur lesend**: Statusleiste rot «Nur lesend – neuerer Programmstand im Projekt», Befehle werden abgelehnt, kein Standabbild. Abhilfe: KICAD aktualisieren.

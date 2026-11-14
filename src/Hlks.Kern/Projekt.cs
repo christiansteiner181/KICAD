@@ -106,6 +106,7 @@ public sealed class Projekt
             {
                 p.Modell.Laden(stand);
                 p.bekannt.UnionWith(stand.EnthaltenePakete);
+                if (stand.Programmstand is long sps) p.NeuererStand(sps);
             }
             var s = p.Synchronisieren();
             if (s.Fehler.FirstOrDefault(f => f.StartsWith("Projektablage", StringComparison.Ordinal)) is { } ablageFehler)
@@ -243,6 +244,13 @@ public sealed class Projekt
                 Aenderungen = aenderungen, NeueBefunde = neu, BehobeneBefunde = behoben, Hinweise = hinweise,
             };
 
+        if (NurLesen is not null)   // Frage 42: neuerer Programmstand im Projekt → nichts schreiben
+            return new BefehlsErgebnis
+            {
+                Angenommen = false, Befehl = befehl, Meldung = "Abgelehnt: Projekt nur lesend.", Fehler = NurLesen,
+                Vorschlag = "KICAD auf den neuesten Stand bringen (Desktop neu starten); ein älteres Programm darf Daten eines neueren nicht überschreiben.",
+            };
+
         if (Speicher is not null)
         {
             IReadOnlyList<Reservierung> gesperrt;
@@ -260,13 +268,13 @@ public sealed class Projekt
                 {
                     Angenommen = false, Befehl = befehl, Meldung = "Abgelehnt: Elemente werden gerade von jemand anderem bearbeitet.",
                     Fehler = string.Join("; ", gesperrt.Select(g => $"{Modell.Finde(g.Element)?.Kennzeichen ?? g.Element}: {g.Akteur}@{g.Geraet} bis {g.Bis:HH:mm}")),
-                    Vorschlag = "Später erneut versuchen oder die Person bitten, freizugeben.", Gesperrt = gesperrt.ToList(),
+                    Vorschlag = "Später erneut versuchen, die Person bitten freizugeben – oder nach einem Absturz bzw. VPN-Abbruch die Reservierung übernehmen.", Gesperrt = gesperrt.ToList(),
                 };
         }
 
         var paket = new Paket
         {
-            Akteur = Akteur, AkteurArt = ArtJetzt, Geraet = Geraet, Zeit = DateTimeOffset.Now, Befehl = befehl,
+            Akteur = Akteur, AkteurArt = ArtJetzt, Geraet = Geraet, Zeit = DateTimeOffset.Now, Befehl = befehl, Programmstand = Programmstand > 0 ? Programmstand : null,
             Parameter = parameter?.DeepClone() as JsonObject, RueckgaengigVon = rueckgaengigVon, Operationen = ops,
             Begruendung = rueckgaengigVon is null ? aufrufBegruendung : null, Prozessschritt = rueckgaengigVon is null ? aufrufSchritt : null,
         };
@@ -629,6 +637,7 @@ public sealed class Projekt
                 bekannt.Add(id);
                 if (bekannt.Contains(p.Id)) { fehler.Add($"Datei {id}.json ist eine Kopie des Pakets {p.Id} – übergangen."); continue; }
             }
+            if (p.Programmstand is long pps) NeuererStand(pps);
             konflikte.AddRange(Modell.Anwenden(p.Operationen, p.Id));
             bekannt.Add(p.Id);
             verlauf.Add(p);
@@ -648,7 +657,38 @@ public sealed class Projekt
     }
 
     /// <summary>Schreibt ein Standabbild (beschleunigt das nächste Öffnen).</summary>
-    public void StandSichern() => Speicher?.StandSchreiben(Modell.Abbild(bekannt.Order(StringComparer.Ordinal)));
+    public void StandSichern()
+    {
+        if (NurLesen is not null || Speicher is null) return;   // Frage 42: ein älterer Programmstand schreibt kein Standabbild
+        var s = Modell.Abbild(bekannt.Order(StringComparer.Ordinal));
+        if (Programmstand > 0) s.Programmstand = Programmstand;
+        Speicher.StandSchreiben(s);
+    }
+
+    /// <summary>Frage 42 (Christian 13.11.2026: «neuerer Programmstand → nur lesend öffnen»): Programmstand dieses Programms = Zeit des letzten
+    /// Commits (Unix-Sekunden, beim Bauen aus git, AssemblyMetadata «Programmstand»); 0 = unbekannt. Pakete und Standabbilder tragen ihn; trägt eines
+    /// einen neueren, ist das Projekt hier nur lesend.</summary>
+    public static long Programmstand { get; } = long.TryParse(typeof(Projekt).Assembly.GetCustomAttributes(typeof(System.Reflection.AssemblyMetadataAttribute), false)
+        .Cast<System.Reflection.AssemblyMetadataAttribute>().FirstOrDefault(a => a.Key == "Programmstand")?.Value?.Trim(), out var ps) ? ps : 0;
+
+    /// <summary>Grund, warum das Projekt nur lesend offen ist (neuerer Programmstand), sonst null.</summary>
+    public string? NurLesen { get; private set; }
+
+    void NeuererStand(long stand)
+    {
+        if (Programmstand <= 0 || stand <= Programmstand || NurLesen is not null) return;
+        NurLesen = $"Das Projekt wurde mit einem neueren Programmstand bearbeitet ({StandText(stand)}; dieses Programm: {StandText(Programmstand)}) – nur lesend.";
+    }
+
+    public static string StandText(long stand) => DateTimeOffset.FromUnixTimeSeconds(stand).ToLocalTime().ToString("dd.MM.yyyy HH:mm", System.Globalization.CultureInfo.InvariantCulture);
+
+    /// <summary>Frage 42: fremde Reservierungen der genannten Elemente übernehmen (Knopf «Reservierung übernehmen»).</summary>
+    public IReadOnlyList<Reservierung> ReservierungUebernehmen(IEnumerable<string> elementIds)
+    {
+        if (Speicher is null) return [];
+        if (NurLesen is not null) throw new HlksFehler(NurLesen, "KICAD aktualisieren (Desktop neu starten), dann erneut versuchen.");
+        return Speicher.Uebernehmen(elementIds, Akteur, Geraet);
+    }
 
     /// <summary>
     /// Gibt die eigenen Reservierungen (dieser Akteur auf diesem Gerät) für die genannten Elemente frei und nennt deren Ids. Reservierungen anderer Akteure oder

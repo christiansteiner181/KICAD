@@ -791,4 +791,63 @@ public sealed class SpeicherTests : IDisposable
         public void Freigeben(string akteur, string geraet, IEnumerable<string>? elementIds = null) => innen.Freigeben(akteur, geraet, elementIds);
         public IReadOnlyList<Reservierung> Reservierungen() => innen.Reservierungen();
     }
+
+    // ---------------------------------------------------------------- Frage 42 (Christian 13.11.2026)
+
+    /// <summary>Knopf «Reservierung übernehmen»: nach Absturz bzw. VPN-Abbruch übernimmt B die noch gültige Reservierung von A, mit Name und Zeitpunkt.</summary>
+    [Fact]
+    public void ReservierungUebernehmen_NachAbsturz()
+    {
+        var a = NeuesProjekt("A", "pc-a");
+        Ok(GebaeudeAnlegen(a, "GEB-X"));
+        Ok(Umbenennen(a, "GEB-X", "von A"));   // A reserviert und «stürzt ab» (gibt nicht frei)
+        var b = Oeffnen("B", "pc-b");
+        Assert.False(Umbenennen(b, "GEB-X", "von B").Angenommen);
+        var id = b.Modell.Finde("GEB-X")!.Id;
+        var alt = Assert.Single(b.ReservierungUebernehmen([id]));
+        Assert.Equal(("A", "pc-a"), (alt.Akteur, alt.Geraet));
+        var neu = Assert.Single(b.Speicher!.Reservierungen());
+        Assert.Equal(("B", "pc-b"), (neu.Akteur, neu.Geraet));
+        Assert.StartsWith("A@pc-a (seit ", neu.UebernommenVon);
+        Ok(Umbenennen(b, "GEB-X", "von B"));
+    }
+
+    /// <summary>Alte Pakete aus dem Standabbild wandern in den Monatsordner; der Ordner aenderungen bleibt klein, gelesen werden sie weiterhin.</summary>
+    [Fact]
+    public void AltePaketeImMonatsordner_LesbarUndNichtMehrGelistet()
+    {
+        var s = new OrdnerSpeicher(ordner);
+        s.KopfSchreiben(new ProjektKopf { Id = "t", Name = "Test", Angelegt = DateTimeOffset.Now });
+        var altId = Paket.NeueId(DateTimeOffset.UtcNow.AddDays(-(OrdnerSpeicher.ArchivNachTagen + 5)), "pc-a", "A", 1);
+        var neuId = Paket.NeueId(DateTimeOffset.UtcNow, "pc-a", "A", 2);
+        s.PaketSchreiben(TestPaket(altId));
+        s.PaketSchreiben(TestPaket(neuId));
+        s.StandSchreiben(new Modell().Abbild([altId, neuId]));
+        Assert.Equal([neuId], s.PaketListe());
+        Assert.True(File.Exists(Path.Combine(Unterordner("aenderungen"), "archiv", $"{altId[..4]}-{altId[4..6]}", altId + ".json")));
+        Assert.Equal(altId, s.PaketLesen(altId).Id);
+        var p = Oeffnen("C", "pc-c");   // aus dem Standabbild: kennt beide
+        Assert.Contains(altId, p.BekanntePakete);
+    }
+
+    /// <summary>Neuerer Programmstand im Projekt → hier nur lesend (kein Paket, kein Standabbild).</summary>
+    [Fact]
+    public void NeuererProgrammstand_NurLesend()
+    {
+        if (Projekt.Programmstand <= 0) return;   // ohne git beim Bauen kein Programmstand – dann gibt es nichts zu vergleichen
+        var a = NeuesProjekt("A", "pc-a");
+        Ok(GebaeudeAnlegen(a, "GEB-X"));
+        var s = new OrdnerSpeicher(ordner);
+        var p = TestPaket(Paket.NeueId(DateTimeOffset.UtcNow, "pc-z", "Z", 1));
+        p.Programmstand = Projekt.Programmstand + 3600;
+        s.PaketSchreiben(p);
+        var b = Oeffnen("B", "pc-b");
+        Assert.NotNull(b.NurLesen);
+        var r = Umbenennen(b, "GEB-X", "von B");
+        Assert.False(r.Angenommen);
+        Assert.Contains("nur lesend", r.Meldung);
+        int paketeVorher = s.PaketListe().Count;
+        b.StandSichern();
+        Assert.Equal(paketeVorher, s.PaketListe().Count);
+    }
 }

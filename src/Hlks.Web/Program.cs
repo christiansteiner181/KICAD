@@ -177,6 +177,22 @@ api.MapPost("/befehl/{name}", (string name, bool? trockenlauf, HttpRequest r) =>
 }));
 
 api.MapPost("/freigeben", () => Sicher(async () => JsonAntwort(new { freigegeben = await dienst.Mit(p => p.Freigeben()) })));
+// Frage 42 (Christian 13.11.2026): Knopf «Reservierung übernehmen» – fremde, noch gültige Reservierungen (nach Absturz bzw. VPN-Abbruch) übernehmen
+api.MapPost("/reservierungen/uebernehmen", (HttpRequest r) => Sicher(async () =>
+{
+    var par = await Koerper(r);
+    var bezuege = (par["elemente"] as JsonArray ?? []).Select(x => x is JsonValue v && v.TryGetValue<string>(out var t) ? t : null).OfType<string>().ToList();
+    if (bezuege.Count == 0) throw new HlksFehler("«elemente» fehlt.", "Liste der Elemente (Id oder Kennzeichen), deren Reservierung übernommen werden soll.");
+    return JsonAntwort(await dienst.Mit(p =>
+    {
+        var ids = bezuege.Select(b => p.Modell.Finde(b)?.Id ?? b).ToList();
+        var liste = p.ReservierungUebernehmen(ids);
+        return new
+        {
+            uebernommen = liste.Select(x => new { element = p.Modell.Finde(x.Element)?.Kennzeichen ?? x.Element, x.Akteur, x.Geraet, seit = x.Seit.ToString("dd.MM.yyyy HH:mm"), bis = x.Bis.ToString("HH:mm") }).ToList(),
+        };
+    }));
+}));
 
 // Unterlagen (Modul 1b, C1): Datei hochladen (roh mit ?name=… oder multipart) in den Ordner unterlagen des offenen Projekts;
 // Netz einer IFC-Unterlage roh holen (3D). Die Ablage selbst macht der Kern (Unterlagen.Ablegen: Prüfsumme + Name, nie überschreiben).

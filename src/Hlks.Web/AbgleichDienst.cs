@@ -177,6 +177,7 @@ sealed class AbgleichSpeicher(IProjektSpeicher innen) : IProjektSpeicher
     public IReadOnlyList<Reservierung> Reservieren(IEnumerable<string> elementIds, string akteur, string geraet) => innen.Reservieren(elementIds, akteur, geraet);
     public void Freigeben(string akteur, string geraet, IEnumerable<string>? elementIds = null) => innen.Freigeben(akteur, geraet, elementIds);
     public IReadOnlyList<Reservierung> Reservierungen() => innen.Reservierungen();
+    public IReadOnlyList<Reservierung> Uebernehmen(IEnumerable<string> elementIds, string akteur, string geraet) => innen.Uebernehmen(elementIds, akteur, geraet);
 
     /// <summary>Synchronisiert nur die vorgelesenen Pakete (kein Ablage-Zugriff unter der Sperre).</summary>
     public SyncErgebnis Etappe(Projekt p, IReadOnlyList<string> ids, IReadOnlyDictionary<string, Paket> pakete)

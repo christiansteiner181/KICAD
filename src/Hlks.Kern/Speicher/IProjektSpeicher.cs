@@ -32,6 +32,9 @@ public interface IProjektSpeicher
     /// <summary>Gibt Reservierungen von akteur@geraet frei (alle oder die genannten).</summary>
     void Freigeben(string akteur, string geraet, IEnumerable<string>? elementIds = null);
     IReadOnlyList<Reservierung> Reservierungen();
+    /// <summary>Frage 42 (Christian 13.11.2026: Knopf «Reservierung übernehmen» mit Name und Zeitpunkt): fremde, noch gültige Reservierungen der
+    /// genannten Elemente für akteur@geraet übernehmen (nach Absturz oder VPN-Abbruch). Rückgabe: die übernommenen fremden Reservierungen.</summary>
+    IReadOnlyList<Reservierung> Uebernehmen(IEnumerable<string> elementIds, string akteur, string geraet) => [];
 
     /// <summary>Ordner der Unterlagen (Modul 1b: IFC, DWG, PDF, Bilder und daraus abgeleitete Dateien) oder null, wenn
     /// die Ablage keinen hat. Dateien darin werden nie überschrieben: Name = Prüfsumme + ursprünglicher Name.</summary>

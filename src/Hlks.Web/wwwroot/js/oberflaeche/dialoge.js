@@ -163,13 +163,18 @@ export function meldung(text, art = 'info', opt = {}) {
   const m = document.createElement('div');
   m.className = 'meldung ' + art;
   if (opt.ersetze) m.dataset.ersetze = opt.ersetze;
-  m.innerHTML = `<div class="m-text"></div>${opt.vorschlag ? '<div class="m-vorschlag"></div>' : ''}`;
+  m.innerHTML = `<div class="m-text"></div>${opt.vorschlag ? '<div class="m-vorschlag"></div>' : ''}${opt.knopf ? '<button type="button" class="m-knopf"></button>' : ''}`;
   m.querySelector('.m-text').textContent = text;
   if (opt.vorschlag) m.querySelector('.m-vorschlag').textContent = 'Vorschlag: ' + opt.vorschlag;
+  if (opt.knopf) {   // opt.knopf = { text, aktion() } – z. B. «Reservierung übernehmen» (Frage 42)
+    const k = m.querySelector('.m-knopf');
+    k.textContent = opt.knopf.text;
+    k.onclick = (e) => { e.stopPropagation(); m.remove(); opt.knopf.aktion(); };
+  }
   m.onclick = () => m.remove();
   while (ort.children.length >= 4) ort.firstElementChild.remove();
   ort.appendChild(m);
-  const dauer = opt.dauer > 0 ? opt.dauer : art === 'fehler' || opt.vorschlag ? 9000 : art === 'warnung' ? 6000 : 3800;
+  const dauer = opt.dauer > 0 ? opt.dauer : opt.knopf ? 20000 : art === 'fehler' || opt.vorschlag ? 9000 : art === 'warnung' ? 6000 : 3800;
   setTimeout(() => m.remove(), dauer);
 }
 

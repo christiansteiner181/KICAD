@@ -106,6 +106,7 @@ function zeichnen() {
   let a;
   if (!verbindungOk || serverWeg) a = '<span class="sl-rot">● Verbindung zum Server unterbrochen</span>';
   else if (abgleichFehler || s?.abgleichFehler) a = `<span class="sl-rot" title="${esc(abgleichFehler || s.abgleichFehler)}">● Abgleich gestört: ${esc(abgleichFehler || s.abgleichFehler)}</span>`;
+  else if (s?.nurLesen) a = `<span class="sl-rot" title="${esc(s.nurLesen)}">● Nur lesend – neuerer Programmstand im Projekt</span>`;   // Frage 42
   else if (s?.offen) a = `<span class="sl-gruen">● Abgleich ${esc(s.letzterAbgleich ?? '–')}</span>`;
   else a = '<span class="sl-leise">○ Kein Abgleich</span>';
   if (teile.abgleich.innerHTML !== a) teile.abgleich.innerHTML = a;

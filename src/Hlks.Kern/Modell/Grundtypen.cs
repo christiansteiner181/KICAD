@@ -185,6 +185,8 @@ public sealed class Paket
     public string Geraet { get; set; } = "";
     public DateTimeOffset Zeit { get; set; }
     public string Befehl { get; set; } = "";
+    /// <summary>Programmstand, der das Paket geschrieben hat (Frage 42; Projekt.Programmstand), null = vor dem 14.11.2026.</summary>
+    public long? Programmstand { get; set; }
     public JsonObject? Parameter { get; set; }
     public string? RueckgaengigVon { get; set; }
     /// <summary>Warum der Befehl ausgeführt wurde (optional, Protokoll für Mustersituationen und Prüfstand; Rang 4, 30.10.2026).</summary>
@@ -254,6 +256,8 @@ public sealed class ProjektKopf
 public sealed class StandAbbild
 {
     public DateTimeOffset Zeit { get; set; }
+    /// <summary>Programmstand, der das Abbild geschrieben hat (Frage 42; Projekt.Programmstand), null = vor dem 14.11.2026.</summary>
+    public long? Programmstand { get; set; }
     public List<string> EnthaltenePakete { get; set; } = [];
     public List<Element> Elemente { get; set; } = [];
     public List<Verbindung> Verbindungen { get; set; } = [];
@@ -262,7 +266,8 @@ public sealed class StandAbbild
     public Dictionary<string, string> GeloeschteVerbindungen { get; set; } = [];
 }
 
-public sealed record Reservierung(string Element, string Akteur, string Geraet, DateTimeOffset Seit, DateTimeOffset Bis);
+/// <param name="UebernommenVon">Frage 42: übernommen von «akteur@geraet (seit …)», sonst null.</param>
+public sealed record Reservierung(string Element, string Akteur, string Geraet, DateTimeOffset Seit, DateTimeOffset Bis, string? UebernommenVon = null);
 
 public sealed record Konflikt(string Id, string Art, int Erwartet, int Vorhanden, string Text);
 

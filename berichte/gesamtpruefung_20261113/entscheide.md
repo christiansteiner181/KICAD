@@ -145,3 +145,7 @@ swisspor führt für Rohre nur PIR-Schalen «swissporKISODUR» (Heizung, Kälte,
   schnittbereich-logik, begehen-logik, xr-mess-logik; Rechnung und gespeicherte Werte in Projekt-mm – offen: die IFC-Netzdatei speichert float32
   absolut, bei LV95 ist sie schon in der Datei ungenau → Fassung mit Bezugspunkt im Kern nötig), 33 (vorderstes Element, Tab schaltet durch),
   35 (LaengeBisHier in Maschen = längster Weg, Annahme gleicher spezifischer Druckverlust), 36 (Befund P40 «Element doppelt platziert») umgesetzt.
+- **14.11.2026 Paket 39/40/42:** 39 (unterlage_einfuegen im Trockenlauf liest aus einem Temp-Ordner, nichts in unterlagen kopiert), 40 (gespiegelter
+  Text aufrecht wie MIRRTEXT=0; PSLTSCALE wartet auf die DWG von Christian), 42 (Knopf «Reservierung übernehmen» mit Name/Zeit, Speicher.Uebernehmen;
+  alte Pakete ab 60 Tagen beim Standabbild nach aenderungen\archiv\JJJJ-MM, PaketLesen findet sie dort – Annahme 60 Tage; Programmstand = Commit-Zeit
+  aus git in Paket und Standabbild, neuerer Stand → nur lesend) umgesetzt.

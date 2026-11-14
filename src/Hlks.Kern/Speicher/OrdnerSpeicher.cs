@@ -119,6 +119,7 @@ public sealed class OrdnerSpeicher : IProjektSpeicher
             if (versuch >= Wiederholungen) throw new IOException($"Standabbild konnte in {standOrdner} nicht angelegt werden (Name besetzt).");
         }
         foreach (var alt in StandDateien().Skip(StaendeBehalten)) Versuchen(() => File.Delete(alt));
+        Archivieren(stand.EnthaltenePakete);
     }
 
     /// <summary>Standdateien, neueste zuerst (Name enthält die Zeit UTC, ordinal absteigend).</summary>
@@ -139,7 +140,36 @@ public sealed class OrdnerSpeicher : IProjektSpeicher
     public IReadOnlyList<string> PaketListe() =>
         JsonDateien(paketOrdner).Select(d => Path.GetFileNameWithoutExtension(d)).Order(StringComparer.Ordinal).ToList();
 
-    public Paket PaketLesen(string id) => DateiLesen<Paket>(PaketPfad(id), inhaltWiederholen: true);
+    public Paket PaketLesen(string id)
+    {
+        var pfad = PaketPfad(id);
+        // Frage 42: alte Pakete liegen im Monatsordner archiv\JJJJ-MM (Rückgängig, paket_zuruecknehmen und verspätete Leser finden sie dort)
+        if (!File.Exists(pfad) && ArchivPfad(id) is { } a && File.Exists(a)) pfad = a;
+        return DateiLesen<Paket>(pfad, inhaltWiederholen: true);
+    }
+
+    /// <summary>Frage 42 (Christian 13.11.2026: «alte Pakete in Monatsordner»): Pakete, die im eben geschriebenen Standabbild stehen und älter als
+    /// ArchivNachTagen sind, wandern nach aenderungen\archiv\JJJJ-MM (Monat aus der Zeit in der Paket-Id). Der Ordner aenderungen, den jeder Takt
+    /// auflistet, bleibt so klein. Annahme ArchivNachTagen = 60: ein Gerät, das länger keinen Abgleich hatte und erst dann ein Paket mit alter Zeit
+    /// nachliefert, ist damit ausgeschlossen; gelesen werden archivierte Pakete weiterhin (PaketLesen).</summary>
+    void Archivieren(IEnumerable<string> enthalten)
+    {
+        var grenze = DateTime.UtcNow.AddDays(-ArchivNachTagen);
+        foreach (var id in enthalten)
+        {
+            if (id.Length < 8 || !DateTime.TryParseExact(id[..8], "yyyyMMdd", CultureInfo.InvariantCulture, DateTimeStyles.AdjustToUniversal | DateTimeStyles.AssumeUniversal, out var t) || t >= grenze) continue;
+            string quelle;
+            try { quelle = PaketPfad(id); } catch (ArgumentException) { continue; }
+            if (!File.Exists(quelle) || ArchivPfad(id) is not { } ziel) continue;
+            Versuchen(() => { Directory.CreateDirectory(Path.GetDirectoryName(ziel)!); if (!File.Exists(ziel)) File.Move(quelle, ziel); });
+        }
+    }
+
+    /// <summary>Tage, nach denen ein Paket aus dem Standabbild in den Monatsordner wandert (Annahme, siehe Archivieren).</summary>
+    public const int ArchivNachTagen = 60;
+
+    string? ArchivPfad(string id) =>
+        id.Length >= 6 && id[..6].All(char.IsDigit) ? Path.Combine(paketOrdner, "archiv", $"{id[..4]}-{id[4..6]}", id + ".json") : null;
 
     public void PaketSchreiben(Paket paket)
     {
@@ -218,6 +248,24 @@ public sealed class OrdnerSpeicher : IProjektSpeicher
         foreach (var pfad in pfade)
             if (SperreLesen(pfad) is { } r && !Fremd(r, akteur, geraet))
                 Wiederholt(() => File.Delete(pfad));
+    }
+
+    public IReadOnlyList<Reservierung> Uebernehmen(IEnumerable<string> elementIds, string akteur, string geraet)
+    {
+        ArgumentNullException.ThrowIfNull(elementIds);
+        OrtPruefen();
+        Directory.CreateDirectory(sperrOrdner);
+        var jetzt = DateTimeOffset.Now;
+        var aus = new List<Reservierung>();
+        foreach (var id in elementIds.Distinct(StringComparer.Ordinal).Order(StringComparer.Ordinal))
+        {
+            var pfad = SperrPfad(id);
+            if (SperreLesen(pfad) is not { } alt || !Fremd(alt, akteur, geraet) || alt.Bis <= jetzt) continue;
+            var neu = new Reservierung(id, akteur, geraet, jetzt, jetzt + dauer, $"{alt.Akteur}@{alt.Geraet} (seit {alt.Seit:dd.MM.yyyy HH:mm})");
+            ErsetzenAtomar(pfad, JsonSerializer.SerializeToUtf8Bytes(neu, Json.Eingerueckt));
+            aus.Add(alt);
+        }
+        return aus;
     }
 
     public IReadOnlyList<Reservierung> Reservierungen()
