@@ -179,6 +179,9 @@ public sealed class MontageelementSetzen : IBefehl
             ["geometrie"] = new JsonObject { ["art"] = "punkt", ["punkte"] = new JsonArray(new JsonArray(Math.Round(pt[0], 3), Math.Round(pt[1], 3), auf.Okff)) },
         };
         if (typ.Artikel is null) par["eigenschaften"]!.AsObject().Remove("artikel");
+        // Anschlüsse des Elementtyps (Frage 30): Name, Medium, Fluss – die Lage rechnet Anschlusslagen aus dem Katalog
+        if (typ.Anschluesse.Count > 0)
+            par["anschluesse"] = new JsonArray(typ.Anschluesse.Select(a => (JsonNode)new JsonObject { ["name"] = a.Name, ["medium"] = a.Medium, ["fluss"] = a.Fluss }).ToArray());
         if (apparat is not null) par["bezuege"] = new JsonObject { ["apparat"] = apparat };
         new ElementAnlegen().Ausfuehren(k, par);
         var kz = k.Arbeit.Finde(k.Operationen[^1].Id)!.Kennzeichen;

@@ -43,7 +43,43 @@ public class VorwandTests
         Assert.Contains(e.Hinweise, h => h.Contains("1 Montageelement(e) auf duofix umgestellt"));
     }
 
-/// <summary>Entscheid Christian 13.11.2026 (Frage 29): Familie platzieren «an Wand» (Rückseite an der Fläche, Vorderseite zum Raum) und mit
+/// <summary>Entscheid Christian 13.11.2026 (Frage 30) mit «die anschlüsse sind im vorwand element»: das Montageelement hat räumliche Anschlüsse
+    /// aus dem Katalog – GIS WC Sigma 12: Abgang SW 230 mm über OKFF (d 90), Spülkastenzulauf KW 1005 mm; an der Beplankung + 5 mm, Richtung Raum.</summary>
+    [Fact]
+    public void Montageelement_AnschluesseMitLage_LeitungSchliesstRaeumlichAn()
+    {
+        var p = Rechteck();
+        Ok(p.Ausfuehren("element_anlegen", new JsonObject
+        {
+            ["klasse"] = "WC", ["kennzeichen"] = "WC-1", ["geschoss"] = "EG",
+            ["geometrie"] = new JsonObject { ["art"] = "punkt", ["punkte"] = new JsonArray(new JsonArray(1100, 600, 0)) },
+        }));
+        Ok(p.Ausfuehren("vorwand_zeichnen", new JsonObject
+        {
+            ["geschoss"] = "EG", ["punkte"] = Pts([100, 300], [2100, 300]), ["aussenkante"] = "rechts", ["system"] = "gis", ["tiefe"] = 200, ["hoehe"] = 1140, ["bestuecken"] = true,
+        }));
+        var me = Hole(p, "ME-1");
+        var st = Anschlusslagen.Von(p.Modell, p.Katalog, me);
+        var sw = Assert.Single(st, x => x.Name == "sw");
+        Assert.True(sw.HatLage);
+        Assert.Equal(305, sw.Lage![1], 3);   // Vorderseite y = 300 + 5 mm
+        Assert.Equal(230, sw.Lage[2], 3);
+        Assert.Equal(1, sw.Richtung![1], 6);  // zum Raum (+y)
+        Assert.True(sw.HatGroesse);
+        var kw = Assert.Single(st, x => x.Name == "kw");
+        Assert.Equal(1005, kw.Lage![2], 3);
+        // eine Kaltwasserleitung schliesst räumlich am Zulauf an
+        Ok(p.Ausfuehren("familie_laden", new JsonObject { ["datei"] = Modul3Hilfe.Datei("test_rohrserie") }));
+        Ok(p.Ausfuehren("element_anlegen", new JsonObject { ["klasse"] = "System", ["kennzeichen"] = "KW", ["eigenschaften"] = new JsonObject { ["systemtyp"] = "Trinkwasser kalt" } }));
+        var e = Ok(p.Ausfuehren("leitung_zeichnen", new JsonObject
+        {
+            ["serie"] = "fam-test-rohrserie", ["groesse"] = "DN 20", ["system"] = "KW", ["nach"] = "ME-1.kw",   // der Zulauf fliesst ins Element
+            ["punkte"] = new JsonArray(new JsonArray(kw.Lage[0], 1300, 1005)),
+        }));
+        Assert.NotNull(p.Modell.VerbindungAn(me.Id, "kw"));
+    }
+
+    /// <summary>Entscheid Christian 13.11.2026 (Frage 29): Familie platzieren «an Wand» (Rückseite an der Fläche, Vorderseite zum Raum) und mit
     /// Höhe über OK fertig Boden. Südwand Achse y = 0, Dicke 200: Fläche bei y = 100; Klick bei y = 600 → Drehung 180° (Vorderseite nach Norden).</summary>
     [Fact]
     public void FamiliePlatzieren_AnWand_HoeheUeberOkfb()
