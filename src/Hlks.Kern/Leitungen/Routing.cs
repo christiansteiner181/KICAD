@@ -555,6 +555,46 @@ public static class Routing
 
     const double LageToleranzRoh = 1;
 
+    /// <summary>Höhenwechsel, der für zwei 90°-Bögen zu kurz ist (Befund Christian 14.11.2026: Abzweig von Lage 1 auf Lage 2 = 120 mm, T-Stück und Bogen
+    /// d88.9 brauchen 192 mm; Entscheid «Mit 45°-Versatz»): das senkrechte Stück A→B vor einem waagrechten B→C wird ein Versatz mit 2 × 45° in Richtung
+    /// von B→C – ab A waagrecht so weit, wie das Formteil davor und der 45°-Bogen brauchen, dann unter 45° auf die Höhe von B. Nur wenn die Serie
+    /// 45°-Bögen hat, die Schräge für zwei 45°-Bögen reicht und B→C lang genug ist; sonst bleibt der Verlauf (dann die bisherige Meldung).
+    /// anfangBelegt: Einbaulänge des Formteils am ersten Punkt (T-Stück c beim Abzweig); ab: erster Punkt, an dem ersetzt werden darf.</summary>
+    public static bool Versatz45(Modell m, Katalog k, Leitungsserie s, Leitungsgroesse g, List<V3> pkt, double anfangBelegt, List<string> hinweise, int ab = 0)
+    {
+        bool geaendert = false;
+        for (int j = Math.Max(0, ab); j + 2 < pkt.Count; j++)
+        {
+            V3 A = pkt[j], B = pkt[j + 1], C = pkt[j + 2];
+            if (!Senkrecht(A, B)) continue;
+            double lv = Math.Abs(B.Z - A.Z), h = Waagrecht(B, C);
+            if (lv < 1 || h < 1 || Math.Abs(C.Z - B.Z) > 0.05 * h) continue;
+            var b90 = s.Formteil(m, k, "bogen", g, winkel: 90);
+            if (!b90.Ok) continue;
+            var dPlan = new V3((C.X - B.X) / h, (C.Y - B.Y) / h, 0);
+            // davor waagrecht in Richtung B→C: nach dem Versatz läuft es gerade durch (kein Formteil an A, der Punkt entfällt)
+            double hv = j > 0 ? Waagrecht(pkt[j - 1], A) : 0;
+            bool gerade = hv > 1 && Math.Abs(A.Z - pkt[j - 1].Z) <= 0.05 * hv && Grad(new V3(A.X - pkt[j - 1].X, A.Y - pkt[j - 1].Y, 0), dPlan) <= WinkelToleranz;
+            double vorA = j == 0 ? anfangBelegt : b90.Geometrie!.Einbaulaenge("b");
+            if (lv >= vorA + b90.Geometrie!.Einbaulaenge("a") - LageToleranzRoh) continue;   // 2 × 90° geht
+            var b45 = s.Formteil(m, k, "bogen", g, winkel: 45);
+            if (!b45.Ok) continue;
+            double a45 = b45.Geometrie!.Einbaulaenge("a"), e45 = b45.Geometrie.Einbaulaenge("b");
+            if (lv * Math.Sqrt(2) < a45 + e45 - LageToleranzRoh) continue;                     // Schräge zu kurz für zwei 45°-Bögen
+            double s1 = (j == 0 ? anfangBelegt : gerade ? 0 : b90.Geometrie.Einbaulaenge("b")) + a45;
+            if ((C - A).Mal(dPlan) < s1 + lv + e45 - LageToleranzRoh) continue;                  // B→C zu kurz für den Versatz
+            var A1 = A + dPlan * s1;
+            var B1 = new V3(A1.X + dPlan.X * lv, A1.Y + dPlan.Y * lv, B.Z);
+            pkt[j + 1] = A1;
+            pkt.Insert(j + 2, B1);
+            if (gerade) { pkt.RemoveAt(j); j--; }
+            hinweise.Add($"Höhenwechsel {Z(lv)} mm bei {P(A)}: für 2 × 90° zu kurz (braucht {Z(vorA + b90.Geometrie.Einbaulaenge("a"))} mm) – als Versatz mit 2 × 45° ausgeführt.");
+            geaendert = true;
+            j += 2;
+        }
+        return geaendert;
+    }
+
     /// <summary>Winkel des Bogens für einen Knick: der Winkel der Liste bis ±WinkelToleranz bzw. bei «frei» der Knick selbst.</summary>
     public static double Bogenwinkel(Leitungsserie s, double knick, string ort = "")
     {

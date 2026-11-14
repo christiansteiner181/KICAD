@@ -397,6 +397,7 @@ public sealed class LeitungZeichnen : IBefehl
         nach = Routing.AnGeradeKuerzen(k, s, sg.Groesse, nach, roh, zVorgabe, false, hinweise, gefaelle);
         var pkt = Routing.Vorbereiten(roh, zVorgabe, von, nach, gefaelle, hinweise);
         Routing.ZweiBoegen(k.Arbeit, k.Katalog, s, sg.Groesse, pkt, hinweise);   // 90° ohne 90°-Bogen: 2 × 45° (06.11.2026)
+        if (gefaelle is null) Routing.Versatz45(k.Arbeit, k.Katalog, s, sg.Groesse, pkt, 0, hinweise, ab: 1);   // zu kurzer Höhenwechsel im Zug: 2 × 45° (14.11.2026)
         var plan = Routing.Planen(k.Arbeit, k.Katalog, s, sg.Groesse, pkt, von, nach, new PlanOptionen { Uebergang = p["uebergang"] as JsonObject });
         var liste = Routing.Umsetzen(k, plan, ziel);
         k.Hinweise.AddRange(hinweise);
@@ -591,6 +592,15 @@ public sealed class LeitungAbzweigen : IBefehl
             kurs = Param.Punkte(p, "punkte").Select(x => new V3(x[0], x[1], x.Length > 2 ? x[2] : q.Z)).ToList();
             if (kurs.Count > 0 && (kurs[0] - q).Laenge <= Anschlusslagen.AbstandMax) kurs.RemoveAt(0);
             if (kurs.Count == 0) throw new HlksFehler("punkte des Abzweigs fehlen.", ParAbzweigPunkte);
+            // Abzweig auf eine nahe Lage (Christian 14.11.2026 «Mit 45°-Versatz»): zu kurzer Höhenwechsel direkt am T-Stück → waagrechter Abgang mit 2 × 45°
+            if (gefaelle is null)
+            {
+                var tProbe = sm.Formteil(m, kat, "tstueck", gm, gb.Groesse, 90);
+                if (!tProbe.Ok) tProbe = sm.Formteil(m, kat, "tstueck", gm, gm, 90);
+                var probe = new List<V3> { q };
+                probe.AddRange(kurs);
+                if (tProbe.Ok && Routing.Versatz45(m, kat, sb, gb.Groesse, probe, tProbe.Geometrie!.Einbaulaenge("c"), hinweise)) kurs = probe.Skip(1).ToList();
+            }
             u = (kurs[0] - q).Einheit();
             waagrecht = Math.Abs(kurs[0].Z - q.Z) <= Anschlusslagen.AbstandMax && !Routing.Senkrecht(q, kurs[0]);
             fernNahe = kurs[^1].Feld();
