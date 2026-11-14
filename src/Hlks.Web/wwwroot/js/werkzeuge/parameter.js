@@ -240,6 +240,32 @@ export function schnittParameter({ geschoss = null, a, b, seitenpunkt, tiefe, ma
   return p;
 }
 
+/**
+ * Abgesetzter Schnitt (N31, Christian 13.11.2026 «Echter abgesetzter Schnitt»): Linienzug; die Blickseite gilt zum ersten Stück. Der Kern schneidet jedes
+ * zum ersten Stück parallele Stück in seiner eigenen Ebene (Schnittraum.Abschnitte).
+ */
+export function schnittZugParameter({ geschoss = null, punkte, seitenpunkt, tiefe, massstab = null, name = '' }) {
+  if (!Array.isArray(punkte) || punkte.length < 2 || abstand(punkte[0], punkte[1]) < 1)
+    throw new WerkzeugFehler('Die Schnittlinie hat keine Länge.', 'Mindestens zwei verschiedene Punkte anklicken.');
+  if (!positiv(tiefe)) throw new WerkzeugFehler('Die Sichttiefe fehlt.', 'In der Optionsleiste die Tiefe in mm eintragen.');
+  const eig = { art: 'schnitt', blick: seiteDerLinie(punkte[0], punkte[1], seitenpunkt), tiefe };
+  if (positiv(massstab)) eig.massstab = massstab;
+  const p = { klasse: 'Ansicht', eigenschaften: eig, geometrie: { art: 'linie', punkte: punkte.map(pkt) } };
+  if (geschoss) p.geschoss = geschoss;
+  if (name) p.name = name;
+  return p;
+}
+
+/** Nächster Punkt des abgesetzten Schnitts: parallel oder quer zum ersten Stück ab dem letzten Punkt (wie Revit nur rechtwinklige Versätze). */
+export function schnittZugPunkt(punkte, p) {
+  if (!punkte || punkte.length < 2) return p;
+  const [a, b] = punkte; const l = abstand(a, b);
+  if (l < 1e-6) return p;
+  const d = [(b[0] - a[0]) / l, (b[1] - a[1]) / l], n = [-d[1], d[0]], q = punkte[punkte.length - 1];
+  const v = [p[0] - q[0], p[1] - q[1]], entlang = v[0] * d[0] + v[1] * d[1], quer = v[0] * n[0] + v[1] * n[1];
+  return Math.abs(entlang) >= Math.abs(quer) ? [q[0] + d[0] * entlang, q[1] + d[1] * entlang] : [q[0] + n[0] * quer, q[1] + n[1] * quer];
+}
+
 // ------------------------------------------------------------------------------------------------ Ändern
 
 function liste(elemente) {

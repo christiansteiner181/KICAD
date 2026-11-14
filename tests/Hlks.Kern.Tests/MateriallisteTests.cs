@@ -379,4 +379,23 @@ public class MateriallisteTests
         Assert.Equal(2.0, Ableitungen.Leitungslaengen(p, systemId: "KW").Sum(x => x.LaengeM), 9);
         Assert.Equal(2.0, Zahl(Ableitungen.Mengen(p, "KW")["leitungslaengeTotal_m"]), 9);   // Mengen und Materialliste gleich
     }
+
+    /// <summary>N30 (Christian 13.11.2026: «Formteil nur im eigenen System»): ein T-Stück am Übergang KW → KW2 mit eigenem System KW steht nur in der Liste KW.</summary>
+    [Fact]
+    public void Materialliste_FormteilAmSystemuebergang_NurImEigenenSystem()
+    {
+        var p = Projekt3();
+        Ok(p.Ausfuehren("element_anlegen", new JsonObject { ["klasse"] = "System", ["kennzeichen"] = "KW2", ["eigenschaften"] = new JsonObject { ["systemtyp"] = "Trinkwasser kalt" } }));
+        Ok(RohrIn(p, "RO-1", "DN 20", null, "EG", "KW", [0, 0, 500], [2000, 0, 500]));
+        Ok(RohrIn(p, "RO-2", "DN 20", null, "EG", "KW2", [2000, 0, 500], [5000, 0, 500]));
+        Ok(p.Ausfuehren("element_anlegen", new JsonObject
+        {
+            ["klasse"] = "TStueck", ["kennzeichen"] = "TS-9", ["system"] = "KW", ["geschoss"] = "EG",
+            ["geometrie"] = new JsonObject { ["art"] = "punkt", ["punkte"] = Pts([2000, 0, 500]) },
+        }));
+        Ok(p.Ausfuehren("verbinden", new JsonObject { ["von"] = "RO-1.ende", ["nach"] = "TS-9.a" }));
+        Ok(p.Ausfuehren("verbinden", new JsonObject { ["von"] = "TS-9.b", ["nach"] = "RO-2.anfang" }));
+        int Formteile(string sys) => (int)Zahl(Ableitungen.Materialliste(p, system: sys)["formteileTotal"]);
+        Assert.Equal((1, 0), (Formteile("KW"), Formteile("KW2")));
+    }
 }

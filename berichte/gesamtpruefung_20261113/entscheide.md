@@ -134,3 +134,6 @@ swisspor führt für Rohre nur PIR-Schalen «swissporKISODUR» (Heizung, Kälte,
   ausgenommen, Führungslinien am gedrehten Block; Masszahlen und Leitungstexte lesbar auf dem Blatt bestimmt → immer über der Linie), 49 (Ansichtsvorlage
   als Verknüpfung mit vorlageGeloest, Nachführung AnsichtsvorlagenNachfuehren), N33 (Befehl ansicht_duplizieren, Wahl «Nur Ansicht» / «Mit Beschriftungen»)
   umgesetzt. Schnittsymbol im gedrehten Grundriss (Ausgabe-Bericht Punkt 8) nicht angefasst.
+- **14.11.2026 Paket Schnitt/Materialliste:** N30 (Formteil – wie jedes Element mit eigenem System – zählt in Materialliste und Mengen nur in seinem
+  System), N31 (echter abgesetzter Schnitt: Schnittraum.Abschnitte, je Abschnitt eigene Ebene und u-Bereich, Zuschnitt der Grafik; Werkzeug «Abgesetzter Schnitt»)
+  umgesetzt.

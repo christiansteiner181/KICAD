@@ -49,16 +49,18 @@ public static class Ableitungen
     static JsonArray LaengenJson(IEnumerable<Leitungslaenge> l) =>
         new(l.Select(x => (JsonNode)new JsonObject { ["serie"] = x.Serie, ["groesse"] = x.Groesse, ["laenge_m"] = x.LaengeM }).ToArray());
 
-    /// <summary>Filter system / strang / geschoss (Kennzeichen oder Id; null = alle). System wie bei den Mengen: eine Leitung mit eigenem System
-    /// gehört genau zu diesem (der Bypass vom Rücklauf ans Mischventil im Vorlauf zählte sonst in beiden Systemen); ohne eigenes System und bei
-    /// Formteilen gelten die Systeme der Anschlüsse.</summary>
+    /// <summary>Filter system / strang / geschoss (Kennzeichen oder Id; null = alle). System wie bei den Mengen: ein Element mit eigenem System
+    /// gehört genau zu diesem (der Bypass vom Rücklauf ans Mischventil im Vorlauf zählte sonst in beiden Systemen; ein T-Stück am Übergang zweier
+    /// Systeme nur in seinem eigenen, N30); ohne eigenes System gelten die Systeme der Anschlüsse.</summary>
     static Func<Element, bool> Filter(Modell m, Katalog k, string? system, string? strang, string? geschoss)
     {
         var sFilter = system is null ? null : m.HoleDerKlasse(system, "System").Id;
         var stFilter = strang is null ? null : m.HoleDerKlasse(strang, "Strang").Id;
         var gFilter = geschoss is null ? null : m.HoleDerKlasse(geschoss, "Geschoss").Id;
+        // N30 (Christian 13.11.2026: «Formteil nur im eigenen System»): wer ein eigenes System hat – Leitung wie Formteil –, gehört genau zu diesem;
+        // nur ohne eigenes System gelten die Systeme der Anschlüsse
         return e => (sFilter is null || e.System == sFilter
-                     || ((!k.IstArt(e, "Leitung") || e.System is null) && Netz.SystemeVon(m, e).Any(s => s.Id == sFilter)))
+                     || (e.System is null && Netz.SystemeVon(m, e).Any(s => s.Id == sFilter)))
                     && (stFilter is null || e.TeilVon == stFilter)
                     && (gFilter is null || e.Geschoss == gFilter);
     }
@@ -310,7 +312,7 @@ public static class Ableitungen
         // Eine Leitung mit System gehört genau zu diesem (Modul 5: der Bypass vom Rücklauf zum Mischventil im Vorlauf zählte sonst in beiden Systemen);
         // ohne eigenes System und bei Bauteilen gelten die Systeme der Anschlüsse
         bool Passt(Element e) => (sFilter is null || e.System == sFilter
-                                  || ((!k.IstArt(e, "Leitung") || e.System is null) && Netz.SystemeVon(m, e).Any(s => s.Id == sFilter)))
+                                  || (e.System is null && Netz.SystemeVon(m, e).Any(s => s.Id == sFilter)))   // N30: eigenes System geht vor
                                  && (gFilter is null || e.Geschoss == gFilter);
         var leitungen = m.Elemente.Where(e => k.IstArt(e, "Leitung") && Passt(e)).ToList();
         var gruppen = new JsonArray(leitungen.Select(l => (L: l, B: HlksMasse.Bezeichnung(p, l)))

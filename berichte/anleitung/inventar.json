@@ -3375,6 +3375,39 @@
           "hinweis": "Decken erscheinen im Schnitt erst mit Modul 1c (Boden/Decke/Dach erzeugen). Abgesetzte Schnittlinien gelten als gerade Linie vom ersten zum letzten Punkt."
         },
         {
+          "id": "zb-n31-schnitt-abgesetzt",
+          "titel": "Abgesetzter Schnitt",
+          "wo": {
+            "register": "Ansicht",
+            "gruppe": "Erstellen",
+            "knopf": "Abgesetzter Schnitt",
+            "kuerzel": "",
+            "sonst": ""
+          },
+          "schritte": [
+            "Grundriss EG aktivieren, «Abgesetzter Schnitt» wählen.",
+            "Ersten und zweiten Punkt der Schnittlinie anklicken (Richtung).",
+            "Versatz quer und weiteren Abschnitt parallel anklicken (das Werkzeug richtet die Punkte rechtwinklig aus), Enter.",
+            "Die Seite anklicken, in die geschaut wird."
+          ],
+          "erwartung": "Ein Schnitt entsteht, dessen Abschnitte je in ihrer eigenen Ebene schneiden (Gesamtprüfung N31, Christian 13.11.2026: «Echter abgesetzter Schnitt»). Im Schnitt erscheinen die Bauteile des ersten Abschnitts geschnitten bzw. in Ansicht nach dessen Ebene, rechts der Grenze (Mitte des Versatzes) nach der Ebene des nächsten Abschnitts.",
+          "pruefpunkte": [
+            "Grundriss zeigt den geknickten Schnittverlauf mit Pfeilen an den Enden.",
+            "Eine Wand, die nur die zweite Ebene kreuzt, ist im Schnitt geschnitten; eine, die nur die erste Ebene verfehlt, erscheint nicht geschnitten.",
+            "Überlappende Abschnitte werden abgelehnt (Meldung)."
+          ],
+          "bild": {
+            "projekt": "beispiel",
+            "ansicht": "Grundriss EG",
+            "zustand": "abgesetzte Schnittlinie mit Versatz"
+          },
+          "quelle": [
+            "src/Hlks.Web/wwwroot/js/werkzeuge/schnitt.js",
+            "src/Hlks.Kern/Grafik/SchnittRaum.cs"
+          ],
+          "hinweis": ""
+        },
+        {
           "id": "m1a-verschieben",
           "titel": "Verschieben",
           "wo": {

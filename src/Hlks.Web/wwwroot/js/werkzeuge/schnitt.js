@@ -6,7 +6,7 @@
 
 import { derKlasse } from '../zustand.js';
 import { abstand, mitteVon } from './fangen.js';
-import { schnittParameter, seiteDerLinie } from './parameter.js';
+import { schnittParameter, seiteDerLinie, schnittZugParameter, schnittZugPunkt } from './parameter.js';
 import * as S from './schicht.js';
 
 /** Erster freier Name «Schnitt n» unter den Ansichten. */
@@ -61,6 +61,48 @@ export function schnittWerkzeug() {
       if (z.a && z.b) return schnittVorschau(z.a, z.b, ctx.maus ?? fang.punkt, tiefe, s);
       if (z.a) return S.linie(z.a, fang.punkt, 'wz-schnitt') + S.tempMass(z.a, fang.punkt, s);
       return '';
+    },
+  };
+}
+
+/** Werkzeug «Abgesetzter Schnitt» (N31): Punkte des Linienzugs anklicken (ab dem dritten nur parallel oder quer zum ersten Stück), Enter beendet die Linie,
+ *  danach die Blickseite anklicken (oder Enter: Seite des Mauszeigers). Der Kern schneidet jeden Abschnitt in seiner Ebene. */
+export function schnittAbgesetztWerkzeug() {
+  const senden = async (z, ctx, seitenpunkt) => {
+    const o = ctx.opt;
+    const name = o.name || schnittName(derKlasse('Ansicht').map((x) => x.name));
+    const r = await ctx.befehl('element_anlegen', schnittZugParameter({ geschoss: ctx.geschoss, punkte: z.punkte, seitenpunkt, tiefe: o.tiefe, massstab: ctx.massstab, name }),
+      `${name} angelegt – im Projektbrowser öffnen.`);
+    if (r?.angenommen) { z.punkte = []; z.fertig = false; }
+  };
+  return {
+    id: 'schnittAbgesetzt', titel: 'Abgesetzter Schnitt', planarten: ['grundriss'],
+    neu: () => ({ punkte: [], fertig: false }),
+    hinweis: (z) => (z.punkte.length === 0 ? 'Ersten Punkt der Schnittlinie anklicken.'
+      : !z.fertig ? (z.punkte.length < 2 ? 'Zweiten Punkt anklicken (Richtung des Schnitts).' : 'Weitere Punkte (Versatz quer, Abschnitt parallel) oder Enter = Linie fertig.')
+        : 'Seite anklicken, in die geschaut wird.'),
+    letzterPunkt: (z) => (!z.fertig && z.punkte.length ? z.punkte[z.punkte.length - 1] : null),
+    extraPunkte: (z) => z.punkte,
+    async klick(z, fang, ctx) {
+      if (z.fertig) { await senden(z, ctx, ctx.maus ?? fang.punkt); return; }
+      const p = schnittZugPunkt(z.punkte, fang.punkt);
+      const letzter = z.punkte[z.punkte.length - 1];
+      if (!letzter || abstand(letzter, p) >= 1) z.punkte.push(p);
+    },
+    async enter(z, ctx) {
+      if (!z.fertig) { if (z.punkte.length >= 2) z.fertig = true; return; }
+      await senden(z, ctx, ctx.maus ?? mitteVon(z.punkte[0], z.punkte[1]));
+    },
+    zeichne(z, fang, ctx, s) {
+      if (!fang && !z.punkte.length) return '';
+      let h = '';
+      for (let i = 1; i < z.punkte.length; i++) h += S.linie(z.punkte[i - 1], z.punkte[i], 'wz-schnitt');
+      if (!z.fertig && z.punkte.length && fang) {
+        const p = schnittZugPunkt(z.punkte, fang.punkt);
+        h += S.linie(z.punkte[z.punkte.length - 1], p, 'wz-schnitt') + S.tempMass(z.punkte[z.punkte.length - 1], p, s);
+      }
+      if (z.fertig && z.punkte.length >= 2) h += schnittVorschau(z.punkte[0], z.punkte[1], ctx.maus ?? fang?.punkt, 0, s);
+      return h;
     },
   };
 }

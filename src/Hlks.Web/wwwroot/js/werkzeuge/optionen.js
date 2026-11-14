@@ -146,6 +146,15 @@ export const WERKZEUGE = {
     hinweis: 'Zwei Punkte der Schnittlinie, dann die Blickseite anklicken.',
     ohneRaster: false,
   },
+  schnittAbgesetzt: {
+    titel: 'Abgesetzter Schnitt',
+    felder: [
+      { id: 'tiefe', titel: 'Tiefe', art: 'zahl', einheit: 'mm', vorgabe: 10000, breite: 7 },
+      { id: 'name', titel: 'Name', art: 'text', platzhalter: 'automatisch', breite: 10, fluechtig: true },
+    ],
+    hinweis: 'Punkte der Schnittlinie (Versatz quer, Abschnitte parallel zum ersten Stück), Enter, dann die Blickseite anklicken.',
+    ohneRaster: false,
+  },
   kalibrieren: {
     titel: 'Kalibrieren',
     felder: [

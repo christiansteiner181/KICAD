@@ -298,6 +298,16 @@ test('Schnitt: blick aus der Seite des Mauszeigers', () => {
   assert.throws(() => P.schnittParameter({ a, b: [0.2, 0], seitenpunkt: [0, 1], tiefe: 1000 }), /Länge/);
 });
 
+test("Abgesetzter Schnitt (N31): Versatz nur quer, Abschnitte parallel, Blick zum ersten Stück", () => {
+  const zug = [[0, 0], [4000, 0]];
+  assert.deepEqual(P.schnittZugPunkt(zug, [4100, 2500]), [4000, 2500]);     // eher quer → Versatz
+  assert.deepEqual(P.schnittZugPunkt([...zug, [4000, 2500]], [9000, 2700]), [9000, 2500]);   // eher entlang → Abschnitt parallel
+  const p = P.schnittZugParameter({ punkte: [...zug, [4000, 2500], [9000, 2500]], seitenpunkt: [1000, 3000], tiefe: 8000, massstab: 50 });
+  assert.equal(p.geometrie.punkte.length, 4);
+  assert.equal(p.eigenschaften.blick, "links");
+  assert.throws(() => P.schnittZugParameter({ punkte: [[0, 0]], seitenpunkt: [0, 1], tiefe: 1000 }), /Länge/);
+});
+
 test('Ändern: Verschieben, Kopieren, Drehen, Spiegeln', () => {
   assert.deepEqual(P.verschiebenParameter(['W-1', 'T-1'], [100, 100], [350.5, -50]), { elemente: ['W-1', 'T-1'], dx: 250.5, dy: -150 });
   assert.deepEqual(P.kopierenParameter(['W-1'], [0, 0], [1000, 0], 3), { elemente: ['W-1'], dx: 1000, dy: 0, anzahl: 3 });

@@ -46,7 +46,8 @@ public static class Schnittgrafik
     /// <summary>Modellgrafik eines Schnitts bzw. einer Ansicht in u/v-Koordinaten (u entlang der Linie, v = z).</summary>
     public static IEnumerable<Grafikteil> Erzeugen(GrafikKontext ctx)
     {
-        var raum = Schnittraum.Aus(ctx.Ansicht);
+        var abschnitte = Schnittraum.Abschnitte(ctx.Ansicht);
+        var raum = abschnitte[0].Raum;
         bool schnitt = ctx.Art == "schnitt";
 
         // 2. Körper der gezeigten Elemente (Wandlagen und Decken einmal je Lauf statt je Wand)
@@ -58,9 +59,18 @@ public static class Schnittgrafik
                 // Familien im Detailgrad der Ansicht (Modul 2), alle anderen Quellen wie bisher
                 if (Grafik.QuelleFuer(ctx.Katalog, e) is { } q && FamilienGrafik.KoerperFuer(q, ctx.Projekt, e, ctx.Detailgrad) is { Leer: false } k) liste.Add((e, k));
             }
-        var teile = Zeichnen(raum, schnitt, liste, ctx.Katalog, ctx.Detailgrad == "grob");
-        IfcDarstellung.Ueberschreiben(ctx, teile);                       // N12: Nachbau in der Farbe der Unterlage
-        teile.InsertRange(0, GrundlagenIfc.Ansicht(ctx, raum));          // N12: Original der IFC-Unterlagen (Schnitt mit der Ebene), unterste Ebene
+        // N31: je Schnittabschnitt in seiner Ebene schneiden und auf seinen u-Bereich zuschneiden (gerade Linie: ein Abschnitt, kein Zuschnitt)
+        var teile = new List<Grafikteil>();
+        var ifc = new List<Grafikteil>();
+        foreach (var (r, u0, u1) in abschnitte)
+        {
+            var t = Zeichnen(r, schnitt, liste, ctx.Katalog, ctx.Detailgrad == "grob");
+            IfcDarstellung.Ueberschreiben(ctx, t);                       // N12: Nachbau in der Farbe der Unterlage
+            var original = GrundlagenIfc.Ansicht(ctx, r).ToList();      // N12: Original der IFC-Unterlagen (Schnitt mit der Ebene), unterste Ebene
+            if (abschnitte.Count > 1) { t = SchnittAbschnitt.Zuschneiden(t, u0, u1); original = SchnittAbschnitt.Zuschneiden(original, u0, u1); }
+            teile.AddRange(t); ifc.AddRange(original);
+        }
+        teile.InsertRange(0, ifc);
 
         // 6. Geschosskoten und Achsen
         teile.AddRange(Schnittbezug.Erzeugen(ctx, raum, teile));

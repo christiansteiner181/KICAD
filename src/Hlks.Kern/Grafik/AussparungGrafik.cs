@@ -150,7 +150,7 @@ public sealed class AussparungGrafik : IGrafikquelle
         }
         else if (ctx.Art is "schnitt" or "ansicht")
         {
-            try { entwuerfe = AnsichtEntwuerfe(ctx, Schnittraum.Aus(ctx.Ansicht)); }
+            try { entwuerfe = AnsichtEntwuerfeAbgesetzt(ctx); }
             catch (HlksFehler) { return; }   // keine brauchbare Schnittlinie: die Schnittgrafik meldet den Fehler
         }
         else return;
@@ -481,12 +481,16 @@ public sealed class AussparungGrafik : IGrafikquelle
     /// Schnittgrafik anzufügen (Dateikopf). Die Lagen der Beschriftungen stammen aus Vorbereiten (Freistellung über alle Aussparungen).</summary>
     internal static List<Grafikteil> Ansicht(GrafikKontext ctx, Schnittraum raum)
     {
-        var fertig = ctx.Ablage.TryGetValue(AblageName, out var o) && o is Dictionary<string, List<Grafikteil>> d ? d : Platzieren(ctx, AnsichtEntwuerfe(ctx, raum));
+        var fertig = ctx.Ablage.TryGetValue(AblageName, out var o) && o is Dictionary<string, List<Grafikteil>> d ? d : Platzieren(ctx, AnsichtEntwuerfeAbgesetzt(ctx));
         var liste = new List<Grafikteil>();
         foreach (var e in ctx.Modell.Elemente)
             if (fertig.TryGetValue(e.Id, out var teile)) liste.AddRange(teile);
         return liste;
     }
+
+    /// <summary>Abgesetzter Schnitt (N31): Aussparungen je Schnittabschnitt, nur die mit der Mitte in seinem u-Bereich.</summary>
+    static List<Entwurf> AnsichtEntwuerfeAbgesetzt(GrafikKontext ctx) =>
+        Schnittraum.Abschnitte(ctx.Ansicht).SelectMany(ab => AnsichtEntwuerfe(ctx, ab.Raum).Where(en => en.Cx >= ab.U0 && en.Cx < ab.U1)).ToList();
 
     static List<Entwurf> AnsichtEntwuerfe(GrafikKontext ctx, Schnittraum raum)
     {

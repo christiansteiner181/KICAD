@@ -20,7 +20,7 @@ import { textWerkzeug } from '../werkzeuge/text.js';
 import { linieWerkzeug } from '../werkzeuge/linie.js';
 import { fuellbereichWerkzeug } from '../werkzeuge/fuellbereich.js';
 import { koteWerkzeug, nordpfeilWerkzeug } from '../werkzeuge/kote.js';
-import { schnittWerkzeug } from '../werkzeuge/schnitt.js';
+import { schnittWerkzeug, schnittAbgesetztWerkzeug } from '../werkzeuge/schnitt.js';
 import { verschiebenWerkzeug, kopierenWerkzeug, drehenWerkzeug, spiegelnWerkzeug, spiegelnWaehlenWerkzeug } from '../werkzeuge/aendern.js';
 import { teilenWerkzeug } from '../werkzeuge/teilen.js';
 import { eckeWerkzeug, dehnenWerkzeug } from '../werkzeuge/stutzen.js';
@@ -66,6 +66,7 @@ werkzeug({ id: 'beschriften.nordpfeil', titel: 'Nord­pfeil', symbol: 'nordpfeil
 // ---------------------------------------------------------------------------------------------- Ansicht: Schnitt
 
 werkzeug({ id: 'ansicht.schnitt', titel: 'Schnitt', symbol: 'schnittlinie', register: 'ansicht', gruppe: 'Erstellen', wo: 'grundriss', wid: 'schnitt', fabrik: schnittWerkzeug });
+werkzeug({ id: 'ansicht.schnitt-abgesetzt', titel: 'Abgesetzter Schnitt', symbol: 'schnittlinie', register: 'ansicht', gruppe: 'Erstellen', wo: 'grundriss', wid: 'schnittAbgesetzt', fabrik: schnittAbgesetztWerkzeug });   // N31
 
 // ---------------------------------------------------------------------------------------------- Ändern (mit Auswahl)
 
